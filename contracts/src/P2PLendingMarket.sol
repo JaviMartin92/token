@@ -18,6 +18,8 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
     address public feeCollector;
     address public priceFeed; // Price feed for collateral/health factor valuation
     address public treasury;  // Treasury contract address for protocol reserve repayments
+    address public opsWallet; // 25% Operational Expenses Wallet
+    address public corporateRevenueWallet; // 25% Company Profit / Corporate Revenue Wallet
 
     uint256 public constant MAX_LTV_BPS = 7000;         // Max 70% LTV
     uint256 public constant MIN_COLLATERAL_RATIO = 130; // 130%
@@ -80,6 +82,11 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
 
     function setTreasury(address _treasury) external onlyOwner {
         treasury = _treasury;
+    }
+
+    function setFeeWallets(address _opsWallet, address _corporateRevenueWallet) external onlyOwner {
+        opsWallet = _opsWallet;
+        corporateRevenueWallet = _corporateRevenueWallet;
     }
 
     function createLoanOffer(
@@ -185,10 +192,19 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
             require(IERC20(stablecoin).transfer(borrower, netBorrow), "P2P: Lender payout failed");
             if (originationFee > 0) {
                 uint256 treasuryFee = originationFee / 2;
-                uint256 protocolFee = originationFee - treasuryFee;
+                uint256 opsFee = originationFee / 4;
+                uint256 corpFee = originationFee - treasuryFee - opsFee;
+
                 require(IERC20(stablecoin).transfer(treasury, treasuryFee), "P2P: Treasury orig fee failed");
-                if (protocolFee > 0 && feeCollector != address(0)) {
-                    require(IERC20(stablecoin).transfer(feeCollector, protocolFee), "P2P: Fee payout failed");
+                if (opsFee > 0 && opsWallet != address(0)) {
+                    require(IERC20(stablecoin).transfer(opsWallet, opsFee), "P2P: Ops orig fee failed");
+                } else if (opsFee > 0 && feeCollector != address(0)) {
+                    require(IERC20(stablecoin).transfer(feeCollector, opsFee), "P2P: Fee payout failed");
+                }
+                if (corpFee > 0 && corporateRevenueWallet != address(0)) {
+                    require(IERC20(stablecoin).transfer(corporateRevenueWallet, corpFee), "P2P: Corp orig fee failed");
+                } else if (corpFee > 0 && feeCollector != address(0)) {
+                    require(IERC20(stablecoin).transfer(feeCollector, corpFee), "P2P: Fee payout failed");
                 }
             }
         } else {
@@ -277,14 +293,18 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
             // Treasury Reserve Loan: 50% of interest + principal returned to Treasury reserves
             uint256 treasuryReservePayout = loan.borrowAmount + (interest / 2);
             uint256 opsPayout = interest / 4;
-            uint256 yieldPayout = interest - (interest / 2) - opsPayout;
+            uint256 corpRevenuePayout = interest - (interest / 2) - opsPayout;
 
             require(IERC20(stablecoin).transferFrom(msg.sender, treasury, treasuryReservePayout), "P2P: Treasury repayment failed");
-            if (opsPayout > 0 && feeCollector != address(0)) {
+            if (opsPayout > 0 && opsWallet != address(0)) {
+                require(IERC20(stablecoin).transferFrom(msg.sender, opsWallet, opsPayout), "P2P: Ops fee failed");
+            } else if (opsPayout > 0 && feeCollector != address(0)) {
                 require(IERC20(stablecoin).transferFrom(msg.sender, feeCollector, opsPayout), "P2P: Ops fee failed");
             }
-            if (yieldPayout > 0 && feeCollector != address(0)) {
-                require(IERC20(stablecoin).transferFrom(msg.sender, feeCollector, yieldPayout), "P2P: Yield fee failed");
+            if (corpRevenuePayout > 0 && corporateRevenueWallet != address(0)) {
+                require(IERC20(stablecoin).transferFrom(msg.sender, corporateRevenueWallet, corpRevenuePayout), "P2P: Corp fee failed");
+            } else if (corpRevenuePayout > 0 && feeCollector != address(0)) {
+                require(IERC20(stablecoin).transferFrom(msg.sender, feeCollector, corpRevenuePayout), "P2P: Corp fee failed");
             }
         } else {
             // Standard P2P Lender
