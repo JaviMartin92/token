@@ -104,7 +104,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '1.5rem' }}>
+    <div className="p2p-container">
       
       {/* Treasury Reserve APY Booster Banner */}
       <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', borderRadius: '16px', borderLeft: '4px solid #10b981', background: 'linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(15,23,42,0.4) 100%)' }}>
