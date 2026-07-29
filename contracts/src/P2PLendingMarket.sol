@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./lib/security/ReentrancyGuard.sol";
 import "./VaultPositionNFT.sol";
 import "./interfaces/IAggregatorV3.sol";
+import "./interfaces/ITreasury.sol";
 
 /**
  * @title P2PLendingMarket
@@ -177,10 +178,19 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
         uint256 originationFee = (loan.borrowAmount * ORIGINATION_FEE_BPS) / 10000; // 0.5%
         uint256 netBorrow = loan.borrowAmount - originationFee;
 
-        // Transfer funds from Lender (msg.sender) to Borrower
-        require(IERC20(stablecoin).transferFrom(msg.sender, borrower, netBorrow), "P2P: Lender payout failed");
-        if (originationFee > 0) {
-            require(IERC20(stablecoin).transferFrom(msg.sender, feeCollector, originationFee), "P2P: Fee payout failed");
+        // If funded by Treasury / Admin operator:
+        if (treasury != address(0) && (msg.sender == owner() || msg.sender == treasury)) {
+            ITreasury(treasury).disburseTreasuryLoan(address(this), loan.borrowAmount);
+            require(IERC20(stablecoin).transfer(borrower, netBorrow), "P2P: Lender payout failed");
+            if (originationFee > 0) {
+                require(IERC20(stablecoin).transfer(feeCollector, originationFee), "P2P: Fee payout failed");
+            }
+        } else {
+            // Standard P2P Lender
+            require(IERC20(stablecoin).transferFrom(msg.sender, borrower, netBorrow), "P2P: Lender payout failed");
+            if (originationFee > 0) {
+                require(IERC20(stablecoin).transferFrom(msg.sender, feeCollector, originationFee), "P2P: Fee payout failed");
+            }
         }
 
         emit LoanAccepted(loanId, borrower, loan.borrowAmount);
@@ -198,13 +208,12 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Returns total USD value of all active loan receivables (principal + accrued interest).
+     * @notice Returns total USD value of all active loan receivables (principal).
      */
     function totalActiveLoansReceivableUSD() external view returns (uint256 totalReceivable) {
         for (uint256 i = 1; i < nextLoanId; i++) {
             if (loans[i].state == LoanState.ACTIVE) {
-                (uint256 totalOwed, ) = calculateTotalOwed(i);
-                totalReceivable += totalOwed;
+                totalReceivable += loans[i].borrowAmount;
             }
         }
         return totalReceivable;
@@ -252,25 +261,33 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
 
         (uint256 totalOwed, uint256 interest) = calculateTotalOwed(loanId);
 
-        uint256 feeSpread = (interest * INTEREST_SPREAD_BPS) / 10000; // 10% of interest
-        uint256 lenderPayout = totalOwed - feeSpread;
-
         loan.state = LoanState.REPAID;
 
-        // Route repayment directly to Treasury if Treasury is lender or owner
-        address recipient = (treasury != address(0) && (loan.lender == owner() || loan.lender == treasury)) ? treasury : loan.lender;
+        if (treasury != address(0) && (loan.lender == owner() || loan.lender == treasury)) {
+            // Treasury Reserve Loan: 50% of interest + principal returned to Treasury reserves
+            uint256 treasuryReservePayout = loan.borrowAmount + (interest / 2);
+            uint256 opsPayout = interest / 4;
+            uint256 yieldPayout = interest - (interest / 2) - opsPayout;
 
-        // Pull repayment from borrower
-        require(IERC20(stablecoin).transferFrom(msg.sender, recipient, lenderPayout), "P2P: Repayment to lender failed");
-        if (feeSpread > 0) {
-            require(IERC20(stablecoin).transferFrom(msg.sender, feeCollector, feeSpread), "P2P: Fee spread failed");
+            require(IERC20(stablecoin).transferFrom(msg.sender, treasury, treasuryReservePayout), "P2P: Treasury repayment failed");
+            if (opsPayout > 0 && feeCollector != address(0)) {
+                require(IERC20(stablecoin).transferFrom(msg.sender, feeCollector, opsPayout), "P2P: Ops fee failed");
+            }
+            if (yieldPayout > 0 && feeCollector != address(0)) {
+                require(IERC20(stablecoin).transferFrom(msg.sender, feeCollector, yieldPayout), "P2P: Yield fee failed");
+            }
+        } else {
+            // Standard P2P Lender
+            uint256 feeSpread = (interest * INTEREST_SPREAD_BPS) / 10000; // 10% of interest
+            uint256 lenderPayout = totalOwed - feeSpread;
+            require(IERC20(stablecoin).transferFrom(msg.sender, loan.lender, lenderPayout), "P2P: Lender payout failed");
+            if (feeSpread > 0 && feeCollector != address(0)) {
+                require(IERC20(stablecoin).transferFrom(msg.sender, feeCollector, feeSpread), "P2P: Fee spread failed");
+            }
         }
 
-        // Return collateral to borrower
-        require(IERC20(stablecoin).transfer(loan.borrower, loan.collateralAmount), "P2P: Collateral return failed");
-
-        // Return Position NFT to lender
-        positionNFT.transferFrom(address(this), loan.lender, loan.positionTokenId);
+        // Return Position NFT to borrower (who colateralized it in escrow)
+        positionNFT.transferFrom(address(this), loan.borrower, loan.positionTokenId);
 
         emit LoanRepaid(loanId, totalOwed);
     }

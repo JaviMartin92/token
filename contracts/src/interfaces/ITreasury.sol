@@ -49,4 +49,9 @@ interface ITreasury {
      * @notice Processes 1% staking entry fee ALPHA tokens, burning them and routing equivalent USDC yield to RealYieldRouter (50/25/25 flywheel).
      */
     function processStakingFee(uint256 feeShares) external;
+
+    /**
+     * @notice Disburses a Treasury reserve loan (up to 20% max of total reserves) to P2PLendingMarket.
+     */
+    function disburseTreasuryLoan(address recipient, uint256 amount) external;
 }

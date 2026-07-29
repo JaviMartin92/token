@@ -226,6 +226,30 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
     }
 
     /**
+     * @notice Disburses a Treasury reserve loan (up to 20% max of total reserves) to P2PLendingMarket.
+     *         Enforces strict 20% max reserve lending cap on active receivables.
+     */
+    function disburseTreasuryLoan(address recipient, uint256 amount) external nonReentrant {
+        require(msg.sender == owner() || msg.sender == p2pMarket, "Treasury: Only owner or P2PMarket");
+        require(recipient != address(0), "Treasury: Invalid recipient");
+        require(amount > 0, "Treasury: Loan amount must be > 0");
+
+        (uint256 totalAssetsUSD, , ) = getProofOfReserves();
+        uint256 mult = (10**(18 - redemptionTokenDecimals));
+        uint256 maxLendableUSD = (totalAssetsUSD * 2000) / 10000; // 20.00% max of total reserves
+
+        uint256 currentReceivablesUSD = 0;
+        if (p2pMarket != address(0) && p2pMarket.code.length > 0) {
+            currentReceivablesUSD = IP2PLendingMarket(p2pMarket).totalActiveLoansReceivableUSD() * mult;
+        }
+
+        uint256 newLoanUSD = amount * mult;
+        require(currentReceivablesUSD + newLoanUSD <= maxLendableUSD, "Treasury: 20% max reserve lending cap exceeded");
+
+        require(IERC20(redemptionToken).transfer(recipient, amount), "Treasury: Reserve loan disbursement failed");
+    }
+
+    /**
      * @notice Processes 1% staking entry fee ALPHA tokens transferred from GovernanceStaking.
      *         Burns the fee ALPHA tokens (deflationary / NAV-accretive) and transfers equivalent
      *         USDC value to RealYieldRouter for 50/25/25 Real Yield Flywheel distribution.
