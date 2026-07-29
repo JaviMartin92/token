@@ -1,0 +1,100 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Double-Entry Ledger Transactions for auditing all asset movements
+model LedgerTransaction {
+  id              String           @id @default(uuid())
+  timestamp       DateTime         @default(now())
+  description     String
+  referenceType   ReferenceType    // DEPOSIT, REDEMPTION, YIELD_DISTRIBUTION, REBALANCE, CORP_INJECTION
+  referenceId     String?          // Tx Hash or external reference ID
+  entries         LedgerEntry[]
+}
+
+enum ReferenceType {
+  DEPOSIT
+  REDEMPTION
+  YIELD_DISTRIBUTION
+  REBALANCE
+  CORP_INJECTION
+}
+
+model LedgerEntry {
+  id            String            @id @default(uuid())
+  transactionId String
+  transaction   LedgerTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  accountCode   String            // Chart of accounts (e.g. "TREASURY_LIQUID_USDC", "USER_EQUITY")
+  debit         Decimal           @db.Decimal(65, 18) // High precision to accommodate raw token units (wei)
+  credit        Decimal           @db.Decimal(65, 18)
+  assetAddress  String            // Token address (or native address)
+}
+
+// Records external corporate capital commitments & injections
+model CorporateContribution {
+  id             String            @id @default(uuid())
+  createdAt      DateTime          @default(now())
+  periodStart    DateTime          // Auditable quarterly/monthly period start
+  periodEnd      DateTime          // Period end
+  grossRevenue   Decimal           @db.Decimal(18, 2) // Corporate auditable metrics
+  rateApplied    Decimal           @db.Decimal(5, 4)  // e.g. 5.0000%
+  expectedUsdc   Decimal           @db.Decimal(65, 18)
+  injectedUsdc   Decimal           @db.Decimal(65, 18)
+  status         InjectionStatus   @default(PENDING)
+  auditRef       String            @unique // Unique invoice/financial statement checksum
+  twapOrders     TwapOrder[]
+}
+
+enum InjectionStatus {
+  PENDING
+  PARTIAL
+  COMPLETED
+}
+
+// Internal logs tracking TWAP order executions
+model TwapOrder {
+  id              String                @id @default(uuid())
+  contributionId  String
+  contribution    CorporateContribution @relation(fields: [contributionId], references: [id])
+  totalAmount     Decimal               @db.Decimal(65, 18)
+  executedAmount  Decimal               @db.Decimal(65, 18) @default(0)
+  totalSteps      Int
+  executedSteps   Int                   @default(0)
+  intervalMinutes Int
+  nextExecutionAt DateTime
+  status          TwapStatus            @default(ACTIVE)
+  history         TwapHistory[]
+}
+
+enum TwapStatus {
+  ACTIVE
+  COMPLETED
+  FAILED
+}
+
+model TwapHistory {
+  id              String      @id @default(uuid())
+  orderId         String
+  order           TwapOrder   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  timestamp       DateTime    @default(now())
+  txHash          String      @unique
+  tokensBought    Decimal     @db.Decimal(65, 18)
+  usdcSpent       Decimal     @db.Decimal(65, 18)
+  slippage        Decimal     @db.Decimal(5, 4)   // Realized price slippage
+}
+
+// Snapshots of asset positions & prices for real-time NAV audits and Circuit Breaker monitoring
+model AssetSnapshot {
+  id             String   @id @default(uuid())
+  timestamp      DateTime @default(now())
+  assetAddress   String
+  symbol         String
+  balance        Decimal  @db.Decimal(65, 18)
+  priceUsd       Decimal  @db.Decimal(65, 18) // Chainlink price feed reference
+  allocationWeight Decimal @db.Decimal(5, 4) // Actual portfolio weight (e.g. 0.2500)
+}

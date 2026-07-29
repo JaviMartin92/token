@@ -1,0 +1,14 @@
+{
+  "name": "alpha-centauri-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Alpha Centauri Protocol Monorepo",
+  "scripts": {
+    "test:contracts": "docker run --rm -v \"%cd%\\contracts:/app\" -w /app --entrypoint forge ghcr.io/foundry-rs/foundry:latest test",
+    "test:frontend": "cd frontend && npm run build && npx tsc --noEmit",
+    "test": "npm run test:contracts && npm run test:frontend",
+    "start": "powershell -ExecutionPolicy Bypass -File ./start_app.ps1",
+    "dev": "docker-compose up -d",
+    "dev:down": "docker-compose down"
+  }
+}

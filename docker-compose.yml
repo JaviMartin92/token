@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: alpha_centauri_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: alpha_centauri
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: alpha_centauri_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  anvil:
+    image: ghcr.io/foundry-rs/foundry:latest
+    container_name: alpha_centauri_anvil
+    ports:
+      - "8545:8545"
+    # chain-id 31337 matches the viem 'localhost' chain default used in web3.ts
+    # NOTE: If you need to simulate Arbitrum chain-id (42161), change --chain-id below
+    #       and update the chain config in frontend/src/utils/web3.ts accordingly.
+    entrypoint: [
+      "anvil",
+      "--host", "0.0.0.0",
+      "--port", "8545",
+      "--chain-id", "31337",
+      "--block-time", "1"
+    ]
+    healthcheck:
+      test: ["CMD-SHELL", "cast block-number --rpc-url http://localhost:8545 2>/dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  frontend:
+    image: node:20-alpine
+    container_name: alpha_centauri_frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "5173:5173"
+    command: sh -c "npm install --silent && npm run dev -- --host 0.0.0.0"
+    depends_on:
+      anvil:
+        condition: service_healthy
+    environment:
+      - VITE_RPC_URL=http://anvil:8545
+
+volumes:
+  postgres_data:

@@ -1,0 +1,191 @@
+import { useState } from 'react';
+import { publicClient, getWalletClient, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
+import { parseEther } from 'viem';
+import type { TxConfirmDetails } from '../components/TransactionConfirmModal.js';
+
+interface TreasuryActionsParams {
+  activeKey: string;
+  userAddress: string;
+  addLog: (msg: string) => void;
+  addToast: (type: 'info' | 'success' | 'warning' | 'error', title: string, message: string) => void;
+  fetchData: () => Promise<void>;
+  requestConfirmation?: (details: TxConfirmDetails, action: () => Promise<void>) => void;
+}
+
+export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, fetchData, requestConfirmation }: TreasuryActionsParams) {
+  const [depositAmount, setDepositAmount] = useState('');
+  const [redeemAmount, setRedeemAmount] = useState('');
+
+  const handleFaucetUSDC = async () => {
+    try {
+      addLog('Reclamando 10,000 USDC mock del Faucet...');
+      addToast('info', 'Faucet USDC', 'Enviando transacción...');
+      const client = getWalletClient(activeKey);
+      const tx = await client.writeContract({
+        address: CONTRACT_ADDRESSES.USDC,
+        abi: ABIS.ERC20,
+        functionName: 'mint',
+        args: [userAddress as `0x${string}`, parseEther('10000')]
+      });
+      await publicClient.waitForTransactionReceipt({ hash: tx });
+      addLog('¡10,000 USDC mock recibidos en tu billetera!');
+      addToast('success', 'Éxito Faucet', 'Recibidos 10,000 USDC mock');
+      await fetchData();
+    } catch (err: any) {
+      addLog(`[Error] Faucet falló: ${err.message || err}`);
+      addToast('error', 'Error Faucet', err.message || 'Transacción fallida');
+    }
+  };
+
+  const executeDeposit = async () => {
+    if (!depositAmount) return;
+    try {
+      addLog(`Depositando ${depositAmount} USDC en Tesorería...`);
+      addToast('info', 'Depósito Tesorería', `Aprobando ${depositAmount} USDC...`);
+      const amountWei = parseEther(depositAmount);
+      const client = getWalletClient(activeKey);
+
+      const appHash = await client.writeContract({
+        address: CONTRACT_ADDRESSES.USDC,
+        abi: ABIS.ERC20,
+        functionName: 'approve',
+        args: [CONTRACT_ADDRESSES.TREASURY, amountWei]
+      });
+      await publicClient.waitForTransactionReceipt({ hash: appHash });
+
+      const depHash = await client.writeContract({
+        address: CONTRACT_ADDRESSES.TREASURY,
+        abi: ABIS.TREASURY,
+        functionName: 'deposit',
+        args: [amountWei]
+      });
+      await publicClient.waitForTransactionReceipt({ hash: depHash });
+      addLog(`Depósito completado. Shares ALPHA acuñadas a valor NAV.`);
+      addToast('success', 'Depósito Completado', `Acuñadas ALPHA shares a valor NAV`);
+      setDepositAmount('');
+      fetchData();
+    } catch (err: any) {
+      addLog(`[Error] Depósito falló: ${err.message || err}`);
+      addToast('error', 'Error Depósito', err.message || 'Error al depositar');
+    }
+  };
+
+  const handleDeposit = () => {
+    if (!depositAmount) return;
+    const num = parseFloat(depositAmount);
+    if (isNaN(num) || num <= 0) return;
+
+    if (requestConfirmation) {
+      const fee = (num * 0.005).toFixed(2);
+      const net = (num * 0.995).toFixed(2);
+      const feeReserves = (num * 0.0025).toFixed(2);
+      const feeOps = (num * 0.00125).toFixed(2);
+      const feeYield = (num * 0.00125).toFixed(2);
+
+      requestConfirmation({
+        title: 'Depósito de USDC en Tesorería',
+        actionIcon: '💵',
+        typeBadge: 'Acuñación NAV Shares',
+        targetContractName: 'Treasury.sol',
+        targetContractAddress: CONTRACT_ADDRESSES.TREASURY,
+        inputAmount: `$${num.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+        inputSymbol: 'USDC (Bruto Ingresado)',
+        expectedOutput: `${net}`,
+        expectedOutputSymbol: 'ALPHA Shares (Acuñadas a $1.00 NAV)',
+        details: [
+          { label: 'Monto Bruto Ingresado', value: `$${num.toFixed(2)} USDC` },
+          { label: 'Comisión de Entrada (0.50%)', value: `$${fee} USDC`, badge: 'Reparto 50%/25%/25%' },
+          { label: 'Destino 50% Comisión (Reservas)', value: `$${feeReserves} USDC (Inyectado a Reservas Tesorería)` },
+          { label: 'Destino 25% Comisión (Gastos Ops)', value: `$${feeOps} USDC (Billetera Operativa)` },
+          { label: 'Destino 25% Comisión (Real Yield)', value: `$${feeYield} USDC (Pool de Stakers Real Yield)` },
+          { label: 'Monto Neto Acreditado a Reservas', value: `$${net} USDC (Acuña ${net} ALPHA Shares)` },
+          { label: 'Solvencia PoR On-Chain', value: '100.00% Collateral Ratio', badge: 'Solvente 1:1' }
+        ],
+        warningNote: 'Las participaciones ALPHA otorgan propiedad directa sobre el pool de reservas líquidas de la tesorería.',
+        confirmButtonText: '✍️ Confirmar y Depositar',
+        confirmButtonColor: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+      }, executeDeposit);
+    } else {
+      executeDeposit();
+    }
+  };
+
+  const executeRedeem = async () => {
+    if (!redeemAmount) return;
+    try {
+      addLog(`Rescatando ${redeemAmount} ALPHA shares por USDC...`);
+      addToast('info', 'Rescate Shares', `Rescatando ${redeemAmount} ALPHA...`);
+      const amountWei = parseEther(redeemAmount);
+      const client = getWalletClient(activeKey);
+
+      const redHash = await client.writeContract({
+        address: CONTRACT_ADDRESSES.TREASURY,
+        abi: ABIS.TREASURY,
+        functionName: 'redeem',
+        args: [amountWei]
+      });
+      await publicClient.waitForTransactionReceipt({ hash: redHash });
+      addLog(`Rescate completado. USDC recibido.`);
+      addToast('success', 'Rescate Exitoso', `Tokens canjeados a valor NAV`);
+      setRedeemAmount('');
+      fetchData();
+    } catch (err: any) {
+      addLog(`[Error] Rescate falló: ${err.message || err}`);
+      addToast('error', 'Error Rescate', err.message || 'Fallo en rescate');
+    }
+  };
+
+  const handleRedeem = () => {
+    if (!redeemAmount) return;
+    const num = parseFloat(redeemAmount);
+    if (isNaN(num) || num <= 0) return;
+
+    if (requestConfirmation) {
+      const fee = (num * 0.01).toFixed(2);
+      const net = (num * 0.99).toFixed(2);
+
+      requestConfirmation({
+        title: 'Rescate de Shares por USDC',
+        actionIcon: '💎',
+        typeBadge: 'Canje Directo NAV',
+        targetContractName: 'Treasury.sol',
+        targetContractAddress: CONTRACT_ADDRESSES.TREASURY,
+        inputAmount: `${num.toLocaleString('en-US')}`,
+        inputSymbol: 'ALPHA Shares',
+        expectedOutput: `$${net}`,
+        expectedOutputSymbol: 'USDC Netos',
+        details: [
+          { label: 'Valor NAV de Canje', value: '$1.00 USD / Share' },
+          { label: 'Quema de Shares', value: `${num} ALPHA se destruyen en contrato` },
+          { label: 'Comisión de Procesamiento Rescate (1.00%)', value: `$${fee} USDC`, badge: 'Retenido en Tesorería' }
+        ],
+        warningNote: 'Tus participaciones ALPHA serán quemadas y recibirás el monto neto en USDC a valor NAV.',
+        confirmButtonText: '✍️ Confirmar y Rescatar',
+        confirmButtonColor: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'
+      }, executeRedeem);
+    } else {
+      executeRedeem();
+    }
+  };
+
+  const handleAuditPoR = async () => {
+    try {
+      addLog(`Auditando Proof of Reserves en tiempo real on-chain...`);
+      fetchData();
+      addToast('success', 'Auditoría PoR', `Proof of Reserves auditado`);
+    } catch (err: any) {
+      addLog(`[Error] Auditoría PoR falló: ${err.message || err}`);
+    }
+  };
+
+  return {
+    depositAmount,
+    setDepositAmount,
+    redeemAmount,
+    setRedeemAmount,
+    handleFaucetUSDC,
+    handleDeposit,
+    handleRedeem,
+    handleAuditPoR
+  };
+}

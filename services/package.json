@@ -1,0 +1,22 @@
+{
+  "name": "alpha-centauri-services",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "satellite",
+    "core",
+    "corporate-injection"
+  ],
+  "scripts": {
+    "dev:satellite": "npm run dev --workspace=satellite",
+    "dev:core": "npm run dev --workspace=core",
+    "dev:corporate": "npm run dev --workspace=corporate-injection",
+    "build": "npm run build --workspaces",
+    "test": "npm test --workspaces"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/node": "^20.11.24",
+    "ts-node": "^10.9.2"
+  }
+}

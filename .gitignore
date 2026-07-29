@@ -1,0 +1,39 @@
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+*.env
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log
+package-lock.json
+
+# Foundry
+contracts/out/
+contracts/cache/
+contracts/broadcast/*/31337/
+contracts/broadcast/*/.last-run.json
+
+# Frontend build
+frontend/dist/
+frontend/.vite/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Docker volumes
+postgres_data/
+redis_data/

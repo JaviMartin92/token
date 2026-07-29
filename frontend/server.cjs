@@ -1,0 +1,98 @@
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+
+const PORT = 5173;
+const ANVIL_HOST = process.env.ANVIL_HOST || 'host.docker.internal';
+const ANVIL_PORT = 8545;
+const DIST_DIR = path.resolve(__dirname, 'dist');
+
+const MIME_TYPES = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.svg': 'image/svg+xml'
+};
+
+const server = http.createServer((req, res) => {
+  // Security Headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.url.startsWith('/rpc')) {
+    // Proxy RPC request directly to Anvil on port 8545
+    const proxyReq = http.request(
+      {
+        host: ANVIL_HOST,
+        port: ANVIL_PORT,
+        path: '/',
+        method: req.method,
+        headers: {
+          'content-type': req.headers['content-type'] || 'application/json',
+          'host': `${ANVIL_HOST}:${ANVIL_PORT}`
+        }
+      },
+      (proxyRes) => {
+        res.writeHead(proxyRes.statusCode, {
+          'content-type': 'application/json',
+          'access-control-allow-origin': '*'
+        });
+        proxyRes.pipe(res);
+      }
+    );
+    proxyReq.on('error', (err) => {
+      console.error('[RPC Proxy Error]:', err.message);
+      res.writeHead(502, { 'content-type': 'application/json', 'access-control-allow-origin': '*' });
+      res.end(JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32603, message: 'Anvil proxy error: ' + err.message } }));
+    });
+    req.pipe(proxyReq);
+    return;
+  }
+
+  // Prevent Path Traversal by resolving and validating absolute target path
+  const sanitizedUrl = path.normalize(req.url === '/' ? '/index.html' : req.url).replace(/^(\.\.[\/\\])+/, '');
+  let filePath = path.join(DIST_DIR, sanitizedUrl);
+
+  // Ensure resolved path stays strictly within DIST_DIR
+  if (!filePath.startsWith(DIST_DIR)) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    res.end('403 Forbidden: Invalid Path Access');
+    return;
+  }
+
+  if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+    filePath = path.join(DIST_DIR, 'index.html');
+  }
+
+  const ext = path.extname(filePath);
+  const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+
+  fs.readFile(filePath, (err, content) => {
+    if (err) {
+      console.error('[Static Server Error]:', filePath, err.message);
+      res.writeHead(500, { 'Content-Type': 'text/plain' });
+      res.end('Server Error');
+      return;
+    }
+
+    res.writeHead(200, { 'Content-Type': contentType });
+    res.end(content);
+  });
+});
+
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`[Frontend & RPC Proxy] Running at http://0.0.0.0:${PORT}`);
+});
