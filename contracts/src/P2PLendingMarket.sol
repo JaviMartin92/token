@@ -180,6 +180,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
 
         // If funded by Treasury / Admin operator:
         if (treasury != address(0) && (msg.sender == owner() || msg.sender == treasury)) {
+            loan.lender = treasury;
             ITreasury(treasury).disburseTreasuryLoan(address(this), loan.borrowAmount);
             require(IERC20(stablecoin).transfer(borrower, netBorrow), "P2P: Lender payout failed");
             if (originationFee > 0) {

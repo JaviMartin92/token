@@ -310,18 +310,10 @@ async function main() {
   await publicClient.waitForTransactionReceipt({ hash: setOracleHash });
   console.log('[+] Linked DynamicYieldOracleRouter into TreasuryReserveManager.');
 
-  // 12. Pre-fund Treasury, Admin and User accounts with Mock USDC
-  console.log('[+] Pre-funding Treasury, Admin, and User accounts with USDC mock...');
+  // 12. Pre-fund Admin and User accounts with 10,000 USDC mock
+  console.log('[+] Pre-funding Admin and User accounts with 10,000 USDC mock...');
   const userAccountAddr = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8';
   const mintAbi = [{ inputs: [{ name: 'to', type: 'address' }, { name: 'amount', type: 'uint256' }], name: 'mint', outputs: [], stateMutability: 'nonpayable', type: 'function' }] as const;
-
-  const m0 = await walletClient.writeContract({
-    address: usdcAddr as `0x${string}`,
-    abi: mintAbi,
-    functionName: 'mint',
-    args: [treasuryAddr as `0x${string}`, parseEther('100000')]
-  });
-  await publicClient.waitForTransactionReceipt({ hash: m0 });
 
   const m1 = await walletClient.writeContract({
     address: usdcAddr as `0x${string}`,
@@ -338,7 +330,7 @@ async function main() {
     args: [userAccountAddr as `0x${string}`, parseEther('10000')]
   });
   await publicClient.waitForTransactionReceipt({ hash: m2 });
-  console.log('[+] Treasury, Admin, and User wallets pre-funded successfully.');
+  console.log('[+] Admin and User wallets pre-funded successfully.');
 
   // Write addresses to root .env file & frontend contracts.json
   const envPath = path.resolve(__dirname, '../../../.env');
