@@ -451,57 +451,63 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
         uint256 alphaStakingBal
     ) {
         uint256 mult = (10**(18 - redemptionTokenDecimals));
-        uint256 totalShares = totalSupply();
-        uint256 nav = getNAV();
 
-        uint256 vaultBal = vestedVault != address(0) ? IERC20(redemptionToken).balanceOf(vestedVault) * mult : 0;
-        uint256 p2pBal = p2pMarket != address(0) ? IERC20(redemptionToken).balanceOf(p2pMarket) * mult : 0;
-        uint256 yieldBal = realYieldRouter != address(0) ? IERC20(redemptionToken).balanceOf(realYieldRouter) * mult : 0;
+        // 1. Stablecoins Breakdown
+        {
+            uint256 vaultBal = vestedVault != address(0) ? IERC20(redemptionToken).balanceOf(vestedVault) * mult : 0;
+            uint256 p2pBal = p2pMarket != address(0) ? IERC20(redemptionToken).balanceOf(p2pMarket) * mult : 0;
+            uint256 yieldBal = realYieldRouter != address(0) ? IERC20(redemptionToken).balanceOf(realYieldRouter) * mult : 0;
 
-        uint256 p2pEscrowCollateral = 0;
-        if (p2pMarket != address(0) && p2pMarket.code.length > 0) {
-            try IP2PLendingMarket(p2pMarket).totalEscrowedCollateralUSD() returns (uint256 col) {
-                p2pEscrowCollateral = col * mult;
-            } catch {}
-        }
-        uint256 unencumberedP2pBal = p2pBal > p2pEscrowCollateral ? p2pBal - p2pEscrowCollateral : 0;
-
-        // Stablecoins: redemption token balance in Treasury & protocol vaults
-        stablesBal = (IERC20(redemptionToken).balanceOf(address(this)) * mult) + vaultBal + unencumberedP2pBal + yieldBal;
-
-        // WBTC and WETH: all other tracked assets (non-stablecoin)
-        // We iterate tracked assets and skip the redemption token
-        for (uint256 i = 0; i < trackedAssets.length; i++) {
-            address asset = trackedAssets[i];
-            if (asset == redemptionToken) continue;
-            address feed = priceFeeds[asset];
-            uint8 decs = assetDecimals[asset];
-            if (feed == address(0)) continue;
-            uint256 val = getAssetValue(asset, feed, decs);
-            // Heuristic: track first non-stable as WBTC, second as WETH
-            // A more robust approach would use asset metadata tags
-            if (wbtcBal == 0) {
-                wbtcBal = val;
-            } else if (wethBal == 0) {
-                wethBal = val;
-            }
-        }
-
-        // Native ALPHA Staking: staked token value at NAV + USDC reward pool
-        if (governanceStaking != address(0) && governanceStaking.code.length > 0) {
-            uint256 totalGovStakedTokens = balanceOf(governanceStaking);
-            if (totalGovStakedTokens == 0) {
-                try IGovernanceStaking(governanceStaking).totalStaked() returns (uint256 staked) {
-                    totalGovStakedTokens = staked;
+            uint256 p2pActiveRec = 0;
+            uint256 p2pEscrow = 0;
+            if (p2pMarket != address(0) && p2pMarket.code.length > 0) {
+                try IP2PLendingMarket(p2pMarket).totalActiveLoansReceivableUSD() returns (uint256 rec) {
+                    p2pActiveRec = rec * mult;
+                } catch {}
+                try IP2PLendingMarket(p2pMarket).totalEscrowedCollateralUSD() returns (uint256 col) {
+                    p2pEscrow = col * mult;
                 } catch {}
             }
-            if (totalShares > 0 && totalGovStakedTokens > 0) {
-                alphaStakingBal += (totalGovStakedTokens * nav) / totalShares;
+            uint256 unencumberedP2pBal = p2pBal > p2pEscrow ? p2pBal - p2pEscrow : 0;
+
+            stablesBal = (IERC20(redemptionToken).balanceOf(address(this)) * mult) + vaultBal + unencumberedP2pBal + p2pActiveRec + yieldBal;
+        }
+
+        // 2. WBTC and WETH Breakdown
+        {
+            for (uint256 i = 0; i < trackedAssets.length; i++) {
+                address asset = trackedAssets[i];
+                if (asset == redemptionToken) continue;
+                address feed = priceFeeds[asset];
+                if (feed == address(0)) continue;
+                uint256 val = getAssetValue(asset, feed, assetDecimals[asset]);
+                if (wbtcBal == 0) {
+                    wbtcBal = val;
+                } else if (wethBal == 0) {
+                    wethBal = val;
+                }
             }
-            try IGovernanceStaking(governanceStaking).totalRewardBalance() returns (uint256 rBal) {
-                alphaStakingBal += rBal * mult;
-            } catch {
-                alphaStakingBal += IERC20(redemptionToken).balanceOf(governanceStaking) * mult;
+        }
+
+        // 3. Staking Breakdown
+        {
+            uint256 totalShares = totalSupply();
+            uint256 nav = getNAV();
+            if (governanceStaking != address(0) && governanceStaking.code.length > 0) {
+                uint256 totalGovStakedTokens = balanceOf(governanceStaking);
+                if (totalGovStakedTokens == 0) {
+                    try IGovernanceStaking(governanceStaking).totalStaked() returns (uint256 staked) {
+                        totalGovStakedTokens = staked;
+                    } catch {}
+                }
+                if (totalShares > 0 && totalGovStakedTokens > 0) {
+                    alphaStakingBal += (totalGovStakedTokens * nav) / totalShares;
+                }
+                try IGovernanceStaking(governanceStaking).totalRewardBalance() returns (uint256 rBal) {
+                    alphaStakingBal += rBal * mult;
+                } catch {
+                    alphaStakingBal += IERC20(redemptionToken).balanceOf(governanceStaking) * mult;
+                }
             }
         }
     }
