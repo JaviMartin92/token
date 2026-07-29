@@ -246,6 +246,9 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
         uint256 newLoanUSD = amount * mult;
         require(currentReceivablesUSD + newLoanUSD <= maxLendableUSD, "Treasury: 20% max reserve lending cap exceeded");
 
+        uint256 liquidBalance = IERC20(redemptionToken).balanceOf(address(this));
+        require(liquidBalance >= amount, "Treasury: Insufficient liquid USDC reserves for loan disbursement");
+
         require(IERC20(redemptionToken).transfer(recipient, amount), "Treasury: Reserve loan disbursement failed");
     }
 

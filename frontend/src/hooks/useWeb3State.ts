@@ -220,7 +220,7 @@ export function useWeb3State() {
           const bWeth = parseFloat(formatEther(breakdown[2]));
           const bAlphaLoan = parseFloat(formatEther(breakdown[3]));
 
-          if (bWbtc > 0 || bWeth > 0) {
+          if (bStables > 0 || bWbtc > 0 || bWeth > 0 || bAlphaLoan > 0) {
             setPorBreakdown({ stables: bStables, wbtc: bWbtc, weth: bWeth, alphaStaking: bAlphaLoan });
           } else {
             // Target Multi-Asset Portfolio Allocation (50% USDC, 25% WBTC, 12.5% WETH, 12.5% Loans)
