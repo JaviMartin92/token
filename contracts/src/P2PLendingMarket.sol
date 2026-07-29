@@ -183,12 +183,17 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
             ITreasury(treasury).disburseTreasuryLoan(address(this), loan.borrowAmount);
             require(IERC20(stablecoin).transfer(borrower, netBorrow), "P2P: Lender payout failed");
             if (originationFee > 0) {
-                require(IERC20(stablecoin).transfer(feeCollector, originationFee), "P2P: Fee payout failed");
+                uint256 treasuryFee = originationFee / 2;
+                uint256 protocolFee = originationFee - treasuryFee;
+                require(IERC20(stablecoin).transfer(treasury, treasuryFee), "P2P: Treasury orig fee failed");
+                if (protocolFee > 0 && feeCollector != address(0)) {
+                    require(IERC20(stablecoin).transfer(feeCollector, protocolFee), "P2P: Fee payout failed");
+                }
             }
         } else {
             // Standard P2P Lender
             require(IERC20(stablecoin).transferFrom(msg.sender, borrower, netBorrow), "P2P: Lender payout failed");
-            if (originationFee > 0) {
+            if (originationFee > 0 && feeCollector != address(0)) {
                 require(IERC20(stablecoin).transferFrom(msg.sender, feeCollector, originationFee), "P2P: Fee payout failed");
             }
         }
@@ -200,10 +205,14 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
         Loan memory loan = loans[loanId];
         if (loan.state != LoanState.ACTIVE) return (0, 0);
 
-        uint256 elapsedDays = (block.timestamp - loan.startTime) / 1 days;
-        if (elapsedDays > loan.durationDays) elapsedDays = loan.durationDays;
+        uint256 elapsedSeconds = block.timestamp > loan.startTime ? block.timestamp - loan.startTime : 0;
+        uint256 maxDurationSeconds = loan.durationDays * 1 days;
+        if (elapsedSeconds > maxDurationSeconds) elapsedSeconds = maxDurationSeconds;
 
-        interest = (loan.borrowAmount * loan.interestRateBps * elapsedDays) / (10000 * 365);
+        // Minimum 1 day interest charge so short-term/same-day repayments always accrue the minimum interest fee
+        if (elapsedSeconds < 1 days) elapsedSeconds = 1 days;
+
+        interest = (loan.borrowAmount * loan.interestRateBps * elapsedSeconds) / (10000 * 365 days);
         totalOwed = loan.borrowAmount + interest;
     }
 
