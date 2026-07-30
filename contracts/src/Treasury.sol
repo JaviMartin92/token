@@ -215,18 +215,6 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
             }
         }
 
-        // 10. Auto-stake 12.5% Target Protocol Reserve Position into GovernanceStaking on-chain
-        if (governanceStaking != address(0) && currentWeights.alphaProtocolStaking > 0 && sharesMinted > 0) {
-            uint256 reserveStakingShares = (sharesMinted * currentWeights.alphaProtocolStaking) / 10000;
-            if (reserveStakingShares > 0) {
-                _mint(address(this), reserveStakingShares);
-                _approve(address(this), governanceStaking, reserveStakingShares);
-                try IGovernanceStaking(governanceStaking).stake(reserveStakingShares) {} catch {
-                    _burn(address(this), reserveStakingShares);
-                }
-            }
-        }
-
         return sharesMinted;
     }
 
@@ -388,12 +376,9 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
 
         // NOTE: opsWallet, corporateRevenueWallet, and P2P Escrow Collateral are NOT included in protocol assets.
         // Those balances belong to external accounts or user escrow custody and do not inflate protocol PoR.
-        totalAssetsUSD = treasuryNav + stakedAlphaValue + stakingRewardBal;
+        totalAssetsUSD = treasuryNav + stakingRewardBal;
         
-        // Total Liabilities = Net external circulating ALPHA shares (excluding protocol Treasury stock) + Vested Vault NPV obligations
-        uint256 treasuryStock = balanceOf(address(this));
-        uint256 externalSupply = totalSupply() > treasuryStock ? totalSupply() - treasuryStock : 0;
-
+        // Total Liabilities = Native ALPHA Shares outstanding + Vested Vault NPV obligations
         uint256 vaultLiabilities = 0;
         if (vestedVault != address(0) && vestedVault.code.length > 0) {
             try IVestedDiscountVault(vestedVault).totalPresentLiability() returns (uint256 liability) {
@@ -405,7 +390,7 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
             }
         }
 
-        totalLiabilitiesUSD = externalSupply + vaultLiabilities;
+        totalLiabilitiesUSD = totalSupply() + vaultLiabilities;
 
         if (totalLiabilitiesUSD == 0) {
             collateralRatioBps = totalAssetsUSD > 0 ? 10000 : 10000;
