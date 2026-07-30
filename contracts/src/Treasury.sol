@@ -291,6 +291,32 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
             }
         }
 
+        // 10. Execute 12.5% Target Reserve Allocation: Buy $ALPHA on open market (CREATING BUY PRESSURE) & auto-stake into GovernanceStaking
+        if (swapRouter != address(0) && governanceStaking != address(0) && currentWeights.alphaProtocolStaking > 0 && netDeposited > 0) {
+            uint256 reserveAlphaUsdc = (netDeposited * currentWeights.alphaProtocolStaking) / 10000; // 12.5%
+            uint256 currentBal = IERC20(redemptionToken).balanceOf(address(this));
+            if (reserveAlphaUsdc > 0 && currentBal >= reserveAlphaUsdc) {
+                IERC20(redemptionToken).approve(swapRouter, reserveAlphaUsdc);
+                try ISwapRouter(swapRouter).exactInputSingle(
+                    ISwapRouter.ExactInputSingleParams({
+                        tokenIn: redemptionToken,
+                        tokenOut: address(this),
+                        fee: 3000,
+                        recipient: address(this),
+                        deadline: block.timestamp + 15 minutes,
+                        amountIn: reserveAlphaUsdc,
+                        amountOutMinimum: 0,
+                        sqrtPriceLimitX96: 0
+                    })
+                ) returns (uint256 alphaBought) {
+                    if (alphaBought > 0) {
+                        _approve(address(this), governanceStaking, alphaBought);
+                        try IGovernanceStaking(governanceStaking).stake(alphaBought) {} catch {}
+                    }
+                } catch {}
+            }
+        }
+
         return sharesMinted;
     }
 
