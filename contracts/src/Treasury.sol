@@ -106,6 +106,7 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
     address public corporateRevenueWallet;
     address public circuitBreaker;
     address public morphoAdapter;
+    uint256 public totalBurnedTokens;
 
     function setCircuitBreaker(address _circuitBreaker) external onlyOwner {
         circuitBreaker = _circuitBreaker;
@@ -449,8 +450,10 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
     function processStakingFee(uint256 feeShares) external override {
         require(msg.sender == governanceStaking, "Treasury: Only GovernanceStaking");
         if (balanceOf(address(this)) >= feeShares) {
+            totalBurnedTokens += feeShares;
             _burn(address(this), feeShares);
         } else if (feeShares > 0 && balanceOf(msg.sender) >= feeShares) {
+            totalBurnedTokens += feeShares;
             _burn(msg.sender, feeShares);
         }
     }

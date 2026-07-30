@@ -222,6 +222,7 @@ export default function App() {
           <GovernanceStakingUI
             stakedBalance={web3.stakedBalance}
             claimableYield={web3.claimableYield}
+            totalBurnedTokens={web3.totalBurnedTokens}
             stakeAmount={staking.stakeAmount}
             setStakeAmount={staking.setStakeAmount}
             payoutPref={staking.payoutPref}
@@ -281,6 +282,7 @@ export default function App() {
           <GovernanceStakingUI
             stakedBalance={web3.stakedBalance}
             claimableYield={web3.claimableYield}
+            totalBurnedTokens={web3.totalBurnedTokens}
             stakeAmount={staking.stakeAmount}
             setStakeAmount={staking.setStakeAmount}
             payoutPref={staking.payoutPref}

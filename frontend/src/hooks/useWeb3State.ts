@@ -29,6 +29,7 @@ export function useWeb3State() {
   const [porLiabilities, setPorLiabilities] = useState('0.00');
   const [porRatio, setPorRatio] = useState('100.00%');
   const [porBreakdown, setPorBreakdown] = useState({ stables: 0, wbtc: 0, weth: 0, alphaStaking: 0 });
+  const [totalBurnedTokens, setTotalBurnedTokens] = useState('0.00');
 
   const [blockDateStr, setBlockDateStr] = useState('');
   const [snapshotId, setSnapshotId] = useState('');
@@ -57,6 +58,17 @@ export function useWeb3State() {
         currentSec = Number(currentBlock.timestamp);
         setBlockDateStr(new Date(currentSec * 1000).toLocaleString('es-ES', { dateStyle: 'full', timeStyle: 'medium' }));
       } catch (e) {}
+
+      try {
+        const burned = await publicClient.readContract({
+          address: CONTRACT_ADDRESSES.TREASURY,
+          abi: [{ name: 'totalBurnedTokens', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] }] as const,
+          functionName: 'totalBurnedTokens'
+        }) as bigint;
+        setTotalBurnedTokens(parseFloat(formatEther(burned)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }));
+      } catch (e) {
+        setTotalBurnedTokens('0.00');
+      }
 
       try {
         const nav = await publicClient.readContract({
@@ -351,6 +363,7 @@ export function useWeb3State() {
     porLiabilities,
     porRatio,
     porBreakdown,
+    totalBurnedTokens,
     blockDateStr,
     snapshotId,
     setSnapshotId,

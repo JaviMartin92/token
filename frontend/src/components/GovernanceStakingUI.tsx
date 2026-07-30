@@ -3,6 +3,7 @@ import React from 'react';
 interface GovernanceStakingUIProps {
   stakedBalance: string;
   claimableYield: string;
+  totalBurnedTokens?: string;
   stakeAmount: string;
   setStakeAmount: (val: string) => void;
   payoutPref: number;
@@ -17,6 +18,7 @@ interface GovernanceStakingUIProps {
 export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
   stakedBalance,
   claimableYield,
+  totalBurnedTokens = '0.00',
   stakeAmount,
   setStakeAmount,
   payoutPref,
@@ -31,9 +33,14 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
     <div className="admin-grid">
       {/* Staking & Reward Metrics Card */}
       <div className="glass-panel por-card">
-        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.15rem' }}>🥩 Staking de Gobernanza (ALPHA)</h3>
+        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.15rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span>🥩 Staking de Gobernanza (ALPHA)</span>
+          <span style={{ fontSize: '0.75rem', background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.4)', padding: '0.25rem 0.6rem', borderRadius: '12px', fontWeight: 600 }}>
+            🔥 Deflacionario
+          </span>
+        </h3>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
           <div className="por-metric-box">
             <div className="por-metric-label">ALPHA EN STAKING</div>
             <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#c084fc' }}>{stakedBalance} ALPHA</div>
@@ -41,6 +48,10 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
           <div className="por-metric-box">
             <div className="por-metric-label">REAL YIELD ACUMULADO</div>
             <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#4ade80' }}>${claimableYield} USD</div>
+          </div>
+          <div className="por-metric-box" style={{ background: 'rgba(239, 68, 68, 0.08)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+            <div className="por-metric-label" style={{ color: '#f87171' }}>🔥 ALPHA QUEMADOS</div>
+            <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#f87171' }}>{totalBurnedTokens} ALPHA</div>
           </div>
         </div>
 
