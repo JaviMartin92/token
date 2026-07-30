@@ -8,6 +8,10 @@ import "./VaultPositionNFT.sol";
 import "./interfaces/IAggregatorV3.sol";
 import "./interfaces/ITreasury.sol";
 
+interface IRealYieldRouter {
+    function routeUniversalFee(address token) external;
+}
+
 /**
  * @title P2PLendingMarket
  * @notice Collateralized P2P lending market allowing position NFT holders to leverage positions up to 70% LTV.
@@ -190,28 +194,22 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
             loan.lender = treasury;
             ITreasury(treasury).disburseTreasuryLoan(address(this), loan.borrowAmount);
             require(IERC20(stablecoin).transfer(borrower, netBorrow), "P2P: Lender payout failed");
-            if (originationFee > 0) {
-                uint256 treasuryFee = originationFee / 2;
-                uint256 opsFee = originationFee / 4;
-                uint256 corpFee = originationFee - treasuryFee - opsFee;
-
-                require(IERC20(stablecoin).transfer(treasury, treasuryFee), "P2P: Treasury orig fee failed");
-                if (opsFee > 0 && opsWallet != address(0)) {
-                    require(IERC20(stablecoin).transfer(opsWallet, opsFee), "P2P: Ops orig fee failed");
-                } else if (opsFee > 0 && feeCollector != address(0)) {
-                    require(IERC20(stablecoin).transfer(feeCollector, opsFee), "P2P: Fee payout failed");
+            if (originationFee > 0 && feeCollector != address(0)) {
+                require(IERC20(stablecoin).transfer(feeCollector, originationFee), "P2P: Origination fee failed");
+                if (feeCollector.code.length > 0) {
+                    try IRealYieldRouter(feeCollector).routeUniversalFee(stablecoin) {} catch {}
                 }
-                if (corpFee > 0 && corporateRevenueWallet != address(0)) {
-                    require(IERC20(stablecoin).transfer(corporateRevenueWallet, corpFee), "P2P: Corp orig fee failed");
-                } else if (corpFee > 0 && feeCollector != address(0)) {
-                    require(IERC20(stablecoin).transfer(feeCollector, corpFee), "P2P: Fee payout failed");
-                }
+            } else if (originationFee > 0 && treasury != address(0)) {
+                require(IERC20(stablecoin).transfer(treasury, originationFee), "P2P: Treasury orig fee failed");
             }
         } else {
             // Standard P2P Lender
             require(IERC20(stablecoin).transferFrom(msg.sender, borrower, netBorrow), "P2P: Lender payout failed");
             if (originationFee > 0 && feeCollector != address(0)) {
                 require(IERC20(stablecoin).transferFrom(msg.sender, feeCollector, originationFee), "P2P: Fee payout failed");
+                if (feeCollector.code.length > 0) {
+                    try IRealYieldRouter(feeCollector).routeUniversalFee(stablecoin) {} catch {}
+                }
             }
         }
 
@@ -242,41 +240,18 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
                 totalReceivable += loans[i].borrowAmount;
             }
         }
-        return totalReceivable;
-    }
-
-    /**
-     * @notice Returns total USD value of all active collateral held in escrow for borrowers.
-     */
-    function totalEscrowedCollateralUSD() external view returns (uint256 totalEscrow) {
-        for (uint256 i = 1; i < nextLoanId; i++) {
-            if (loans[i].state == LoanState.ACTIVE || loans[i].state == LoanState.CREATED) {
-                totalEscrow += loans[i].collateralAmount;
-            }
-        }
-        return totalEscrow;
     }
 
     function calculateHealthFactor(uint256 loanId) public view returns (uint256 healthFactorRatio) {
         Loan memory loan = loans[loanId];
-        if (loan.state != LoanState.ACTIVE) return 1000;
+        if (loan.state != LoanState.ACTIVE) return 10000;
 
         (uint256 totalOwed, ) = calculateTotalOwed(loanId);
-        if (totalOwed == 0) return 1000;
+        if (totalOwed == 0) return 10000;
 
-        uint256 collateralUSD = loan.collateralAmount;
-        if (priceFeed != address(0)) {
-            (, int256 price, , uint256 updatedAt, ) = IAggregatorV3(priceFeed).latestRoundData();
-            require(price > 0, "P2P: Invalid oracle price");
-            require(updatedAt > 0 && block.timestamp - updatedAt <= ORACLE_STALENESS, "P2P: Oracle price is stale");
-            
-            // forge-lint: disable-next-line(unsafe-typecast)
-            uint256 feedDecs = uint256(IAggregatorV3(priceFeed).decimals());
-            // forge-lint: disable-next-line(unsafe-typecast)
-            collateralUSD = (loan.collateralAmount * uint256(price)) / (10**feedDecs);
-        }
+        VaultPositionNFT.Position memory pos = positionNFT.getPosition(loan.positionTokenId);
+        uint256 collateralUSD = pos.discountedPricePaid;
 
-        // Health factor ratio = (collateralUSD * 100) / totalOwed
         healthFactorRatio = (collateralUSD * 100) / totalOwed;
     }
 
@@ -290,21 +265,15 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
         loan.state = LoanState.REPAID;
 
         if (treasury != address(0) && (loan.lender == owner() || loan.lender == treasury)) {
-            // Treasury Reserve Loan: 50% of interest + principal returned to Treasury reserves
-            uint256 treasuryReservePayout = loan.borrowAmount + (interest / 2);
-            uint256 opsPayout = interest / 4;
-            uint256 corpRevenuePayout = interest - (interest / 2) - opsPayout;
-
-            require(IERC20(stablecoin).transferFrom(msg.sender, treasury, treasuryReservePayout), "P2P: Treasury repayment failed");
-            if (opsPayout > 0 && opsWallet != address(0)) {
-                require(IERC20(stablecoin).transferFrom(msg.sender, opsWallet, opsPayout), "P2P: Ops fee failed");
-            } else if (opsPayout > 0 && feeCollector != address(0)) {
-                require(IERC20(stablecoin).transferFrom(msg.sender, feeCollector, opsPayout), "P2P: Ops fee failed");
-            }
-            if (corpRevenuePayout > 0 && corporateRevenueWallet != address(0)) {
-                require(IERC20(stablecoin).transferFrom(msg.sender, corporateRevenueWallet, corpRevenuePayout), "P2P: Corp fee failed");
-            } else if (corpRevenuePayout > 0 && feeCollector != address(0)) {
-                require(IERC20(stablecoin).transferFrom(msg.sender, feeCollector, corpRevenuePayout), "P2P: Corp fee failed");
+            // Treasury Reserve Loan: Principal returned to Treasury reserves + 50/25/25 interest split
+            require(IERC20(stablecoin).transferFrom(msg.sender, treasury, loan.borrowAmount), "P2P: Principal repayment failed");
+            if (interest > 0 && feeCollector != address(0)) {
+                require(IERC20(stablecoin).transferFrom(msg.sender, feeCollector, interest), "P2P: Interest fee failed");
+                if (feeCollector.code.length > 0) {
+                    try IRealYieldRouter(feeCollector).routeUniversalFee(stablecoin) {} catch {}
+                }
+            } else if (interest > 0 && treasury != address(0)) {
+                require(IERC20(stablecoin).transferFrom(msg.sender, treasury, interest), "P2P: Interest to treasury failed");
             }
         } else {
             // Standard P2P Lender
@@ -313,6 +282,9 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
             require(IERC20(stablecoin).transferFrom(msg.sender, loan.lender, lenderPayout), "P2P: Lender payout failed");
             if (feeSpread > 0 && feeCollector != address(0)) {
                 require(IERC20(stablecoin).transferFrom(msg.sender, feeCollector, feeSpread), "P2P: Fee spread failed");
+                if (feeCollector.code.length > 0) {
+                    try IRealYieldRouter(feeCollector).routeUniversalFee(stablecoin) {} catch {}
+                }
             }
         }
 

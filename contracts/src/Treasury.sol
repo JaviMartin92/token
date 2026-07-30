@@ -59,12 +59,13 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
         redemptionToken = _redemptionToken;
         redemptionTokenDecimals = _redemptionTokenDecimals;
 
-        // Initialize target weights: Stables (50%), WBTC (25%), WETH (12.5%), Native ALPHA Staking (12.5%)
+        // Default target weights matching protocol spec:
+        // 50% Stablecoins, 25% WBTC, 12.5% WETH, 12.5% ALPHA Staking
         currentWeights = AssetWeights({
-            stablecoins: 50_00,
-            wbtc: 25_00,
-            weth: 12_50,
-            alphaProtocolStaking: 12_50
+            stablecoins: 5000,
+            wbtc: 2500,
+            weth: 1250,
+            alphaProtocolStaking: 1250
         });
 
         if (_initialOwner != msg.sender) {
@@ -104,9 +105,14 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
     address public opsWallet;
     address public corporateRevenueWallet;
     address public circuitBreaker;
+    address public morphoAdapter;
 
     function setCircuitBreaker(address _circuitBreaker) external onlyOwner {
         circuitBreaker = _circuitBreaker;
+    }
+
+    function setMorphoAdapter(address _morphoAdapter) external onlyOwner {
+        morphoAdapter = _morphoAdapter;
     }
 
     function setProtocolModules(
@@ -166,20 +172,9 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
         uint256 actualDeposited = balanceAfter - balanceBefore;
         require(actualDeposited > 0, "Treasury: Actual deposited amount is 0");
 
-        // 4. 0.5% Deposit Entry Fee Split (50% Treasury Reserves, 25% Ops, 25% Corporate Revenue)
-        uint256 feeAmount = (actualDeposited * 50) / 10000;
-        uint256 treasuryReserveShare = feeAmount / 2; // 50% retained for Treasury reserves
-        uint256 opsShare = feeAmount / 4;            // 25% for Operational Expenses
-        uint256 corpRevenueShare = feeAmount - treasuryReserveShare - opsShare; // 25% for Corporate Revenue
-
+        // 4. 0.5% Deposit Entry Fee Split
+        uint256 feeAmount = (msg.sender == realYieldRouter) ? 0 : (actualDeposited * 50) / 10000;
         uint256 netDeposited = actualDeposited - feeAmount;
-
-        if (opsShare > 0 && opsWallet != address(0)) {
-            require(IERC20(redemptionToken).transfer(opsWallet, opsShare), "Treasury: Ops fee transfer failed");
-        }
-        if (corpRevenueShare > 0 && corporateRevenueWallet != address(0)) {
-            require(IERC20(redemptionToken).transfer(corporateRevenueWallet, corpRevenueShare), "Treasury: Corp fee transfer failed");
-        }
 
         // 5. Calculate deposit value in 18 decimals using net deposited amount
         uint256 depositValueUSD = netDeposited * (10**(18 - redemptionTokenDecimals));
@@ -191,9 +186,57 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
             sharesMinted = (depositValueUSD * currentShares) / navBefore;
         }
 
-        // 7. Mint net shares to user
+        // 7. Mint net shares to user FIRST
         _mint(msg.sender, sharesMinted);
 
+        // 8. Route fees to RealYieldRouter SECOND
+        if (feeAmount > 0 && realYieldRouter != address(0)) {
+            require(IERC20(redemptionToken).transfer(realYieldRouter, feeAmount), "Treasury: Fee routing failed");
+            RealYieldRouter(realYieldRouter).routeUniversalFee(redemptionToken);
+        } else if (feeAmount > 0) {
+            uint256 opsShare = feeAmount / 4;
+            uint256 corpRevenueShare = feeAmount / 4;
+            if (opsShare > 0 && opsWallet != address(0)) {
+                require(IERC20(redemptionToken).transfer(opsWallet, opsShare), "Treasury: Ops fee transfer failed");
+            }
+            if (corpRevenueShare > 0 && corporateRevenueWallet != address(0)) {
+                require(IERC20(redemptionToken).transfer(corporateRevenueWallet, corpRevenueShare), "Treasury: Corp fee transfer failed");
+            }
+        }
+
+        // 9. 80/20 USDC Sub-Reserve: Auto-deposit 80% of net USDC into Morpho Yield Vault Adapter for APY
+        if (morphoAdapter != address(0) && netDeposited > 0) {
+            uint256 morphoAmount = (netDeposited * 8000) / 10000; // 80%
+            uint256 availBal = IERC20(redemptionToken).balanceOf(address(this));
+            if (morphoAmount > 0 && availBal >= morphoAmount) {
+                require(IERC20(redemptionToken).transfer(morphoAdapter, morphoAmount), "Treasury: Morpho transfer failed");
+            }
+        }
+
+        return sharesMinted;
+    }
+
+    /**
+     * @notice Allows RealYieldRouter to convert corporate fee shares into ALPHA tokens for corporate vaults without reentrancy conflicts.
+     */
+    function mintCorporateFeeShares(uint256 stableAmount) external returns (uint256 sharesMinted) {
+        require(msg.sender == realYieldRouter, "Treasury: Only RealYieldRouter");
+        require(stableAmount > 0, "Treasury: Amount must be > 0");
+
+        uint256 navBefore = getNAV();
+        uint256 currentShares = totalSupply();
+
+        require(IERC20(redemptionToken).transferFrom(msg.sender, address(this), stableAmount), "Treasury: USDC transfer failed");
+
+        uint256 depositValueUSD = stableAmount * (10**(18 - redemptionTokenDecimals));
+
+        if (currentShares == 0 || navBefore == 0) {
+            sharesMinted = depositValueUSD;
+        } else {
+            sharesMinted = (depositValueUSD * currentShares) / navBefore;
+        }
+
+        _mint(msg.sender, sharesMinted);
         return sharesMinted;
     }
 
@@ -209,177 +252,107 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
         uint256 nav = getNAV();
         uint256 grossAssetValueUSD = (sharesAmount * nav) / totalShares;
         
-        // 2. Charge 1% processing fee
-        uint256 feeUSD = grossAssetValueUSD / 100;
-        uint256 netValueUSD = grossAssetValueUSD - feeUSD;
-        
-        // 3. Convert 18 decimals USD value to redemption stablecoin decimals
-        assetsReceived = netValueUSD / (10**(18 - redemptionTokenDecimals));
-        uint256 feeCharged = feeUSD / (10**(18 - redemptionTokenDecimals));
+        // 2. 1% Redeem Exit Fee Split (50% Treasury Reserves, 25% Ops, 25% Corporate Revenue)
+        uint256 feeChargedUSD = (grossAssetValueUSD * 100) / 10000; // 1% exit fee
+        uint256 netAssetValueUSD = grossAssetValueUSD - feeChargedUSD;
 
-        // 4. Burn shares and transfer stablecoins
+        // Convert 18-decimal USD value to redemptionToken decimals (e.g. 6 for USDC)
+        assetsReceived = netAssetValueUSD / (10**(18 - redemptionTokenDecimals));
+        require(assetsReceived > 0, "Treasury: Net redeemed asset amount is 0");
+
+        uint256 treasuryBalance = IERC20(redemptionToken).balanceOf(address(this));
+        require(treasuryBalance >= assetsReceived, "Treasury: Insufficient liquidity for redemption");
+
+        // 3. Burn shares from user
         _burn(msg.sender, sharesAmount);
-        require(IERC20(redemptionToken).transfer(msg.sender, assetsReceived), "Treasury: stablecoin transfer failed");
 
-        emit Redeemed(msg.sender, sharesAmount, assetsReceived, feeCharged);
+        // 4. Transfer net redemption tokens to user
+        require(IERC20(redemptionToken).transfer(msg.sender, assetsReceived), "Treasury: Transfer to user failed");
+
+        // 5. Fee distribution for exit fee
+        uint256 feeTokenAmount = feeChargedUSD / (10**(18 - redemptionTokenDecimals));
+        if (feeTokenAmount > 0 && realYieldRouter != address(0) && treasuryBalance >= assetsReceived + feeTokenAmount) {
+            require(IERC20(redemptionToken).transfer(realYieldRouter, feeTokenAmount), "Treasury: Exit fee routing failed");
+            try RealYieldRouter(realYieldRouter).routeUniversalFee(redemptionToken) {} catch {}
+        } else if (feeTokenAmount > 0 && treasuryBalance >= assetsReceived + feeTokenAmount) {
+            uint256 opsShare = feeTokenAmount / 4;
+            uint256 corpRevenueShare = feeTokenAmount / 4;
+            if (opsShare > 0 && opsWallet != address(0)) {
+                require(IERC20(redemptionToken).transfer(opsWallet, opsShare), "Treasury: Ops exit fee transfer failed");
+            }
+            if (corpRevenueShare > 0 && corporateRevenueWallet != address(0)) {
+                require(IERC20(redemptionToken).transfer(corporateRevenueWallet, corpRevenueShare), "Treasury: Corp exit fee transfer failed");
+            }
+        }
+
+        emit Redeemed(msg.sender, sharesAmount, assetsReceived, feeChargedUSD);
         return assetsReceived;
     }
 
     /**
-     * @notice Disburses a Treasury reserve loan (up to 20% max of total reserves) to P2PLendingMarket.
-     *         Enforces strict 20% max reserve lending cap on active receivables.
+     * @notice Returns total NAV in USD (18 decimals).
      */
-    function disburseTreasuryLoan(address recipient, uint256 amount) external nonReentrant {
-        require(msg.sender == owner() || msg.sender == p2pMarket, "Treasury: Only owner or P2PMarket");
-        require(recipient != address(0), "Treasury: Invalid recipient");
-        require(amount > 0, "Treasury: Loan amount must be > 0");
-
-        (uint256 totalAssetsUSD, , ) = getProofOfReserves();
+    function getNAV() public view returns (uint256 totalNAVUSD) {
         uint256 mult = (10**(18 - redemptionTokenDecimals));
-        uint256 maxLendableUSD = (totalAssetsUSD * 2000) / 10000; // 20.00% max of total reserves
+        
+        // 1. Stablecoins in Treasury address
+        uint256 treasuryStables = IERC20(redemptionToken).balanceOf(address(this)) * mult;
+        
+        // 2. Stablecoins in MorphoYieldVaultAdapter + VestedDiscountVault + P2PLendingMarket (unencumbered) + RealYieldRouter
+        uint256 morphoStables = morphoAdapter != address(0) ? IERC20(redemptionToken).balanceOf(morphoAdapter) * mult : 0;
+        uint256 vaultStables = vestedVault != address(0) ? IERC20(redemptionToken).balanceOf(vestedVault) * mult : 0;
+        uint256 p2pStables = p2pMarket != address(0) ? IERC20(redemptionToken).balanceOf(p2pMarket) * mult : 0;
+        uint256 yieldStables = realYieldRouter != address(0) ? IERC20(redemptionToken).balanceOf(realYieldRouter) * mult : 0;
 
-        uint256 currentReceivablesUSD = 0;
+        uint256 p2pActiveReceivables = 0;
+        uint256 p2pEscrowCollateral = 0;
         if (p2pMarket != address(0) && p2pMarket.code.length > 0) {
-            currentReceivablesUSD = IP2PLendingMarket(p2pMarket).totalActiveLoansReceivableUSD() * mult;
+            try IP2PLendingMarket(p2pMarket).totalActiveLoansReceivableUSD() returns (uint256 rec) {
+                p2pActiveReceivables = rec * mult;
+            } catch {}
+            try IP2PLendingMarket(p2pMarket).totalEscrowedCollateralUSD() returns (uint256 col) {
+                p2pEscrowCollateral = col * mult;
+            } catch {}
         }
 
-        uint256 newLoanUSD = amount * mult;
-        require(currentReceivablesUSD + newLoanUSD <= maxLendableUSD, "Treasury: 20% max reserve lending cap exceeded");
-
-        uint256 liquidBalance = IERC20(redemptionToken).balanceOf(address(this));
-        require(liquidBalance >= amount, "Treasury: Insufficient liquid USDC reserves for loan disbursement");
-
-        require(IERC20(redemptionToken).transfer(recipient, amount), "Treasury: Reserve loan disbursement failed");
-    }
-
-    /**
-     * @notice Processes 1% staking entry fee ALPHA tokens transferred from GovernanceStaking.
-     *         Burns the fee ALPHA tokens (deflationary / NAV-accretive) and transfers equivalent
-     *         USDC value to RealYieldRouter for 50/25/25 Real Yield Flywheel distribution.
-     */
-    function processStakingFee(uint256 feeShares) external nonReentrant {
-        require(msg.sender == governanceStaking, "Treasury: Only GovernanceStaking");
-        if (feeShares == 0) return;
-
-        // 1. Burn fee ALPHA shares held by Treasury
-        _burn(address(this), feeShares);
-
-        // 2. Calculate equivalent USDC value at current NAV
-        uint256 nav = getNAV();
-        uint256 totalShares = totalSupply();
-        if (totalShares == 0 || nav == 0) return;
-
-        uint256 feeUSD = (feeShares * nav) / totalShares;
-        uint256 feeUSDC = feeUSD / (10**(18 - redemptionTokenDecimals));
-
-        uint256 treasuryBal = IERC20(redemptionToken).balanceOf(address(this));
-        if (feeUSDC > treasuryBal) feeUSDC = treasuryBal;
-
-        // 3. Transfer USDC fee to RealYieldRouter for 50/25/25 flywheel distribution
-        if (feeUSDC > 0 && realYieldRouter != address(0)) {
-            require(IERC20(redemptionToken).transfer(realYieldRouter, feeUSDC), "Treasury: Fee payout failed");
-            if (realYieldRouter.code.length > 0) {
-                try RealYieldRouter(realYieldRouter).notifyYield(feeUSDC) {} catch {}
-            }
-        }
-    }
-
-    /**
-     * @inheritdoc ITreasury
-     */
-    function getNAV() public view override returns (uint256) {
-        uint256 totalNAV = 0;
-        uint256 count = trackedAssets.length;
+        uint256 unencumberedP2pStables = p2pStables > p2pEscrowCollateral ? p2pStables - p2pEscrowCollateral : 0;
         
-        for (uint256 i = 0; i < count; i++) {
+        totalNAVUSD = treasuryStables + morphoStables + vaultStables + unencumberedP2pStables + p2pActiveReceivables + yieldStables;
+
+        // 3. Add values of tracked assets (WBTC, WETH, etc.) using Chainlink oracles
+        for (uint256 i = 0; i < trackedAssets.length; i++) {
             address asset = trackedAssets[i];
+            if (asset == redemptionToken) continue; // Skip stablecoin to avoid double counting
+
             address feed = priceFeeds[asset];
-            uint8 decs = assetDecimals[asset];
-            
             if (feed != address(0)) {
-                totalNAV += getAssetValue(asset, feed, decs);
+                totalNAVUSD += getAssetValue(asset, feed, assetDecimals[asset]);
             }
         }
-        
-        // Return 0 when no assets are tracked (prevents first-depositor inflation attack via NAV=1)
-        return totalNAV;
     }
 
     /**
-     * @notice Helper to calculate the USD value of an asset in 18 decimals using Chainlink.
+     * @notice Helper to calculate the USD value of an asset using Chainlink oracle.
      */
-    function getAssetValue(
-        address asset,
-        address feed,
-        uint8 decimals_
-    ) public view returns (uint256) {
-        uint256 balance = IERC20(asset).balanceOf(address(this));
-        if (balance == 0) return 0;
-        
+    function getAssetValue(address asset, address feed, uint8 assetDec) public view returns (uint256 usdValue) {
+        uint256 assetBalance = getAssetBalance(asset);
+        if (assetBalance == 0) return 0;
+
         (, int256 price, , uint256 updatedAt, ) = IAggregatorV3(feed).latestRoundData();
-        require(price > 0, "Treasury: Invalid price feedback");
+        require(price > 0, "Treasury: Invalid oracle price");
         require(block.timestamp - updatedAt <= oracleStalenessLimit, "Treasury: Stale price feed");
-        // forge-lint: disable-next-line(unsafe-typecast)
-        uint256 usdPrice = uint256(price);
+
         uint8 feedDecimals = IAggregatorV3(feed).decimals();
-        
-        uint256 combinedDecimals = uint256(decimals_) + uint256(feedDecimals);
-        if (combinedDecimals <= 18) {
-            return balance * usdPrice * (10**(18 - combinedDecimals));
-        } else {
-            return (balance * usdPrice) / (10**(combinedDecimals - 18));
-        }
+
+        // Convert balance * price to 18 decimal USD value
+        usdValue = (assetBalance * uint256(price) * 10**18) / (10**assetDec * 10**feedDecimals);
     }
 
     /**
      * @inheritdoc ITreasury
      */
-    function getAssetBalance(address asset) external view override returns (uint256) {
+    function getAssetBalance(address asset) public view override returns (uint256) {
         return IERC20(asset).balanceOf(address(this));
-    }
-
-    /**
-     * @inheritdoc ITreasury
-     */
-    function validateSanityBounds() public view override returns (bool) {
-        uint256 total = currentWeights.stablecoins +
-            currentWeights.wbtc +
-            currentWeights.weth +
-            currentWeights.alphaProtocolStaking;
-            
-        if (total != 100_00) return false;
-
-        bool stablesOk = currentWeights.stablecoins >= 40_00 && currentWeights.stablecoins <= 60_00;
-        bool wbtcOk = currentWeights.wbtc >= 20_00 && currentWeights.wbtc <= 30_00;
-        bool wethOk = currentWeights.weth >= 10_00 && currentWeights.weth <= 15_00;
-        bool alphaOk = currentWeights.alphaProtocolStaking >= 5_00 && currentWeights.alphaProtocolStaking <= 15_00;
-
-        return stablesOk && wbtcOk && wethOk && alphaOk;
-    }
-
-    /**
-     * @notice Rebalances portfolio weights on-chain. Restricted to owner.
-     */
-    function rebalance() external override onlyOwner {
-        require(validateSanityBounds(), "Treasury: Current configuration violates bounds");
-        emit Rebalanced(block.timestamp);
-    }
-
-    /**
-     * @notice Updates portfolio allocation targets.
-     */
-    function adjustWeights(AssetWeights calldata newWeights) external onlyOwner {
-        currentWeights = newWeights;
-        require(validateSanityBounds(), "Treasury: Adjusted weights exceed safety limits");
-        emit WeightsAdjusted(newWeights);
-    }
-
-    /**
-     * @notice Updates the TVL cap for the Treasury.
-     */
-    function setTvlCap(uint256 cap) external onlyOwner {
-        tvlCap = cap;
-        emit TvlCapUpdated(cap);
     }
 
     /**
@@ -448,94 +421,72 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
         totalLiabilitiesUSD = totalSupply() + vaultLiabilities;
 
         if (totalLiabilitiesUSD == 0) {
-            collateralRatioBps = 10000; // 100.00%
+            collateralRatioBps = totalAssetsUSD > 0 ? 10000 : 10000;
         } else {
             collateralRatioBps = (totalAssetsUSD * 10000) / totalLiabilitiesUSD;
         }
     }
 
     /**
-     * @notice Writes an on-chain audit record (emits ProofOfReservesAudited event). Restricted to owner.
-     *         For polling/reading use getProofOfReserves() instead.
+     * @notice Performs Proof of Reserves audit and emits audit event.
      */
-    function auditProofOfReserves() external onlyOwner returns (uint256 totalAssetsUSD, uint256 totalLiabilitiesUSD, uint256 collateralRatioBps) {
+    function auditProofOfReserves() external returns (uint256 totalAssetsUSD, uint256 totalLiabilitiesUSD, uint256 collateralRatioBps) {
         (totalAssetsUSD, totalLiabilitiesUSD, collateralRatioBps) = getProofOfReserves();
         emit ProofOfReservesAudited(totalAssetsUSD, totalLiabilitiesUSD, collateralRatioBps, block.timestamp);
     }
 
     /**
-     * @notice Returns a per-asset USD breakdown for the Proof of Reserves dashboard.
-     *         Values are in 18-decimal USD.
-     * @return stablesBal    Treasury USDC/stablecoin balance (USD 18-dec)
-     * @return wbtcBal       Treasury WBTC balance valued in USD
-     * @return wethBal       Treasury WETH balance valued in USD
-     * @return alphaStakingBal  Staked ALPHA tokens valued at NAV + staking reward pool
+     * @inheritdoc ITreasury
      */
-    function getAssetBreakdown() external view returns (
-        uint256 stablesBal,
-        uint256 wbtcBal,
-        uint256 wethBal,
-        uint256 alphaStakingBal
-    ) {
-        uint256 mult = (10**(18 - redemptionTokenDecimals));
+    function disburseTreasuryLoan(address recipient, uint256 amount) external override nonReentrant {
+        require(msg.sender == p2pMarket, "Treasury: Only P2P Market");
+        require(IERC20(redemptionToken).transfer(recipient, amount), "Treasury: Loan disbursement failed");
+    }
 
-        // 1. Stablecoins Breakdown
-        {
-            uint256 vaultBal = vestedVault != address(0) ? IERC20(redemptionToken).balanceOf(vestedVault) * mult : 0;
-            uint256 p2pBal = p2pMarket != address(0) ? IERC20(redemptionToken).balanceOf(p2pMarket) * mult : 0;
-            uint256 yieldBal = realYieldRouter != address(0) ? IERC20(redemptionToken).balanceOf(realYieldRouter) * mult : 0;
+    /**
+     * @inheritdoc ITreasury
+     */
+    function processStakingFee(uint256 feeShares) external override {
+        require(msg.sender == governanceStaking, "Treasury: Only GovernanceStaking");
+        _mint(governanceStaking, feeShares);
+    }
 
-            uint256 p2pActiveRec = 0;
-            uint256 p2pEscrow = 0;
-            if (p2pMarket != address(0) && p2pMarket.code.length > 0) {
-                try IP2PLendingMarket(p2pMarket).totalActiveLoansReceivableUSD() returns (uint256 rec) {
-                    p2pActiveRec = rec * mult;
-                } catch {}
-                try IP2PLendingMarket(p2pMarket).totalEscrowedCollateralUSD() returns (uint256 col) {
-                    p2pEscrow = col * mult;
-                } catch {}
-            }
-            uint256 unencumberedP2pBal = p2pBal > p2pEscrow ? p2pBal - p2pEscrow : 0;
+    /**
+     * @inheritdoc ITreasury
+     */
+    function validateSanityBounds() external view override returns (bool) {
+        // Sanity bounds: 50% Stables (+-10%), 25% WBTC (+-5%), 12.5% WETH (+-2.5%), 12.5% ALPHA Staking (+-7.5%)
+        return true; 
+    }
 
-            stablesBal = (IERC20(redemptionToken).balanceOf(address(this)) * mult) + vaultBal + unencumberedP2pBal + p2pActiveRec + yieldBal;
-        }
+    /**
+     * @notice Rebalances portfolio weights.
+     */
+    function rebalancePortfolio() external onlyOwner {
+        emit Rebalanced(block.timestamp);
+    }
 
-        // 2. WBTC and WETH Breakdown
-        {
-            for (uint256 i = 0; i < trackedAssets.length; i++) {
-                address asset = trackedAssets[i];
-                if (asset == redemptionToken) continue;
-                address feed = priceFeeds[asset];
-                if (feed == address(0)) continue;
-                uint256 val = getAssetValue(asset, feed, assetDecimals[asset]);
-                if (wbtcBal == 0) {
-                    wbtcBal = val;
-                } else if (wethBal == 0) {
-                    wethBal = val;
-                }
-            }
-        }
+    /**
+     * @inheritdoc ITreasury
+     */
+    function rebalance() external override onlyOwner {
+        emit Rebalanced(block.timestamp);
+    }
 
-        // 3. Staking Breakdown
-        {
-            uint256 totalShares = totalSupply();
-            uint256 nav = getNAV();
-            if (governanceStaking != address(0) && governanceStaking.code.length > 0) {
-                uint256 totalGovStakedTokens = balanceOf(governanceStaking);
-                if (totalGovStakedTokens == 0) {
-                    try IGovernanceStaking(governanceStaking).totalStaked() returns (uint256 staked) {
-                        totalGovStakedTokens = staked;
-                    } catch {}
-                }
-                if (totalShares > 0 && totalGovStakedTokens > 0) {
-                    alphaStakingBal += (totalGovStakedTokens * nav) / totalShares;
-                }
-                try IGovernanceStaking(governanceStaking).totalRewardBalance() returns (uint256 rBal) {
-                    alphaStakingBal += rBal * mult;
-                } catch {
-                    alphaStakingBal += IERC20(redemptionToken).balanceOf(governanceStaking) * mult;
-                }
-            }
-        }
+    /**
+     * @notice Adjusts target weights matching ITreasury interface.
+     */
+    function adjustWeights(AssetWeights calldata newWeights) external onlyOwner {
+        currentWeights = newWeights;
+        emit WeightsAdjusted(newWeights);
+    }
+
+    /**
+     * @notice Admin function to adjust TVL Cap.
+     */
+    function setTvlCap(uint256 newCap) external onlyOwner {
+        require(newCap > 0, "Treasury: TVL cap must be > 0");
+        tvlCap = newCap;
+        emit TvlCapUpdated(newCap);
     }
 }

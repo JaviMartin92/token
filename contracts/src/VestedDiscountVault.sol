@@ -171,7 +171,7 @@ contract VestedDiscountVault is Ownable, ReentrancyGuard {
         if (mintFee > 0 && realYieldRouter != address(0)) {
             require(IERC20(stablecoin).transfer(realYieldRouter, mintFee), "VestedVault: Mint fee payout failed");
             if (realYieldRouter.code.length > 0) {
-                try RealYieldRouter(realYieldRouter).notifyYield(mintFee) {} catch {}
+                try RealYieldRouter(realYieldRouter).routeUniversalFee(stablecoin) {} catch {}
             }
         }
         if (netToTreasury > 0 && treasuryBunker != address(0) && treasuryBunker.code.length > 0) {
@@ -205,38 +205,21 @@ contract VestedDiscountVault is Ownable, ReentrancyGuard {
 
         // Ensure VestedVault has enough stablecoins to execute payouts by requesting reimbursement from Treasury
         uint256 currentBal = IERC20(stablecoin).balanceOf(address(this));
-        if (currentBal < userReturn && treasuryBunker != address(0) && treasuryBunker.code.length > 0) {
-            uint256 needed = userReturn - currentBal;
+        if (currentBal < pos.discountedPricePaid && treasuryBunker != address(0) && treasuryBunker.code.length > 0) {
+            uint256 needed = pos.discountedPricePaid - currentBal;
             ITreasury(treasuryBunker).releaseVaultPayout(address(this), needed);
         }
 
-        // Splits: 50% Bunker Reserve, 25% Ops Wallet, 25% Fee Collector / Real Yield
-        uint256 bunkerShare = penaltyTotal / 2;       // 50%
-        uint256 opsShare = penaltyTotal / 4;          // 25%
-        uint256 yieldShare = penaltyTotal - bunkerShare - opsShare; // 25%
-
-        // Re-check available balance after possible Treasury reimbursement
-        uint256 available = IERC20(stablecoin).balanceOf(address(this));
-        require(available >= userReturn, "VestedVault: Insufficient balance for user return");
-        uint256 rem = available - userReturn;
-
-        if (bunkerShare > rem) bunkerShare = rem;
-        rem -= bunkerShare;
-
-        if (opsShare > rem) opsShare = rem;
-        rem -= opsShare;
-
-        if (yieldShare > rem) yieldShare = rem;
-
         // SECURITY FIX: Execute ALL transfers BEFORE burning the NFT (checks-effects-interactions)
         require(IERC20(stablecoin).transfer(msg.sender, userReturn), "VestedVault: User refund failed");
-        if (bunkerShare > 0) require(IERC20(stablecoin).transfer(treasuryBunker, bunkerShare), "VestedVault: Bunker payout failed");
-        if (opsShare > 0) require(IERC20(stablecoin).transfer(opsWallet, opsShare), "VestedVault: Ops payout failed");
-        if (yieldShare > 0) {
-            require(IERC20(stablecoin).transfer(realYieldRouter, yieldShare), "VestedVault: Yield payout failed");
+        
+        if (penaltyTotal > 0 && realYieldRouter != address(0)) {
+            require(IERC20(stablecoin).transfer(realYieldRouter, penaltyTotal), "VestedVault: Penalty transfer failed");
             if (realYieldRouter.code.length > 0) {
-                try RealYieldRouter(realYieldRouter).notifyYield(yieldShare) {} catch {}
+                try RealYieldRouter(realYieldRouter).routeUniversalFee(stablecoin) {} catch {}
             }
+        } else if (penaltyTotal > 0 && treasuryBunker != address(0)) {
+            require(IERC20(stablecoin).transfer(treasuryBunker, penaltyTotal), "VestedVault: Penalty to treasury failed");
         }
 
         // Burn NFT AFTER all transfers have succeeded

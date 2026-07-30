@@ -24,6 +24,18 @@ interface ITreasury {
     function getAssetBalance(address asset) external view returns (uint256);
 
     /**
+     * @notice Allows an investor to deposit stablecoins to mint native ALPHA shares based on NAV.
+     * @param stableAmount The amount of USDC/stablecoin to deposit.
+     * @return sharesMinted The net amount of ALPHA shares minted.
+     */
+    function deposit(uint256 stableAmount) external returns (uint256 sharesMinted);
+
+    /**
+     * @notice Allows RealYieldRouter to convert corporate fee shares into ALPHA tokens without triggering reentrancy locks.
+     */
+    function mintCorporateFeeShares(uint256 stableAmount) external returns (uint256 sharesMinted);
+
+    /**
      * @notice Allows an investor to redeem shares directly for stablecoins based on the NAV.
      * @param sharesAmount The amount of native shares/tokens to redeem.
      * @return assetsReceived The net amount of USDC/EURC stablecoins received.

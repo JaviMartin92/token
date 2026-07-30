@@ -63,7 +63,8 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
       addLog(`Depósito completado. Shares ALPHA acuñadas a valor NAV.`);
       addToast('success', 'Depósito Completado', `Acuñadas ALPHA shares a valor NAV`);
       setDepositAmount('');
-      fetchData();
+      await fetchData();
+      setTimeout(fetchData, 500);
     } catch (err: any) {
       addLog(`[Error] Depósito falló: ${err.message || err}`);
       addToast('error', 'Error Depósito', err.message || 'Error al depositar');
@@ -128,7 +129,8 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
       addLog(`Rescate completado. USDC recibido.`);
       addToast('success', 'Rescate Exitoso', `Tokens canjeados a valor NAV`);
       setRedeemAmount('');
-      fetchData();
+      await fetchData();
+      setTimeout(fetchData, 500);
     } catch (err: any) {
       addLog(`[Error] Rescate falló: ${err.message || err}`);
       addToast('error', 'Error Rescate', err.message || 'Fallo en rescate');

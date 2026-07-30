@@ -152,7 +152,7 @@ async function main() {
   const ryRouterTx = await walletClient.deployContract({
     abi: routerYieldArtifact.abi,
     bytecode: routerYieldArtifact.bytecode.object,
-    args: [usdcAddr, address(0x999), routerAddr, stakingAddr, account.address]
+    args: [usdcAddr, treasuryAddr, routerAddr, stakingAddr, account.address]
   });
   const ryRouterAddr = (await publicClient.waitForTransactionReceipt({ hash: ryRouterTx })).contractAddress!;
   console.log(`[+] RealYieldRouter Contract deployed at: ${ryRouterAddr}`);
@@ -168,16 +168,37 @@ async function main() {
   await publicClient.waitForTransactionReceipt({ hash: authStakingTx });
   console.log(`[+] Authorized RealYieldRouter on GovernanceStaking.`);
 
-  // Set Treasury, Ops, and Corporate Revenue wallets on RealYieldRouter for 50/25/25 fee split
+  // 11.5 Deploy Corporate OpEx and Profit Vaults
+  const opExArtifact = loadArtifact('CorporateOpExVault', 'CorporateOpExVault.sol');
+  const opExTx = await walletClient.deployContract({
+    abi: opExArtifact.abi,
+    bytecode: opExArtifact.bytecode.object,
+    args: [treasuryAddr, account.address],
+    account
+  });
+  const corpOpExAddr = (await publicClient.waitForTransactionReceipt({ hash: opExTx })).contractAddress!;
+  console.log(`[+] CorporateOpExVault Contract deployed at: ${corpOpExAddr}`);
+
+  const profitArtifact = loadArtifact('CorporateProfitVault', 'CorporateProfitVault.sol');
+  const profitTx = await walletClient.deployContract({
+    abi: profitArtifact.abi,
+    bytecode: profitArtifact.bytecode.object,
+    args: [treasuryAddr, account.address],
+    account
+  });
+  const corpProfitAddr = (await publicClient.waitForTransactionReceipt({ hash: profitTx })).contractAddress!;
+  console.log(`[+] CorporateProfitVault Contract deployed at: ${corpProfitAddr}`);
+
+  // Set Treasury, Corporate OpEx Vault, Corporate Profit Vault on RealYieldRouter for 50/25/25 fee split with Auto-Swap
   const setRyWalletsTx = await walletClient.writeContract({
     address: ryRouterAddr,
     abi: routerYieldArtifact.abi,
-    functionName: 'setWallets',
-    args: [treasuryAddr, account.address, account.address],
+    functionName: 'setCorporateVaults',
+    args: [treasuryAddr, corpOpExAddr, corpProfitAddr, treasuryAddr],
     account
   });
   await publicClient.waitForTransactionReceipt({ hash: setRyWalletsTx });
-  console.log(`[+] Configured 50/25/25 Fee Split Wallets (50% Treasury, 25% Ops, 25% Corp Revenue) on RealYieldRouter.`);
+  console.log(`[+] Configured 50/25/25 Corporate Auto-Staking Vaults (50% Treasury, 25% OpEx ALPHA Vault, 25% Profit ALPHA Vault) on RealYieldRouter.`);
 
   // 12. Deploy VestedDiscountVault
   const vaultArtifact = loadArtifact('VestedDiscountVault', 'VestedDiscountVault.sol');
@@ -280,6 +301,16 @@ async function main() {
   const morphoAddr = (await publicClient.waitForTransactionReceipt({ hash: morphoTx })).contractAddress!;
   console.log(`[+] MorphoYieldVaultAdapter Contract deployed at: ${morphoAddr}`);
 
+  // Link MorphoYieldVaultAdapter into Treasury for 80/20 USDC sub-reserve routing
+  const setMorphoHash = await walletClient.writeContract({
+    address: treasuryAddr,
+    abi: Treasury.abi,
+    functionName: 'setMorphoAdapter',
+    args: [morphoAddr]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: setMorphoHash });
+  console.log('[+] Linked MorphoYieldVaultAdapter into Treasury for 80/20 USDC sub-reserve auto-routing.');
+
   // 15. Deploy PromotionalIncentiveVault (10% ALPHA Pool)
   const promoArtifact = loadArtifact('PromotionalIncentiveVault', 'PromotionalIncentiveVault.sol');
   const promoTx = await walletClient.deployContract({
@@ -371,7 +402,8 @@ async function main() {
   updateEnvVar('VITE_VESTED_VAULT_ADDRESS', vestedVaultAddr);
   updateEnvVar('VITE_P2P_MARKET_ADDRESS', p2pAddr);
   updateEnvVar('VITE_STAKING_ADDRESS', stakingAddr);
-  updateEnvVar('VITE_REAL_YIELD_ROUTER_ADDRESS', ryRouterAddr);
+  updateEnvVar('VITE_CORPORATE_OPEX_VAULT_ADDRESS', corpOpExAddr);
+  updateEnvVar('VITE_CORPORATE_PROFIT_VAULT_ADDRESS', corpProfitAddr);
 
   fs.writeFileSync(envPath, envContent.trim() + '\n', 'utf8');
 
@@ -390,6 +422,8 @@ async function main() {
     P2P_MARKET: p2pAddr,
     STAKING: stakingAddr,
     REAL_YIELD_ROUTER: ryRouterAddr,
+    CORPORATE_OPEX_VAULT: corpOpExAddr,
+    CORPORATE_PROFIT_VAULT: corpProfitAddr,
     MORPHO_ADAPTER: morphoAddr,
     PROMO_VAULT: promoAddr,
     RESERVE_MANAGER: mgrAddr,
