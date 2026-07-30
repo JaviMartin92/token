@@ -225,6 +225,8 @@ export default function App() {
             totalBurnedTokens={web3.totalBurnedTokens}
             circulatingSupply={web3.circulatingSupply}
             totalStakedSupply={web3.totalStakedSupply}
+            communityStakedSupply={web3.communityStakedSupply}
+            corporateStakedSupply={web3.corporateStakedSupply}
             stakingRatioPct={web3.stakingRatioPct}
             navPerShareUSD={web3.navPerShareUSD}
             stakeAmount={staking.stakeAmount}
@@ -289,6 +291,8 @@ export default function App() {
             totalBurnedTokens={web3.totalBurnedTokens}
             circulatingSupply={web3.circulatingSupply}
             totalStakedSupply={web3.totalStakedSupply}
+            communityStakedSupply={web3.communityStakedSupply}
+            corporateStakedSupply={web3.corporateStakedSupply}
             stakingRatioPct={web3.stakingRatioPct}
             navPerShareUSD={web3.navPerShareUSD}
             stakeAmount={staking.stakeAmount}

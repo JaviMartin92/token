@@ -32,6 +32,8 @@ export function useWeb3State() {
   const [totalBurnedTokens, setTotalBurnedTokens] = useState('0.00');
   const [circulatingSupply, setCirculatingSupply] = useState('0.00');
   const [totalStakedSupply, setTotalStakedSupply] = useState('0.00');
+  const [communityStakedSupply, setCommunityStakedSupply] = useState('0.00');
+  const [corporateStakedSupply, setCorporateStakedSupply] = useState('0.00');
   const [stakingRatioPct, setStakingRatioPct] = useState('0.00%');
   const [navPerShareUSD, setNavPerShareUSD] = useState('1.0000');
 
@@ -86,6 +88,9 @@ export function useWeb3State() {
         }) as bigint;
       } catch (e) {}
 
+      let opExStaked = 0n;
+      let profitStaked = 0n;
+
       try {
         rawTotalStaked = await publicClient.readContract({
           address: CONTRACT_ADDRESSES.STAKING,
@@ -94,6 +99,31 @@ export function useWeb3State() {
         }) as bigint;
         setTotalStakedSupply(parseFloat(formatEther(rawTotalStaked)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
       } catch (e) {}
+
+      try {
+        if (CONTRACT_ADDRESSES.CORPORATE_OPEX) {
+          opExStaked = await publicClient.readContract({
+            address: CONTRACT_ADDRESSES.STAKING,
+            abi: ABIS.STAKING,
+            functionName: 'stakedBalances',
+            args: [CONTRACT_ADDRESSES.CORPORATE_OPEX]
+          }) as bigint;
+        }
+        if (CONTRACT_ADDRESSES.CORPORATE_PROFIT) {
+          profitStaked = await publicClient.readContract({
+            address: CONTRACT_ADDRESSES.STAKING,
+            abi: ABIS.STAKING,
+            functionName: 'stakedBalances',
+            args: [CONTRACT_ADDRESSES.CORPORATE_PROFIT]
+          }) as bigint;
+        }
+      } catch (e) {}
+
+      const corporateTotal = opExStaked + profitStaked;
+      const communityTotal = rawTotalStaked > corporateTotal ? rawTotalStaked - corporateTotal : rawTotalStaked;
+
+      setCorporateStakedSupply(parseFloat(formatEther(corporateTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+      setCommunityStakedSupply(parseFloat(formatEther(communityTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
       const netCirculating = rawTotalSupply > rawBurned ? rawTotalSupply - rawBurned : 0n;
       setCirculatingSupply(parseFloat(formatEther(netCirculating)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
@@ -410,6 +440,8 @@ export function useWeb3State() {
     totalBurnedTokens,
     circulatingSupply,
     totalStakedSupply,
+    communityStakedSupply,
+    corporateStakedSupply,
     stakingRatioPct,
     navPerShareUSD,
     blockDateStr,

@@ -17,6 +17,8 @@ export const CONTRACT_ADDRESSES = {
   STAKING: ((contractsJson as any).STAKING || import.meta.env.VITE_STAKING_ADDRESS || '0xf5059a5d33d5853360d16c683c16e67980206f36') as `0x${string}`,
   REAL_YIELD_ROUTER: ((contractsJson as any).REAL_YIELD_ROUTER || import.meta.env.VITE_REAL_YIELD_ROUTER_ADDRESS || '0x95401dc811bb5740090279ba06cfa8fcf6113778') as `0x${string}`,
   YIELD_VAULT: ((contractsJson as any).YIELD_VAULT || import.meta.env.VITE_YIELD_STREAMING_VAULT_ADDRESS || '0xa82ff9afd8f496c3d6ac40e2a0f282e47488cfc9') as `0x${string}`,
+  CORPORATE_OPEX: ((contractsJson as any).CORPORATE_OPEX_VAULT || '0x0dcd1bf9a1b36ce34237eeafef220932846bcd82') as `0x${string}`,
+  CORPORATE_PROFIT: ((contractsJson as any).CORPORATE_PROFIT_VAULT || '0x9a676e781a523b5d0c0e43731313a708cb607508') as `0x${string}`,
   PRICE_FEED: ((contractsJson as any).ORACLE_ROUTER || (contractsJson as any).PRICE_FEED || '0xa9e6bfa2bf53de88feb19761d9b2ee2e821bf1bf') as `0x${string}`
 };
 
