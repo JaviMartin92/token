@@ -30,6 +30,10 @@ export function useWeb3State() {
   const [porRatio, setPorRatio] = useState('100.00%');
   const [porBreakdown, setPorBreakdown] = useState({ stables: 0, wbtc: 0, weth: 0, alphaStaking: 0 });
   const [totalBurnedTokens, setTotalBurnedTokens] = useState('0.00');
+  const [circulatingSupply, setCirculatingSupply] = useState('0.00');
+  const [totalStakedSupply, setTotalStakedSupply] = useState('0.00');
+  const [stakingRatioPct, setStakingRatioPct] = useState('0.00%');
+  const [navPerShareUSD, setNavPerShareUSD] = useState('1.0000');
 
   const [blockDateStr, setBlockDateStr] = useState('');
   const [snapshotId, setSnapshotId] = useState('');
@@ -59,15 +63,46 @@ export function useWeb3State() {
         setBlockDateStr(new Date(currentSec * 1000).toLocaleString('es-ES', { dateStyle: 'full', timeStyle: 'medium' }));
       } catch (e) {}
 
+      let rawBurned = 0n;
+      let rawTotalSupply = 0n;
+      let rawTotalStaked = 0n;
+
       try {
-        const burned = await publicClient.readContract({
+        rawBurned = await publicClient.readContract({
           address: CONTRACT_ADDRESSES.TREASURY,
           abi: [{ name: 'totalBurnedTokens', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] }] as const,
           functionName: 'totalBurnedTokens'
         }) as bigint;
-        setTotalBurnedTokens(parseFloat(formatEther(burned)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }));
+        setTotalBurnedTokens(parseFloat(formatEther(rawBurned)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }));
       } catch (e) {
         setTotalBurnedTokens('0.00');
+      }
+
+      try {
+        rawTotalSupply = await publicClient.readContract({
+          address: CONTRACT_ADDRESSES.TREASURY,
+          abi: ABIS.ERC20,
+          functionName: 'totalSupply'
+        }) as bigint;
+      } catch (e) {}
+
+      try {
+        rawTotalStaked = await publicClient.readContract({
+          address: CONTRACT_ADDRESSES.STAKING,
+          abi: ABIS.STAKING,
+          functionName: 'totalStaked'
+        }) as bigint;
+        setTotalStakedSupply(parseFloat(formatEther(rawTotalStaked)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+      } catch (e) {}
+
+      const netCirculating = rawTotalSupply > rawBurned ? rawTotalSupply - rawBurned : 0n;
+      setCirculatingSupply(parseFloat(formatEther(netCirculating)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+
+      if (netCirculating > 0n) {
+        const ratio = (Number(rawTotalStaked * 10000n / netCirculating) / 100).toFixed(2);
+        setStakingRatioPct(`${ratio}%`);
+      } else {
+        setStakingRatioPct('0.00%');
       }
 
       try {
@@ -76,7 +111,9 @@ export function useWeb3State() {
           abi: ABIS.TREASURY,
           functionName: 'getNAV'
         }) as bigint;
-        setNavValue(parseFloat(formatEther(nav)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        const navNum = parseFloat(formatEther(nav));
+        setNavValue(navNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        setNavPerShareUSD(`$${navNum.toFixed(4)} USDC`);
       } catch (e) {}
 
       try {
@@ -364,6 +401,10 @@ export function useWeb3State() {
     porRatio,
     porBreakdown,
     totalBurnedTokens,
+    circulatingSupply,
+    totalStakedSupply,
+    stakingRatioPct,
+    navPerShareUSD,
     blockDateStr,
     snapshotId,
     setSnapshotId,

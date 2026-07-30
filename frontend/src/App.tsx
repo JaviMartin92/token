@@ -223,6 +223,10 @@ export default function App() {
             stakedBalance={web3.stakedBalance}
             claimableYield={web3.claimableYield}
             totalBurnedTokens={web3.totalBurnedTokens}
+            circulatingSupply={web3.circulatingSupply}
+            totalStakedSupply={web3.totalStakedSupply}
+            stakingRatioPct={web3.stakingRatioPct}
+            navPerShareUSD={web3.navPerShareUSD}
             stakeAmount={staking.stakeAmount}
             setStakeAmount={staking.setStakeAmount}
             payoutPref={staking.payoutPref}
@@ -283,6 +287,10 @@ export default function App() {
             stakedBalance={web3.stakedBalance}
             claimableYield={web3.claimableYield}
             totalBurnedTokens={web3.totalBurnedTokens}
+            circulatingSupply={web3.circulatingSupply}
+            totalStakedSupply={web3.totalStakedSupply}
+            stakingRatioPct={web3.stakingRatioPct}
+            navPerShareUSD={web3.navPerShareUSD}
             stakeAmount={staking.stakeAmount}
             setStakeAmount={staking.setStakeAmount}
             payoutPref={staking.payoutPref}

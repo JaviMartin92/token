@@ -4,6 +4,10 @@ interface GovernanceStakingUIProps {
   stakedBalance: string;
   claimableYield: string;
   totalBurnedTokens?: string;
+  circulatingSupply?: string;
+  totalStakedSupply?: string;
+  stakingRatioPct?: string;
+  navPerShareUSD?: string;
   stakeAmount: string;
   setStakeAmount: (val: string) => void;
   payoutPref: number;
@@ -19,6 +23,10 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
   stakedBalance,
   claimableYield,
   totalBurnedTokens = '0.00',
+  circulatingSupply = '0.00',
+  totalStakedSupply = '0.00',
+  stakingRatioPct = '0.00%',
+  navPerShareUSD = '$1.0000 USDC',
   stakeAmount,
   setStakeAmount,
   payoutPref,
@@ -42,16 +50,41 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
           <div className="por-metric-box">
-            <div className="por-metric-label">ALPHA EN STAKING</div>
-            <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#c084fc' }}>{stakedBalance} ALPHA</div>
+            <div className="por-metric-label">TU STAKING (stALPHA)</div>
+            <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#c084fc' }}>{stakedBalance} stALPHA</div>
           </div>
           <div className="por-metric-box">
             <div className="por-metric-label">REAL YIELD ACUMULADO</div>
             <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#4ade80' }}>${claimableYield} USD</div>
           </div>
           <div className="por-metric-box" style={{ background: 'rgba(239, 68, 68, 0.08)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
-            <div className="por-metric-label" style={{ color: '#f87171' }}>🔥 ALPHA QUEMADOS</div>
+            <div className="por-metric-label" style={{ color: '#f87171' }}>🔥 TOTAL QUEMADOS</div>
             <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#f87171' }}>{totalBurnedTokens} ALPHA</div>
+          </div>
+        </div>
+
+        {/* Global Deflationary Tokenomics Breakdown */}
+        <div style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '12px', padding: '0.85rem 1rem', marginBottom: '1.25rem', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
+            📊 Tokenomics & Estado de Oferta Deflacionaria
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.6rem', fontSize: '0.8rem' }}>
+            <div>
+              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.7rem' }}>🪙 En Circulación:</span>
+              <span style={{ fontWeight: 700, color: '#38bdf8' }}>{circulatingSupply} ALPHA</span>
+            </div>
+            <div>
+              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.7rem' }}>🥩 Total en Staking:</span>
+              <span style={{ fontWeight: 700, color: '#c084fc' }}>{totalStakedSupply} ALPHA</span>
+            </div>
+            <div>
+              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.7rem' }}>📊 % en Staking:</span>
+              <span style={{ fontWeight: 700, color: '#eab308' }}>{stakingRatioPct}</span>
+            </div>
+            <div>
+              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.7rem' }}>💎 NAV / ALPHA:</span>
+              <span style={{ fontWeight: 700, color: '#4ade80' }}>{navPerShareUSD}</span>
+            </div>
           </div>
         </div>
 
