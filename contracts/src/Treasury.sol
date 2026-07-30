@@ -448,7 +448,11 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
      */
     function processStakingFee(uint256 feeShares) external override {
         require(msg.sender == governanceStaking, "Treasury: Only GovernanceStaking");
-        _mint(governanceStaking, feeShares);
+        if (balanceOf(address(this)) >= feeShares) {
+            _burn(address(this), feeShares);
+        } else if (feeShares > 0 && balanceOf(msg.sender) >= feeShares) {
+            _burn(msg.sender, feeShares);
+        }
     }
 
     /**
