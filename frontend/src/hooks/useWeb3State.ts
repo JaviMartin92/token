@@ -120,14 +120,22 @@ export function useWeb3State() {
         }
       } catch (e) {}
 
+      let treasuryStaked = 0n;
+      try {
+        treasuryStaked = await publicClient.readContract({
+          address: CONTRACT_ADDRESSES.STAKING,
+          abi: ABIS.STAKING,
+          functionName: 'stakedBalances',
+          args: [CONTRACT_ADDRESSES.TREASURY]
+        }) as bigint;
+      } catch (e) {}
+
       const corporateTotal = opExStaked + profitStaked;
       const communityTotal = rawTotalStaked;
-
       const netCirculating = rawTotalSupply > rawBurned ? rawTotalSupply - rawBurned : 0n;
       setCirculatingSupply(parseFloat(formatEther(netCirculating)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
-      // 12.5% Protocol Reserve Allocation in Native ALPHA Staking
-      const treasuryStaked = (netCirculating * 1250n) / 10000n;
+      // Global locked/reserved supply = Community Staked + Corporate Vaults + Treasury Staked
       const globalLockedTotal = rawTotalStaked + corporateTotal + treasuryStaked;
 
       setCorporateStakedSupply(parseFloat(formatEther(corporateTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));

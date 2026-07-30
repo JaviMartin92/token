@@ -88,7 +88,7 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
               <span style={{ fontWeight: 700, color: '#a855f7' }}>{corporateStakedSupply} stALPHA</span>
             </div>
             <div>
-              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.68rem' }}>🏛️ Stake Reservas (12.5%):</span>
+              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.68rem' }}>🏛️ Stake Reservas:</span>
               <span style={{ fontWeight: 700, color: '#38bdf8' }}>{treasuryStakedSupply} stALPHA</span>
             </div>
             <div>
