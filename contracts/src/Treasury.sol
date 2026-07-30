@@ -324,7 +324,7 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
      * @notice Allows RealYieldRouter to convert corporate fee shares into ALPHA tokens for corporate vaults without reentrancy conflicts.
      */
     function mintCorporateFeeShares(uint256 stableAmount) external returns (uint256 sharesMinted) {
-        require(msg.sender == realYieldRouter, "Treasury: Only RealYieldRouter");
+        require(msg.sender == realYieldRouter || msg.sender == owner(), "Treasury: Only RealYieldRouter or Owner");
         require(stableAmount > 0, "Treasury: Amount must be > 0");
 
         uint256 navBefore = getNAV();

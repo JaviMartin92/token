@@ -86,7 +86,7 @@ async function main() {
   const treasuryTx = await walletClient.deployContract({
     abi: Treasury.abi,
     bytecode: Treasury.bytecode.object,
-    args: [account.address, usdcAddr, 18]
+    args: [account.address, usdcAddr, 6]
   });
   const treasuryAddr = (await publicClient.waitForTransactionReceipt({ hash: treasuryTx })).contractAddress!;
   console.log(`[+] Treasury Contract deployed at: ${treasuryAddr}`);
@@ -299,6 +299,45 @@ async function main() {
   await publicClient.waitForTransactionReceipt({ hash: setSwapHash });
   console.log('[+] Configured SwapRouter on Treasury for open market reserve buy pressure.');
 
+  // Pre-fund MockSwapRouter with ALPHA liquidity so DEX swaps succeed on-chain
+  const erc20Abi = [
+    { name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ name: '', type: 'bool' }] },
+    { name: 'mint', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'to', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ name: '', type: 'bool' }] }
+  ] as const;
+
+  const mintUsdcHash = await walletClient.writeContract({
+    address: usdcAddr,
+    abi: erc20Abi,
+    functionName: 'mint',
+    args: [account.address, 100000n * 10n**6n]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: mintUsdcHash });
+
+  const approveUsdcHash = await walletClient.writeContract({
+    address: usdcAddr,
+    abi: erc20Abi,
+    functionName: 'approve',
+    args: [treasuryAddr, 100000n * 10n**6n]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: approveUsdcHash });
+
+  const mintRouterHash = await walletClient.writeContract({
+    address: treasuryAddr,
+    abi: Treasury.abi,
+    functionName: 'mintCorporateFeeShares',
+    args: [100000n * 10n**6n]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: mintRouterHash });
+
+  const transferRouterHash = await walletClient.writeContract({
+    address: treasuryAddr,
+    abi: Treasury.abi,
+    functionName: 'transfer',
+    args: [routerAddr, parseEther('100000')]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: transferRouterHash });
+  console.log('[+] Pre-funded MockSwapRouter with 100,000 ALPHA liquidity for DEX market buy-orders.');
+
   // Wire Treasury address into GovernanceStaking for NAV-based staked value computation
   const stakingAbi = loadArtifact('GovernanceStaking', 'GovernanceStaking.sol').abi;
   const setTreasuryHash = await walletClient.writeContract({
@@ -379,7 +418,7 @@ async function main() {
     address: usdcAddr as `0x${string}`,
     abi: mintAbi,
     functionName: 'mint',
-    args: [account.address, parseEther('10000')]
+    args: [account.address, 10000n * 10n**6n]
   });
   await publicClient.waitForTransactionReceipt({ hash: m1 });
 
@@ -387,13 +426,13 @@ async function main() {
     address: usdcAddr as `0x${string}`,
     abi: mintAbi,
     functionName: 'mint',
-    args: [userAccountAddr as `0x${string}`, parseEther('10000')]
+    args: [userAccountAddr as `0x${string}`, 10000n * 10n**6n]
   });
   await publicClient.waitForTransactionReceipt({ hash: m2 });
   console.log('[+] Admin and User wallets pre-funded successfully.');
 
   // Write addresses to root .env file & frontend contracts.json
-  const envPath = path.resolve(__dirname, '../../../.env');
+  const envPath = path.resolve(process.cwd(), '.env');
   let envContent = '';
   if (fs.existsSync(envPath)) {
     envContent = fs.readFileSync(envPath, 'utf8');
@@ -427,7 +466,7 @@ async function main() {
   fs.writeFileSync(envPath, envContent.trim() + '\n', 'utf8');
 
   // Also write JSON artifact for frontend dynamic import
-  const jsonPath = path.resolve(__dirname, '../../../frontend/src/contracts.json');
+  const jsonPath = path.resolve(process.cwd(), 'frontend/src/contracts.json');
   const addressesJson = {
     USDC: usdcAddr,
     USDT: usdtAddr,

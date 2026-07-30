@@ -81,15 +81,17 @@ contract MockSwapRouter is ISwapRouter {
         // Transfer tokenIn from sender to router
         ERC20(params.tokenIn).transferFrom(msg.sender, address(this), params.amountIn);
 
-        // Custom rate conversion: USDC to Native Token yields 2x rate
-        if (params.tokenIn == usdcToken && params.tokenOut == nativeToken) {
-            amountOut = params.amountIn * 2;
+        // Custom rate conversion / decimal scaling: USDC (6 decimals) to 18-decimal tokens
+        if (params.tokenIn == usdcToken && params.tokenOut != usdcToken) {
+            amountOut = params.amountIn * 10**12;
         } else {
             amountOut = params.amountIn;
         }
 
-        // Mint tokenOut to recipient
-        MockERC20(params.tokenOut).mint(params.recipient, amountOut);
+        // Try minting tokenOut to recipient, or transfer from router balance if mint is not supported
+        try MockERC20(params.tokenOut).mint(params.recipient, amountOut) {} catch {
+            IERC20(params.tokenOut).transfer(params.recipient, amountOut);
+        }
         return amountOut;
     }
 }

@@ -61,7 +61,7 @@ async function runExhaustiveStakingAudit() {
 
   // 0. Obtener tokens ALPHA iniciales mediante depósito en Tesorería
   console.log("\n--- 0️⃣ INICIALIZACIÓN: OBTENCIÓN DE SHARES ALPHA ---");
-  const initialUSDC = 5000n * 10n**18n;
+  const initialUSDC = 5000n * 10n**6n;
   await userWallet.writeContract({ address: contracts.USDC, abi: ERC20_ABI, functionName: 'mint', args: [userAddr, initialUSDC] });
   await userWallet.writeContract({ address: contracts.USDC, abi: ERC20_ABI, functionName: 'approve', args: [contracts.TREASURY, initialUSDC] });
   const depTx = await userWallet.writeContract({ address: contracts.TREASURY, abi: TREASURY_ABI, functionName: 'deposit', args: [initialUSDC] });
