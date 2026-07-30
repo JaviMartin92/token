@@ -270,7 +270,8 @@ contract VestedDiscountVault is Ownable, ReentrancyGuard {
      */
     function totalPresentLiability() external view returns (uint256 totalLiabilityUSD) {
         uint256 count = positionNFT.nextTokenId();
-        for (uint256 i = 1; i < count; i++) {
+        uint256 limit = count > 100 ? 100 : count;
+        for (uint256 i = 1; i < limit; i++) {
             if (!isVestedBond[i]) continue;
             try positionNFT.getPosition(i) returns (VaultPositionNFT.Position memory pos) {
                 if (!pos.isRagequitted && !pos.isMaturedClaimed && pos.principalAmount > 0) {

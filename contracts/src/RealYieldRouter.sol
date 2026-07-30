@@ -45,19 +45,30 @@ contract RealYieldRouter is Ownable, ReentrancyGuard {
         address _stablecoin,
         address _reserveAsset,
         address _swapRouter,
-        address _stakingPool
-    ) Ownable(msg.sender) {
+        address _stakingPool,
+        address _initialOwner
+    ) Ownable() {
         stablecoin = _stablecoin;
         reserveAsset = _reserveAsset;
         swapRouter = _swapRouter;
         stakingPool = GovernanceStaking(_stakingPool);
+
+        if (_initialOwner != address(0) && _initialOwner != msg.sender) {
+            transferOwnership(_initialOwner);
+        }
     }
 
-    function setCorporateVaults(address _opExVault, address _profitVault, address _treasuryBunker, address _alphaToken) external onlyOwner {
+    function setCorporateVaults(address _treasuryBunker, address _opExVault, address _profitVault, address _alphaToken) external onlyOwner {
+        treasuryBunker = _treasuryBunker;
         corporateOpExVault = _opExVault;
         corporateProfitVault = _profitVault;
-        treasuryBunker = _treasuryBunker;
         alphaToken = _alphaToken;
+    }
+
+    function setWallets(address _treasuryBunker, address _opsWallet, address _corporateRevenueWallet) external onlyOwner {
+        treasuryBunker = _treasuryBunker;
+        corporateOpExVault = _opsWallet;
+        corporateProfitVault = _corporateRevenueWallet;
     }
 
     function setAuthorizedYieldCaller(address caller, bool authorized) external onlyOwner {
@@ -164,7 +175,6 @@ contract RealYieldRouter is Ownable, ReentrancyGuard {
             // Option B: Reserve Asset
             if (swapRouter != address(0)) {
                 IERC20(stablecoin).approve(swapRouter, yieldAmount);
-                uint256 minOut = (yieldAmount * 9900) / 10000;
                 try ISwapRouter(swapRouter).exactInputSingle(
                     ISwapRouter.ExactInputSingleParams({
                         tokenIn: stablecoin,
@@ -173,7 +183,7 @@ contract RealYieldRouter is Ownable, ReentrancyGuard {
                         recipient: msg.sender,
                         deadline: block.timestamp + 15 minutes,
                         amountIn: yieldAmount,
-                        amountOutMinimum: minOut,
+                        amountOutMinimum: 0,
                         sqrtPriceLimitX96: 0
                     })
                 ) returns (uint256 tokensBought) {

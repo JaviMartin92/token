@@ -249,8 +249,12 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
         (uint256 totalOwed, ) = calculateTotalOwed(loanId);
         if (totalOwed == 0) return 10000;
 
-        VaultPositionNFT.Position memory pos = positionNFT.getPosition(loan.positionTokenId);
-        uint256 collateralUSD = pos.discountedPricePaid;
+        uint256 collateralUSD = loan.collateralAmount;
+        if (loan.positionTokenId > 0 && address(positionNFT) != address(0)) {
+            try positionNFT.getPosition(loan.positionTokenId) returns (VaultPositionNFT.Position memory pos) {
+                collateralUSD = pos.discountedPricePaid > 0 ? pos.discountedPricePaid : pos.principalAmount;
+            } catch {}
+        }
 
         healthFactorRatio = (collateralUSD * 100) / totalOwed;
     }
@@ -288,8 +292,15 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
             }
         }
 
-        // Return Position NFT to borrower (who colateralized it in escrow)
-        positionNFT.transferFrom(address(this), loan.borrower, loan.positionTokenId);
+        // Return Position NFT to borrower if colateralized
+        if (loan.positionTokenId > 0 && address(positionNFT) != address(0)) {
+            positionNFT.transferFrom(address(this), loan.borrower, loan.positionTokenId);
+        }
+
+        // Return stablecoin collateral to borrower if colateralized in USDC
+        if (loan.collateralAmount > 0) {
+            require(IERC20(stablecoin).transfer(loan.borrower, loan.collateralAmount), "P2P: Failed to return borrower collateral");
+        }
 
         emit LoanRepaid(loanId, totalOwed);
     }

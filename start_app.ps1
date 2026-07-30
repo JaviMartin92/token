@@ -34,10 +34,9 @@ npx tsx services/core/src/deploy.ts
 
 # 3. Re-compilar Bundle Frontend con las nuevas direcciones y Servir
 Write-Host "[3/3] Re-compilando Bundle Frontend y Servidor Web..." -ForegroundColor Yellow
-$frontendRunning = docker ps --filter "name=alpha-frontend" --format "{{.Names}}"
-if (-not $frontendRunning) {
-  docker run -d --name alpha-frontend -p 5173:5173 --add-host=host.docker.internal:host-gateway -v "${ROOT_DIR}/frontend:/app" -w /app node:20-alpine node server.cjs | Out-Null
-}
+docker rm -f alpha-frontend 2>$null | Out-Null
+docker run -d --name alpha-frontend -p 5173:5173 --add-host=host.docker.internal:host-gateway -v "${ROOT_DIR}/frontend:/app" -w /app node:20-alpine node server.cjs | Out-Null
+Start-Sleep -Seconds 1
 docker exec alpha-frontend sh -c "npx vite build" | Out-Null
 
 Write-Host "=======================================================" -ForegroundColor Green
