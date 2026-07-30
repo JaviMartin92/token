@@ -200,6 +200,15 @@ async function main() {
   await publicClient.waitForTransactionReceipt({ hash: setRyWalletsTx });
   console.log(`[+] Configured 50/25/25 Corporate Auto-Staking Vaults (50% Treasury, 25% OpEx ALPHA Vault, 25% Profit ALPHA Vault) on RealYieldRouter.`);
 
+  const setGovCorpHash = await walletClient.writeContract({
+    address: stakingAddr,
+    abi: stakingArtifact.abi,
+    functionName: 'setCorporateVaults',
+    args: [corpOpExAddr, corpProfitAddr]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: setGovCorpHash });
+  console.log('[+] Configured 50/25/25 Corporate Auto-Staking Vaults on GovernanceStaking.');
+
   // 12. Deploy VestedDiscountVault
   const vaultArtifact = loadArtifact('VestedDiscountVault', 'VestedDiscountVault.sol');
   const vestedVaultTx = await walletClient.deployContract({
