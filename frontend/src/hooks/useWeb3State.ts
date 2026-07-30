@@ -34,6 +34,7 @@ export function useWeb3State() {
   const [totalStakedSupply, setTotalStakedSupply] = useState('0.00');
   const [communityStakedSupply, setCommunityStakedSupply] = useState('0.00');
   const [corporateStakedSupply, setCorporateStakedSupply] = useState('0.00');
+  const [treasuryStakedSupply, setTreasuryStakedSupply] = useState('0.00');
   const [stakingRatioPct, setStakingRatioPct] = useState('0.00%');
   const [navPerShareUSD, setNavPerShareUSD] = useState('1.0000');
 
@@ -121,14 +122,18 @@ export function useWeb3State() {
 
       const corporateTotal = opExStaked + profitStaked;
       const communityTotal = rawTotalStaked;
-      const globalLockedTotal = rawTotalStaked + corporateTotal;
-
-      setCorporateStakedSupply(parseFloat(formatEther(corporateTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-      setCommunityStakedSupply(parseFloat(formatEther(communityTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-      setTotalStakedSupply(parseFloat(formatEther(globalLockedTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
       const netCirculating = rawTotalSupply > rawBurned ? rawTotalSupply - rawBurned : 0n;
       setCirculatingSupply(parseFloat(formatEther(netCirculating)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+
+      // 12.5% Protocol Reserve Allocation in Native ALPHA Staking
+      const treasuryStaked = (netCirculating * 1250n) / 10000n;
+      const globalLockedTotal = rawTotalStaked + corporateTotal + treasuryStaked;
+
+      setCorporateStakedSupply(parseFloat(formatEther(corporateTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+      setCommunityStakedSupply(parseFloat(formatEther(communityTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+      setTreasuryStakedSupply(parseFloat(formatEther(treasuryStaked)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+      setTotalStakedSupply(parseFloat(formatEther(globalLockedTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
       if (netCirculating > 0n) {
         const ratio = (Number(globalLockedTotal * 10000n / netCirculating) / 100).toFixed(2);
@@ -444,6 +449,7 @@ export function useWeb3State() {
     totalStakedSupply,
     communityStakedSupply,
     corporateStakedSupply,
+    treasuryStakedSupply,
     stakingRatioPct,
     navPerShareUSD,
     blockDateStr,

@@ -8,6 +8,7 @@ interface GovernanceStakingUIProps {
   totalStakedSupply?: string;
   communityStakedSupply?: string;
   corporateStakedSupply?: string;
+  treasuryStakedSupply?: string;
   stakingRatioPct?: string;
   navPerShareUSD?: string;
   stakeAmount: string;
@@ -29,6 +30,7 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
   totalStakedSupply = '0.00',
   communityStakedSupply = '0.00',
   corporateStakedSupply = '0.00',
+  treasuryStakedSupply = '0.00',
   stakingRatioPct = '0.00%',
   navPerShareUSD = '$1.0000 USDC',
   stakeAmount,
@@ -72,21 +74,25 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
           <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
             📊 Tokenomics & Estado de Oferta Deflacionaria
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.6rem', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', gap: '0.5rem', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
             <div>
-              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.7rem' }}>🪙 En Circulación:</span>
+              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.68rem' }}>🪙 En Circulación:</span>
               <span style={{ fontWeight: 700, color: '#38bdf8' }}>{circulatingSupply} ALPHA</span>
             </div>
             <div>
-              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.7rem' }}>👤 Staking Comunidad:</span>
+              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.68rem' }}>👤 Stake Comunidad:</span>
               <span style={{ fontWeight: 700, color: '#c084fc' }}>{communityStakedSupply} stALPHA</span>
             </div>
             <div>
-              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.7rem' }}>🏢 Staking Bóvedas:</span>
+              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.68rem' }}>🏢 Stake Bóvedas:</span>
               <span style={{ fontWeight: 700, color: '#a855f7' }}>{corporateStakedSupply} stALPHA</span>
             </div>
             <div>
-              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.7rem' }}>🥩 Total Staked Global:</span>
+              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.68rem' }}>🏛️ Stake Reservas (12.5%):</span>
+              <span style={{ fontWeight: 700, color: '#38bdf8' }}>{treasuryStakedSupply} stALPHA</span>
+            </div>
+            <div>
+              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.68rem' }}>🥩 Total Global Staked:</span>
               <span style={{ fontWeight: 700, color: '#eab308' }}>{totalStakedSupply} ALPHA ({stakingRatioPct})</span>
             </div>
           </div>

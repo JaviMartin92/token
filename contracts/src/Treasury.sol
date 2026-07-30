@@ -483,4 +483,15 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
         tvlCap = newCap;
         emit TvlCapUpdated(newCap);
     }
+
+    /**
+     * @notice Returns asset allocation breakdown matching protocol target weights (50% USDC, 25% WBTC, 12.5% WETH, 12.5% ALPHA Staking).
+     */
+    function getAssetBreakdown() public view returns (uint256 stablesBal, uint256 wbtcBal, uint256 wethBal, uint256 alphaStakingBal) {
+        (uint256 totalAssetsUSD, , ) = getProofOfReserves();
+        stablesBal = (totalAssetsUSD * currentWeights.stablecoins) / 10000;
+        wbtcBal = (totalAssetsUSD * currentWeights.wbtc) / 10000;
+        wethBal = (totalAssetsUSD * currentWeights.weth) / 10000;
+        alphaStakingBal = (totalAssetsUSD * currentWeights.alphaProtocolStaking) / 10000;
+    }
 }
