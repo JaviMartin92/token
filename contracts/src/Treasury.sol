@@ -364,10 +364,6 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
         uint256 treasuryNav = getNAV();
         uint256 mult = (10**(18 - redemptionTokenDecimals));
 
-        uint256 vaultBal = vestedVault != address(0) ? IERC20(redemptionToken).balanceOf(vestedVault) * mult : 0;
-        uint256 p2pBal = p2pMarket != address(0) ? IERC20(redemptionToken).balanceOf(p2pMarket) * mult : 0;
-        uint256 yieldBal = realYieldRouter != address(0) ? IERC20(redemptionToken).balanceOf(realYieldRouter) * mult : 0;
-
         // Native ALPHA Staking asset value = staked ALPHA tokens valued at current NAV per share
         // + USDC rewards accumulated in the pool.
         uint256 stakedAlphaValue = 0;
@@ -390,24 +386,14 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
             }
         }
 
-        uint256 p2pActiveReceivables = 0;
-        uint256 p2pEscrowCollateral = 0;
-        if (p2pMarket != address(0) && p2pMarket.code.length > 0) {
-            try IP2PLendingMarket(p2pMarket).totalActiveLoansReceivableUSD() returns (uint256 rec) {
-                p2pActiveReceivables = rec * mult;
-            } catch {}
-            try IP2PLendingMarket(p2pMarket).totalEscrowedCollateralUSD() returns (uint256 col) {
-                p2pEscrowCollateral = col * mult;
-            } catch {}
-        }
-
-        uint256 unencumberedP2pBal = p2pBal > p2pEscrowCollateral ? p2pBal - p2pEscrowCollateral : 0;
-
         // NOTE: opsWallet, corporateRevenueWallet, and P2P Escrow Collateral are NOT included in protocol assets.
         // Those balances belong to external accounts or user escrow custody and do not inflate protocol PoR.
-        totalAssetsUSD = treasuryNav + stakingRewardBal;
+        totalAssetsUSD = treasuryNav + stakedAlphaValue + stakingRewardBal;
         
-        // Total Liabilities = Native ALPHA Shares outstanding + Vested Vault NPV obligations
+        // Total Liabilities = Net external circulating ALPHA shares (excluding protocol Treasury stock) + Vested Vault NPV obligations
+        uint256 treasuryStock = balanceOf(address(this));
+        uint256 externalSupply = totalSupply() > treasuryStock ? totalSupply() - treasuryStock : 0;
+
         uint256 vaultLiabilities = 0;
         if (vestedVault != address(0) && vestedVault.code.length > 0) {
             try IVestedDiscountVault(vestedVault).totalPresentLiability() returns (uint256 liability) {
@@ -419,7 +405,7 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
             }
         }
 
-        totalLiabilitiesUSD = totalSupply() + vaultLiabilities;
+        totalLiabilitiesUSD = externalSupply + vaultLiabilities;
 
         if (totalLiabilitiesUSD == 0) {
             collateralRatioBps = totalAssetsUSD > 0 ? 10000 : 10000;
