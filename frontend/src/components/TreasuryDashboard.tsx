@@ -104,24 +104,24 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
             </thead>
             <tbody>
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                <td style={{ padding: '0.45rem' }}>💵 USDC / Stablecoins (Reserva Líquida Búnker)</td>
+                <td style={{ padding: '0.45rem' }}>💵 USDC (50% Total: 80% APY Morpho + 20% Préstamos P2P)</td>
                 <td style={{ padding: '0.45rem', textAlign: 'right', fontWeight: 600 }}>${porBreakdown.stables.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</td>
-                <td style={{ padding: '0.45rem', textAlign: 'right', opacity: 0.7 }}>{targetWeights.stables.toFixed(2)}%</td>
+                <td style={{ padding: '0.45rem', textAlign: 'right', opacity: 0.7 }}>50.00%</td>
               </tr>
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                <td style={{ padding: '0.45rem' }}>₿ Wrapped Bitcoin (WBTC Target Allocation)</td>
+                <td style={{ padding: '0.45rem' }}>₿ Wrapped Bitcoin (25% BTC en Stake)</td>
                 <td style={{ padding: '0.45rem', textAlign: 'right', fontWeight: 600 }}>${porBreakdown.wbtc.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</td>
-                <td style={{ padding: '0.45rem', textAlign: 'right', opacity: 0.7 }}>{targetWeights.wbtc.toFixed(2)}%</td>
+                <td style={{ padding: '0.45rem', textAlign: 'right', opacity: 0.7 }}>25.00%</td>
               </tr>
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                <td style={{ padding: '0.45rem' }}>Ξ Wrapped Ethereum (WETH Liquid Staking)</td>
+                <td style={{ padding: '0.45rem' }}>Ξ Wrapped Ethereum (12.5% ETH en Stake)</td>
                 <td style={{ padding: '0.45rem', textAlign: 'right', fontWeight: 600 }}>${porBreakdown.weth.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</td>
-                <td style={{ padding: '0.45rem', textAlign: 'right', opacity: 0.7 }}>{targetWeights.weth.toFixed(2)}%</td>
+                <td style={{ padding: '0.45rem', textAlign: 'right', opacity: 0.7 }}>12.50%</td>
               </tr>
               <tr>
-                <td style={{ padding: '0.45rem' }}>🥩 Native ALPHA Staking (Reserva por Acuñación)</td>
+                <td style={{ padding: '0.45rem' }}>🥩 Native ALPHA (12.5% ALPHA en Stake)</td>
                 <td style={{ padding: '0.45rem', textAlign: 'right', fontWeight: 600 }}>${porBreakdown.alphaStaking.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</td>
-                <td style={{ padding: '0.45rem', textAlign: 'right', opacity: 0.7 }}>{targetWeights.alts.toFixed(2)}%</td>
+                <td style={{ padding: '0.45rem', textAlign: 'right', opacity: 0.7 }}>12.50%</td>
               </tr>
             </tbody>
           </table>

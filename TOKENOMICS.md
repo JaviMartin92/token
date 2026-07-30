@@ -21,22 +21,24 @@ Toda comisión generada por cualquier operativa de la plataforma (depósitos, re
 
 ---
 
-## 🏦 2. Sub-Reserva 80 / 20 de USDC en Tesorería
+## 🏦 2. Composición de Activos y Sub-Reserva 80 / 20 de USDC
 
-Para optimizar el rendimiento del capital inactivo de la Tesorería sin comprometer la liquidez operativa, todo depósito en USDC que ingresa a `Treasury.sol` se divide de forma automática:
+La Tesorería de `Treasury.sol` mantiene una cartera diversificada multi-activo con las siguientes ponderaciones objetivo (`Target Asset Allocation`):
+
+| Ponderación Target | Activo de Reserva | Estrategia de Liquidez y Rendimiento |
+| :---: | :--- | :--- |
+| **50.00%** | **USDC / Stablecoins** | **Sub-Reserva 80/20**: 80% auto-depositado en `MorphoYieldVaultAdapter.sol` (productos seguros con APY del 6.45%) + 20% en Búfer Líquido para originar Préstamos P2P. |
+| **25.00%** | **Wrapped Bitcoin (WBTC)** | En Staking / Rendimiento valorado on-chain vía Oráculos Chainlink BTC/USD. |
+| **12.50%** | **Wrapped Ethereum (WETH)** | Liquid Staking de ETH valorado on-chain vía Oráculos Chainlink ETH/USD. |
+| **12.50%** | **Native ALPHA Staking** | Reserva en staking nativo `$ALPHA` para respaldo de liquidez. |
 
 ```mermaid
 flowchart TD
     A["Usuario deposita USDC en Treasury"] --> B["Comisión 0.50% enrutada a RealYieldRouter"]
     A --> C["Neto 99.50% ingresa a Reservas"]
-    C --> D["80% Auto-depositado en MorphoYieldVaultAdapter"]
-    C --> E["20% Conservado en Búfer Líquido de Treasury"]
-    D --> F["Genera APY pasivo distribuido a Stakers (xALPHA)"]
-    E --> G["Disponible para originar Préstamos P2P Sobrecolateralizados"]
+    C --> D["80% Auto-depositado en MorphoYieldVaultAdapter (Genera APY)"]
+    C --> E["20% Conservado en Búfer Líquido de Treasury (Destinado a Préstamos P2P)"]
 ```
-
-- **80% (Sub-Reserva de Rendimiento)**: Transferido automáticamente a `MorphoYieldVaultAdapter.sol` para generar rendimiento pasivo en Morpho Vaults.
-- **20% (Búfer de Liquidez P2P)**: Conservado de forma líquida en `Treasury.sol` para financiar préstamos P2P sobrecolateralizados solicitados por los usuarios (`P2PLendingMarket.sol`).
 
 ---
 
