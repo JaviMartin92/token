@@ -63,6 +63,7 @@ try {
   compileContract('YieldStreamingVault.sol', 'YieldStreamingVault');
   compileContract('GovernanceStaking.sol', 'GovernanceStaking');
   compileContract('VestedDiscountVault.sol', 'VestedDiscountVault');
+  compileContract('Treasury.sol', 'Treasury');
   console.log('🎉 Compilación de Smart Contracts completada con éxito!');
 } catch (e) {
   console.error(e);

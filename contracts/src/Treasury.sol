@@ -299,26 +299,14 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
         // 1. Stablecoins in Treasury address
         uint256 treasuryStables = IERC20(redemptionToken).balanceOf(address(this)) * mult;
         
-        // 2. Stablecoins in MorphoYieldVaultAdapter + VestedDiscountVault + P2PLendingMarket (unencumbered) + RealYieldRouter
+        // 2. Stablecoins in MorphoYieldVaultAdapter + VestedDiscountVault + RealYieldRouter
         uint256 morphoStables = morphoAdapter != address(0) ? IERC20(redemptionToken).balanceOf(morphoAdapter) * mult : 0;
         uint256 vaultStables = vestedVault != address(0) ? IERC20(redemptionToken).balanceOf(vestedVault) * mult : 0;
-        uint256 p2pStables = p2pMarket != address(0) ? IERC20(redemptionToken).balanceOf(p2pMarket) * mult : 0;
         uint256 yieldStables = realYieldRouter != address(0) ? IERC20(redemptionToken).balanceOf(realYieldRouter) * mult : 0;
 
-        uint256 p2pActiveReceivables = 0;
-        uint256 p2pEscrowCollateral = 0;
-        if (p2pMarket != address(0) && p2pMarket.code.length > 0) {
-            try IP2PLendingMarket(p2pMarket).totalActiveLoansReceivableUSD() returns (uint256 rec) {
-                p2pActiveReceivables = rec * mult;
-            } catch {}
-            try IP2PLendingMarket(p2pMarket).totalEscrowedCollateralUSD() returns (uint256 col) {
-                p2pEscrowCollateral = col * mult;
-            } catch {}
-        }
-
-        uint256 unencumberedP2pStables = p2pStables > p2pEscrowCollateral ? p2pStables - p2pEscrowCollateral : 0;
-        
-        totalNAVUSD = treasuryStables + morphoStables + vaultStables + unencumberedP2pStables + p2pActiveReceivables + yieldStables;
+        // Note: P2P Lending Market collateral and active loans are user escrow custody,
+        // so they are strictly excluded from protocol-owned Treasury NAV reserves.
+        totalNAVUSD = treasuryStables + morphoStables + vaultStables + yieldStables;
 
         // 3. Add values of tracked assets (WBTC, WETH, etc.) using Chainlink oracles
         for (uint256 i = 0; i < trackedAssets.length; i++) {
@@ -402,10 +390,9 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
 
         uint256 unencumberedP2pBal = p2pBal > p2pEscrowCollateral ? p2pBal - p2pEscrowCollateral : 0;
 
-        // NOTE: opsWallet and corporateRevenueWallet are NOT included in protocol assets.
-        // Those wallets are external and not under protocol custody — including them
-        // would inflate PoR with funds the protocol does not control.
-        totalAssetsUSD = treasuryNav + vaultBal + unencumberedP2pBal + p2pActiveReceivables + yieldBal + stakingRewardBal;
+        // NOTE: opsWallet, corporateRevenueWallet, and P2P Escrow Collateral are NOT included in protocol assets.
+        // Those balances belong to external accounts or user escrow custody and do not inflate protocol PoR.
+        totalAssetsUSD = treasuryNav + stakingRewardBal;
         
         // Total Liabilities = Native ALPHA Shares outstanding + Vested Vault NPV obligations
         uint256 vaultLiabilities = 0;
