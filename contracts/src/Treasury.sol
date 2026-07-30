@@ -19,6 +19,7 @@ interface IVestedDiscountVault {
 interface IGovernanceStaking {
     function totalStaked() external view returns (uint256);
     function totalRewardBalance() external view returns (uint256);
+    function stake(uint256 amount) external;
 }
 
 interface IP2PLendingMarket {
@@ -211,6 +212,18 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
             uint256 availBal = IERC20(redemptionToken).balanceOf(address(this));
             if (morphoAmount > 0 && availBal >= morphoAmount) {
                 require(IERC20(redemptionToken).transfer(morphoAdapter, morphoAmount), "Treasury: Morpho transfer failed");
+            }
+        }
+
+        // 10. Auto-stake 12.5% Target Protocol Reserve Position into GovernanceStaking on-chain
+        if (governanceStaking != address(0) && currentWeights.alphaProtocolStaking > 0 && sharesMinted > 0) {
+            uint256 reserveStakingShares = (sharesMinted * currentWeights.alphaProtocolStaking) / 10000;
+            if (reserveStakingShares > 0) {
+                _mint(address(this), reserveStakingShares);
+                _approve(address(this), governanceStaking, reserveStakingShares);
+                try IGovernanceStaking(governanceStaking).stake(reserveStakingShares) {} catch {
+                    _burn(address(this), reserveStakingShares);
+                }
             }
         }
 
