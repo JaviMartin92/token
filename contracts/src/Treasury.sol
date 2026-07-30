@@ -107,6 +107,9 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
     address public corporateRevenueWallet;
     address public circuitBreaker;
     address public morphoAdapter;
+    address public swapRouter;
+    address public wbtcToken;
+    address public wethToken;
     uint256 public totalBurnedTokens;
 
     function setCircuitBreaker(address _circuitBreaker) external onlyOwner {
@@ -115,6 +118,79 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
 
     function setMorphoAdapter(address _morphoAdapter) external onlyOwner {
         morphoAdapter = _morphoAdapter;
+    }
+
+    function setSwapRouter(address _swapRouter, address _wbtc, address _weth) external onlyOwner {
+        swapRouter = _swapRouter;
+        wbtcToken = _wbtc;
+        wethToken = _weth;
+    }
+
+    /**
+     * @notice Processes reserve fee revenue by executing open market swaps for 25% WBTC, 12.5% WETH, and 12.5% ALPHA (buy pressure), auto-staking the purchased ALPHA into GovernanceStaking.
+     */
+    function notifyReserveFee(uint256 usdcFeeAmount) external {
+        if (usdcFeeAmount == 0 || swapRouter == address(0)) return;
+
+        uint256 btcUsdc = (usdcFeeAmount * 2500) / 10000;
+        uint256 ethUsdc = (usdcFeeAmount * 1250) / 10000;
+        uint256 alphaUsdc = (usdcFeeAmount * 1250) / 10000;
+
+        // 1. Buy WBTC on open market
+        if (btcUsdc > 0 && wbtcToken != address(0)) {
+            IERC20(redemptionToken).approve(swapRouter, btcUsdc);
+            try ISwapRouter(swapRouter).exactInputSingle(
+                ISwapRouter.ExactInputSingleParams({
+                    tokenIn: redemptionToken,
+                    tokenOut: wbtcToken,
+                    fee: 3000,
+                    recipient: address(this),
+                    deadline: block.timestamp + 15 minutes,
+                    amountIn: btcUsdc,
+                    amountOutMinimum: 0,
+                    sqrtPriceLimitX96: 0
+                })
+            ) returns (uint256) {} catch {}
+        }
+
+        // 2. Buy WETH on open market
+        if (ethUsdc > 0 && wethToken != address(0)) {
+            IERC20(redemptionToken).approve(swapRouter, ethUsdc);
+            try ISwapRouter(swapRouter).exactInputSingle(
+                ISwapRouter.ExactInputSingleParams({
+                    tokenIn: redemptionToken,
+                    tokenOut: wethToken,
+                    fee: 3000,
+                    recipient: address(this),
+                    deadline: block.timestamp + 15 minutes,
+                    amountIn: ethUsdc,
+                    amountOutMinimum: 0,
+                    sqrtPriceLimitX96: 0
+                })
+            ) returns (uint256) {} catch {}
+        }
+
+        // 3. Buy ALPHA on open market (CREATES DIRECT BUY PRESSURE ON $ALPHA) & Auto-Stake into GovernanceStaking
+        if (alphaUsdc > 0) {
+            IERC20(redemptionToken).approve(swapRouter, alphaUsdc);
+            try ISwapRouter(swapRouter).exactInputSingle(
+                ISwapRouter.ExactInputSingleParams({
+                    tokenIn: redemptionToken,
+                    tokenOut: address(this),
+                    fee: 3000,
+                    recipient: address(this),
+                    deadline: block.timestamp + 15 minutes,
+                    amountIn: alphaUsdc,
+                    amountOutMinimum: 0,
+                    sqrtPriceLimitX96: 0
+                })
+            ) returns (uint256 alphaBought) {
+                if (alphaBought > 0 && governanceStaking != address(0)) {
+                    _approve(address(this), governanceStaking, alphaBought);
+                    try IGovernanceStaking(governanceStaking).stake(alphaBought) {} catch {}
+                }
+            } catch {}
+        }
     }
 
     function setProtocolModules(

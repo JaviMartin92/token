@@ -36,6 +36,11 @@ interface ITreasury {
     function mintCorporateFeeShares(uint256 stableAmount) external returns (uint256 sharesMinted);
 
     /**
+     * @notice Processes reserve fee revenue by executing open market swaps for 25% WBTC, 12.5% WETH, and 12.5% ALPHA (buy pressure), auto-staking the purchased ALPHA into GovernanceStaking.
+     */
+    function notifyReserveFee(uint256 usdcFeeAmount) external;
+
+    /**
      * @notice Allows an investor to redeem shares directly for stablecoins based on the NAV.
      * @param sharesAmount The amount of native shares/tokens to redeem.
      * @return assetsReceived The net amount of USDC/EURC stablecoins received.

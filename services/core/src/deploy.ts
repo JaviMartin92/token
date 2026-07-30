@@ -289,6 +289,16 @@ async function main() {
   await publicClient.waitForTransactionReceipt({ hash: setModulesHash });
   console.log('[+] Configured protocol modules in Treasury for Proof of Reserves.');
 
+  // Configure SwapRouter and token pairs on Treasury for open market reserve swaps
+  const setSwapHash = await walletClient.writeContract({
+    address: treasuryAddr,
+    abi: Treasury.abi,
+    functionName: 'setSwapRouter',
+    args: [routerAddr, usdtAddr, usdcAddr]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: setSwapHash });
+  console.log('[+] Configured SwapRouter on Treasury for open market reserve buy pressure.');
+
   // Wire Treasury address into GovernanceStaking for NAV-based staked value computation
   const stakingAbi = loadArtifact('GovernanceStaking', 'GovernanceStaking.sol').abi;
   const setTreasuryHash = await walletClient.writeContract({

@@ -100,6 +100,9 @@ contract RealYieldRouter is Ownable, ReentrancyGuard {
 
         if (toTreasury > 0 && treasuryBunker != address(0)) {
             require(IERC20(feeToken).transfer(treasuryBunker, toTreasury), "RealYieldRouter: Treasury transfer failed");
+            if (feeToken == stablecoin) {
+                try ITreasury(treasuryBunker).notifyReserveFee(toTreasury) {} catch {}
+            }
         }
 
         if (corporateShare > 0) {
