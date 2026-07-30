@@ -103,33 +103,35 @@ export function useWeb3State() {
       try {
         if (CONTRACT_ADDRESSES.CORPORATE_OPEX) {
           opExStaked = await publicClient.readContract({
-            address: CONTRACT_ADDRESSES.STAKING,
-            abi: ABIS.STAKING,
-            functionName: 'stakedBalances',
+            address: CONTRACT_ADDRESSES.TREASURY,
+            abi: ABIS.ERC20,
+            functionName: 'balanceOf',
             args: [CONTRACT_ADDRESSES.CORPORATE_OPEX]
           }) as bigint;
         }
         if (CONTRACT_ADDRESSES.CORPORATE_PROFIT) {
           profitStaked = await publicClient.readContract({
-            address: CONTRACT_ADDRESSES.STAKING,
-            abi: ABIS.STAKING,
-            functionName: 'stakedBalances',
+            address: CONTRACT_ADDRESSES.TREASURY,
+            abi: ABIS.ERC20,
+            functionName: 'balanceOf',
             args: [CONTRACT_ADDRESSES.CORPORATE_PROFIT]
           }) as bigint;
         }
       } catch (e) {}
 
       const corporateTotal = opExStaked + profitStaked;
-      const communityTotal = rawTotalStaked > corporateTotal ? rawTotalStaked - corporateTotal : rawTotalStaked;
+      const communityTotal = rawTotalStaked;
+      const globalLockedTotal = rawTotalStaked + corporateTotal;
 
       setCorporateStakedSupply(parseFloat(formatEther(corporateTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
       setCommunityStakedSupply(parseFloat(formatEther(communityTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+      setTotalStakedSupply(parseFloat(formatEther(globalLockedTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
       const netCirculating = rawTotalSupply > rawBurned ? rawTotalSupply - rawBurned : 0n;
       setCirculatingSupply(parseFloat(formatEther(netCirculating)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
       if (netCirculating > 0n) {
-        const ratio = (Number(rawTotalStaked * 10000n / netCirculating) / 100).toFixed(2);
+        const ratio = (Number(globalLockedTotal * 10000n / netCirculating) / 100).toFixed(2);
         setStakingRatioPct(`${ratio}%`);
       } else {
         setStakingRatioPct('0.00%');
