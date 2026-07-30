@@ -113,7 +113,14 @@ export function useWeb3State() {
         }) as bigint;
         const navNum = parseFloat(formatEther(nav));
         setNavValue(navNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-        setNavPerShareUSD(`$${navNum.toFixed(4)} USDC`);
+
+        const netCirculatingNum = parseFloat(formatEther(netCirculating));
+        if (netCirculatingNum > 0) {
+          const navPerShare = (navNum / netCirculatingNum).toFixed(4);
+          setNavPerShareUSD(`$${navPerShare} USDC`);
+        } else {
+          setNavPerShareUSD('$1.0000 USDC');
+        }
       } catch (e) {}
 
       try {
