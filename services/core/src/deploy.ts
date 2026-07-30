@@ -209,6 +209,16 @@ async function main() {
   await publicClient.waitForTransactionReceipt({ hash: setGovStakingHash });
   console.log('[+] Configured GovernanceStaking on VestedDiscountVault.');
 
+  // Configure VestedDiscountVault parameters for 5%/10%/15%/20%/25% discount scale
+  const setParamsHash = await walletClient.writeContract({
+    address: vestedVaultAddr,
+    abi: vaultArtifact.abi,
+    functionName: 'setVaultParameters',
+    args: [500n, 2000n, 0n, 100n] // 500 BPS base yield (5%/yr), 0 BPS subsidy
+  });
+  await publicClient.waitForTransactionReceipt({ hash: setParamsHash });
+  console.log('[+] Configured VestedDiscountVault discount scale (5%/10%/15%/20%/25%).');
+
   // 13. Deploy P2PLendingMarket
   const p2pArtifact = loadArtifact('P2PLendingMarket', 'P2PLendingMarket.sol');
   const p2pTx = await walletClient.deployContract({

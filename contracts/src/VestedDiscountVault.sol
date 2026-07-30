@@ -34,10 +34,10 @@ contract VestedDiscountVault is Ownable, ReentrancyGuard {
         circuitBreaker = _circuitBreaker;
     }
 
-    uint256 public baseYieldRateBps = 800;   // 8.00% annual yield
-    uint256 public haircutBps = 2000;         // 20% haircut on yield
-    uint256 public subsidyBps = 200;          // 2% treasury subsidy
-    uint256 public govTokenBonusBps = 100;    // 1% extra bonus for gov token holders
+    uint256 public baseYieldRateBps = 500;   // 5.00% per year (5% 1yr, 10% 2yr, 15% 3yr, 20% 4yr, 25% 5yr)
+    uint256 public haircutBps = 2000;        // 20% haircut on yield
+    uint256 public subsidyBps = 0;           // 0% base subsidy
+    uint256 public govTokenBonusBps = 100;   // 1% extra bonus for gov token holders
 
     uint256 public constant REFERRAL_REWARD_BPS = 150;  // 1.5% referral reward
     uint256 public constant RAGEQUIT_PENALTY_BPS = 1500; // 15%
@@ -205,8 +205,8 @@ contract VestedDiscountVault is Ownable, ReentrancyGuard {
 
         // Ensure VestedVault has enough stablecoins to execute payouts by requesting reimbursement from Treasury
         uint256 currentBal = IERC20(stablecoin).balanceOf(address(this));
-        if (currentBal < pos.discountedPricePaid && treasuryBunker != address(0) && treasuryBunker.code.length > 0) {
-            uint256 needed = pos.discountedPricePaid - currentBal;
+        if (currentBal < userReturn && treasuryBunker != address(0) && treasuryBunker.code.length > 0) {
+            uint256 needed = userReturn - currentBal;
             ITreasury(treasuryBunker).releaseVaultPayout(address(this), needed);
         }
 
