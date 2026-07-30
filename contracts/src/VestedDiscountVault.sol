@@ -283,9 +283,10 @@ contract VestedDiscountVault is Ownable, ReentrancyGuard {
                         if (elapsed >= totalDuration) {
                             totalLiabilityUSD += pos.principalAmount;
                         } else {
-                            uint256 discountGain = pos.principalAmount > pos.discountedPricePaid ? pos.principalAmount - pos.discountedPricePaid : 0;
-                            uint256 accrued = (discountGain * elapsed) / totalDuration;
-                            totalLiabilityUSD += (pos.discountedPricePaid + accrued);
+                            uint256 netCapitalReceived = (pos.discountedPricePaid * 9850) / 10000;
+                            uint256 totalLiabilityGrowth = pos.principalAmount > netCapitalReceived ? pos.principalAmount - netCapitalReceived : 0;
+                            uint256 accrued = (totalLiabilityGrowth * elapsed) / totalDuration;
+                            totalLiabilityUSD += (netCapitalReceived + accrued);
                         }
                     }
                 }

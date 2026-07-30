@@ -126,10 +126,7 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
             </tbody>
           </table>
 
-          {/* Transparency Note */}
-          <div style={{ marginTop: '0.8rem', padding: '0.5rem 0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)', fontSize: '0.72rem', color: '#94a3b8', lineHeight: 1.4 }}>
-            💡 <strong>Nota de Transparencia PoR:</strong> Las nuevas emisiones de bonos vestados ingresan respaldadas al 100.00% en Valor Presente Neto (NPV 1:1). Las micro-variaciones decimales reflejan la dilución proporcional de superávits o comisiones previas.
-          </div>
+
 
           {/* Dedicated Section: Treasury Active Loans & Overcollateralized Escrow Reserves */}
           <div style={{ marginTop: '0.9rem', background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(15, 23, 42, 0.5) 100%)', border: '1px solid rgba(168, 85, 247, 0.25)', padding: '0.85rem', borderRadius: '12px' }}>
