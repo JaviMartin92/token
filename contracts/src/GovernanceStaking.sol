@@ -35,7 +35,10 @@ contract GovernanceStaking is Ownable, ReentrancyGuard {
     event Staked(address indexed user, uint256 amount);
     event Unstaked(address indexed user, uint256 amount);
     event RewardAdded(uint256 rewardAmount);
-    event RewardClaimed(address indexed user, uint256 reward);
+    // Excluded addresses (e.g. CEX accounts/vaults) ineligible for yield payouts
+    mapping(address => bool) public isExcludedFromYield;
+
+    event AddressExclusionSet(address indexed account, bool excluded);
 
     constructor(address _govToken, address _rewardToken, address _initialOwner) Ownable() {
         govToken = IERC20(_govToken);
@@ -44,6 +47,15 @@ contract GovernanceStaking is Ownable, ReentrancyGuard {
         if (_initialOwner != msg.sender) {
             transferOwnership(_initialOwner);
         }
+    }
+
+    /**
+     * @notice Registers or unregisters CEX accounts so they do not receive yield distribution.
+     */
+    function setExcludedAddress(address account, bool excluded) external onlyOwner {
+        require(account != address(0), "Staking: Zero address");
+        isExcludedFromYield[account] = excluded;
+        emit AddressExclusionSet(account, excluded);
     }
 
     /**

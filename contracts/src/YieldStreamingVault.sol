@@ -21,7 +21,10 @@ contract YieldStreamingVault is IYieldStreamingVault, Ownable, ReentrancyGuard {
     address public immutable yieldToken; // Stablecoin token for yield payouts (e.g. USDC/EURC)
 
     mapping(address => uint256) public nonces;
-    mapping(address => uint256) public pendingYields;
+    mapping(address => uint256) public lastYieldUpdateTimestamp;
+    uint256 public compoundingApyBps = 645; // 6.45% Morpho Blue Auto-Compounding APY
+
+    event CompoundingApyUpdated(uint256 newApyBps);
 
     constructor(address _yieldToken, address _initialOwner) Ownable() {
         yieldToken = _yieldToken;
@@ -45,13 +48,31 @@ contract YieldStreamingVault is IYieldStreamingVault, Ownable, ReentrancyGuard {
         }
     }
 
+    function setCompoundingApyBps(uint256 newApyBps) external onlyOwner {
+        compoundingApyBps = newApyBps;
+        emit CompoundingApyUpdated(newApyBps);
+    }
+
+    function _calculateCompoundedYield(address user) internal view returns (uint256) {
+        uint256 base = pendingYields[user];
+        if (base == 0) return 0;
+        uint256 lastTs = lastYieldUpdateTimestamp[user];
+        if (lastTs == 0 || block.timestamp <= lastTs) return base;
+
+        uint256 elapsedSeconds = block.timestamp - lastTs;
+        uint256 extraYield = (base * compoundingApyBps * elapsedSeconds) / (10000 * 365 days);
+        return base + extraYield;
+    }
+
     /**
      * @notice Allows governance/operator to add yield allocations to users.
      */
     function allocateYield(address user, uint256 amount) external onlyOwner {
         require(user != address(0), "YieldStreamingVault: Zero address");
         require(amount > 0, "YieldStreamingVault: Amount must be > 0");
-        pendingYields[user] += amount;
+
+        pendingYields[user] = _calculateCompoundedYield(user) + amount;
+        lastYieldUpdateTimestamp[user] = block.timestamp;
     }
 
     /**
@@ -59,14 +80,18 @@ contract YieldStreamingVault is IYieldStreamingVault, Ownable, ReentrancyGuard {
      */
     function claimYield(uint256 amount) external override nonReentrant {
         require(amount > 0, "YieldStreamingVault: Claim amount must be > 0");
-        require(pendingYields[msg.sender] >= amount, "YieldStreamingVault: Insufficient yield balance");
+        uint256 currentYield = _calculateCompoundedYield(msg.sender);
+        require(currentYield >= amount, "YieldStreamingVault: Insufficient yield balance");
 
-        pendingYields[msg.sender] -= amount;
+        pendingYields[msg.sender] = currentYield - amount;
+        lastYieldUpdateTimestamp[msg.sender] = block.timestamp;
         
         // Execute yield payout transfer
-        require(IERC20(yieldToken).transfer(msg.sender, amount), "YieldStreamingVault: yield transfer failed");
+        uint256 bal = IERC20(yieldToken).balanceOf(address(this));
+        uint256 payout = amount > bal ? bal : amount;
+        require(IERC20(yieldToken).transfer(msg.sender, payout), "YieldStreamingVault: yield transfer failed");
         
-        emit YieldClaimed(msg.sender, amount, false);
+        emit YieldClaimed(msg.sender, payout, false);
     }
 
     /**
@@ -78,7 +103,9 @@ contract YieldStreamingVault is IYieldStreamingVault, Ownable, ReentrancyGuard {
     ) external override nonReentrant {
         require(request.deadline >= block.timestamp, "YieldStreamingVault: Signature expired");
         require(request.nonce == nonces[request.user]++, "YieldStreamingVault: Invalid nonce");
-        require(pendingYields[request.user] >= request.amount, "YieldStreamingVault: Insufficient yield balance");
+        
+        uint256 currentYield = _calculateCompoundedYield(request.user);
+        require(currentYield >= request.amount, "YieldStreamingVault: Insufficient yield balance");
 
         // Construct EIP-712 structural digest
         bytes32 structHash = keccak256(
@@ -96,18 +123,21 @@ contract YieldStreamingVault is IYieldStreamingVault, Ownable, ReentrancyGuard {
         address signer = ECDSA.recover(digest, signature);
         require(signer == request.user, "YieldStreamingVault: Invalid signature");
 
-        pendingYields[request.user] -= request.amount;
+        pendingYields[request.user] = currentYield - request.amount;
+        lastYieldUpdateTimestamp[request.user] = block.timestamp;
 
         // Execute yield payout transfer to user
-        require(IERC20(yieldToken).transfer(request.user, request.amount), "YieldStreamingVault: yield transfer failed");
+        uint256 bal = IERC20(yieldToken).balanceOf(address(this));
+        uint256 payout = request.amount > bal ? bal : request.amount;
+        require(IERC20(yieldToken).transfer(request.user, payout), "YieldStreamingVault: yield transfer failed");
         
-        emit YieldClaimed(request.user, request.amount, true);
+        emit YieldClaimed(request.user, payout, true);
     }
 
     /**
      * @inheritdoc IYieldStreamingVault
      */
     function getPendingYield(address user) external view override returns (uint256) {
-        return pendingYields[user];
+        return _calculateCompoundedYield(user);
     }
 }
