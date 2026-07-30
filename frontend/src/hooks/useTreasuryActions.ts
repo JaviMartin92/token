@@ -81,7 +81,7 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
       const net = (num * 0.995).toFixed(2);
       const feeReserves = (num * 0.0025).toFixed(2);
       const feeOps = (num * 0.00125).toFixed(2);
-      const feeYield = (num * 0.00125).toFixed(2);
+      const feeProfit = (num * 0.00125).toFixed(2);
 
       requestConfirmation({
         title: 'Depósito de USDC en Tesorería',
@@ -97,13 +97,11 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
           { label: 'Monto Bruto Ingresado', value: `$${num.toFixed(2)} USDC` },
           { label: 'Comisión de Entrada (0.50%)', value: `$${fee} USDC`, badge: 'Reparto 50%/25%/25%' },
           { label: 'Destino 50% Comisión (Reservas)', value: `$${feeReserves} USDC (Inyectado a Reservas Tesorería)` },
-          { label: 'Destino 25% Comisión (Gastos Ops)', value: `$${feeOps} USDC (Billetera Operativa)` },
-          { label: 'Destino 25% Comisión (Real Yield)', value: `$${feeYield} USDC (Pool de Stakers Real Yield)` },
-          { label: 'Monto Neto Acreditado a Reservas', value: `$${net} USDC (Acuña ${net} ALPHA Shares)` },
-          { label: 'Solvencia PoR On-Chain', value: '100.00% Collateral Ratio', badge: 'Solvente 1:1' }
+          { label: 'Destino 25% Comisión (OpEx Vault)', value: `$${feeOps} USDC (CorporateOpExVault Staked ALPHA)` },
+          { label: 'Destino 25% Comisión (Profit Vault)', value: `$${feeProfit} USDC (CorporateProfitVault Staked ALPHA)` }
         ],
-        warningNote: 'Las participaciones ALPHA otorgan propiedad directa sobre el pool de reservas líquidas de la tesorería.',
-        confirmButtonText: '✍️ Confirmar y Depositar',
+        warningNote: 'El 80% de tu depósito en USDC ingresará automáticamente a Morpho Yield Vault Adapter para APY pasivo, y el 20% se mantendrá como búfer líquido para préstamos P2P.',
+        confirmButtonText: '✍️ Confirmar Depósito',
         confirmButtonColor: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
       }, executeDeposit);
     } else {
@@ -114,26 +112,26 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
   const executeRedeem = async () => {
     if (!redeemAmount) return;
     try {
-      addLog(`Rescatando ${redeemAmount} ALPHA shares por USDC...`);
-      addToast('info', 'Rescate Shares', `Rescatando ${redeemAmount} ALPHA...`);
+      addLog(`Rescatando ${redeemAmount} ALPHA shares en Tesorería...`);
+      addToast('info', 'Rescate Tesorería', 'Enviando transacción...');
       const amountWei = parseEther(redeemAmount);
       const client = getWalletClient(activeKey);
 
-      const redHash = await client.writeContract({
+      const tx = await client.writeContract({
         address: CONTRACT_ADDRESSES.TREASURY,
         abi: ABIS.TREASURY,
         functionName: 'redeem',
         args: [amountWei]
       });
-      await publicClient.waitForTransactionReceipt({ hash: redHash });
-      addLog(`Rescate completado. USDC recibido.`);
-      addToast('success', 'Rescate Exitoso', `Tokens canjeados a valor NAV`);
+      await publicClient.waitForTransactionReceipt({ hash: tx });
+      addLog(`Rescate completado. USDC transferidos a tu billetera.`);
+      addToast('success', 'Rescate Completado', 'USDC abonados a tu billetera');
       setRedeemAmount('');
       await fetchData();
       setTimeout(fetchData, 500);
     } catch (err: any) {
       addLog(`[Error] Rescate falló: ${err.message || err}`);
-      addToast('error', 'Error Rescate', err.message || 'Fallo en rescate');
+      addToast('error', 'Error Rescate', err.message || 'Error al rescatar');
     }
   };
 
@@ -145,25 +143,30 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
     if (requestConfirmation) {
       const fee = (num * 0.01).toFixed(2);
       const net = (num * 0.99).toFixed(2);
+      const feeReserves = (num * 0.005).toFixed(2);
+      const feeOps = (num * 0.0025).toFixed(2);
+      const feeProfit = (num * 0.0025).toFixed(2);
 
       requestConfirmation({
-        title: 'Rescate de Shares por USDC',
-        actionIcon: '💎',
-        typeBadge: 'Canje Directo NAV',
+        title: 'Rescate de ALPHA Shares por USDC',
+        actionIcon: '🏛️',
+        typeBadge: 'Quema de Shares & Salida',
         targetContractName: 'Treasury.sol',
         targetContractAddress: CONTRACT_ADDRESSES.TREASURY,
         inputAmount: `${num.toLocaleString('en-US')}`,
-        inputSymbol: 'ALPHA Shares',
+        inputSymbol: 'ALPHA Shares a Quemat',
         expectedOutput: `$${net}`,
-        expectedOutputSymbol: 'USDC Netos',
+        expectedOutputSymbol: 'USDC Netos Recibidos',
         details: [
-          { label: 'Valor NAV de Canje', value: '$1.00 USD / Share' },
-          { label: 'Quema de Shares', value: `${num} ALPHA se destruyen en contrato` },
-          { label: 'Comisión de Procesamiento Rescate (1.00%)', value: `$${fee} USDC`, badge: 'Retenido en Tesorería' }
+          { label: 'Shares Presentadas para Rescate', value: `${num.toFixed(2)} ALPHA Shares` },
+          { label: 'Comisión de Rescate (1.00%)', value: `$${fee} USDC`, badge: 'Reparto 50%/25%/25%' },
+          { label: 'Destino 50% Comisión (Reservas)', value: `$${feeReserves} USDC (Acrece NAV del Protocolo)` },
+          { label: 'Destino 25% Comisión (OpEx Vault)', value: `$${feeOps} USDC (CorporateOpExVault Staked ALPHA)` },
+          { label: 'Destino 25% Comisión (Profit Vault)', value: `$${feeProfit} USDC (CorporateProfitVault Staked ALPHA)` }
         ],
         warningNote: 'Tus participaciones ALPHA serán quemadas y recibirás el monto neto en USDC a valor NAV.',
-        confirmButtonText: '✍️ Confirmar y Rescatar',
-        confirmButtonColor: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'
+        confirmButtonText: '✍️ Confirmar Rescate',
+        confirmButtonColor: 'linear-gradient(135deg, #eab308 0%, #ca8a04 100%)'
       }, executeRedeem);
     } else {
       executeRedeem();

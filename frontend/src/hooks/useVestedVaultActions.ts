@@ -199,9 +199,9 @@ export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, 
         expectedOutputSymbol: 'Principal Neto Reembolsado en USDC',
         details: [
           { label: 'Penalización por Salida Anticipada', value: '15.00% del Precio Pagado (RAGEQUIT_PENALTY_BPS)', isHighlight: true },
-          { label: 'Desglose 50% Penalización (Reservas)', value: '7.50% Inyectado a Reservas Tesorería (Soporte NAV)' },
-          { label: 'Desglose 25% Penalización (Operaciones)', value: '3.75% a Billetera Operativa' },
-          { label: 'Desglose 25% Penalización (Stakers)', value: '3.75% a Real Yield Pool para Stakers' }
+          { label: 'Destino 50% Penalización (Reservas)', value: '7.50% a Reservas Tesorería (Treasury.sol)' },
+          { label: 'Destino 25% Penalización (OpEx Vault)', value: '3.75% a CorporateOpExVault (Auto-Staked ALPHA)' },
+          { label: 'Destino 25% Penalización (Profit Vault)', value: '3.75% a CorporateProfitVault (Auto-Staked ALPHA)' }
         ],
         warningNote: '¡Atención! El contrato inteligente VestedDiscountVault.sol ejecutará una retención irreversible del 15.00% sobre el valor del bono.',
         confirmButtonText: '⚠️ Confirmar Ragequit (15% Penalty)',

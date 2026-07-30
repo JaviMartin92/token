@@ -67,12 +67,14 @@ export function useStakingActions({ activeKey, account, userAddress, addLog, add
         expectedOutputSymbol: 'Certificado Neto con Derecho a Dividendos USDC',
         details: [
           { label: 'Monto Bruto Ingresado', value: `${num.toLocaleString('en-US')} ALPHA Tokens` },
-          { label: 'Comisión de Entrada a Staking (1.00%)', value: `${fee} ALPHA`, badge: 'Retenido en Pool para Recompensas' },
-          { label: 'Balance Neto Acuñado', value: `${net} stALPHA (Balance Staked On-Chain)`, badge: '100% Reembolsable en Unstake' },
-          { label: 'Derecho a Dividendo Real Yield', value: 'Reparto Pro-Rata del 100% de Comisiones en USDC (1.5% Bonos, 0.5% P2P, 10% Intereses)', badge: 'Cobro en Tiempo Real' },
-          { label: 'Beneficio Extra Desbloqueado', value: 'Descuento Extra Loyalty al Comprar Bonos (+2.00% a +5.00% Bonus Extra)', badge: 'VIP Holder' }
+          { label: 'Comisión de Entrada a Staking (1.00%)', value: `${fee} ALPHA`, badge: 'Reparto 50%/25%/25%' },
+          { label: 'Destino 50% Comisión (Quema Deflacionaria)', value: `${(num * 0.005).toFixed(2)} ALPHA (Quema permanente en Tesorería)`, isHighlight: true },
+          { label: 'Destino 25% Comisión (OpEx Vault)', value: `${(num * 0.0025).toFixed(2)} ALPHA (CorporateOpExVault Auto-Staked)` },
+          { label: 'Destino 25% Comisión (Profit Vault)', value: `${(num * 0.0025).toFixed(2)} ALPHA (CorporateProfitVault Auto-Staked)` },
+          { label: 'Balance Neto Acreditado', value: `${net} stALPHA (Balance Staked On-Chain)`, badge: '100% Reembolsable en Unstake' },
+          { label: 'Derecho a Dividendo Real Yield', value: 'Reparto Pro-Rata del 100% de Comisiones en USDC (1.5% Bonos, 0.5% P2P, 10% Intereses)', badge: 'Cobro en Tiempo Real' }
         ],
-        warningNote: 'El contrato inteligente GovernanceStaking.sol deduce un 1.00% de comisión de entrada que se inyecta al fondo global. Recibirás el 99.00% neto en stALPHA.',
+        warningNote: 'El contrato inteligente GovernanceStaking.sol aplica la comisión del 1.00% enviando el 50% a quema permanente (acreciendo el NAV por token) y el 50% a las bóvedas corporativas.',
         confirmButtonText: '✍️ Confirmar y Bloquear Staking',
         confirmButtonColor: 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)'
       }, executeStake);
