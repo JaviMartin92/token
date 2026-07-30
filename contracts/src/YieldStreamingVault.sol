@@ -21,6 +21,7 @@ contract YieldStreamingVault is IYieldStreamingVault, Ownable, ReentrancyGuard {
     address public immutable yieldToken; // Stablecoin token for yield payouts (e.g. USDC/EURC)
 
     mapping(address => uint256) public nonces;
+    mapping(address => uint256) public pendingYields;
     mapping(address => uint256) public lastYieldUpdateTimestamp;
     uint256 public compoundingApyBps = 645; // 6.45% Morpho Blue Auto-Compounding APY
 

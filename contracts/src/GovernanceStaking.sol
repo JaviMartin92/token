@@ -35,6 +35,7 @@ contract GovernanceStaking is Ownable, ReentrancyGuard {
     event Staked(address indexed user, uint256 amount);
     event Unstaked(address indexed user, uint256 amount);
     event RewardAdded(uint256 rewardAmount);
+    event RewardClaimed(address indexed user, uint256 reward);
     // Excluded addresses (e.g. CEX accounts/vaults) ineligible for yield payouts
     mapping(address => bool) public isExcludedFromYield;
 
