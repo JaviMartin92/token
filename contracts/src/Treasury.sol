@@ -485,7 +485,7 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
         uint256 morphoStables = morphoAdapter != address(0) ? IERC20(redemptionToken).balanceOf(morphoAdapter) * mult : 0;
         uint256 vaultStables = vestedVault != address(0) ? IERC20(redemptionToken).balanceOf(vestedVault) * mult : 0;
         uint256 yieldStables = realYieldRouter != address(0) ? IERC20(redemptionToken).balanceOf(realYieldRouter) * mult : 0;
-        uint256 stakingStables = governanceStaking != address(0) ? balanceOf(governanceStaking) * mult : 0;
+        uint256 stakingStables = governanceStaking != address(0) ? balanceOf(governanceStaking) : 0;
 
         // Note: P2P Lending Market collateral and active loans are user escrow custody,
         // so they are strictly excluded from protocol-owned Treasury NAV reserves.
