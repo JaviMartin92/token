@@ -73,4 +73,19 @@ contract PromotionalIncentiveVault is Ownable, ReentrancyGuard {
         emit RewardDistributed(campaignId, recipient, amount);
         return true;
     }
+
+    /**
+     * @notice Toggles active status of a promotional campaign
+     */
+    function toggleCampaign(uint256 campaignId, bool isActive) external onlyOwner {
+        require(campaignId > 0 && campaignId <= campaignCount, "PromoVault: Invalid campaign ID");
+        campaigns[campaignId].isActive = isActive;
+    }
+
+    /**
+     * @notice Returns total campaign count
+     */
+    function getCampaignCount() external view returns (uint256) {
+        return campaignCount;
+    }
 }

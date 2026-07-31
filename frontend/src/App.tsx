@@ -13,6 +13,7 @@ import { VestedVaults } from './components/VestedVaults.js';
 import { P2PMarketplace } from './components/P2PMarketplace.js';
 import { GovernanceStakingUI } from './components/GovernanceStakingUI.js';
 import { AdminControlPanel } from './components/AdminControlPanel.js';
+import { GovernanceCommandCenter } from './components/GovernanceCommandCenter.js';
 import { ActivityLog } from './components/ActivityLog.js';
 import { NotificationToast, type ToastMessage } from './components/NotificationToast.js';
 import { ReferralModal } from './components/ReferralModal.js';
@@ -306,6 +307,12 @@ export default function App() {
             onClaimYield={staking.handleClaimYield}
             onGaslessClaim={staking.handleGaslessClaim}
             onSetPayoutPreference={staking.handleSetPayoutPreference}
+          />
+
+          <GovernanceCommandCenter
+            web3Data={web3}
+            adminActions={admin}
+            isAdmin={web3.activeKey === web3.ADMIN_KEY}
           />
 
           <AdminControlPanel

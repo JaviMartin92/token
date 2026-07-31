@@ -293,6 +293,51 @@ export function useAdminActions({ activeKey, snapshotId, setSnapshotId, addLog, 
     }
   };
 
+  const executeCreateCampaign = async (name: string, amount: string) => {
+    try {
+      addLog(`Creando campaña promocional "${name}" por $${amount} ALPHA...`);
+      const client = getWalletClient(activeKey);
+      const amountWei = parseEther(amount);
+      const tx = await client.writeContract({
+        address: CONTRACT_ADDRESSES.PROMOTIONAL_VAULT,
+        abi: [{ name: 'createCampaign', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'name', type: 'string' }, { name: 'rewardAmount', type: 'uint256' }], outputs: [{ name: 'campaignId', type: 'uint256' }] }],
+        functionName: 'createCampaign',
+        args: [name, amountWei]
+      });
+      await publicClient.waitForTransactionReceipt({ hash: tx });
+      addLog(`¡Campaña "${name}" creada con éxito on-chain!`);
+      addToast('success', 'Campaña Creada', `Evento "${name}" activado`);
+      fetchData();
+    } catch (err: any) {
+      addLog(`[Error] Creación de campaña falló: ${err.message || err}`);
+    }
+  };
+
+  const handleCreateCampaign = (name: string, amount: string) => {
+    if (!name || !amount) return;
+    if (requestConfirmation) {
+      requestConfirmation({
+        title: `Crear Campaña Promocional: ${name}`,
+        actionIcon: '🎁',
+        typeBadge: 'Incentivo de Gobernanza',
+        targetContractName: 'PromotionalIncentiveVault.sol',
+        targetContractAddress: CONTRACT_ADDRESSES.PROMOTIONAL_VAULT,
+        inputAmount: `${amount} ALPHA`,
+        inputSymbol: 'Presupuesto Promocional',
+        expectedOutput: 'Campaña Activa',
+        expectedOutputSymbol: 'Promoción On-Chain',
+        details: [
+          { label: 'Nombre de la Campaña', value: name },
+          { label: 'Fondo Asignado', value: `${amount} ALPHA` }
+        ],
+        confirmButtonText: '✍️ Confirmar y Crear Campaña',
+        confirmButtonColor: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)'
+      }, () => executeCreateCampaign(name, amount));
+    } else {
+      executeCreateCampaign(name, amount);
+    }
+  };
+
   return {
     injectionAmount,
     setInjectionAmount,
@@ -311,6 +356,7 @@ export function useAdminActions({ activeKey, snapshotId, setSnapshotId, addLog, 
     handleSimulateDrop,
     handleResetBreaker,
     handleExecuteTWAP,
-    handleResetBlockchain
+    handleResetBlockchain,
+    handleCreateCampaign
   };
 }
