@@ -32,8 +32,8 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
     reserveBreakdown
   } = web3Data;
 
-  const totalAssetsVal = parseFloat(proofOfReserves.totalAssetsUSD || '0');
-  const totalLiabVal = parseFloat(proofOfReserves.totalLiabilitiesUSD || '0');
+  const totalAssetsVal = parseFloat(proofOfReserves?.totalAssetsUSD || '0');
+  const totalLiabVal = parseFloat(proofOfReserves?.totalLiabilitiesUSD || '0');
   const solvencyRatio = totalLiabVal > 0 ? ((totalAssetsVal / totalLiabVal) * 100).toFixed(2) : '100.00';
 
   return (
