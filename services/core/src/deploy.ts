@@ -415,7 +415,7 @@ async function main() {
   const promoTx = await walletClient.deployContract({
     abi: promoArtifact.abi,
     bytecode: promoArtifact.bytecode.object,
-    args: [usdcAddr, account.address]
+    args: [treasuryAddr, account.address]
   });
   const promoAddr = (await publicClient.waitForTransactionReceipt({ hash: promoTx })).contractAddress!;
   console.log(`[+] PromotionalIncentiveVault Contract deployed at: ${promoAddr}`);
