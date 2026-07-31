@@ -361,39 +361,6 @@ async function main() {
     { name: 'mint', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'to', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ name: '', type: 'bool' }] }
   ] as const;
 
-  const mintUsdcHash = await walletClient.writeContract({
-    address: usdcAddr,
-    abi: erc20Abi,
-    functionName: 'mint',
-    args: [account.address, 100000n * 10n**6n]
-  });
-  await publicClient.waitForTransactionReceipt({ hash: mintUsdcHash });
-
-  const approveUsdcHash = await walletClient.writeContract({
-    address: usdcAddr,
-    abi: erc20Abi,
-    functionName: 'approve',
-    args: [treasuryAddr, 100000n * 10n**6n]
-  });
-  await publicClient.waitForTransactionReceipt({ hash: approveUsdcHash });
-
-  const depRouterHash = await walletClient.writeContract({
-    address: treasuryAddr,
-    abi: Treasury.abi,
-    functionName: 'deposit',
-    args: [100000n * 10n**6n]
-  });
-  await publicClient.waitForTransactionReceipt({ hash: depRouterHash });
-
-  const transferRouterHash = await walletClient.writeContract({
-    address: treasuryAddr,
-    abi: Treasury.abi,
-    functionName: 'transfer',
-    args: [routerAddr, parseEther('99500')]
-  });
-  await publicClient.waitForTransactionReceipt({ hash: transferRouterHash });
-  console.log('[+] Pre-funded MockSwapRouter with 99,500 ALPHA liquidity backed 1:1 by $100,000 USDC Treasury reserves.');
-
   // Pre-fund MockSwapRouter with WBTC and WETH tokens for swaps
   const mintWbtcRouter = await walletClient.writeContract({
     address: wbtcAddr,
@@ -410,7 +377,7 @@ async function main() {
     args: [routerAddr, 1000n * 10n**18n]
   });
   await publicClient.waitForTransactionReceipt({ hash: mintWethRouter });
-  console.log('[+] Pre-funded MockSwapRouter with ALPHA, WBTC, and WETH liquidity for DEX market buy-orders.');
+  console.log('[+] Protocol initialized 100% clean at State 0 ($0.00 USD Reserves, 0 ALPHA Supply).');
 
   // Wire Treasury address into GovernanceStaking for NAV-based staked value computation
   const stakingAbi = loadArtifact('GovernanceStaking', 'GovernanceStaking.sol').abi;
