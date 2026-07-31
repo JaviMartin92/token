@@ -485,7 +485,7 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
         uint256 morphoStables = morphoAdapter != address(0) ? IERC20(redemptionToken).balanceOf(morphoAdapter) * mult : 0;
         uint256 vaultStables = vestedVault != address(0) ? IERC20(redemptionToken).balanceOf(vestedVault) * mult : 0;
         uint256 yieldStables = realYieldRouter != address(0) ? IERC20(redemptionToken).balanceOf(realYieldRouter) * mult : 0;
-        uint256 stakingStables = governanceStaking != address(0) ? balanceOf(governanceStaking) : 0;
+        uint256 stakingStables = governanceStaking != address(0) ? IERC20(redemptionToken).balanceOf(governanceStaking) * mult : 0;
 
         // Note: P2P Lending Market collateral and active loans are user escrow custody,
         // so they are strictly excluded from protocol-owned Treasury NAV reserves.
@@ -534,33 +534,10 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
         uint256 treasuryNav = getNAV();
         uint256 mult = (10**(18 - redemptionTokenDecimals));
 
-        // Native ALPHA Staking asset value = staked ALPHA tokens valued at current NAV per share
-        // + USDC rewards accumulated in the pool.
-        uint256 stakedAlphaValue = 0;
-        uint256 stakingRewardBal = 0;
-        if (governanceStaking != address(0) && governanceStaking.code.length > 0) {
-            uint256 totalGovStakedTokens = balanceOf(governanceStaking);
-            if (totalGovStakedTokens == 0) {
-                try IGovernanceStaking(governanceStaking).totalStaked() returns (uint256 staked) {
-                    totalGovStakedTokens = staked;
-                } catch {}
-            }
-            uint256 supply = totalSupply();
-            if (supply > 0 && totalGovStakedTokens > 0) {
-                stakedAlphaValue = (totalGovStakedTokens * treasuryNav) / supply;
-            }
-            try IGovernanceStaking(governanceStaking).totalRewardBalance() returns (uint256 rBal) {
-                stakingRewardBal = rBal * mult;
-            } catch {
-                stakingRewardBal = IERC20(redemptionToken).balanceOf(governanceStaking) * mult;
-            }
-        }
-
-        // NOTE: opsWallet, corporateRevenueWallet, and P2P Escrow Collateral are NOT included in protocol assets.
-        // Those balances belong to external accounts or user escrow custody and do not inflate protocol PoR.
-        totalAssetsUSD = treasuryNav + stakingRewardBal;
+        // Total Assets USD = Full Treasury NAV
+        totalAssetsUSD = treasuryNav;
         
-        // Total Liabilities = Native ALPHA Shares outstanding + Vested Vault NPV obligations
+        // Total Liabilities USD = Outstanding ALPHA Share Obligation (backed 1:1 by NAV) + Vested Vault NPV obligations
         uint256 vaultLiabilities = 0;
         if (vestedVault != address(0) && vestedVault.code.length > 0) {
             try IVestedDiscountVault(vestedVault).totalPresentLiability() returns (uint256 liability) {
@@ -572,10 +549,10 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
             }
         }
 
-        totalLiabilitiesUSD = totalSupply() + vaultLiabilities;
+        totalLiabilitiesUSD = treasuryNav + vaultLiabilities;
 
         if (totalLiabilitiesUSD == 0) {
-            collateralRatioBps = totalAssetsUSD > 0 ? 10000 : 10000;
+            collateralRatioBps = 10000;
         } else {
             collateralRatioBps = (totalAssetsUSD * 10000) / totalLiabilitiesUSD;
         }
