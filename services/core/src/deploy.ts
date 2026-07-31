@@ -377,21 +377,22 @@ async function main() {
   });
   await publicClient.waitForTransactionReceipt({ hash: approveUsdcHash });
 
-  const mintRouterHash = await walletClient.writeContract({
+  const depRouterHash = await walletClient.writeContract({
     address: treasuryAddr,
     abi: Treasury.abi,
-    functionName: 'mintCorporateFeeShares',
+    functionName: 'deposit',
     args: [100000n * 10n**6n]
   });
-  await publicClient.waitForTransactionReceipt({ hash: mintRouterHash });
+  await publicClient.waitForTransactionReceipt({ hash: depRouterHash });
 
   const transferRouterHash = await walletClient.writeContract({
     address: treasuryAddr,
     abi: Treasury.abi,
     functionName: 'transfer',
-    args: [routerAddr, parseEther('100000')]
+    args: [routerAddr, parseEther('99500')]
   });
   await publicClient.waitForTransactionReceipt({ hash: transferRouterHash });
+  console.log('[+] Pre-funded MockSwapRouter with 99,500 ALPHA liquidity backed 1:1 by $100,000 USDC Treasury reserves.');
 
   // Pre-fund MockSwapRouter with WBTC and WETH tokens for swaps
   const mintWbtcRouter = await walletClient.writeContract({

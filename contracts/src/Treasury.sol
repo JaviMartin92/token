@@ -481,14 +481,15 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
         // 1. Stablecoins in Treasury address
         uint256 treasuryStables = IERC20(redemptionToken).balanceOf(address(this)) * mult;
         
-        // 2. Stablecoins in MorphoYieldVaultAdapter + VestedDiscountVault + RealYieldRouter
+        // 2. Stablecoins in MorphoYieldVaultAdapter + VestedDiscountVault + RealYieldRouter + GovernanceStaking
         uint256 morphoStables = morphoAdapter != address(0) ? IERC20(redemptionToken).balanceOf(morphoAdapter) * mult : 0;
         uint256 vaultStables = vestedVault != address(0) ? IERC20(redemptionToken).balanceOf(vestedVault) * mult : 0;
         uint256 yieldStables = realYieldRouter != address(0) ? IERC20(redemptionToken).balanceOf(realYieldRouter) * mult : 0;
+        uint256 stakingStables = governanceStaking != address(0) ? balanceOf(governanceStaking) * mult : 0;
 
         // Note: P2P Lending Market collateral and active loans are user escrow custody,
         // so they are strictly excluded from protocol-owned Treasury NAV reserves.
-        totalNAVUSD = treasuryStables + morphoStables + vaultStables + yieldStables;
+        totalNAVUSD = treasuryStables + morphoStables + vaultStables + yieldStables + stakingStables;
 
         // 3. Add values of tracked assets (WBTC, WETH, etc.) using Chainlink oracles
         for (uint256 i = 0; i < trackedAssets.length; i++) {
