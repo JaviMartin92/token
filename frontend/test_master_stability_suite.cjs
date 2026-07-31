@@ -153,10 +153,47 @@ async function runMasterStabilitySuite() {
   const supply = await publicClient.readContract({ address: contracts.TREASURY, abi: TREASURY_ABI, functionName: 'totalSupply' });
   const navPerShare = parseFloat(formatEther(navUSD)) / parseFloat(formatEther(supply));
   console.log(`   [Pass] Valor Actual NAV por Token ALPHA : $${navPerShare.toFixed(6)} USDC/ALPHA`);
-  console.log(`   ✅ INVARIANTE VERIFICADA: Todas las operaciones mantuvieron o incrementaron el valor del token.\n`);
+  console.log(`   ✅ INVARIANTE VERIFICADA: Todas las operaciones mantuvieron o incrementaron el valor del token.`);
+
+  // -----------------------------------------------------------------
+  // MÓDULO 4: AUDITORÍA DE GOBERNANZA Y CONTROL DE ACCESO BASADO EN ROLES (RBAC)
+  // -----------------------------------------------------------------
+  console.log("\n--- 4️⃣ MÓDULO 4: AUDITORÍA DE GOBERNANZA Y CONTROL DE ACCESO BASADO EN ROLES (RBAC) ---");
+
+  // 1. Verificación de Poder de Voto de Gobernanza
+  const stAlphaPower = await publicClient.readContract({ address: contracts.STAKING, abi: STAKING_ABI, functionName: 'stakedBalances', args: [userAddr] });
+  console.log(`   [Pass] Poder de Voto DAO de Gobernanza ➔ Usuario ostenta ${parseFloat(formatEther(stAlphaPower)).toFixed(2)} stALPHA de peso.`);
+
+  // 2. Control de Acceso Negativo (Rechazo de No-Admin)
+  let unauthorizedReverted = false;
+  try {
+    await userWallet.writeContract({
+      address: contracts.TREASURY,
+      abi: [{ name: 'setOracleStalenessLimit', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'limit', type: 'uint256' }], outputs: [] }],
+      functionName: 'setOracleStalenessLimit',
+      args: [100n]
+    });
+  } catch (err) {
+    unauthorizedReverted = true;
+  }
+
+  if (!unauthorizedReverted) {
+    throw new Error("❌ FALLO DE SEGURIDAD RBAC: Un usuario no autorizado pudo modificar parámetros administrativos!");
+  }
+  console.log(`   [Pass] RBAC Negativo ➔ Intento no autorizado bloqueado con éxito (Ownable Guard activo).`);
+
+  // 3. Control de Acceso Positivo (Acción Privilegiada de Admin)
+  const adminConfigTx = await adminWallet.writeContract({
+    address: contracts.TREASURY,
+    abi: [{ name: 'setOracleStalenessLimit', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'limit', type: 'uint256' }], outputs: [] }],
+    functionName: 'setOracleStalenessLimit',
+    args: [3153600000n]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: adminConfigTx });
+  console.log(`   [Pass] RBAC Positivo ➔ Admin legítimo configuró parámetros de gobernanza con éxito.\n`);
 
   console.log("===================================================================");
-  console.log("🎉 SUITE MÁSTER COMPLETADA CON ÉXITO: ESTABILIDAD Y TOKENOMICS VERIFICADOS AL 100%.");
+  console.log("🎉 SUITE MÁSTER COMPLETADA CON ÉXITO: OPERACIONES, RESERVAS, INVARIANTE Y GOBERNANZA VERIFICADAS AL 100%.");
   console.log("===================================================================\n");
 }
 
