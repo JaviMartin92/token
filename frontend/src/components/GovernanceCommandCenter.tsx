@@ -148,25 +148,25 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
               <tbody>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                   <td style={{ padding: '12px 16px', fontWeight: 700, color: '#60a5fa' }}>💵 USDC (Sub-Reserva 80/20)</td>
-                  <td style={{ padding: '12px 16px' }}>${parseFloat(reserveBreakdown.usdcUsd).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                  <td style={{ padding: '12px 16px' }}>${parseFloat(reserveBreakdown?.usdcUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                   <td style={{ padding: '12px 16px', color: '#4ade80', fontWeight: 700 }}>50.00%</td>
                   <td style={{ padding: '12px 16px', color: '#94a3b8' }}>Morpho Yield (80%) + Líquido (20%)</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                   <td style={{ padding: '12px 16px', fontWeight: 700, color: '#f59e0b' }}>₿ Wrapped Bitcoin (WBTC)</td>
-                  <td style={{ padding: '12px 16px' }}>${parseFloat(reserveBreakdown.wbtcUsd).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                  <td style={{ padding: '12px 16px' }}>${parseFloat(reserveBreakdown?.wbtcUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                   <td style={{ padding: '12px 16px', color: '#4ade80', fontWeight: 700 }}>25.00%</td>
                   <td style={{ padding: '12px 16px', color: '#94a3b8' }}>Compras DEX en Mercado Secundario</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                   <td style={{ padding: '12px 16px', fontWeight: 700, color: '#a855f7' }}>Ξ Wrapped Ethereum (WETH)</td>
-                  <td style={{ padding: '12px 16px' }}>${parseFloat(reserveBreakdown.wethUsd).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                  <td style={{ padding: '12px 16px' }}>${parseFloat(reserveBreakdown?.wethUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                   <td style={{ padding: '12px 16px', color: '#4ade80', fontWeight: 700 }}>12.50%</td>
                   <td style={{ padding: '12px 16px', color: '#94a3b8' }}>Compras DEX en Mercado Secundario</td>
                 </tr>
                 <tr>
                   <td style={{ padding: '12px 16px', fontWeight: 700, color: '#ec4899' }}>🥩 Native ALPHA Staked</td>
-                  <td style={{ padding: '12px 16px' }}>${parseFloat(reserveBreakdown.stakedAlphaUsd).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                  <td style={{ padding: '12px 16px' }}>${parseFloat(reserveBreakdown?.stakedAlphaUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                   <td style={{ padding: '12px 16px', color: '#4ade80', fontWeight: 700 }}>12.50%</td>
                   <td style={{ padding: '12px 16px', color: '#94a3b8' }}>Auto-stake Institucional Governance</td>
                 </tr>
