@@ -17,13 +17,11 @@ if ($LASTEXITCODE -ne 0) {
 
 $ROOT_DIR = Get-Location
 
-# 1. Reset instantaneo de Anvil Blockchain a Estado 0 (Limpia memoria y bloques)
-Write-Host "[1/3] Reiniciando memoria de Anvil Blockchain a Estado 0..." -ForegroundColor Yellow
-docker restart alpha-anvil 2>$null | Out-Null
-if ($LASTEXITCODE -ne 0) {
-  docker run -d --name alpha-anvil -p 8545:8545 --entrypoint anvil ghcr.io/foundry-rs/foundry:latest --host 0.0.0.0 --port 8545 --chain-id 31337 | Out-Null
-}
-Start-Sleep -Seconds 1
+# 1. Reset instantaneo de Anvil Blockchain a Estado 0 (Purga completa de memoria)
+Write-Host "[1/3] Reiniciando memoria de Anvil Blockchain a Estado 0 (Fresh Genesis)..." -ForegroundColor Yellow
+docker rm -f alpha-anvil 2>$null | Out-Null
+docker run -d --name alpha-anvil -p 8545:8545 --entrypoint anvil ghcr.io/foundry-rs/foundry:latest --host 0.0.0.0 --port 8545 --chain-id 31337 | Out-Null
+Start-Sleep -Seconds 2
 
 # 2. Desplegar Smart Contracts y Pre-fondear Billeteras
 Write-Host "[2/3] Desplegando Smart Contracts y Pre-fondeando 10,000 USDC..." -ForegroundColor Yellow
