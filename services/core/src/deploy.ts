@@ -325,6 +325,14 @@ async function main() {
     args: [wethAddr, wethFeedAddr, 18]
   });
   await publicClient.waitForTransactionReceipt({ hash: setTrackedWethHash });
+  // Set oracle staleness limit to 100 years for sandbox time-travel testing
+  const setStalenessHash = await walletClient.writeContract({
+    address: treasuryAddr,
+    abi: Treasury.abi,
+    functionName: 'setOracleStalenessLimit',
+    args: [3153600000n]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: setStalenessHash });
   console.log('[+] Configured USDC, WBTC, and WETH as tracked reserve assets in Treasury.');
 
   // Configure protocol modules for Proof of Reserves
