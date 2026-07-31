@@ -27,6 +27,11 @@ interface IP2PLendingMarket {
     function totalEscrowedCollateralUSD() external view returns (uint256);
 }
 
+interface IMorphoAdapter {
+    function depositStablecoins(uint256 amount) external returns (bool);
+    function totalStablecoinInvested() external view returns (uint256);
+}
+
 /**
  * @title Treasury
  * @notice Manages asset allocation weights, NAV valuation, direct redemption, and deposits.
@@ -287,7 +292,10 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
             uint256 morphoAmount = (netDeposited * 8000) / 10000; // 80%
             uint256 availBal = IERC20(redemptionToken).balanceOf(address(this));
             if (morphoAmount > 0 && availBal >= morphoAmount) {
-                require(IERC20(redemptionToken).transfer(morphoAdapter, morphoAmount), "Treasury: Morpho transfer failed");
+                IERC20(redemptionToken).approve(morphoAdapter, morphoAmount);
+                try IMorphoAdapter(morphoAdapter).depositStablecoins(morphoAmount) {} catch {
+                    IERC20(redemptionToken).transfer(morphoAdapter, morphoAmount);
+                }
             }
         }
 
