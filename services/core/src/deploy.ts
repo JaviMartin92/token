@@ -64,14 +64,46 @@ async function main() {
   const usdtAddr = (await publicClient.waitForTransactionReceipt({ hash: usdtTx })).contractAddress!;
   console.log(`[+] Mock USDT deployed at: ${usdtAddr}`);
 
-  // 2. Deploy Mock Feed
+  const wbtcTx = await walletClient.deployContract({
+    abi: MockERC20.abi,
+    bytecode: MockERC20.bytecode.object,
+    args: ['Wrapped BTC', 'WBTC']
+  });
+  const wbtcAddr = (await publicClient.waitForTransactionReceipt({ hash: wbtcTx })).contractAddress!;
+  console.log(`[+] Mock WBTC deployed at: ${wbtcAddr}`);
+
+  const wethTx = await walletClient.deployContract({
+    abi: MockERC20.abi,
+    bytecode: MockERC20.bytecode.object,
+    args: ['Wrapped Ether', 'WETH']
+  });
+  const wethAddr = (await publicClient.waitForTransactionReceipt({ hash: wethTx })).contractAddress!;
+  console.log(`[+] Mock WETH deployed at: ${wethAddr}`);
+
+  // 2. Deploy Mock Price Feeds (USDC $1.00, WBTC $1.00 per unit value, WETH $1.00 per unit value)
   const feedTx = await walletClient.deployContract({
     abi: MockChainlinkFeed.abi,
     bytecode: MockChainlinkFeed.bytecode.object,
     args: [8, 100000000n]
   });
   const feedAddr = (await publicClient.waitForTransactionReceipt({ hash: feedTx })).contractAddress!;
-  console.log(`[+] Mock Price Feed deployed at: ${feedAddr}`);
+  console.log(`[+] Mock USDC Price Feed deployed at: ${feedAddr}`);
+
+  const wbtcFeedTx = await walletClient.deployContract({
+    abi: MockChainlinkFeed.abi,
+    bytecode: MockChainlinkFeed.bytecode.object,
+    args: [8, 100000000n]
+  });
+  const wbtcFeedAddr = (await publicClient.waitForTransactionReceipt({ hash: wbtcFeedTx })).contractAddress!;
+  console.log(`[+] Mock WBTC Price Feed deployed at: ${wbtcFeedAddr}`);
+
+  const wethFeedTx = await walletClient.deployContract({
+    abi: MockChainlinkFeed.abi,
+    bytecode: MockChainlinkFeed.bytecode.object,
+    args: [8, 100000000n]
+  });
+  const wethFeedAddr = (await publicClient.waitForTransactionReceipt({ hash: wethFeedTx })).contractAddress!;
+  console.log(`[+] Mock WETH Price Feed deployed at: ${wethFeedAddr}`);
 
   // 3. Deploy Mock Swap Router
   const routerTx = await walletClient.deployContract({
@@ -269,15 +301,31 @@ async function main() {
   await publicClient.waitForTransactionReceipt({ hash: setP2pTreasuryHash });
   console.log('[+] Linked Treasury address into P2PLendingMarket for reserve repayments.');
 
-  // Configure tracked asset
-  const setTrackedHash = await walletClient.writeContract({
+  // Configure tracked assets
+  const setTrackedUsdcHash = await walletClient.writeContract({
     address: treasuryAddr,
     abi: Treasury.abi,
     functionName: 'setTrackedAsset',
-    args: [usdcAddr, feedAddr, 18]
+    args: [usdcAddr, feedAddr, 6]
   });
-  await publicClient.waitForTransactionReceipt({ hash: setTrackedHash });
-  console.log('[+] Configured USDC as tracked asset in Treasury.');
+  await publicClient.waitForTransactionReceipt({ hash: setTrackedUsdcHash });
+
+  const setTrackedWbtcHash = await walletClient.writeContract({
+    address: treasuryAddr,
+    abi: Treasury.abi,
+    functionName: 'setTrackedAsset',
+    args: [wbtcAddr, wbtcFeedAddr, 18]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: setTrackedWbtcHash });
+
+  const setTrackedWethHash = await walletClient.writeContract({
+    address: treasuryAddr,
+    abi: Treasury.abi,
+    functionName: 'setTrackedAsset',
+    args: [wethAddr, wethFeedAddr, 18]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: setTrackedWethHash });
+  console.log('[+] Configured USDC, WBTC, and WETH as tracked reserve assets in Treasury.');
 
   // Configure protocol modules for Proof of Reserves
   const setModulesHash = await walletClient.writeContract({
@@ -294,12 +342,12 @@ async function main() {
     address: treasuryAddr,
     abi: Treasury.abi,
     functionName: 'setSwapRouter',
-    args: [routerAddr, usdtAddr, usdcAddr]
+    args: [routerAddr, wbtcAddr, wethAddr]
   });
   await publicClient.waitForTransactionReceipt({ hash: setSwapHash });
-  console.log('[+] Configured SwapRouter on Treasury for open market reserve buy pressure.');
+  console.log('[+] Configured SwapRouter on Treasury for open market WBTC, WETH, and ALPHA reserve buy pressure.');
 
-  // Pre-fund MockSwapRouter with ALPHA liquidity so DEX swaps succeed on-chain
+  // Pre-fund MockSwapRouter with ALPHA, WBTC, and WETH liquidity so DEX swaps succeed on-chain
   const erc20Abi = [
     { name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ name: '', type: 'bool' }] },
     { name: 'mint', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'to', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ name: '', type: 'bool' }] }
@@ -336,7 +384,24 @@ async function main() {
     args: [routerAddr, parseEther('100000')]
   });
   await publicClient.waitForTransactionReceipt({ hash: transferRouterHash });
-  console.log('[+] Pre-funded MockSwapRouter with 100,000 ALPHA liquidity for DEX market buy-orders.');
+
+  // Pre-fund MockSwapRouter with WBTC and WETH tokens for swaps
+  const mintWbtcRouter = await walletClient.writeContract({
+    address: wbtcAddr,
+    abi: erc20Abi,
+    functionName: 'mint',
+    args: [routerAddr, 100n * 10n**18n]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: mintWbtcRouter });
+
+  const mintWethRouter = await walletClient.writeContract({
+    address: wethAddr,
+    abi: erc20Abi,
+    functionName: 'mint',
+    args: [routerAddr, 1000n * 10n**18n]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: mintWethRouter });
+  console.log('[+] Pre-funded MockSwapRouter with ALPHA, WBTC, and WETH liquidity for DEX market buy-orders.');
 
   // Wire Treasury address into GovernanceStaking for NAV-based staked value computation
   const stakingAbi = loadArtifact('GovernanceStaking', 'GovernanceStaking.sol').abi;
@@ -470,6 +535,8 @@ async function main() {
   const addressesJson = {
     USDC: usdcAddr,
     USDT: usdtAddr,
+    WBTC: wbtcAddr,
+    WETH: wethAddr,
     TREASURY: treasuryAddr,
     CORPORATE_CONTRIBUTION: corpAddr,
     ATOMIC_SWAP: swapAddr,

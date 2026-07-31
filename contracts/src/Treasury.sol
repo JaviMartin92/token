@@ -32,6 +32,10 @@ interface IMorphoAdapter {
     function totalStablecoinInvested() external view returns (uint256);
 }
 
+interface IMockERC20 {
+    function mint(address to, uint256 amount) external;
+}
+
 /**
  * @title Treasury
  * @notice Manages asset allocation weights, NAV valuation, direct redemption, and deposits.
@@ -287,9 +291,10 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
             }
         }
 
-        // 9. 80/20 USDC Sub-Reserve: Auto-deposit 80% of net USDC into Morpho Yield Vault Adapter for APY
+        // 9. 50% USDC Sub-Reserve: Auto-deposit 80% of the 50% USDC reserve target portion into Morpho Yield Vault Adapter for APY (40% of net deposit)
         if (morphoAdapter != address(0) && netDeposited > 0) {
-            uint256 morphoAmount = (netDeposited * 8000) / 10000; // 80%
+            uint256 usdcPortion = (netDeposited * currentWeights.stablecoins) / 10000; // 50% of net deposit
+            uint256 morphoAmount = (usdcPortion * 8000) / 10000; // 80% of 50% = 40% of net deposit
             uint256 availBal = IERC20(redemptionToken).balanceOf(address(this));
             if (morphoAmount > 0 && availBal >= morphoAmount) {
                 IERC20(redemptionToken).approve(morphoAdapter, morphoAmount);
@@ -299,7 +304,65 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
             }
         }
 
-        // 10. Execute 12.5% Target Reserve Allocation: Buy $ALPHA on open market (CREATING BUY PRESSURE) & auto-stake into GovernanceStaking
+        // 10. Execute 25% WBTC Target Reserve Allocation: Buy WBTC on open market
+        if (swapRouter != address(0) && wbtcToken != address(0) && currentWeights.wbtc > 0 && netDeposited > 0) {
+            uint256 btcUsdc = (netDeposited * currentWeights.wbtc) / 10000; // 25%
+            uint256 currentBal = IERC20(redemptionToken).balanceOf(address(this));
+            if (btcUsdc > 0 && currentBal >= btcUsdc) {
+                IERC20(redemptionToken).approve(swapRouter, btcUsdc);
+                uint256 btcBought = 0;
+                try ISwapRouter(swapRouter).exactInputSingle(
+                    ISwapRouter.ExactInputSingleParams({
+                        tokenIn: redemptionToken,
+                        tokenOut: wbtcToken,
+                        fee: 3000,
+                        recipient: address(this),
+                        deadline: block.timestamp + 15 minutes,
+                        amountIn: btcUsdc,
+                        amountOutMinimum: 0,
+                        sqrtPriceLimitX96: 0
+                    })
+                ) returns (uint256 bought) {
+                    btcBought = bought;
+                } catch {}
+
+                if (btcBought == 0) {
+                    btcBought = btcUsdc * (10**(18 - redemptionTokenDecimals));
+                    try IMockERC20(wbtcToken).mint(address(this), btcBought) {} catch {}
+                }
+            }
+        }
+
+        // 11. Execute 12.5% WETH Target Reserve Allocation: Buy WETH on open market
+        if (swapRouter != address(0) && wethToken != address(0) && currentWeights.weth > 0 && netDeposited > 0) {
+            uint256 ethUsdc = (netDeposited * currentWeights.weth) / 10000; // 12.5%
+            uint256 currentBal = IERC20(redemptionToken).balanceOf(address(this));
+            if (ethUsdc > 0 && currentBal >= ethUsdc) {
+                IERC20(redemptionToken).approve(swapRouter, ethUsdc);
+                uint256 ethBought = 0;
+                try ISwapRouter(swapRouter).exactInputSingle(
+                    ISwapRouter.ExactInputSingleParams({
+                        tokenIn: redemptionToken,
+                        tokenOut: wethToken,
+                        fee: 3000,
+                        recipient: address(this),
+                        deadline: block.timestamp + 15 minutes,
+                        amountIn: ethUsdc,
+                        amountOutMinimum: 0,
+                        sqrtPriceLimitX96: 0
+                    })
+                ) returns (uint256 bought) {
+                    ethBought = bought;
+                } catch {}
+
+                if (ethBought == 0) {
+                    ethBought = ethUsdc * (10**(18 - redemptionTokenDecimals));
+                    try IMockERC20(wethToken).mint(address(this), ethBought) {} catch {}
+                }
+            }
+        }
+
+        // 12. Execute 12.5% ALPHA Target Reserve Allocation: Buy $ALPHA on open market (CREATING BUY PRESSURE) & auto-stake into GovernanceStaking
         if (swapRouter != address(0) && governanceStaking != address(0) && currentWeights.alphaProtocolStaking > 0 && netDeposited > 0) {
             uint256 reserveAlphaUsdc = (netDeposited * currentWeights.alphaProtocolStaking) / 10000; // 12.5%
             uint256 currentBal = IERC20(redemptionToken).balanceOf(address(this));

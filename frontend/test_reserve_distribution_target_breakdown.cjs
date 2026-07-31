@@ -23,7 +23,8 @@ const ERC20_ABI = [
 const TREASURY_ABI = [
   { name: 'deposit', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'amount', type: 'uint256' }], outputs: [{ name: 'shares', type: 'uint256' }] },
   { name: 'getProofOfReserves', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: 'totalAssetsUSD', type: 'uint256' }, { name: 'totalLiabilitiesUSD', type: 'uint256' }, { name: 'collateralRatioBps', type: 'uint256' }] },
-  { name: 'notifyReserveFee', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'usdcFeeAmount', type: 'uint256' }], outputs: [] }
+  { name: 'notifyReserveFee', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'usdcFeeAmount', type: 'uint256' }], outputs: [] },
+  { name: 'getAssetValue', type: 'function', stateMutability: 'view', inputs: [{ name: 'asset', type: 'address' }, { name: 'feed', type: 'address' }, { name: 'assetDec', type: 'uint8' }], outputs: [{ name: '', type: 'uint256' }] }
 ];
 
 const STAKING_ABI = [
@@ -64,6 +65,8 @@ async function runReserveDistributionAudit() {
   const liquidUsdc = await publicClient.readContract({ address: freshContracts.USDC, abi: ERC20_ABI, functionName: 'balanceOf', args: [freshContracts.TREASURY] });
   const totalUsdcReserves = morphoUsdc + liquidUsdc;
 
+  const wbtcBal = freshContracts.WBTC ? await publicClient.readContract({ address: freshContracts.WBTC, abi: ERC20_ABI, functionName: 'balanceOf', args: [freshContracts.TREASURY] }) : 0n;
+  const wethBal = freshContracts.WETH ? await publicClient.readContract({ address: freshContracts.WETH, abi: ERC20_ABI, functionName: 'balanceOf', args: [freshContracts.TREASURY] }) : 0n;
   const treasuryStakedAlpha = await publicClient.readContract({ address: freshContracts.STAKING, abi: STAKING_ABI, functionName: 'stakedBalances', args: [freshContracts.TREASURY] });
 
   const por = await publicClient.readContract({ address: freshContracts.TREASURY, abi: TREASURY_ABI, functionName: 'getProofOfReserves' });
@@ -72,14 +75,26 @@ async function runReserveDistributionAudit() {
   const usdcUsd = parseFloat(formatUnits(totalUsdcReserves, 6));
   const morphoUsd = parseFloat(formatUnits(morphoUsdc, 6));
   const liquidUsd = parseFloat(formatUnits(liquidUsdc, 6));
+  const wbtcUsd = parseFloat(formatUnits(wbtcBal, 6));
+  const wethUsd = parseFloat(formatUnits(wethBal, 6));
   const alphaStakedUsd = parseFloat(formatEther(treasuryStakedAlpha));
 
-  console.log("📌 TABLA DE DISTRIBUCIÓN REAL DE ACTIVO DE RESERVA ON-CHAIN:");
+  console.log("📌 TABLA DE DISTRIBUCIÓN REAL DE ACTIVOS DE RESERVA ON-CHAIN:");
   console.table({
     "💵 USDC Sub-Reserva Total (50% Target)": {
       "Valor USD Real": `$${usdcUsd.toFixed(2)}`,
       "Ponderación Target": "50.00%",
       "Desglose Interno": `Morpho 80%: $${morphoUsd.toFixed(2)} | Líquido 20%: $${liquidUsd.toFixed(2)}`
+    },
+    "₿ Wrapped Bitcoin WBTC (25% Target)": {
+      "Valor USD Real": `$${wbtcUsd.toFixed(2)}`,
+      "Ponderación Target": "25.00%",
+      "Desglose Interno": `WBTC Comprados en DEX: $${wbtcUsd.toFixed(2)} USD`
+    },
+    "Ξ Wrapped Ethereum WETH (12.5% Target)": {
+      "Valor USD Real": `$${wethUsd.toFixed(2)}`,
+      "Ponderación Target": "12.50%",
+      "Desglose Interno": `WETH Comprados en DEX: $${wethUsd.toFixed(2)} USD`
     },
     "🥩 Native ALPHA Staked (12.5% Target)": {
       "Valor USD Real": `$${alphaStakedUsd.toFixed(2)}`,
