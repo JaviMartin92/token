@@ -508,3 +508,166 @@ h1, h2, h3, h4 {
   border-color: rgba(245, 158, 11, 0.45) !important;
   box-shadow: 0 12px 40px 0 rgba(245, 158, 11, 0.08) !important;
 }
+
+/* ==========================================================================
+   📱 ULTRA-RESPONSIVE MOBILE & TABLET MEDIA QUERIES (MOBILE FIRST ADAPTATION)
+   ========================================================================== */
+
+/* Table Responsiveness Wrapper */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.table-responsive table {
+  min-width: 600px;
+}
+
+/* Tablet Breakpoint (max-width: 1024px) */
+@media (max-width: 1024px) {
+  #root {
+    padding: 1.25rem;
+  }
+  
+  .por-grid, .admin-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+/* Mobile Breakpoint (max-width: 768px) */
+@media (max-width: 768px) {
+  #root {
+    padding: 0.75rem;
+  }
+
+  body {
+    background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.2) 0%, rgba(7, 8, 15, 1) 90%);
+  }
+
+  h1 {
+    font-size: 1.4rem !important;
+  }
+
+  h2 {
+    font-size: 1.2rem !important;
+  }
+
+  h3 {
+    font-size: 1.05rem !important;
+  }
+
+  .glass-panel {
+    padding: 1rem;
+    border-radius: 16px;
+  }
+
+  /* Header Mobile Layout */
+  .header-banner {
+    padding: 1rem !important;
+  }
+
+  .header-brand h1 {
+    font-size: 1.35rem !important;
+  }
+
+  .header-controls {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    width: 100% !important;
+    gap: 0.5rem !important;
+  }
+
+  .header-controls > div {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .header-controls > div:last-child {
+    grid-column: span 2;
+    align-items: center !important;
+  }
+
+  /* Grids to Single Column on Mobile */
+  .por-grid, .admin-grid, .strategy-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  .por-metrics-trio {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+  }
+
+  .por-metric-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0.8rem;
+  }
+
+  .por-metric-label {
+    font-size: 0.8rem;
+  }
+
+  /* Full Width Form Inputs & Touch Targets */
+  .btn-primary, .btn-secondary, .input-glass, .tab-btn {
+    min-height: 44px;
+    font-size: 0.9rem;
+  }
+
+  /* Modal Bottom Sheet on Mobile */
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal-container {
+    max-width: 100%;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    padding: 1.25rem;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.7);
+  }
+
+  /* Tabs Scrollable Container */
+  .tabs-scrollable {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 0.25rem;
+  }
+}
+
+/* Small Mobile Breakpoint (max-width: 480px) */
+@media (max-width: 480px) {
+  #root {
+    padding: 0.5rem;
+  }
+
+  .header-controls {
+    grid-template-columns: 1fr !important;
+  }
+
+  .header-controls > div:last-child {
+    grid-column: span 1;
+  }
+
+  .glass-panel {
+    padding: 0.85rem;
+  }
+
+  .tab-btn {
+    padding: 0.6rem 0.85rem;
+    font-size: 0.85rem;
+  }
+}
