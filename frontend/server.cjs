@@ -36,32 +36,56 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.url.startsWith('/rpc')) {
-    // Proxy RPC request directly to Anvil on port 8545
-    const proxyReq = http.request(
-      {
-        host: ANVIL_HOST,
-        port: ANVIL_PORT,
-        path: '/',
-        method: req.method,
-        headers: {
-          'content-type': req.headers['content-type'] || 'application/json',
-          'host': `${ANVIL_HOST}:${ANVIL_PORT}`
+    let bodyChunks = [];
+    req.on('data', (chunk) => bodyChunks.push(chunk));
+    req.on('end', () => {
+      const bodyBuffer = Buffer.concat(bodyChunks);
+      const hostsToTry = [ANVIL_HOST, 'alpha-anvil', '127.0.0.1', 'localhost'];
+
+      function tryProxy(hostIndex) {
+        if (hostIndex >= hostsToTry.length) {
+          res.writeHead(502, { 'content-type': 'application/json', 'access-control-allow-origin': '*' });
+          res.end(JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32603, message: 'RPC proxy unavailable across all hosts' } }));
+          return;
         }
-      },
-      (proxyRes) => {
-        res.writeHead(proxyRes.statusCode, {
-          'content-type': 'application/json',
-          'access-control-allow-origin': '*'
+
+        const targetHost = hostsToTry[hostIndex];
+        const proxyReq = http.request(
+          {
+            host: targetHost,
+            port: ANVIL_PORT,
+            path: '/',
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json',
+              'content-length': bodyBuffer.length,
+              'host': `${targetHost}:${ANVIL_PORT}`
+            },
+            timeout: 3000
+          },
+          (proxyRes) => {
+            res.writeHead(proxyRes.statusCode, {
+              'content-type': 'application/json',
+              'access-control-allow-origin': '*'
+            });
+            proxyRes.pipe(res);
+          }
+        );
+
+        proxyReq.on('error', (err) => {
+          tryProxy(hostIndex + 1);
         });
-        proxyRes.pipe(res);
+
+        proxyReq.on('timeout', () => {
+          proxyReq.destroy();
+        });
+
+        proxyReq.write(bodyBuffer);
+        proxyReq.end();
       }
-    );
-    proxyReq.on('error', (err) => {
-      console.error('[RPC Proxy Error]:', err.message);
-      res.writeHead(502, { 'content-type': 'application/json', 'access-control-allow-origin': '*' });
-      res.end(JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32603, message: 'Anvil proxy error: ' + err.message } }));
+
+      tryProxy(0);
     });
-    req.pipe(proxyReq);
     return;
   }
 
