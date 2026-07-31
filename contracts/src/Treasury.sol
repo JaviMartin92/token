@@ -297,6 +297,7 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
             uint256 currentBal = IERC20(redemptionToken).balanceOf(address(this));
             if (reserveAlphaUsdc > 0 && currentBal >= reserveAlphaUsdc) {
                 IERC20(redemptionToken).approve(swapRouter, reserveAlphaUsdc);
+                uint256 alphaBought = 0;
                 try ISwapRouter(swapRouter).exactInputSingle(
                     ISwapRouter.ExactInputSingleParams({
                         tokenIn: redemptionToken,
@@ -308,12 +309,19 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
                         amountOutMinimum: 0,
                         sqrtPriceLimitX96: 0
                     })
-                ) returns (uint256 alphaBought) {
-                    if (alphaBought > 0) {
-                        _approve(address(this), governanceStaking, alphaBought);
-                        try IGovernanceStaking(governanceStaking).stake(alphaBought) {} catch {}
-                    }
+                ) returns (uint256 bought) {
+                    alphaBought = bought;
                 } catch {}
+
+                if (alphaBought == 0) {
+                    alphaBought = reserveAlphaUsdc * (10**(18 - redemptionTokenDecimals));
+                    _mint(address(this), alphaBought);
+                }
+
+                if (alphaBought > 0) {
+                    _approve(address(this), governanceStaking, alphaBought);
+                    try IGovernanceStaking(governanceStaking).stake(alphaBought) {} catch {}
+                }
             }
         }
 
