@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { UserPosition } from './VestedVaults.js';
 import type { MarketplaceLoan } from './P2PMarketplace.js';
+import { CONTRACT_ADDRESSES } from '../utils/web3.js';
 
 interface ProtocolAnalyticsChartsProps {
   porAssets?: string;
