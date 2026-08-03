@@ -282,15 +282,35 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
         // 5. Calculate deposit value in 18 decimals using net deposited amount
         uint256 depositValueUSD = netDeposited * (10**(18 - redemptionTokenDecimals));
 
-        // 6. Calculate user's shares based on pre-deposit NAV and shares
+        // 6. Calculate total shares (user + protocol reserve portion)
+        uint256 totalSharesMinted;
         if (currentShares == 0 || navBefore == 0) {
-            sharesMinted = depositValueUSD;
+            totalSharesMinted = depositValueUSD;
         } else {
-            sharesMinted = (depositValueUSD * currentShares) / navBefore;
+            totalSharesMinted = (depositValueUSD * currentShares) / navBefore;
         }
 
-        // 7. Mint net shares to user FIRST
+        // 12.5% of minted shares are retained as Protocol Reserve Stake (alphaProtocolStaking weight).
+        // These are minted because a user deposited USDC — NOT new emissions.
+        // They are immediately locked in GovernanceStaking under the Treasury address,
+        // generating yield for the protocol and backing the PoR.
+        uint256 reserveStakeShares = 0;
+        if (governanceStaking != address(0) && currentWeights.alphaProtocolStaking > 0) {
+            reserveStakeShares = (totalSharesMinted * currentWeights.alphaProtocolStaking) / 10000;
+        }
+        sharesMinted = totalSharesMinted - reserveStakeShares;
+
+        // 7. Mint user shares FIRST (87.5% of total)
         _mint(msg.sender, sharesMinted);
+
+        // 7b. Mint reserve shares to Treasury and immediately stake them
+        if (reserveStakeShares > 0) {
+            _mint(address(this), reserveStakeShares);
+            _approve(address(this), governanceStaking, reserveStakeShares);
+            try IGovernanceStaking(governanceStaking).stake(reserveStakeShares) {} catch {
+                // Staking failed — Treasury keeps the ALPHA in its wallet (still protocol-owned)
+            }
+        }
 
         // 8. Route fees to RealYieldRouter SECOND
         if (feeAmount > 0 && realYieldRouter != address(0)) {
@@ -380,34 +400,6 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
             }
         }
 
-        // 12. Execute 12.5% ALPHA Target Reserve Allocation: Buy $ALPHA on open market (CREATING BUY PRESSURE) & auto-stake into GovernanceStaking
-        if (swapRouter != address(0) && governanceStaking != address(0) && currentWeights.alphaProtocolStaking > 0 && netDeposited > 0) {
-            uint256 reserveAlphaUsdc = (netDeposited * currentWeights.alphaProtocolStaking) / 10000; // 12.5%
-            uint256 currentBal = IERC20(redemptionToken).balanceOf(address(this));
-            if (reserveAlphaUsdc > 0 && currentBal >= reserveAlphaUsdc) {
-                IERC20(redemptionToken).approve(swapRouter, reserveAlphaUsdc);
-                uint256 alphaBought = 0;
-                try ISwapRouter(swapRouter).exactInputSingle(
-                    ISwapRouter.ExactInputSingleParams({
-                        tokenIn: redemptionToken,
-                        tokenOut: address(this),
-                        fee: 3000,
-                        recipient: address(this),
-                        deadline: block.timestamp + 15 minutes,
-                        amountIn: reserveAlphaUsdc,
-                        amountOutMinimum: 0,
-                        sqrtPriceLimitX96: 0
-                    })
-                ) returns (uint256 bought) {
-                    alphaBought = bought;
-                } catch {}
-
-                if (alphaBought > 0) {
-                    _approve(address(this), governanceStaking, alphaBought);
-                    try IGovernanceStaking(governanceStaking).stake(alphaBought) {} catch {}
-                }
-            }
-        }
         // 11. Strict Safety Invariant Guard: Ensure Collateralization Ratio BPS does not decrease
         (, , uint256 postRatioBps) = getProofOfReserves();
         require(postRatioBps >= preRatioBps, "Treasury: Security Violation - Transaction reduced collateralization ratio");
