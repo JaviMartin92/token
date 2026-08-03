@@ -27,10 +27,13 @@ const walletClient = createWalletClient({
 
 function loadArtifact(name: string, file: string) {
   const p1 = path.resolve(__dirname, `../../../contracts/out/${file}/${name}.json`);
-  const p2 = path.resolve(__dirname, `../../../contracts/out/adapters/${file}/${name}.json`);
-  const p = fs.existsSync(p1) ? p1 : fs.existsSync(p2) ? p2 : p1;
+  const p2 = path.resolve(__dirname, `../../../contracts/out/src/${file}/${name}.json`);
+  const p3 = path.resolve(__dirname, `../../../contracts/out/test/${file}/${name}.json`);
+  const p4 = path.resolve(__dirname, `../../../contracts/out/adapters/${file}/${name}.json`);
+  const p5 = path.resolve(__dirname, `../../../contracts/out/${name}.sol/${name}.json`);
+  const p = fs.existsSync(p1) ? p1 : fs.existsSync(p2) ? p2 : fs.existsSync(p3) ? p3 : fs.existsSync(p4) ? p4 : fs.existsSync(p5) ? p5 : p1;
   if (!fs.existsSync(p)) {
-    throw new Error(`Artifact not found at ${p1} nor ${p2}. Run forge compile first.`);
+    throw new Error(`Artifact not found for ${name} in ${file}. Run forge compile first.`);
   }
   return JSON.parse(fs.readFileSync(p, 'utf8'));
 }
@@ -47,11 +50,11 @@ async function main() {
   const YieldStreamingVault = loadArtifact('YieldStreamingVault', 'YieldStreamingVault.sol');
   const CorporateContribution = loadArtifact('CorporateContribution', 'CorporateContribution.sol');
 
-  // 1. Deploy Mock USDC and Mock USDT
+  // 1. Deploy Mock USDC and Mock USDT with CORRECT decimals (6)
   const usdcTx = await walletClient.deployContract({
     abi: MockERC20.abi,
     bytecode: MockERC20.bytecode.object,
-    args: ['USD Coin', 'USDC']
+    args: ['USD Coin', 'USDC', 6]
   });
   const usdcAddr = (await publicClient.waitForTransactionReceipt({ hash: usdcTx })).contractAddress!;
   console.log(`[+] Mock USDC deployed at: ${usdcAddr}`);
@@ -59,32 +62,34 @@ async function main() {
   const usdtTx = await walletClient.deployContract({
     abi: MockERC20.abi,
     bytecode: MockERC20.bytecode.object,
-    args: ['Tether USD', 'USDT']
+    args: ['Tether USD', 'USDT', 6]
   });
   const usdtAddr = (await publicClient.waitForTransactionReceipt({ hash: usdtTx })).contractAddress!;
   console.log(`[+] Mock USDT deployed at: ${usdtAddr}`);
 
+  // WBTC: 8 decimals (real-world standard)
   const wbtcTx = await walletClient.deployContract({
     abi: MockERC20.abi,
     bytecode: MockERC20.bytecode.object,
-    args: ['Wrapped BTC', 'WBTC']
+    args: ['Wrapped BTC', 'WBTC', 8]
   });
   const wbtcAddr = (await publicClient.waitForTransactionReceipt({ hash: wbtcTx })).contractAddress!;
   console.log(`[+] Mock WBTC deployed at: ${wbtcAddr}`);
 
+  // WETH: 18 decimals (real-world standard)
   const wethTx = await walletClient.deployContract({
     abi: MockERC20.abi,
     bytecode: MockERC20.bytecode.object,
-    args: ['Wrapped Ether', 'WETH']
+    args: ['Wrapped Ether', 'WETH', 18]
   });
   const wethAddr = (await publicClient.waitForTransactionReceipt({ hash: wethTx })).contractAddress!;
   console.log(`[+] Mock WETH deployed at: ${wethAddr}`);
 
-  // 2. Deploy Mock Price Feeds (USDC $1.00, WBTC $1.00 per unit value, WETH $1.00 per unit value)
+  // 2. Deploy Mock Price Feeds with REALISTIC sandbox prices
   const feedTx = await walletClient.deployContract({
     abi: MockChainlinkFeed.abi,
     bytecode: MockChainlinkFeed.bytecode.object,
-    args: [8, 100000000n]
+    args: [8, 100000000n]  // USDC = $1.00
   });
   const feedAddr = (await publicClient.waitForTransactionReceipt({ hash: feedTx })).contractAddress!;
   console.log(`[+] Mock USDC Price Feed deployed at: ${feedAddr}`);
@@ -92,7 +97,7 @@ async function main() {
   const wbtcFeedTx = await walletClient.deployContract({
     abi: MockChainlinkFeed.abi,
     bytecode: MockChainlinkFeed.bytecode.object,
-    args: [8, 100000000n]
+    args: [8, 6000000000000n]  // WBTC = $60,000.00
   });
   const wbtcFeedAddr = (await publicClient.waitForTransactionReceipt({ hash: wbtcFeedTx })).contractAddress!;
   console.log(`[+] Mock WBTC Price Feed deployed at: ${wbtcFeedAddr}`);
@@ -100,7 +105,7 @@ async function main() {
   const wethFeedTx = await walletClient.deployContract({
     abi: MockChainlinkFeed.abi,
     bytecode: MockChainlinkFeed.bytecode.object,
-    args: [8, 100000000n]
+    args: [8, 300000000000n]  // WETH = $3,000.00
   });
   const wethFeedAddr = (await publicClient.waitForTransactionReceipt({ hash: wethFeedTx })).contractAddress!;
   console.log(`[+] Mock WETH Price Feed deployed at: ${wethFeedAddr}`);
@@ -109,7 +114,7 @@ async function main() {
   const routerTx = await walletClient.deployContract({
     abi: MockSwapRouter.abi,
     bytecode: MockSwapRouter.bytecode.object,
-    args: [usdcAddr, address(0x999)]
+    args: [usdcAddr, '0x0000000000000000000000000000000000000999']
   });
   const routerAddr = (await publicClient.waitForTransactionReceipt({ hash: routerTx })).contractAddress!;
   console.log(`[+] Mock Swap Router deployed at: ${routerAddr}`);
@@ -306,7 +311,7 @@ async function main() {
     address: treasuryAddr,
     abi: Treasury.abi,
     functionName: 'setTrackedAsset',
-    args: [usdcAddr, feedAddr, 6]
+    args: [usdcAddr, feedAddr, 6]  // USDC = 6 decimals
   });
   await publicClient.waitForTransactionReceipt({ hash: setTrackedUsdcHash });
 
@@ -314,7 +319,7 @@ async function main() {
     address: treasuryAddr,
     abi: Treasury.abi,
     functionName: 'setTrackedAsset',
-    args: [wbtcAddr, wbtcFeedAddr, 18]
+    args: [wbtcAddr, wbtcFeedAddr, 8]  // WBTC = 8 decimals
   });
   await publicClient.waitForTransactionReceipt({ hash: setTrackedWbtcHash });
 
@@ -322,7 +327,7 @@ async function main() {
     address: treasuryAddr,
     abi: Treasury.abi,
     functionName: 'setTrackedAsset',
-    args: [wethAddr, wethFeedAddr, 18]
+    args: [wethAddr, wethFeedAddr, 18]  // WETH = 18 decimals
   });
   await publicClient.waitForTransactionReceipt({ hash: setTrackedWethHash });
   // Set oracle staleness limit to 100 years for sandbox time-travel testing
@@ -440,15 +445,41 @@ async function main() {
   const mgrAddr = (await publicClient.waitForTransactionReceipt({ hash: mgrTx })).contractAddress!;
   console.log(`[+] TreasuryReserveManager Contract deployed at: ${mgrAddr}`);
 
-  // Link DynamicYieldOracleRouter into TreasuryReserveManager
-  const setOracleHash = await walletClient.writeContract({
-    address: mgrAddr,
-    abi: mgrArtifact.abi,
-    functionName: 'setOracleRouter',
-    args: [oracleAddr]
+  // 18. Deploy ProtocolTokenomicsEngine (Master Math Engine)
+  const engineArtifact = loadArtifact('ProtocolTokenomicsEngine', 'ProtocolTokenomicsEngine.sol');
+  const engineTx = await walletClient.deployContract({
+    abi: engineArtifact.abi,
+    bytecode: engineArtifact.bytecode.object,
+    args: [account.address]
   });
-  await publicClient.waitForTransactionReceipt({ hash: setOracleHash });
-  console.log('[+] Linked DynamicYieldOracleRouter into TreasuryReserveManager.');
+  const engineAddr = (await publicClient.waitForTransactionReceipt({ hash: engineTx })).contractAddress!;
+  console.log(`[+] ProtocolTokenomicsEngine Contract deployed at: ${engineAddr}`);
+
+  // Link ProtocolTokenomicsEngine into Treasury, VestedDiscountVault, and P2PLendingMarket
+  const setTreasuryEngineHash = await walletClient.writeContract({
+    address: treasuryAddr,
+    abi: Treasury.abi,
+    functionName: 'setTokenomicsEngine',
+    args: [engineAddr]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: setTreasuryEngineHash });
+
+  const setVaultEngineHash = await walletClient.writeContract({
+    address: vestedVaultAddr,
+    abi: vaultArtifact.abi,
+    functionName: 'setTokenomicsEngine',
+    args: [engineAddr]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: setVaultEngineHash });
+
+  const setP2pEngineHash = await walletClient.writeContract({
+    address: p2pAddr,
+    abi: p2pArtifact.abi,
+    functionName: 'setTokenomicsEngine',
+    args: [engineAddr]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: setP2pEngineHash });
+  console.log('[+] Linked ProtocolTokenomicsEngine into Treasury, VestedDiscountVault, and P2PLendingMarket.');
 
   // 12. Pre-fund Admin and User accounts with 10,000 USDC mock
   console.log('[+] Pre-funding Admin and User accounts with 10,000 USDC mock...');
@@ -523,6 +554,7 @@ async function main() {
     P2P_MARKET: p2pAddr,
     STAKING: stakingAddr,
     REAL_YIELD_ROUTER: ryRouterAddr,
+    TOKENOMICS_ENGINE: engineAddr,
     CORPORATE_OPEX_VAULT: corpOpExAddr,
     CORPORATE_PROFIT_VAULT: corpProfitAddr,
     MORPHO_ADAPTER: morphoAddr,

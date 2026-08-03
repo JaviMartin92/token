@@ -26,9 +26,14 @@ contract VestedDiscountVault is Ownable, ReentrancyGuard {
     address public realYieldRouter;
     address public govToken;
     address public circuitBreaker;
+    address public tokenomicsEngine;
 
-    uint256 public tvlCap = 10_000_000 * 10**18; // Default 10M cap for Sandbox
+    uint256 public tvlCap = 10_000_000 * 10**6; // Default 10M cap for Sandbox (USDC 6 decimals)
     uint256 public totalInvested;
+
+    function setTokenomicsEngine(address _tokenomicsEngine) external onlyOwner {
+        tokenomicsEngine = _tokenomicsEngine;
+    }
 
     function setCircuitBreaker(address _circuitBreaker) external onlyOwner {
         circuitBreaker = _circuitBreaker;

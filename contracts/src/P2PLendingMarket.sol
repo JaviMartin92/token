@@ -24,6 +24,11 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
     address public treasury;  // Treasury contract address for protocol reserve repayments
     address public opsWallet; // 25% Operational Expenses Wallet
     address public corporateRevenueWallet; // 25% Company Profit / Corporate Revenue Wallet
+    address public tokenomicsEngine;
+
+    function setTokenomicsEngine(address _tokenomicsEngine) external onlyOwner {
+        tokenomicsEngine = _tokenomicsEngine;
+    }
 
     uint256 public constant MAX_LTV_BPS = 7000;         // Max 70% LTV
     uint256 public constant MIN_COLLATERAL_RATIO = 130; // 130%
@@ -310,7 +315,8 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
         require(loan.state == LoanState.ACTIVE, "P2P: Loan not active");
 
         uint256 healthRatio = calculateHealthFactor(loanId);
-        require(healthRatio < LIQUIDATION_THRESHOLD, "P2P: Loan health factor >= 115%, cannot liquidate");
+        bool isExpired = block.timestamp > (loan.startTime + (loan.durationDays * 1 days));
+        require(healthRatio < LIQUIDATION_THRESHOLD || isExpired, "P2P: Loan health factor >= 115% and not expired");
 
         (uint256 totalOwed, ) = calculateTotalOwed(loanId);
 

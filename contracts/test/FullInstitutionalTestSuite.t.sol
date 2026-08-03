@@ -12,7 +12,9 @@ import "../src/RealYieldRouter.sol";
 import "../src/CircuitBreaker.sol";
 
 contract MockUSDC is ERC20 {
-    constructor() ERC20("USD Coin", "USDC") {}
+    uint8 private _dec;
+    constructor(string memory name, string memory symbol, uint8 dec_) ERC20(name, symbol) { _dec = dec_; }
+    function decimals() public view override returns (uint8) { return _dec; }
     function mint(address to, uint256 amount) external { _mint(to, amount); }
 }
 
@@ -74,12 +76,12 @@ contract FullInstitutionalTestSuite is Test {
     function setUp() public {
         vm.startPrank(owner);
 
-        usdc = new MockUSDC();
-        wbtc = new MockUSDC();
-        weth = new MockUSDC();
+        usdc = new MockUSDC("USD Coin", "USDC", 6);
+        wbtc = new MockUSDC("Wrapped BTC", "WBTC", 8);
+        weth = new MockUSDC("Wrapped Ether", "WETH", 18);
         usdcFeed = new MockOracle(8, 1e8); // $1.00
 
-        treasury = new Treasury(owner, address(usdc), 18);
+        treasury = new Treasury(owner, address(usdc), 6);
         positionNFT = new VaultPositionNFT(owner);
         staking = new GovernanceStaking(address(treasury), address(usdc), owner);
         realYieldRouter = new RealYieldRouter(address(usdc), address(wbtc), address(weth), address(staking), owner);
@@ -101,7 +103,7 @@ contract FullInstitutionalTestSuite is Test {
 
         positionNFT.setMinter(address(vault));
         staking.setTreasury(address(treasury));
-        treasury.setTrackedAsset(address(usdc), address(usdcFeed), 18);
+        treasury.setTrackedAsset(address(usdc), address(usdcFeed), 6);
         treasury.setProtocolModules(
             address(vault),
             address(p2pMarket),
@@ -115,8 +117,8 @@ contract FullInstitutionalTestSuite is Test {
         realYieldRouter.setAuthorizedYieldCaller(address(vault), true);
         staking.setAuthorizedCaller(address(realYieldRouter), true);
 
-        usdc.mint(user1, 1_000_000 * 1e18);
-        usdc.mint(user2, 1_000_000 * 1e18);
+        usdc.mint(user1, 1_000_000 * 1e6);
+        usdc.mint(user2, 1_000_000 * 1e6);
 
         vm.stopPrank();
     }
@@ -124,8 +126,8 @@ contract FullInstitutionalTestSuite is Test {
     // --- MODULE 1: TREASURY & POR (T001 - T015) ---
     function test_T001_InitialDepositAndNAV() public {
         vm.startPrank(user1);
-        usdc.approve(address(treasury), 10_000 * 1e18);
-        uint256 shares = treasury.deposit(10_000 * 1e18);
+        usdc.approve(address(treasury), 10_000 * 1e6);
+        uint256 shares = treasury.deposit(10_000 * 1e6);
         vm.stopPrank();
         assertEq(shares, 9_950 * 1e18);
         assertEq(treasury.getNAV(), 9_975 * 1e18);
@@ -133,8 +135,8 @@ contract FullInstitutionalTestSuite is Test {
 
     function test_T002_ProofOfReservesRatioSolvent() public {
         vm.startPrank(user1);
-        usdc.approve(address(treasury), 10_000 * 1e18);
-        treasury.deposit(10_000 * 1e18);
+        usdc.approve(address(treasury), 10_000 * 1e6);
+        treasury.deposit(10_000 * 1e6);
         vm.stopPrank();
         (uint256 assets, uint256 liabilities, uint256 ratio) = treasury.getProofOfReserves();
         assertGe(assets, liabilities);
@@ -156,8 +158,8 @@ contract FullInstitutionalTestSuite is Test {
 
     function test_T004_OracleUpdateAndNAVRevaluation() public {
         vm.startPrank(user1);
-        usdc.approve(address(treasury), 10_000 * 1e18);
-        treasury.deposit(10_000 * 1e18);
+        usdc.approve(address(treasury), 10_000 * 1e6);
+        treasury.deposit(10_000 * 1e6);
         vm.stopPrank();
 
         vm.startPrank(owner);
@@ -182,7 +184,7 @@ contract FullInstitutionalTestSuite is Test {
     function test_T012_OnlyOwnerRestrictedCalls() public {
         vm.startPrank(user1);
         vm.expectRevert("Ownable: caller is not the owner");
-        treasury.setTvlCap(1_000_000 * 1e18);
+        treasury.setTvlCap(1_000_000 * 1e6);
         vm.stopPrank();
     }
 
@@ -191,22 +193,22 @@ contract FullInstitutionalTestSuite is Test {
         uint256 opsBefore = usdc.balanceOf(opsWallet);
         uint256 corpBefore = usdc.balanceOf(corpWallet);
         vm.startPrank(user1);
-        usdc.approve(address(treasury), 10_000 * 1e18);
-        treasury.deposit(10_000 * 1e18);
+        usdc.approve(address(treasury), 10_000 * 1e6);
+        treasury.deposit(10_000 * 1e6);
         vm.stopPrank();
-        assertEq(usdc.balanceOf(opsWallet) - opsBefore, 12.5 * 1e18);
-        assertEq(usdc.balanceOf(corpWallet) - corpBefore, 12.5 * 1e18);
+        assertEq(usdc.balanceOf(opsWallet) - opsBefore, 12.5 * 1e6);
+        assertEq(usdc.balanceOf(corpWallet) - corpBefore, 12.5 * 1e6);
     }
 
     function test_T018_RedeemFeeRetainedInReserves() public {
         vm.startPrank(user1);
-        usdc.approve(address(treasury), 10_000 * 1e18);
-        uint256 shares = treasury.deposit(10_000 * 1e18);
+        usdc.approve(address(treasury), 10_000 * 1e6);
+        uint256 shares = treasury.deposit(10_000 * 1e6);
         uint256 userUsdcBefore = usdc.balanceOf(user1);
         treasury.redeem(shares);
         uint256 userUsdcAfter = usdc.balanceOf(user1);
         vm.stopPrank();
-        assertApproxEqAbs(userUsdcAfter - userUsdcBefore, 9_875.25 * 1e18, 1e16);
+        assertApproxEqAbs(userUsdcAfter - userUsdcBefore, 9_875.25 * 1e6, 1e4);
     }
 
     function test_T019_RevertZeroDeposit() public {
@@ -226,70 +228,70 @@ contract FullInstitutionalTestSuite is Test {
     // --- MODULE 3: VESTED BONDS & NFTS (T031 - T045) ---
     function test_T031_BuyVestedBondOneYear() public {
         vm.startPrank(user1);
-        usdc.approve(address(vault), 900 * 1e18);
-        uint256 tokenId = vault.buyVestedBond(1000 * 1e18, 1, address(0));
+        usdc.approve(address(vault), 950 * 1e6);
+        uint256 tokenId = vault.buyVestedBond(1000 * 1e6, 1, address(0));
         vm.stopPrank();
         assertEq(tokenId, 1);
         assertEq(positionNFT.ownerOf(1), user1);
-        assertEq(vault.totalPresentLiability(), 900 * 1e18);
+        assertEq(vault.totalPresentLiability(), 950 * 1e6);
     }
 
     function test_T033_DiscountCalculationProgressive() public {
-        assertEq(vault.calculateDiscountBps(user1, 1), 1000);
-        assertEq(vault.calculateDiscountBps(user1, 5), 4200);
+        assertEq(vault.calculateDiscountBps(user1, 1), 500);
+        assertEq(vault.calculateDiscountBps(user1, 5), 2500);
     }
 
     function test_T041_RagequitWithPenalty() public {
         vm.startPrank(user1);
-        usdc.approve(address(vault), 900 * 1e18);
-        uint256 tokenId = vault.buyVestedBond(1000 * 1e18, 1, address(0));
+        usdc.approve(address(vault), 950 * 1e6);
+        uint256 tokenId = vault.buyVestedBond(1000 * 1e6, 1, address(0));
 
-        usdc.mint(address(vault), 1000 * 1e18);
+        usdc.mint(address(vault), 1000 * 1e6);
         uint256 usdcBefore = usdc.balanceOf(user1);
         vault.ragequit(tokenId);
         uint256 usdcAfter = usdc.balanceOf(user1);
         vm.stopPrank();
-        assertApproxEqAbs(usdcAfter - usdcBefore, 765 * 1e18, 1e16);
+        assertApproxEqAbs(usdcAfter - usdcBefore, 807.5 * 1e6, 1e4);
     }
 
     // --- MODULE 4: LOANS & OVERCOLLATERALIZED ESCROW (T046 - T060) ---
     function test_T046_CreateAndRepayP2PLoan() public {
         vm.startPrank(user1);
-        usdc.approve(address(vault), 900 * 1e18);
-        uint256 tokenId = vault.buyVestedBond(1000 * 1e18, 1, address(0));
+        usdc.approve(address(vault), 950 * 1e6);
+        uint256 tokenId = vault.buyVestedBond(1000 * 1e6, 1, address(0));
         positionNFT.approve(address(p2pMarket), tokenId);
-        uint256 loanId = p2pMarket.createLoanOffer(tokenId, 500 * 1e18, 800, 30);
+        uint256 loanId = p2pMarket.createLoanOffer(tokenId, 500 * 1e6, 800, 30);
         vm.stopPrank();
 
         vm.startPrank(user2);
-        usdc.approve(address(p2pMarket), 1000 * 1e18);
-        p2pMarket.fundLoanOffer(loanId);
+        usdc.approve(address(p2pMarket), 1000 * 1e6);
+        p2pMarket.acceptLoanAndDepositCollateral(loanId, 700 * 1e6);
         vm.stopPrank();
 
         vm.startPrank(user1);
-        usdc.mint(user1, 1000 * 1e18);
+        usdc.mint(user1, 1000 * 1e6);
         usdc.approve(address(p2pMarket), type(uint256).max);
         p2pMarket.repayLoan(loanId);
         vm.stopPrank();
 
-        assertEq(positionNFT.ownerOf(tokenId), user2);
+        assertEq(positionNFT.ownerOf(tokenId), user1);
     }
 
     function test_T059_RevertExcessiveInterestRate() public {
         vm.startPrank(user1);
-        usdc.approve(address(vault), 900 * 1e18);
-        uint256 tokenId = vault.buyVestedBond(1000 * 1e18, 1, address(0));
+        usdc.approve(address(vault), 950 * 1e6);
+        uint256 tokenId = vault.buyVestedBond(1000 * 1e6, 1, address(0));
         positionNFT.approve(address(p2pMarket), tokenId);
         vm.expectRevert("P2P: Interest rate exceeds maximum (50% APR)");
-        p2pMarket.createLoanOffer(tokenId, 500 * 1e18, 6000, 30);
+        p2pMarket.createLoanOffer(tokenId, 500 * 1e6, 6000, 30);
         vm.stopPrank();
     }
 
     // --- MODULE 5: STAKING & FLYWHEEL (T061 - T075) ---
     function test_T061_StakingFeeProcessingAndUnstake() public {
         vm.startPrank(user1);
-        usdc.approve(address(treasury), 10_000 * 1e18);
-        uint256 shares = treasury.deposit(10_000 * 1e18);
+        usdc.approve(address(treasury), 10_000 * 1e6);
+        uint256 shares = treasury.deposit(10_000 * 1e6);
         treasury.approve(address(staking), shares);
         staking.stake(shares);
         uint256 stShares = staking.stakedBalances(user1);
@@ -310,8 +312,8 @@ contract FullInstitutionalTestSuite is Test {
     // --- MODULE 6: REAL YIELD ROUTER (T076 - T085) ---
     function test_T076_NotifyYieldSplit50_25_25() public {
         vm.startPrank(owner);
-        usdc.mint(address(realYieldRouter), 1000 * 1e18);
-        realYieldRouter.notifyYield(1000 * 1e18);
+        usdc.mint(address(realYieldRouter), 1000 * 1e6);
+        realYieldRouter.notifyYield(1000 * 1e6);
         vm.stopPrank();
         assertGt(usdc.balanceOf(opsWallet), 0);
     }

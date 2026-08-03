@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { publicClient, getWalletClient, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
-import { parseEther } from 'viem';
+import { parseEther, parseUnits } from 'viem';
 import type { TxConfirmDetails } from '../components/TransactionConfirmModal.js';
 
 interface TreasuryActionsParams {
@@ -25,7 +25,7 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
         address: CONTRACT_ADDRESSES.USDC,
         abi: ABIS.ERC20,
         functionName: 'mint',
-        args: [userAddress as `0x${string}`, parseEther('10000')]
+        args: [userAddress as `0x${string}`, parseUnits('10000', 6)]  // USDC = 6 decimals
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
       addLog('¡10,000 USDC mock recibidos en tu billetera!');
@@ -42,7 +42,7 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
     try {
       addLog(`Depositando ${depositAmount} USDC en Tesorería...`);
       addToast('info', 'Depósito Tesorería', `Aprobando ${depositAmount} USDC...`);
-      const amountWei = parseEther(depositAmount);
+      const amountWei = parseUnits(depositAmount, 6);  // USDC = 6 decimals
       const client = getWalletClient(activeKey);
 
       const appHash = await client.writeContract({

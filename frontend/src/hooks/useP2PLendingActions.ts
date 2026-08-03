@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { parseEther } from 'viem';
+import { parseEther, parseUnits } from 'viem';
 import { publicClient, getWalletClient, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
 import type { TxConfirmDetails } from '../components/TransactionConfirmModal.js';
 
@@ -81,7 +81,7 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
         address: CONTRACT_ADDRESSES.P2P_MARKET,
         abi: ABIS.P2P_MARKET,
         functionName: 'createLoanOffer',
-        args: [tokenIdBig, parseEther(p2pBorrowAmount), BigInt(p2pInterestBps), BigInt(p2pDays)]
+        args: [tokenIdBig, parseUnits(p2pBorrowAmount, 6), BigInt(p2pInterestBps), BigInt(p2pDays)]  // USDC = 6 decimals
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
       addLog(`¡Oferta P2P creada! NFT #${p2pTokenId} en escrow. Publicada en el Marketplace.`);
@@ -185,7 +185,7 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
   const handleAcceptLoanById = (loanId: number, reqBorrowAmountStr: string, customCollateralStr?: string) => {
     const numBorrow = parseFloat(reqBorrowAmountStr.replace(/,/g, ''));
     const colVal = customCollateralStr ? parseFloat(customCollateralStr) : numBorrow * 1.4;
-    const colWei = parseEther(colVal.toString());
+    const colWei = parseUnits(colVal.toFixed(6), 6);  // USDC = 6 decimals
 
     if (requestConfirmation) {
       requestConfirmation({
@@ -271,7 +271,7 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
         address: CONTRACT_ADDRESSES.USDC,
         abi: ABIS.ERC20,
         functionName: 'approve',
-        args: [CONTRACT_ADDRESSES.P2P_MARKET, parseEther('1000000')]
+        args: [CONTRACT_ADDRESSES.P2P_MARKET, parseUnits('1000000', 6)]  // USDC = 6 decimals
       });
       await publicClient.waitForTransactionReceipt({ hash: appHash });
 
@@ -398,7 +398,7 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
 
   const executeBorrowFromTreasury = async (collateralType: string, tokenIdOrAmountStr: string, amountStr: string, daysStr: string) => {
     try {
-      const amountWei = parseEther(amountStr);
+      const amountWei = parseUnits(amountStr, 6);  // USDC = 6 decimals
       const daysBig = BigInt(daysStr || '30');
       const interestBpsBig = 800n; // 8.00% APR Fixed Treasury Reserve Rate
       const userClient = getWalletClient(activeKey);
@@ -417,7 +417,7 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
         const priceUsd = await getOnChainOraclePriceUSD(collateralType);
 
         const colValUSD = colAmt * priceUsd;
-        const colValWei = parseEther(colValUSD.toFixed(2));
+        const colValWei = parseUnits(colValUSD.toFixed(6), 6);  // USDC = 6 decimals
         const assetSymbol = collateralType.toUpperCase();
 
         addLog(`[Tesorería APY Booster] Registrando posición de colateral en la blockchain (${tokenIdOrAmountStr} ${assetSymbol} = $${colValUSD.toFixed(2)} USD)...`);
@@ -448,7 +448,7 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
 
         // 3. Lock collateral ERC20 tokens in Escrow contract
         const colTokenAddr = collateralType === 'alpha' ? CONTRACT_ADDRESSES.TREASURY : collateralType === 'wbtc' ? CONTRACT_ADDRESSES.USDT : CONTRACT_ADDRESSES.USDC;
-        const colAmountWei = parseEther(tokenIdOrAmountStr);
+        const colAmountWei = parseUnits(tokenIdOrAmountStr, 6);  // Assuming USDC collateral, 6 decimals
 
         const appCol = await userClient.writeContract({
           address: colTokenAddr,

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { publicClient, getWalletClient, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
-import { parseEther } from 'viem';
+import { parseEther, parseUnits } from 'viem';
 import type { TxConfirmDetails } from '../components/TransactionConfirmModal.js';
 
 interface AdminActionsParams {
@@ -195,7 +195,8 @@ export function useAdminActions({ activeKey, snapshotId, setSnapshotId, addLog, 
     if (!injectionAmount) return;
     try {
       addLog(`Creando orden TWAP de recompra por $${injectionAmount} USDC...`);
-      const amountWei = parseEther(injectionAmount);
+      const amountWei = parseUnits(injectionAmount, 6);  // USDC = 6 decimals
+
       const client = getWalletClient(activeKey);
 
       const appHash = await client.writeContract({

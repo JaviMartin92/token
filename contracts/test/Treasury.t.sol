@@ -16,7 +16,15 @@ import "../src/CorporateContribution.sol";
 // ==========================================
 
 contract MockERC20 is ERC20 {
-    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
+    uint8 private _dec;
+
+    constructor(string memory name, string memory symbol, uint8 dec_) ERC20(name, symbol) {
+        _dec = dec_;
+    }
+
+    function decimals() public view override returns (uint8) {
+        return _dec;
+    }
 
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
@@ -81,11 +89,27 @@ contract MockSwapRouter is ISwapRouter {
         // Transfer tokenIn from sender to router
         ERC20(params.tokenIn).transferFrom(msg.sender, address(this), params.amountIn);
 
-        // Custom rate conversion / decimal scaling: USDC (6 decimals) to 18-decimal tokens
-        if (params.tokenIn == usdcToken && params.tokenOut != usdcToken) {
-            amountOut = params.amountIn * 10**12;
+        // 1:1 USD-value swap — scale amountIn (tokenIn decimals) to amountOut (tokenOut decimals)
+        // Both prices are $1.00 in this sandbox so USD value is preserved directly.
+        uint8 decIn = ERC20(params.tokenIn).decimals();
+        uint8 decOut = ERC20(params.tokenOut).decimals();
+
+        if (decOut == 8) {
+            // WBTC ($60,000 USD per WBTC)
+            amountOut = (params.amountIn * 10**8) / (60000 * (10 ** uint256(decIn)));
+        } else if (decOut == 18 && params.tokenOut != usdcToken) {
+            // WETH ($3,000 USD per WETH) or ALPHA ($1 USD per ALPHA)
+            string memory symbol = "";
+            try ERC20(params.tokenOut).symbol() returns (string memory sym) { symbol = sym; } catch {}
+            if (keccak256(bytes(symbol)) == keccak256(bytes("WETH"))) {
+                amountOut = (params.amountIn * 10**18) / (3000 * (10 ** uint256(decIn)));
+            } else {
+                amountOut = (params.amountIn * 10**18) / (10 ** uint256(decIn));
+            }
+        } else if (decOut >= decIn) {
+            amountOut = params.amountIn * (10 ** uint256(decOut - decIn));
         } else {
-            amountOut = params.amountIn;
+            amountOut = params.amountIn / (10 ** uint256(decIn - decOut));
         }
 
         // Try minting tokenOut to recipient, or transfer from router balance if mint is not supported
@@ -133,13 +157,13 @@ contract TreasuryTest is Test {
     uint256 public investorPrivateKey = 0xA11CE;
 
     function setUp() public {
-        // 1. Deploy Mock Tokens
-        usdc = new MockERC20("USD Coin", "USDC");
-        usdt = new MockERC20("Tether USD", "USDT");
-        wbtc = new MockERC20("Wrapped BTC", "WBTC");
-        weth = new MockERC20("Wrapped ETH", "WETH");
-        altcoin = new MockERC20("Altcoin Token", "ALT");
-        nativeToken = new MockERC20("Alpha Centauri Token", "ALPHA");
+        // 1. Deploy Mock Tokens with REAL decimals
+        usdc = new MockERC20("USD Coin", "USDC", 6);
+        usdt = new MockERC20("Tether USD", "USDT", 6);
+        wbtc = new MockERC20("Wrapped BTC", "WBTC", 8);
+        weth = new MockERC20("Wrapped ETH", "WETH", 18);
+        altcoin = new MockERC20("Altcoin Token", "ALT", 18);
+        nativeToken = new MockERC20("Alpha Centauri Token", "ALPHA", 18);
 
         // 2. Deploy Mock Oracles (USDC: 8 decimals, WBTC/WETH: 8 decimals, Alts: 8 decimals)
         usdcFeed = new MockChainlinkFeed(8, 1_00000000);     // $1.00
@@ -151,7 +175,7 @@ contract TreasuryTest is Test {
         swapRouter = new MockSwapRouter(address(usdc), address(nativeToken));
 
         // 4. Deploy Core Protocols
-        treasury = new Treasury(governance, address(usdc), 18); // set as 18 decimals for scale testing
+        treasury = new Treasury(governance, address(usdc), 6); // USDC = 6 decimals
         circuitBreaker = new CircuitBreaker(governance);
         swapReceiver = new AtomicSwapReceiver(address(usdt), address(usdc), address(swapRouter), address(treasury), governance);
         yieldVault = new YieldStreamingVault(address(usdc), governance);
@@ -159,7 +183,7 @@ contract TreasuryTest is Test {
 
         // 5. Config Treasury tracked assets
         vm.startPrank(governance);
-        treasury.setTrackedAsset(address(usdc), address(usdcFeed), 18);
+        treasury.setTrackedAsset(address(usdc), address(usdcFeed), 6);
         treasury.setTrackedAsset(address(wbtc), address(wbtcFeed), 8); // WBTC (8 decimals)
         treasury.setTrackedAsset(address(weth), address(wethFeed), 18); // WETH (18 decimals)
         treasury.setTrackedAsset(address(altcoin), address(altcoinFeed), 18); // Altcoin (18 decimals)
@@ -201,12 +225,12 @@ contract TreasuryTest is Test {
     function testRedemptionAndNAV() public {
         address user = vm.addr(investorPrivateKey);
         
-        // Deposit 1,000 USDC into Treasury
-        usdc.mint(user, 1000 * 10**18);
+        // Deposit 1,000 USDC into Treasury (USDC has 6 decimals)
+        usdc.mint(user, 1000 * 10**6);
         vm.startPrank(user);
         usdc.approve(address(treasury), type(uint256).max);
         
-        uint256 sharesMinted = treasury.deposit(1000 * 10**18);
+        uint256 sharesMinted = treasury.deposit(1000 * 10**6);
         assertTrue(sharesMinted > 0);
         assertEq(treasury.balanceOf(user), sharesMinted);
 
@@ -214,8 +238,8 @@ contract TreasuryTest is Test {
         uint256 initialUSDC = usdc.balanceOf(user);
         uint256 assetsReceived = treasury.redeem(sharesMinted);
         
-        assertEq(assetsReceived, 990 * 10**18);
-        assertEq(usdc.balanceOf(user), initialUSDC + (990 * 10**18));
+        assertEq(assetsReceived, 990 * 10**6);
+        assertEq(usdc.balanceOf(user), initialUSDC + (990 * 10**6));
         assertEq(treasury.balanceOf(user), 0);
         vm.stopPrank();
     }
@@ -253,15 +277,15 @@ contract TreasuryTest is Test {
     // 4. TEST ATOMIC SWAP USDT -> USDC
     // ==========================================
     function testAtomicSwapUSDTtoUSDC() public {
-        // Mint USDT to user
-        usdt.mint(investor, 1000 * 10**18);
+        // Mint USDT to user (USDT has 6 decimals)
+        usdt.mint(investor, 1000 * 10**6);
         
         vm.startPrank(investor);
         usdt.approve(address(swapReceiver), type(uint256).max);
 
         // Swap USDT to USDC: 0.05% slippage check -> expects at least 999.5 USDC
-        uint256 usdcExpected = 999_500000000000000000; // 999.5
-        uint256 usdcOut = swapReceiver.depositUSDT(1000 * 10**18, usdcExpected);
+        uint256 usdcExpected = 999_500000; // 999.5 (6 decimals)
+        uint256 usdcOut = swapReceiver.depositUSDT(1000 * 10**6, usdcExpected);
         
         assertTrue(usdcOut >= usdcExpected);
         assertEq(usdc.balanceOf(address(treasury)), usdcOut);
@@ -269,13 +293,13 @@ contract TreasuryTest is Test {
     }
 
     function testAtomicSwapSlippageRevert() public {
-        usdt.mint(investor, 1000 * 10**18);
+        usdt.mint(investor, 1000 * 10**6);
         vm.startPrank(investor);
         usdt.approve(address(swapReceiver), type(uint256).max);
 
         // Reverts if requested min USDC expected is too low (violates 0.05% max slip check on-chain)
         vm.expectRevert("AtomicSwapReceiver: Slippage input exceeds 0.05% limit");
-        swapReceiver.depositUSDT(1000 * 10**18, 990 * 10**18);
+        swapReceiver.depositUSDT(1000 * 10**6, 990 * 10**6);
         vm.stopPrank();
     }
 
@@ -287,16 +311,16 @@ contract TreasuryTest is Test {
 
         // Pre-allocate mock yield in vault
         vm.startPrank(governance);
-        usdc.mint(address(yieldVault), 500 * 10**18);
-        yieldVault.allocateYield(user, 100 * 10**18);
+        usdc.mint(address(yieldVault), 500 * 10**6);
+        yieldVault.allocateYield(user, 100 * 10**6);
         vm.stopPrank();
 
-        assertEq(yieldVault.getPendingYield(user), 100 * 10**18);
+        assertEq(yieldVault.getPendingYield(user), 100 * 10**6);
 
         // Prepare EIP-712 Signature parameters
         uint256 nonce = yieldVault.nonces(user);
         uint256 deadline = block.timestamp + 1 hours;
-        uint256 amountToClaim = 50 * 10**18;
+        uint256 amountToClaim = 50 * 10**6;
 
         bytes32 structHash = keccak256(
             abi.encode(
@@ -328,33 +352,33 @@ contract TreasuryTest is Test {
         vm.stopPrank();
 
         // Verify balances updated
-        assertEq(yieldVault.getPendingYield(user), 50 * 10**18);
-        assertEq(usdc.balanceOf(user), 50 * 10**18);
+        assertEq(yieldVault.getPendingYield(user), 50 * 10**6);
+        assertEq(usdc.balanceOf(user), 50 * 10**6);
     }
 
     // ==========================================
     // 6. TEST CORPORATE INJECTION & TWAP SCHEDULER
     // ==========================================
     function testCorporateTWAPBuyback() public {
-        // Mint corporate USDC
-        usdc.mint(company, 1000 * 10**18);
+        // Mint corporate USDC (USDC has 6 decimals)
+        usdc.mint(company, 1000 * 10**6);
 
         vm.startPrank(company);
         usdc.approve(address(corpContribution), type(uint256).max);
         
         // 1. Audit Injection
-        corpContribution.injectFunds(1000 * 10**18, "STATEMENT_Q2_HASH");
-        assertEq(usdc.balanceOf(address(corpContribution)), 1000 * 10**18);
+        corpContribution.injectFunds(1000 * 10**6, "STATEMENT_Q2_HASH");
+        assertEq(usdc.balanceOf(address(corpContribution)), 1000 * 10**6);
         vm.stopPrank();
 
-        // 2. Create TWAP: 4 steps, 1 hour interval
+        // 2. Create TWAP: 4 steps, 1 hour interval (USDC has 6 decimals)
         vm.startPrank(governance);
-        corpContribution.createTwapOrder(1000 * 10**18, 4, 1 hours);
+        corpContribution.createTwapOrder(1000 * 10**6, 4, 1 hours);
         vm.stopPrank();
 
         // Order details check
         (,, uint256 amountPerInterval,,,) = corpContribution.twapOrders(0);
-        assertEq(amountPerInterval, 250 * 10**18);
+        assertEq(amountPerInterval, 250 * 10**6);
 
         // 3. Trigger TWAP Step 1
         corpContribution.executeTwapStep(0);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { publicClient, getWalletClient, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
-import { parseEther } from 'viem';
+import { parseEther, parseUnits } from 'viem';
 import type { TxConfirmDetails } from '../components/TransactionConfirmModal.js';
 
 interface VestedVaultActionsParams {
@@ -21,7 +21,7 @@ export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, 
     try {
       addLog(`Adquiriendo Bono Vestado a ${bondLockYears} años por $${bondPrincipal}...`);
       addToast('info', 'Compra Bono', 'Aprobando pago USDC...');
-      const principalWei = parseEther(bondPrincipal);
+      const principalWei = parseUnits(bondPrincipal, 6);  // USDC = 6 decimals
       const refAddr = bondReferrer ? (bondReferrer as `0x${string}`) : '0x0000000000000000000000000000000000000000';
       const client = getWalletClient(activeKey);
 
@@ -29,7 +29,7 @@ export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, 
         address: CONTRACT_ADDRESSES.USDC,
         abi: ABIS.ERC20,
         functionName: 'approve',
-        args: [CONTRACT_ADDRESSES.VESTED_VAULT, parseEther('1000000')]
+        args: [CONTRACT_ADDRESSES.VESTED_VAULT, parseUnits('1000000', 6)]  // USDC = 6 decimals
       });
       await publicClient.waitForTransactionReceipt({ hash: appHash });
 

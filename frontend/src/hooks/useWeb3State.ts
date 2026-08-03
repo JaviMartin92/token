@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { publicClient, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
-import { formatEther } from 'viem';
+import { formatEther, formatUnits } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import type { UserPosition } from '../components/VestedVaults.js';
 import type { MarketplaceLoan } from '../components/P2PMarketplace.js';
@@ -225,9 +225,9 @@ export function useWeb3State() {
               const startTime = Array.isArray(raw) ? Number(raw[8]) : Number(raw.startTime);
               const state = Array.isArray(raw) ? Number(raw[9]) : Number(raw.state);
 
-              const numBorrowVal = parseFloat(formatEther(borrowAmt));
+              const numBorrowVal = parseFloat(formatUnits(borrowAmt, 6));
 
-              let numCollateralVal = parseFloat(formatEther(collateralAmt));
+              let numCollateralVal = parseFloat(formatUnits(collateralAmt, 6));
               if (numCollateralVal === 0 && posTokenId > 0n) {
                 try {
                   const pos = await publicClient.readContract({
@@ -236,8 +236,8 @@ export function useWeb3State() {
                     functionName: 'getPosition',
                     args: [posTokenId]
                   }) as any;
-                  const principalVal = parseFloat(formatEther(pos[2]));
-                  const paidVal = parseFloat(formatEther(pos[3]));
+                  const principalVal = parseFloat(formatUnits(pos[2], 6));
+                  const paidVal = parseFloat(formatUnits(pos[3], 6));
                   numCollateralVal = principalVal > 0 ? principalVal : (paidVal > 0 ? paidVal : 0);
                 } catch (e) {
                   numCollateralVal = 0;
@@ -350,7 +350,8 @@ export function useWeb3State() {
             functionName: 'balanceOf',
             args: [userAddress as `0x${string}`]
           }) as bigint;
-          setUsdcBalance(parseFloat(formatEther(usdc)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+          setUsdcBalance(parseFloat(formatUnits(usdc, 6)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+
         } catch (e) {}
 
         try {
@@ -404,8 +405,8 @@ export function useWeb3State() {
                 const isExpired = currentSec >= expSec;
                 posList.push({
                   id: i,
-                  principal: parseFloat(formatEther(pos[2])).toLocaleString('en-US', { maximumFractionDigits: 2 }),
-                  paid: parseFloat(formatEther(pos[3])).toLocaleString('en-US', { maximumFractionDigits: 2 }),
+                  principal: parseFloat(formatUnits(pos[2], 6)).toLocaleString('en-US', { maximumFractionDigits: 2 }),
+                  paid: parseFloat(formatUnits(pos[3], 6)).toLocaleString('en-US', { maximumFractionDigits: 2 }),
                   expirationTimestamp: expSec,
                   expDateStr: new Date(expSec * 1000).toLocaleDateString('es-ES'),
                   lockYears: pos[6].toString(),

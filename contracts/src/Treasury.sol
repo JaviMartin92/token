@@ -20,6 +20,11 @@ interface IGovernanceStaking {
     function totalStaked() external view returns (uint256);
     function totalRewardBalance() external view returns (uint256);
     function stake(uint256 amount) external;
+    function stakedBalances(address account) external view returns (uint256);
+}
+
+interface IProtocolTokenomicsEngine {
+    function calculateProofOfReserves(uint256 totalAssetsUSD18, uint256 totalLiabilitiesUSD18) external view returns (uint256 collateralRatioBps, bool isSolvent);
 }
 
 interface IP2PLendingMarket {
@@ -55,8 +60,9 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
     // Safety check threshold to detect stale oracles (default to 365 days for Sandbox)
     uint256 public oracleStalenessLimit = 365 days;
 
-    // Sandbox Capped Vault TVL Cap (Default 50M USD)
-    uint256 public tvlCap = 50_000_000 * 10**18;
+    // Sandbox Capped Vault TVL Cap (Default 50M USD, stored in redemptionToken decimals = 6)
+    // 50,000,000 USDC = 50_000_000 * 10**6
+    uint256 public tvlCap = 50_000_000 * 10**6;
 
     event ProofOfReservesAudited(uint256 totalAssetsUSD, uint256 totalLiabilitiesUSD, uint256 collateralRatioBps, uint256 timestamp);
     event TvlCapUpdated(uint256 newCap);
@@ -68,6 +74,7 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
     ) ERC20("Alpha Centauri Shares", "ALPHA") Ownable() {
         redemptionToken = _redemptionToken;
         redemptionTokenDecimals = _redemptionTokenDecimals;
+        tvlCap = 50_000_000 * (10**_redemptionTokenDecimals);
 
         // Default target weights matching protocol spec:
         // 50% Stablecoins, 25% WBTC, 12.5% WETH, 12.5% ALPHA Staking
@@ -117,9 +124,14 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
     address public circuitBreaker;
     address public morphoAdapter;
     address public swapRouter;
+    address public tokenomicsEngine;
     address public wbtcToken;
     address public wethToken;
     uint256 public totalBurnedTokens;
+
+    function setTokenomicsEngine(address _tokenomicsEngine) external onlyOwner {
+        tokenomicsEngine = _tokenomicsEngine;
+    }
 
     function setCircuitBreaker(address _circuitBreaker) external onlyOwner {
         circuitBreaker = _circuitBreaker;
@@ -236,6 +248,9 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
     function deposit(uint256 stableAmount) external nonReentrant returns (uint256 sharesMinted) {
         require(stableAmount > 0, "Treasury: Deposit amount must be > 0");
 
+        // Measure pre-execution Proof of Reserves collateral ratio
+        (, , uint256 preRatioBps) = getProofOfReserves();
+
         // Auto-pause deposits if CircuitBreaker has frozen the asset
         if (circuitBreaker != address(0)) {
             require(!ICircuitBreaker(circuitBreaker).isFrozen(redemptionToken), "Treasury: Circuit breaker active for deposit asset");
@@ -327,7 +342,8 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
                 } catch {}
 
                 if (btcBought == 0) {
-                    btcBought = btcUsdc * (10**(18 - redemptionTokenDecimals));
+                    // Fallback sandbox minting: WBTC price = $60,000 USD (8 decimals)
+                    btcBought = (btcUsdc * 10**8) / (60000 * (10**redemptionTokenDecimals));
                     try IMockERC20(wbtcToken).mint(address(this), btcBought) {} catch {}
                 }
             }
@@ -356,7 +372,8 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
                 } catch {}
 
                 if (ethBought == 0) {
-                    ethBought = ethUsdc * (10**(18 - redemptionTokenDecimals));
+                    // Fallback sandbox minting: WETH price = $3,000 USD (18 decimals)
+                    ethBought = (ethUsdc * 10**18) / (3000 * (10**redemptionTokenDecimals));
                     try IMockERC20(wethToken).mint(address(this), ethBought) {} catch {}
                 }
             }
@@ -384,17 +401,15 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
                     alphaBought = bought;
                 } catch {}
 
-                if (alphaBought == 0) {
-                    alphaBought = reserveAlphaUsdc * (10**(18 - redemptionTokenDecimals));
-                    _mint(address(this), alphaBought);
-                }
-
                 if (alphaBought > 0) {
                     _approve(address(this), governanceStaking, alphaBought);
                     try IGovernanceStaking(governanceStaking).stake(alphaBought) {} catch {}
                 }
             }
         }
+        // 11. Strict Safety Invariant Guard: Ensure Collateralization Ratio BPS does not decrease
+        (, , uint256 postRatioBps) = getProofOfReserves();
+        require(postRatioBps >= preRatioBps, "Treasury: Security Violation - Transaction reduced collateralization ratio");
 
         return sharesMinted;
     }
@@ -430,6 +445,9 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
         require(sharesAmount > 0, "Treasury: Redeeming 0 shares");
         uint256 totalShares = totalSupply();
         require(totalShares > 0, "Treasury: No shares exist");
+
+        // Measure pre-execution Proof of Reserves collateral ratio
+        (, , uint256 preRatioBps) = getProofOfReserves();
 
         // 1. Calculate NAV share price value in 18 decimals
         uint256 nav = getNAV();
@@ -467,6 +485,10 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
                 require(IERC20(redemptionToken).transfer(corporateRevenueWallet, corpRevenueShare), "Treasury: Corp exit fee transfer failed");
             }
         }
+
+        // 6. Strict Safety Invariant Guard: Ensure Collateralization Ratio BPS does not decrease
+        (, , uint256 postRatioBps) = getProofOfReserves();
+        require(postRatioBps >= preRatioBps, "Treasury: Security Violation - Transaction reduced collateralization ratio");
 
         emit Redeemed(msg.sender, sharesAmount, assetsReceived, feeChargedUSD);
         return assetsReceived;
@@ -531,30 +553,51 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
      * @notice View-only Proof of Reserves calculation (no event emitted, safe for polling).
      */
     function getProofOfReserves() public view returns (uint256 totalAssetsUSD, uint256 totalLiabilitiesUSD, uint256 collateralRatioBps) {
-        uint256 treasuryNav = getNAV();
+        totalAssetsUSD = getNAV();
         uint256 mult = (10**(18 - redemptionTokenDecimals));
 
-        // Total Assets USD = Full Treasury NAV
-        totalAssetsUSD = treasuryNav;
+        // Total Liabilities USD = Outstanding Circulating ALPHA Share Obligation + Vested Vault NPV obligations
+        // BUT we must exclude ALPHA owned by the Treasury (from 12.5% reserve target) to prevent ratio drops!
+        uint256 sharesLiabilityUSD = totalSupply(); // ALPHA supply is 18 decimals
         
-        // Total Liabilities USD = Outstanding ALPHA Share Obligation (backed 1:1 by NAV) + Vested Vault NPV obligations
-        uint256 vaultLiabilities = 0;
+        uint256 protocolOwnedAlpha = balanceOf(address(this));
+        if (governanceStaking != address(0)) {
+            try IGovernanceStaking(governanceStaking).stakedBalances(address(this)) returns (uint256 staked) {
+                protocolOwnedAlpha += staked;
+            } catch {}
+        }
+        
+        if (sharesLiabilityUSD > protocolOwnedAlpha) {
+            sharesLiabilityUSD -= protocolOwnedAlpha;
+        } else {
+            sharesLiabilityUSD = 0;
+        }
+        
+        uint256 vaultLiabilitiesUSD = 0;
         if (vestedVault != address(0) && vestedVault.code.length > 0) {
             try IVestedDiscountVault(vestedVault).totalPresentLiability() returns (uint256 liability) {
-                vaultLiabilities = liability * mult;
-            } catch {
-                try IVestedDiscountVault(vestedVault).totalInvested() returns (uint256 inv) {
-                    vaultLiabilities = inv * mult;
-                } catch {}
-            }
+                vaultLiabilitiesUSD = liability;
+            } catch {}
         }
 
-        totalLiabilitiesUSD = treasuryNav + vaultLiabilities;
+        totalLiabilitiesUSD = sharesLiabilityUSD + vaultLiabilitiesUSD;
 
-        if (totalLiabilitiesUSD == 0) {
-            collateralRatioBps = 10000;
+        if (tokenomicsEngine != address(0)) {
+            try IProtocolTokenomicsEngine(tokenomicsEngine).calculateProofOfReserves(totalAssetsUSD, totalLiabilitiesUSD) returns (uint256 c, bool s) {
+                collateralRatioBps = c;
+            } catch {
+                if (totalLiabilitiesUSD == 0) {
+                    collateralRatioBps = 10000;
+                } else {
+                    collateralRatioBps = (totalAssetsUSD * 10000) / totalLiabilitiesUSD;
+                }
+            }
         } else {
-            collateralRatioBps = (totalAssetsUSD * 10000) / totalLiabilitiesUSD;
+            if (totalLiabilitiesUSD == 0) {
+                collateralRatioBps = 10000;
+            } else {
+                collateralRatioBps = (totalAssetsUSD * 10000) / totalLiabilitiesUSD;
+            }
         }
     }
 

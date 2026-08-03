@@ -8,7 +8,9 @@ import "../src/CircuitBreaker.sol";
 import "../src/lib/token/ERC20/ERC20.sol";
 
 contract MockUSDC is ERC20 {
-    constructor() ERC20("USD Coin", "USDC") {}
+    uint8 private _dec;
+    constructor(string memory name, string memory symbol, uint8 dec_) ERC20(name, symbol) { _dec = dec_; }
+    function decimals() public view override returns (uint8) { return _dec; }
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
     }
@@ -48,15 +50,15 @@ contract ProtocolInvariantsTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
-        usdc = new MockUSDC();
+        usdc = new MockUSDC("USD Coin", "USDC", 6);
         usdcFeed = new MockFeed(1e8); // $1.00
 
-        treasury = new Treasury(owner, address(usdc), 18);
+        treasury = new Treasury(owner, address(usdc), 6);
         staking = new GovernanceStaking(address(usdc), address(usdc), owner);
         breaker = new CircuitBreaker(owner);
 
         breaker.setPriceFeed(address(usdc), address(usdcFeed));
-        treasury.setTrackedAsset(address(usdc), address(usdcFeed), 18);
+        treasury.setTrackedAsset(address(usdc), address(usdcFeed), 6);
         treasury.setProtocolModules(
             address(0x10),
             address(0x11),
@@ -66,14 +68,14 @@ contract ProtocolInvariantsTest is Test {
             address(0x14)
         );
 
-        usdc.mint(user1, 1_000_000 * 1e18);
-        usdc.mint(user2, 1_000_000 * 1e18);
+        usdc.mint(user1, 1_000_000 * 1e6);
+        usdc.mint(user2, 1_000_000 * 1e6);
         vm.stopPrank();
     }
 
     /// @dev Invariant 1: Proof of Reserves collateral ratio must be >= 100% after normal deposits.
     function testFuzz_DepositCollateralRatio(uint256 amount) public {
-        amount = bound(amount, 100 * 1e18, 50_000 * 1e18);
+        amount = bound(amount, 100 * 1e6, 50_000 * 1e6);
 
         vm.startPrank(user1);
         usdc.approve(address(treasury), amount);
@@ -87,7 +89,7 @@ contract ProtocolInvariantsTest is Test {
 
     /// @dev Invariant 2: Redemption fee (1%) must reduce liabilities proportionally without making assets < liabilities.
     function testFuzz_RedeemMaintainSolvency(uint256 depositAmt, uint256 redeemPct) public {
-        depositAmt = bound(depositAmt, 1_000 * 1e18, 50_000 * 1e18);
+        depositAmt = bound(depositAmt, 1_000 * 1e6, 50_000 * 1e6);
         redeemPct = bound(redeemPct, 1, 100);
 
         vm.startPrank(user1);
