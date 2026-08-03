@@ -120,15 +120,27 @@ export function useWeb3State() {
         }
       } catch (e) {}
 
-      let treasuryStaked = 0n;
+      // FIX #3: Stake Reservas = ALPHA tokens owned by the Treasury wallet itself
+      // (these are the protocol-owned reserve tokens, NOT staked in the staking contract)
+      let treasuryAlphaBalance = 0n;
+      let treasuryStakedInGov = 0n;
       try {
-        treasuryStaked = await publicClient.readContract({
+        // ALPHA balance held directly in Treasury wallet
+        treasuryAlphaBalance = await publicClient.readContract({
+          address: CONTRACT_ADDRESSES.TREASURY,
+          abi: ABIS.ERC20,
+          functionName: 'balanceOf',
+          args: [CONTRACT_ADDRESSES.TREASURY]
+        }) as bigint;
+        // Also check if Treasury has staked in GovernanceStaking
+        treasuryStakedInGov = await publicClient.readContract({
           address: CONTRACT_ADDRESSES.STAKING,
           abi: ABIS.STAKING,
           functionName: 'stakedBalances',
           args: [CONTRACT_ADDRESSES.TREASURY]
         }) as bigint;
       } catch (e) {}
+      const treasuryStaked = treasuryAlphaBalance + treasuryStakedInGov;
 
       const corporateTotal = opExStaked + profitStaked;
       const communityTotal = rawTotalStaked;
@@ -294,6 +306,9 @@ export function useWeb3State() {
         }) as readonly [bigint, bigint, bigint];
 
         // Pure real on-chain Assets, Liabilities, and Ratio directly from Treasury.sol
+        // FIX #2: Active Treasury loans are tracked separately (shown below PoR as Activos Totales)
+        // The NAV from the contract already excludes P2P escrow; we do NOT add loans to assets
+        // to avoid double-counting — loans are shown in the separate loans counter below the PoR widget.
         const assetsVal = parseFloat(formatEther(res[0]));
         const liabilitiesVal = parseFloat(formatEther(res[1]));
         const ratioVal = liabilitiesVal > 0 ? (assetsVal / liabilitiesVal) * 100 : 100.0;

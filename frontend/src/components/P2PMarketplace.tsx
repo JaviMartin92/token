@@ -129,18 +129,18 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
         </div>
       </div>
 
-      {/* ACTIVE LOANS QUICK REPAYMENT PANEL */}
-      {loansList.filter(l => l.state === 1 || l.state === 0).length > 0 && (
+      {/* ACTIVE LOANS QUICK REPAYMENT PANEL - only show user's own loans */}
+      {loansList.filter(l => (l.state === 1 && l.borrower.toLowerCase() === userAddress.toLowerCase()) || (l.state === 0 && l.lender.toLowerCase() === userAddress.toLowerCase())).length > 0 && (
         <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', borderRadius: '16px', border: '1px solid rgba(59, 130, 246, 0.4)', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(15, 23, 42, 0.6) 100%)' }}>
           <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            💳 Mis Préstamos Solicitados & Activos ({loansList.filter(l => l.state === 1 || l.state === 0).length})
+            💳 Mis Préstamos Solicitados & Activos ({loansList.filter(l => (l.state === 1 && l.borrower.toLowerCase() === userAddress.toLowerCase()) || (l.state === 0 && l.lender.toLowerCase() === userAddress.toLowerCase())).length})
           </h3>
           <p style={{ margin: '0 0 1rem 0', fontSize: '0.8rem', opacity: 0.85 }}>
             Aquí puedes ver claramente todos los préstamos solicitados u ofertas activas y <strong>reembolsarlos fácilmente en 1-clic</strong> para recuperar tu colateral en custodia (NFT, ALPHA, WBTC, WETH).
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
-            {loansList.filter(l => l.state === 1 || l.state === 0).map((loan) => (
+            {loansList.filter(l => (l.state === 1 && l.borrower.toLowerCase() === userAddress.toLowerCase()) || (l.state === 0 && l.lender.toLowerCase() === userAddress.toLowerCase())).map((loan) => (
               <div key={loan.id} style={{ background: 'rgba(0,0,0,0.3)', border: loan.state === 1 ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid rgba(234, 179, 8, 0.4)', borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.75rem' }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>

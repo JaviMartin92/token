@@ -29,6 +29,7 @@ interface IProtocolTokenomicsEngine {
 
 interface IP2PLendingMarket {
     function totalActiveLoansReceivableUSD() external view returns (uint256);
+    function treasuryLoansReceivableUSD() external view returns (uint256);
     function totalEscrowedCollateralUSD() external view returns (uint256);
 }
 
@@ -509,8 +510,6 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
         uint256 yieldStables = realYieldRouter != address(0) ? IERC20(redemptionToken).balanceOf(realYieldRouter) * mult : 0;
         uint256 stakingStables = governanceStaking != address(0) ? IERC20(redemptionToken).balanceOf(governanceStaking) * mult : 0;
 
-        // Note: P2P Lending Market collateral and active loans are user escrow custody,
-        // so they are strictly excluded from protocol-owned Treasury NAV reserves.
         totalNAVUSD = treasuryStables + morphoStables + vaultStables + yieldStables + stakingStables;
 
         // 3. Add values of tracked assets (WBTC, WETH, etc.) using Chainlink oracles
@@ -522,6 +521,15 @@ contract Treasury is ITreasury, ERC20, Ownable, ReentrancyGuard {
             if (feed != address(0)) {
                 totalNAVUSD += getAssetValue(asset, feed, assetDecimals[asset]);
             }
+        }
+
+        // 4. CRITICAL FIX: Active Treasury Loans are protocol receivables — the USDC left Treasury
+        // but is still owed BACK to the protocol. Must be counted as an asset to avoid NAV/PoR drop.
+        // ONLY treasury-funded loans (lender == treasury) count — pure P2P user loans are NOT protocol assets.
+        if (p2pMarket != address(0)) {
+            try IP2PLendingMarket(p2pMarket).treasuryLoansReceivableUSD() returns (uint256 loansUSD) {
+                totalNAVUSD += loansUSD * mult;
+            } catch {}
         }
     }
 

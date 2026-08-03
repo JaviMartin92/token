@@ -247,6 +247,20 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
         }
     }
 
+    /**
+     * @notice Returns only the receivables for loans funded by the Treasury (lender == treasury address).
+     * These are protocol-owned assets (loans the treasury made) and must be reflected in NAV.
+     * Pure P2P user-to-user loans are NOT included as they are not protocol funds.
+     */
+    function treasuryLoansReceivableUSD() external view returns (uint256 totalReceivable) {
+        if (treasury == address(0)) return 0;
+        for (uint256 i = 1; i < nextLoanId; i++) {
+            if (loans[i].state == LoanState.ACTIVE && loans[i].lender == treasury) {
+                totalReceivable += loans[i].borrowAmount;
+            }
+        }
+    }
+
     function calculateHealthFactor(uint256 loanId) public view returns (uint256 healthFactorRatio) {
         Loan memory loan = loans[loanId];
         if (loan.state != LoanState.ACTIVE) return 10000;
