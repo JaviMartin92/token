@@ -1,4 +1,24 @@
-# 📜 BIBLIA DE TOKENOMICS - ALPHA CENTAURI PROTOCOL
+# 📜 BIBLIA COMPLETA DE TOKENOMICS - ALPHA CENTAURI PROTOCOL
+
+## 🛡️ 0. DIRECTIVAS INMUTABLES E INVARIANTES DEL PROTOCOLO
+
+El Protocolo **Alpha Centauri** está gobernado por **3 Directivas Inmutables de Inmunidad Operativa**, codificadas a nivel de bytecode en la EVM y no modificables por ninguna entidad:
+
+### 1. Directiva de Invariante de Colateralización Incondicional
+$$\mathbf{\text{Ratio}_{\text{post-tx}} \ge \text{Ratio}_{\text{pre-tx}}}$$
+- **Mecanismo On-Chain:** Evaluado en `TreasuryManager.sol` en las funciones `deposit()` y `redeem()`.
+- **Reversión Obligatoria:** Si cualquier transacción provocara una caída en el porcentaje de reservas (por redondeo, desajuste de oráculo o arbitraje), la EVM la revierte de inmediato con el mensaje:
+  `"TreasuryManager: Security Violation - Transaction reduced collateralization ratio"`.
+
+### 2. Prohibición Absoluta de Minteado Inflacionario Sin Respaldo
+- **Regla:** Ninguna billetera corporativa (`CorporateOpExVault`, `CorporateProfitVault`, equipo o fundadores) puede recibir tokens `ALPHA` minteados "de la nada".
+- **Mecanismo:** La acuñación solo existe cuando ingresa colateral real en USDC en la Tesorería. Las comisiones asignadas a las bóvedas corporativas (25% OpEx / 25% Profit) provienen **exclusivamente de compras reales en el mercado DEX** efectuadas por `RealYieldRouter.sol`.
+
+### 3. Invariante Deflacionario Incondicional (Quema Permanente)
+- **Staking:** El 50% de la comisión de entrada al pool de gobernanza (0.50% del total bloqueado) es **destruido de forma irreversible** mediante `_burn`.
+- **Ragequit:** Al cancelar anticipadamente un bono vestado (`VestedDiscountVault.sol`), el **100% de los tokens ALPHA asociados en vesting son destruidos de forma irreversible**, además de retener la penalización del 15% en USDC para las reservas.
+
+---
 
 ## 🌟 Visión General y Filosofía de Real Yield
 
@@ -10,35 +30,24 @@ El Protocolo **Alpha Centauri** opera bajo un modelo estricto de **Real Yield Re
 
 Toda comisión generada por cualquier operativa de la plataforma (depósitos, rescates, compra de bonos vestados, penalizaciones por ragequit, originación e intereses de préstamos P2P) ingresa a través del contrato `RealYieldRouter.sol` y se distribuye estrictamente bajo la siguiente regla universal:
 
-| Porcentaje | Destino | Mecanismo On-Chain | Propósito Económico |
+| Porcentaje | Destino On-Chain | Mecanismo On-Chain | Propósito Económico |
 | :--- | :--- | :--- | :--- |
-| **50%** | **Reservas Estratégicas** (`Treasury.sol`) | Depósito directo en Tesorería | Incrementa el NAV por token y fortalece las reservas respaldadas por activos |
-| **25%** | **Corporate OpEx Vault** (`CorporateOpExVault.sol`) | Auto-Swap en DEX a `ALPHA` y Staking | Financia gastos operativos acumulando tokens ALPHA reales comprados en mercado |
-| **25%** | **Corporate Profit Vault** (`CorporateProfitVault.sol`) | Auto-Swap en DEX a `ALPHA` y Staking | Acumula beneficios corporativos exclusivamente en tokens ALPHA reales comprados en mercado |
-
-> [!IMPORTANT]
-> **PROHIBICIÓN DE MINTEADO SIN RESPALDO**: Las carteras corporativas (`OpEx` y `Profit`) **NUNCA** reciben tokens ALPHA minteados de la nada. Toda asignación a las bóvedas corporativas proviene exclusivamente de swaps de mercado DEX con comisiones reales capturadas.
+| **50.00%** | **Reservas Estratégicas** (`TreasuryManager.sol`) | Depósito directo en Tesorería (`AlphaVault.sol`) | Incrementa el NAV por token y fortalece las reservas respaldadas por activos |
+| **25.00%** | **Corporate OpEx Vault** (`CorporateOpExVault.sol`) | Auto-Swap en DEX a `ALPHA` y Staking | Financia gastos operativos acumulando tokens ALPHA reales comprados en mercado |
+| **25.00%** | **Corporate Profit Vault** (`CorporateProfitVault.sol`) | Auto-Swap en DEX a `ALPHA` y Staking | Acumula beneficios corporativos exclusivamente en tokens ALPHA reales comprados en mercado |
 
 ---
 
 ## 🏦 2. Composición de Activos y Sub-Reserva 80 / 20 de USDC
 
-La Tesorería de `Treasury.sol` mantiene una cartera diversificada multi-activo con las siguientes ponderaciones objetivo (`Target Asset Allocation`):
+La Tesorería de `TreasuryManager.sol` mantiene una cartera diversificada multi-activo con las siguientes ponderaciones objetivo (`Target Asset Allocation`):
 
 | Ponderación Target | Activo de Reserva | Estrategia de Liquidez y Rendimiento |
 | :---: | :--- | :--- |
-| **50.00%** | **USDC / Stablecoins** | **Sub-Reserva 80/20**: 80% auto-depositado en `MorphoYieldVaultAdapter.sol` (productos seguros con APY del 6.45%) + 20% en Búfer Líquido para originar Préstamos P2P. |
-| **25.00%** | **Wrapped Bitcoin (WBTC)** | En Staking / Rendimiento valorado on-chain vía Oráculos Chainlink BTC/USD. |
-| **12.50%** | **Wrapped Ethereum (WETH)** | Liquid Staking de ETH valorado on-chain vía Oráculos Chainlink ETH/USD. |
+| **50.00%** | **USDC / Stablecoins** | **Sub-Reserva 80/20**: 80% auto-depositado en `MorphoYieldVaultAdapter.sol` (productos seguros con APY del ~6.45%) + 20% en Búfer Líquido de Tesorería (`treasuryLoanBuffer`) para originar Préstamos P2P y préstamos directos. |
+| **25.00%** | **Wrapped Bitcoin (WBTC)** | En Staking / Rendimiento valorado on-chain vía Oráculos Chainlink BTC/USD (`OracleHub.sol`). |
+| **12.50%** | **Wrapped Ethereum (WETH)** | Liquid Staking de ETH valorado on-chain vía Oráculos Chainlink ETH/USD (`OracleHub.sol`). |
 | **12.50%** | **Native ALPHA Staking** | Reserva en staking nativo `$ALPHA` para respaldo de liquidez. |
-
-```mermaid
-flowchart TD
-    A["Usuario deposita USDC en Treasury"] --> B["Comisión 0.50% enrutada a RealYieldRouter"]
-    A --> C["Neto 99.50% ingresa a Reservas"]
-    C --> D["80% Auto-depositado en MorphoYieldVaultAdapter (Genera APY)"]
-    C --> E["20% Conservado en Búfer Líquido de Treasury (Destinado a Préstamos P2P)"]
-```
 
 ---
 
@@ -46,55 +55,69 @@ flowchart TD
 
 Las carteras corporativas de OpEx y Beneficios no acumulan stablecoins ni activos heterogéneos:
 
-1. **Moneda Única (`ALPHA`)**: Si una comisión ingresa en USDC, USDT u otro token, el `RealYieldRouter` efectúa una compra en mercado (DEX) del token `ALPHA`.
+1. **Moneda Única (`ALPHA`)**: Si una comisión ingresa en USDC u otro token, el `RealYieldRouter` efectúa una compra en mercado (DEX) del token `ALPHA`.
 2. **Auto-Staking**: El token `ALPHA` resultante se deposita inmediatamente en `GovernanceStaking.sol` asignado a las bóvedas segregadas `CorporateOpExVault` y `CorporateProfitVault`.
 
 ---
 
-## 📊 4. Matriz Completa de Comisiones y Descuentos
+## 🔀 4. Opciones de Cobro de Yield para Usuarios (`RealYieldRouter.sol`)
 
-| Operativa | Contrato Responsable | Comisión / Penalización | Enrutamiento On-Chain |
+Los usuarios stakers de `stALPHA` pueden configurar su preferencia de cobro de dividendos en cualquier momento:
+
+- **Opción A (`OPTION_A_STABLECOIN`)**: Cobro directo de dividendos en **USDC líquido** en su billetera.
+- **Opción B (`OPTION_B_RESERVE_ASSET`)**: Auto-compounding mediante la conversión de dividendos a activos de reserva **WBTC / WETH**.
+
+---
+
+## 📊 5. Matriz Completa de Comisiones On-Chain (`ProtocolTokenomicsEngine.sol`)
+
+| Operativa | Contrato Responsable | Comisión / Penalización | Reparto On-Chain |
 | :--- | :--- | :--- | :--- |
-| **Treasury Deposit** | `Treasury.sol` | **0.50%** | Enrutado vía `RealYieldRouter` (50/25/25) |
-| **Treasury Redeem** | `Treasury.sol` | **1.00%** | Enrutado vía `RealYieldRouter` (50/25/25) |
-| **Vested Bond Mint** | `VestedDiscountVault.sol` | **1.50%** | Enrutado vía `RealYieldRouter` (50/25/25) |
-| **Vested Bond Ragequit** | `VestedDiscountVault.sol` | **15.00%** (Penalización) | **100%** de la penalización enrutado vía `RealYieldRouter` (50/25/25). El 85% restante se reembolsa al usuario |
-| **P2P Loan Origination** | `P2PLendingMarket.sol` | **0.50%** | Enrutado vía `RealYieldRouter` (50/25/25) |
-| **P2P Interest Spread** | `P2PLendingMarket.sol` | **10.00%** del Interés | Enrutado vía `RealYieldRouter` (50/25/25) |
-| **Staking Entry Fee** | `GovernanceStaking.sol` | **1.00%** | Distribuido a stakers / reservas |
+| **Depósito en Tesorería** | `TreasuryManager.sol` | **0.50%** (50 BPS) | 50% Reservas / 25% OpEx / 25% Profit |
+| **Rescate (Redeem)** | `TreasuryManager.sol` | **1.00%** (100 BPS) | 50% Reservas / 25% OpEx / 25% Profit |
+| **Entrada a Staking** | `GovernanceStaking.sol` | **1.00%** (100 BPS) | **0.50% Quema Deflacionaria Permanente**, 0.25% OpEx, 0.25% Profit |
+| **Acuñación de Bonos** | `VestedDiscountVault.sol` | **1.50%** Mint Fee + **1.50%** Referidos | 50% Reservas / 25% OpEx / 25% Profit |
+| **Ragequit de Bonos** | `VestedDiscountVault.sol` | **15.00%** Penalización USDC | **100% de la penalización enrutada 50/25/25 + Quema 100% Unvested** |
+| **Originación Préstamo P2P** | `P2PLendingMarket.sol` | **0.50%** (50 BPS) | 50% Reservas / 25% OpEx / 25% Profit |
+| **Spread Interés P2P** | `P2PLendingMarket.sol` | **10.00%** del Interés Generado | 50% Reservas / 25% OpEx / 25% Profit |
 
 ---
 
-## 🎯 5. Tabla de Vested Discount Vault (Escala de Maduración)
+## 📜 6. Escala de Descuentos para Bonos Vestados y Tiers VIP
 
-Los bonos con descuento se mintean como **NFTs de Posición** (`VaultPositionNFT.sol`) y otorgan descuentos crecientes según la duración del bloqueo:
+Los bonos con descuento se mintean como **NFTs de Posición** (`VaultPositionNFT.sol`):
 
-| Periodo de Vesting | Descuento Aplicado | Penalización por Cancelación (`Ragequit`) |
-| :---: | :---: | :---: |
-| **3 Meses** | **5.00%** | **15.00%** |
-| **6 Meses** | **10.00%** | **15.00%** |
-| **12 Meses** | **15.00%** | **15.00%** |
-| **24 Meses** | **20.00%** | **15.00%** |
-| **36 Meses** | **25.00%** | **15.00%** |
-
----
-
-## 🛡️ 6. Proof of Reserves (PoR) e Invariante de Solvencia
-
-El contrato `Treasury.sol` calcula en todo momento la solvencia del protocolo combinando los activos custodiados con las obligaciones vigentes:
-
-$$\text{Activos Totales USD} = \text{NAV Treasury} + \text{USDC en Morpho} + \text{USDC en Préstamos P2P} + \text{Cuentas por Cobrar P2P} + \text{Staking Rewards}$$
-
-$$\text{Pasivos Totales USD} = \text{Oferta Total de Shares ALPHA} + \text{Obligaciones NPV de Vested Vault}$$
-
-$$\text{Ratio de Solvencia} = \left( \frac{\text{Activos Totales USD}}{\text{Pasivos Totales USD}} \right) \times 100 \ge 100.00\%$$
+| Bloqueo | Descuento Base | Bonus VIP Staking Tier | Descuento Máximo Cap | Penalización Ragequit |
+| :---: | :---: | :---: | :---: | :---: |
+| **1 Año** | **5.00%** | **+1.00%** ($\ge 5\text{k stALPHA}$) | **50.00%** | **15.00%** + Quema 100% Unvested |
+| **2 Años** | **10.00%** | **+2.00%** ($\ge 10\text{k stALPHA}$) | **50.00%** | **15.00%** + Quema 100% Unvested |
+| **3 Años** | **15.00%** | **+3.00%** ($\ge 20\text{k stALPHA}$) | **50.00%** | **15.00%** + Quema 100% Unvested |
+| **4 Años** | **20.00%** | **+3.00%** ($\ge 20\text{k stALPHA}$) | **50.00%** | **15.00%** + Quema 100% Unvested |
 
 ---
 
-## 🔍 7. Verificación de Inspección Interna On-Chain
+## 🤝 7. Parámetros de Préstamos P2P y Búfer de Tesorería (`P2PLendingMarket.sol`)
 
-La validez de esta especificación se audita dinámicamente mediante el script de inspección directa de balances [frontend/test_strict_tokenomics_audit.cjs](file:///C:/Users/Admin/Desktop/token/frontend/test_strict_tokenomics_audit.cjs):
+- **LTV Máximo:** **70.00%** para Activos Estándar / Position NFTs, **50.00%** para token ALPHA líquido.
+- **Liquidadibilidad Min Health Factor:** **115.00%** (`minHealthFactorBps = 11500`).
+- **Línea Directa de Tesorería:** Origen de fondos desde el 20% del Búfer Líquido de Tesorería.
+- **Custodia en Escrow:** NFTs de posición retenidos en el mercado P2P como garantía hasta el pago total del principal + intereses.
 
-```bash
-node frontend/test_strict_tokenomics_audit.cjs
-```
+---
+
+## ⚡ 8. Control de Seguridad y Circuit Breaker (`CircuitBreaker.sol`)
+
+- **Pausa de Emergencia:** Congelación inmediata del protocolo ante obsolescencia de oráculos (`staleness > 86400s`) o anomalías de volatilidad.
+- **Invariante PoR Garantizado:** Evaluado dinámicamente antes y después de cada transacción de depósito/rescate (`postRatioBps >= preRatioBps`).
+
+---
+
+## 🛡️ 9. Proof of Reserves (PoR) e Invariante de Solvencia
+
+El contrato `TreasuryManager.sol` calcula en todo momento la solvencia del protocolo combinando los activos custodiados con las obligaciones vigentes:
+
+$$\text{Activos Totales USD} = \text{USDC Bóveda} + \text{Morpho Yield} + \text{WBTC/WETH} + \text{Préstamos P2P Activos}$$
+
+$$\text{Pasivos Totales USD} = \text{Circulante ALPHA} \times \text{NAV} + \text{Obligaciones Bonos Vestados}$$
+
+$$\text{Ratio PoR} = \left( \frac{\text{Activos Totales USD}}{\text{Pasivos Totales USD}} \right) \times 100 \ge \mathbf{100.00\%}$$

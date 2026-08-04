@@ -80,7 +80,7 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({ toasts, on
                 padding: '0 0.2rem'
               }}
             >
-              ✕
+              ✖
             </button>
           </div>
         );

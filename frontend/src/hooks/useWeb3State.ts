@@ -6,11 +6,14 @@ import type { UserPosition } from '../components/VestedVaults.js';
 import type { MarketplaceLoan } from '../components/P2PMarketplace.js';
 
 export function useWeb3State() {
-  const ADMIN_KEY = (import.meta.env.VITE_ADMIN_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80');
-  const USER_KEY = (import.meta.env.VITE_USER_KEY || '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d');
+  const ADMIN_KEY = import.meta.env.VITE_ADMIN_KEY;
+  const USER_KEY = import.meta.env.VITE_USER_KEY;
 
   const [activeKey, setActiveKey] = useState(ADMIN_KEY);
+  console.log("DEBUG: ADMIN_KEY", ADMIN_KEY);
+  console.log("DEBUG: activeKey", activeKey);
   const account = privateKeyToAccount(activeKey as `0x${string}`);
+  console.log("DEBUG: account", account);
 
   const [walletConnected, setWalletConnected] = useState(false);
   const [userAddress, setUserAddress] = useState('');
@@ -36,7 +39,8 @@ export function useWeb3State() {
   const [corporateStakedSupply, setCorporateStakedSupply] = useState('0.00');
   const [treasuryStakedSupply, setTreasuryStakedSupply] = useState('0.00');
   const [stakingRatioPct, setStakingRatioPct] = useState('0.00%');
-  const [navPerShareUSD, setNavPerShareUSD] = useState('1.0000');
+  const [navPerShareUSD, setNavPerShareUSD] = useState('$1.0000 USDC');
+  const [navPerShareNum, setNavPerShareNum] = useState(1.0);
 
   const [blockDateStr, setBlockDateStr] = useState('');
   const [snapshotId, setSnapshotId] = useState('');
@@ -83,7 +87,7 @@ export function useWeb3State() {
 
       try {
         rawTotalSupply = await publicClient.readContract({
-          address: CONTRACT_ADDRESSES.TREASURY,
+          address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
           abi: ABIS.ERC20,
           functionName: 'totalSupply'
         }) as bigint;
@@ -104,7 +108,7 @@ export function useWeb3State() {
       try {
         if (CONTRACT_ADDRESSES.CORPORATE_OPEX) {
           opExStaked = await publicClient.readContract({
-            address: CONTRACT_ADDRESSES.TREASURY,
+            address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
             abi: ABIS.ERC20,
             functionName: 'balanceOf',
             args: [CONTRACT_ADDRESSES.CORPORATE_OPEX]
@@ -112,7 +116,7 @@ export function useWeb3State() {
         }
         if (CONTRACT_ADDRESSES.CORPORATE_PROFIT) {
           profitStaked = await publicClient.readContract({
-            address: CONTRACT_ADDRESSES.TREASURY,
+            address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
             abi: ABIS.ERC20,
             functionName: 'balanceOf',
             args: [CONTRACT_ADDRESSES.CORPORATE_PROFIT]
@@ -122,12 +126,14 @@ export function useWeb3State() {
 
       // FIX #3: Stake Reservas = ALPHA tokens owned by the Treasury wallet itself
       // (these are the protocol-owned reserve tokens, NOT staked in the staking contract)
+      const corporateTotal = opExStaked + profitStaked;
+
       let treasuryAlphaBalance = 0n;
       let treasuryStakedInGov = 0n;
       try {
         // ALPHA balance held directly in Treasury wallet
         treasuryAlphaBalance = await publicClient.readContract({
-          address: CONTRACT_ADDRESSES.TREASURY,
+          address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
           abi: ABIS.ERC20,
           functionName: 'balanceOf',
           args: [CONTRACT_ADDRESSES.TREASURY]
@@ -142,13 +148,14 @@ export function useWeb3State() {
       } catch (e) {}
       const treasuryStaked = treasuryAlphaBalance + treasuryStakedInGov;
 
-      const corporateTotal = opExStaked + profitStaked;
-      const communityTotal = rawTotalStaked;
+      // Global locked/reserved supply = Community Staked + Corporate Vaults + Treasury Staked
+      // rawTotalStaked includes Community Staked AND treasuryStakedInGov!
+      const communityTotal = rawTotalStaked > treasuryStakedInGov ? rawTotalStaked - treasuryStakedInGov : 0n;
       const netCirculating = rawTotalSupply > rawBurned ? rawTotalSupply - rawBurned : 0n;
       setCirculatingSupply(parseFloat(formatEther(netCirculating)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
-      // Global locked/reserved supply = Community Staked + Corporate Vaults + Treasury Staked
-      const globalLockedTotal = rawTotalStaked + corporateTotal + treasuryStaked;
+      // Global locked is just Community + Corporate + Treasury
+      const globalLockedTotal = communityTotal + corporateTotal + treasuryStaked;
 
       setCorporateStakedSupply(parseFloat(formatEther(corporateTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
       setCommunityStakedSupply(parseFloat(formatEther(communityTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
@@ -175,8 +182,10 @@ export function useWeb3State() {
         if (netCirculatingNum > 0) {
           const navPerShare = (navNum / netCirculatingNum).toFixed(4);
           setNavPerShareUSD(`$${navPerShare} USDC`);
+          setNavPerShareNum(navNum / netCirculatingNum);
         } else {
           setNavPerShareUSD('$1.0000 USDC');
+          setNavPerShareNum(1.0);
         }
       } catch (e) {}
 
@@ -371,7 +380,7 @@ export function useWeb3State() {
 
         try {
           const shares = await publicClient.readContract({
-            address: CONTRACT_ADDRESSES.TREASURY,
+            address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
             abi: ABIS.ERC20,
             functionName: 'balanceOf',
             args: [userAddress as `0x${string}`]
@@ -476,6 +485,7 @@ export function useWeb3State() {
     treasuryStakedSupply,
     stakingRatioPct,
     navPerShareUSD,
+    navPerShareNum,
     blockDateStr,
     snapshotId,
     setSnapshotId,

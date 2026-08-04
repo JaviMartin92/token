@@ -64,7 +64,8 @@ export default function App() {
     addLog,
     addToast,
     fetchData: web3.fetchData,
-    requestConfirmation: txConfirm.requestConfirmation
+    requestConfirmation: txConfirm.requestConfirmation,
+    navPerShareNum: web3.navPerShareNum
   });
 
   const vestedVault = useVestedVaultActions({
@@ -169,6 +170,7 @@ export default function App() {
         porAssets={web3.porAssets}
         porBreakdown={web3.porBreakdown}
         stakedBalance={web3.stakedBalance}
+        grossCashflowUsd={grossCashflowUsd}
         activeLoansUsd={activeLoansSum}
         claimableYieldUsd={claimableYieldVal}
       />
@@ -191,7 +193,7 @@ export default function App() {
             porLiabilities={web3.porLiabilities}
             porRatio={web3.porRatio}
             porBreakdown={web3.porBreakdown}
-            targetWeights={web3.targetWeights}
+
             usdcBalance={web3.usdcBalance}
             sharesBalance={web3.sharesBalance}
             depositAmount={treasury.depositAmount}

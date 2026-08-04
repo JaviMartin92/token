@@ -10,9 +10,10 @@ interface TreasuryActionsParams {
   addToast: (type: 'info' | 'success' | 'warning' | 'error', title: string, message: string) => void;
   fetchData: () => Promise<void>;
   requestConfirmation?: (details: TxConfirmDetails, action: () => Promise<void>) => void;
+  navPerShareNum: number;
 }
 
-export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, fetchData, requestConfirmation }: TreasuryActionsParams) {
+export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, fetchData, requestConfirmation, navPerShareNum }: TreasuryActionsParams) {
   const [depositAmount, setDepositAmount] = useState('');
   const [redeemAmount, setRedeemAmount] = useState('');
 
@@ -91,8 +92,8 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
         targetContractAddress: CONTRACT_ADDRESSES.TREASURY,
         inputAmount: `$${num.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
         inputSymbol: 'USDC (Bruto Ingresado)',
-        expectedOutput: `${net}`,
-        expectedOutputSymbol: 'ALPHA Shares (Acuñadas a $1.00 NAV)',
+        expectedOutput: `${(parseFloat(net) / navPerShareNum).toFixed(2)}`,
+        expectedOutputSymbol: `ALPHA Shares (Acuñadas a $${navPerShareNum.toFixed(4)} NAV)`,
         details: [
           { label: 'Monto Bruto Ingresado', value: `$${num.toFixed(2)} USDC` },
           { label: 'Comisión de Entrada (0.50%)', value: `$${fee} USDC`, badge: 'Reparto 50%/25%/25%' },
@@ -116,6 +117,14 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
       addToast('info', 'Rescate Tesorería', 'Enviando transacción...');
       const amountWei = parseEther(redeemAmount);
       const client = getWalletClient(activeKey);
+
+      const appHash = await client.writeContract({
+        address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
+        abi: ABIS.ERC20,
+        functionName: 'approve',
+        args: [CONTRACT_ADDRESSES.TREASURY, amountWei]
+      });
+      await publicClient.waitForTransactionReceipt({ hash: appHash });
 
       const tx = await client.writeContract({
         address: CONTRACT_ADDRESSES.TREASURY,
@@ -153,10 +162,10 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
         typeBadge: 'Quema de Shares & Salida',
         targetContractName: 'Treasury.sol',
         targetContractAddress: CONTRACT_ADDRESSES.TREASURY,
-        inputAmount: `${num.toLocaleString('en-US')}`,
-        inputSymbol: 'ALPHA Shares a Quemat',
-        expectedOutput: `$${net}`,
-        expectedOutputSymbol: 'USDC Netos Recibidos',
+        inputAmount: `${num.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+        inputSymbol: 'ALPHA Shares a Quemar',
+        expectedOutput: `$${(parseFloat(net) * navPerShareNum).toFixed(2)}`,
+        expectedOutputSymbol: `USDC Netos Recibidos (Canje a $${navPerShareNum.toFixed(4)} NAV)`,
         details: [
           { label: 'Shares Presentadas para Rescate', value: `${num.toFixed(2)} ALPHA Shares` },
           { label: 'Comisión de Rescate (1.00%)', value: `$${fee} USDC`, badge: 'Reparto 50%/25%/25%' },

@@ -23,7 +23,7 @@ export function useStakingActions({ activeKey, account, userAddress, addLog, add
       addToast('info', 'Staking ALPHA', 'Aprobando tokens...');
       const client = getWalletClient(activeKey);
       const appHash = await client.writeContract({
-        address: CONTRACT_ADDRESSES.TREASURY,
+        address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
         abi: ABIS.ERC20,
         functionName: 'approve',
         args: [CONTRACT_ADDRESSES.STAKING, parseEther(stakeAmount)]
@@ -39,7 +39,8 @@ export function useStakingActions({ activeKey, account, userAddress, addLog, add
       await publicClient.waitForTransactionReceipt({ hash: tx });
       addLog(`¡Stake de ${stakeAmount} ALPHA realizado con éxito!`);
       addToast('success', 'Staking Exitoso', 'ALPHA bloqueado en pool de gobernanza');
-      fetchData();
+      await fetchData();
+      setTimeout(fetchData, 500);
     } catch (err: any) {
       addLog(`[Error] Stake falló: ${err.message || err}`);
       addToast('error', 'Error Staking', err.message || 'Fallo');
@@ -98,7 +99,8 @@ export function useStakingActions({ activeKey, account, userAddress, addLog, add
       await publicClient.waitForTransactionReceipt({ hash: tx });
       addLog(`¡Unstake de ${stakeAmount} ALPHA completado!`);
       addToast('success', 'Unstake Exitoso', 'ALPHA liberado a tu billetera');
-      fetchData();
+      await fetchData();
+      setTimeout(fetchData, 500);
     } catch (err: any) {
       addLog(`[Error] Unstake falló: ${err.message || err}`);
       addToast('error', 'Error Unstake', err.message || 'Fallo');
@@ -144,7 +146,8 @@ export function useStakingActions({ activeKey, account, userAddress, addLog, add
       await publicClient.waitForTransactionReceipt({ hash: tx });
       addLog('¡Real Yield reclamado con éxito!');
       addToast('success', 'Yield Reclamado', 'Dividendos transferidos');
-      fetchData();
+      await fetchData();
+      setTimeout(fetchData, 500);
     } catch (err: any) {
       addLog(`[Error] Reclamo Yield falló: ${err.message || err}`);
       addToast('error', 'Error Reclamo Yield', err.message || 'Fallo');

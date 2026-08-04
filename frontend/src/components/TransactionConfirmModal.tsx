@@ -62,6 +62,8 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
         style={{
           width: '100%',
           maxWidth: '520px',
+          maxHeight: '90vh',
+          overflowY: 'auto',
           borderRadius: '20px',
           padding: '1.75rem',
           border: '1px solid rgba(255, 255, 255, 0.15)',
@@ -188,7 +190,7 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
           >
             <span style={{ opacity: 0.6 }}>Contrato Objetivo:</span>
             <span style={{ fontFamily: 'monospace', opacity: 0.85, color: '#38bdf8' }}>
-              {txDetails.targetContractName} ({txDetails.targetContractAddress.slice(0, 6)}...{txDetails.targetContractAddress.slice(-4)})
+              {txDetails.targetContractName} ({txDetails.targetContractAddress?.slice(0, 6)}...{txDetails.targetContractAddress?.slice(-4)})
             </span>
           </div>
         </div>

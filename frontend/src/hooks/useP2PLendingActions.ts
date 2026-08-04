@@ -1,23 +1,32 @@
 import { useState } from 'react';
-import { parseEther, parseUnits } from 'viem';
+import { parseUnits } from 'viem';
 import { publicClient, getWalletClient, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
 import type { TxConfirmDetails } from '../components/TransactionConfirmModal.js';
 
-// Fetch real-time asset price directly from the on-chain Chainlink Price Feed oracle contract
+// Fetch real-time asset price directly from the on-chain OracleHub contract
 async function getOnChainOraclePriceUSD(collateralType: string): Promise<number> {
   try {
-    const data = await publicClient.readContract({
+    let assetAddress = CONTRACT_ADDRESSES.USDC;
+    if (collateralType === 'wbtc') assetAddress = CONTRACT_ADDRESSES.WBTC || '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0';
+    if (collateralType === 'weth') assetAddress = CONTRACT_ADDRESSES.WETH || '0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9';
+    if (collateralType === 'alpha') assetAddress = CONTRACT_ADDRESSES.ALPHA_TOKEN;
+
+    // We query the value of 1 ether (1e18) of the asset. The oracle handles decimal conversions
+    // and returns the value in 18 decimal USD format.
+    const oneTokenWei = parseUnits('1', collateralType === 'wbtc' ? 8 : 18);
+    
+    const usdValueWei = await publicClient.readContract({
       address: CONTRACT_ADDRESSES.PRICE_FEED,
       abi: ABIS.PRICE_FEED,
-      functionName: 'latestRoundData'
-    }) as readonly [bigint, bigint, bigint, bigint, bigint];
-    const rawPrice = Number(data[1]) / 1e8; // Chainlink 8 decimal precision
-    if (rawPrice > 0) {
-      if (collateralType === 'wbtc') return rawPrice * 65000;
-      if (collateralType === 'weth') return rawPrice * 3200;
-      return rawPrice;
-    }
-  } catch {}
+      functionName: 'getAssetUsdValue',
+      args: [assetAddress, oneTokenWei]
+    }) as bigint;
+    
+    const usdValue = Number(usdValueWei) / 1e18;
+    if (usdValue > 0) return usdValue;
+  } catch (e) {
+    console.error('Oracle fetch failed:', e);
+  }
   return 1.0;
 }
 
@@ -86,7 +95,8 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
       await publicClient.waitForTransactionReceipt({ hash: tx });
       addLog(`¡Oferta P2P creada! NFT #${p2pTokenId} en escrow. Publicada en el Marketplace.`);
       addToast('success', 'Oferta Creada', 'Préstamo publicado en el mercado en tiempo real');
-      fetchData();
+      await fetchData();
+      setTimeout(fetchData, 500);
     } catch (err: any) {
       addLog(`[Error] Creación de préstamo falló: ${err.message || err}`);
       addToast('error', 'Error Oferta P2P', err.message || 'Fallo al crear oferta');
@@ -175,7 +185,8 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
       await publicClient.waitForTransactionReceipt({ hash: tx });
       addLog(`¡Préstamo #${loanId} financiado con éxito!`);
       addToast('success', 'Préstamo Financiado', 'Fondos transferidos al prestatario');
-      fetchData();
+      await fetchData();
+      setTimeout(fetchData, 500);
     } catch (err: any) {
       addLog(`[Error] Financiamiento falló: ${err.message || err}`);
       addToast('error', 'Error Financiamiento', err.message || 'Fallo');
@@ -230,7 +241,8 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
       await publicClient.waitForTransactionReceipt({ hash: tx });
       addLog(`¡Oferta #${loanId} cancelada! NFT devuelto a tu billetera.`);
       addToast('success', 'Oferta Cancelada', `NFT devuelto a la billetera`);
-      fetchData();
+      await fetchData();
+      setTimeout(fetchData, 500);
     } catch (err: any) {
       addLog(`[Error] Cancelar oferta falló: ${err.message || err}`);
       addToast('error', 'Error Cancelar Oferta', err.message || 'Fallo');
@@ -260,7 +272,7 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
     }
   };
 
-  const executeRepayLoanById = async (loanId: number) => {
+  const executeRepayLoanById = async (loanId: number, totalToPay: number) => {
     try {
       addLog(`Reembolsando préstamo P2P #${loanId}...`);
       addToast('info', 'Reembolso Préstamo', 'Aprobando pago en USDC e intereses...');
@@ -271,7 +283,7 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
         address: CONTRACT_ADDRESSES.USDC,
         abi: ABIS.ERC20,
         functionName: 'approve',
-        args: [CONTRACT_ADDRESSES.P2P_MARKET, parseUnits('1000000', 6)]  // USDC = 6 decimals
+        args: [CONTRACT_ADDRESSES.P2P_MARKET, parseUnits(totalToPay.toFixed(6), 6)]  // USDC = 6 decimals
       });
       await publicClient.waitForTransactionReceipt({ hash: appHash });
 
@@ -286,7 +298,8 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
 
       addLog(`¡Préstamo #${loanId} reembolsado totalmente! Principal e intereses acreditados a las Reservas de Tesorería.`);
       addToast('success', 'Préstamo Reembolsado', 'Garantía liberada y reservas incrementadas con el interés generado');
-      fetchData();
+      await fetchData();
+      setTimeout(fetchData, 500);
     } catch (err: any) {
       addLog(`[Error] Reembolso falló: ${err.message || err}`);
       addToast('error', 'Error Reembolso', err.message || 'Fallo');
@@ -338,9 +351,9 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
         warningNote: `Al confirmar, pagarás exactamente $${totalToPay.toFixed(2)} USDC para cancelar el préstamo #${loanId} y recuperarás tu colateral (${collateralStr}).`,
         confirmButtonText: '✍️ Confirmar y Reembolsar Préstamo',
         confirmButtonColor: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'
-      }, () => executeRepayLoanById(loanId));
+      }, () => executeRepayLoanById(loanId, totalToPay));
     } else {
-      executeRepayLoanById(loanId);
+      executeRepayLoanById(loanId, totalToPay);
     }
   };
 
@@ -361,7 +374,8 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
       await publicClient.waitForTransactionReceipt({ hash: tx });
       addLog(`¡Préstamo #${loanId} liquidado! NFT transferido al prestamista.`);
       addToast('warning', 'Liquidación Ejecutada', 'NFT transferido al prestamista');
-      fetchData();
+      await fetchData();
+      setTimeout(fetchData, 500);
     } catch (err: any) {
       addLog(`[Error] Liquidación falló: ${err.message || err}`);
       addToast('error', 'Error Liquidación', err.message || 'Fallo');
@@ -430,7 +444,7 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
           functionName: 'mintPosition',
           args: [
             userClient.account.address,
-            collateralType === 'alpha' ? CONTRACT_ADDRESSES.TREASURY : CONTRACT_ADDRESSES.USDC,
+            collateralType === 'alpha' ? CONTRACT_ADDRESSES.ALPHA_TOKEN : CONTRACT_ADDRESSES.USDC,
             colValWei,
             colValWei,
             1n
@@ -447,7 +461,7 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
         tokenIdBig = nextNftId - 1n;
 
         // 3. Lock collateral ERC20 tokens in Escrow contract
-        const colTokenAddr = collateralType === 'alpha' ? CONTRACT_ADDRESSES.TREASURY : collateralType === 'wbtc' ? CONTRACT_ADDRESSES.USDT : CONTRACT_ADDRESSES.USDC;
+          const colTokenAddr = collateralType === 'alpha' ? CONTRACT_ADDRESSES.ALPHA_TOKEN : collateralType === 'wbtc' ? CONTRACT_ADDRESSES.USDT : CONTRACT_ADDRESSES.USDC;
         const colAmountWei = parseUnits(tokenIdOrAmountStr, 6);  // Assuming USDC collateral, 6 decimals
 
         const appCol = await userClient.writeContract({
@@ -530,7 +544,8 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
       addLog(`¡Préstamo #${newLoanId} desembolsado por la Tesorería! $${amountStr} USDC acreditados en tu billetera.`);
       addToast('success', 'Préstamo Desembolsado', `Préstamo #${newLoanId} registrado y $${amountStr} USDC acreditados de las Reservas`);
 
-      fetchData();
+      await fetchData();
+      setTimeout(fetchData, 500);
     } catch (err: any) {
       addLog(`[Error] Préstamo Tesorería falló: ${err.message || err}`);
       addToast('error', 'Error Préstamo Tesorería', err.message || 'Fallo en desembolso');

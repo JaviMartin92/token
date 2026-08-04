@@ -6,20 +6,24 @@ export const ANVIL_URL = typeof window !== 'undefined' ? `${window.location.orig
 
 // Deployed contract addresses (matches Anvil setup)
 export const CONTRACT_ADDRESSES = {
-  USDC: ((contractsJson as any).USDC || import.meta.env.VITE_USDC_ADDRESS || '0x09635f643e140090a9a8dcd712ed6285858cebef') as `0x${string}`,
-  USDT: ((contractsJson as any).USDT || import.meta.env.VITE_USDT_ADDRESS || '0xc5a5c42992decbae36851359345fe25997f5c42d') as `0x${string}`,
-  TREASURY: ((contractsJson as any).TREASURY || import.meta.env.VITE_TREASURY_ADDRESS || '0xc3e53f4d16ae77db1c982e75a937b9f60fe63690') as `0x${string}`,
-  CORPORATE_CONTRIBUTION: ((contractsJson as any).CORPORATE_CONTRIBUTION || import.meta.env.VITE_CORPORATE_CONTRIBUTION_ADDRESS || '0x1613beb3b2c4f22ee086b2b38c1476a3ce7f78e8') as `0x${string}`,
-  CIRCUIT_BREAKER: ((contractsJson as any).CIRCUIT_BREAKER || import.meta.env.VITE_CIRCUIT_BREAKER_ADDRESS || '0x84ea74d481ee0a5332c457a4d796187f6ba67feb') as `0x${string}`,
-  POSITION_NFT: ((contractsJson as any).POSITION_NFT || import.meta.env.VITE_POSITION_NFT_ADDRESS || '0x851356ae760d987e095750cceb3bc6014560891c') as `0x${string}`,
-  VESTED_VAULT: ((contractsJson as any).VESTED_VAULT || import.meta.env.VITE_VESTED_VAULT_ADDRESS || '0x4826533b4897376654bb4d4ad88b7fafd0c98528') as `0x${string}`,
-  P2P_MARKET: ((contractsJson as any).P2P_MARKET || import.meta.env.VITE_P2P_MARKET_ADDRESS || '0x0e801d84fa97b50751dbf25036d067dcf18858bf') as `0x${string}`,
-  STAKING: ((contractsJson as any).STAKING || import.meta.env.VITE_STAKING_ADDRESS || '0xf5059a5d33d5853360d16c683c16e67980206f36') as `0x${string}`,
-  REAL_YIELD_ROUTER: ((contractsJson as any).REAL_YIELD_ROUTER || import.meta.env.VITE_REAL_YIELD_ROUTER_ADDRESS || '0x95401dc811bb5740090279ba06cfa8fcf6113778') as `0x${string}`,
-  YIELD_VAULT: ((contractsJson as any).YIELD_VAULT || import.meta.env.VITE_YIELD_STREAMING_VAULT_ADDRESS || '0xa82ff9afd8f496c3d6ac40e2a0f282e47488cfc9') as `0x${string}`,
-  CORPORATE_OPEX: ((contractsJson as any).CORPORATE_OPEX_VAULT || '0x0dcd1bf9a1b36ce34237eeafef220932846bcd82') as `0x${string}`,
-  CORPORATE_PROFIT: ((contractsJson as any).CORPORATE_PROFIT_VAULT || '0x9a676e781a523b5d0c0e43731313a708cb607508') as `0x${string}`,
-  PRICE_FEED: ((contractsJson as any).ORACLE_ROUTER || (contractsJson as any).PRICE_FEED || '0xa9e6bfa2bf53de88feb19761d9b2ee2e821bf1bf') as `0x${string}`
+  USDC: ((contractsJson as any).USDC || import.meta.env.VITE_USDC_ADDRESS) as `0x${string}`,
+  USDT: ((contractsJson as any).USDT || import.meta.env.VITE_USDT_ADDRESS) as `0x${string}`,
+  WBTC: ((contractsJson as any).WBTC || import.meta.env.VITE_WBTC_ADDRESS) as `0x${string}`,
+  WETH: ((contractsJson as any).WETH || import.meta.env.VITE_WETH_ADDRESS) as `0x${string}`,
+  TREASURY: ((contractsJson as any).TREASURY || import.meta.env.VITE_TREASURY_MANAGER_ADDRESS) as `0x${string}`,
+  ALPHA_TOKEN: ((contractsJson as any).ALPHA_TOKEN || import.meta.env.VITE_ALPHA_TOKEN_ADDRESS) as `0x${string}`,
+  CORPORATE_CONTRIBUTION: ((contractsJson as any).CORPORATE_CONTRIBUTION || import.meta.env.VITE_CORPORATE_CONTRIBUTION_ADDRESS) as `0x${string}`,
+  CIRCUIT_BREAKER: ((contractsJson as any).CIRCUIT_BREAKER || import.meta.env.VITE_CIRCUIT_BREAKER_ADDRESS) as `0x${string}`,
+  POSITION_NFT: ((contractsJson as any).POSITION_NFT || import.meta.env.VITE_POSITION_NFT_ADDRESS) as `0x${string}`,
+  VESTED_VAULT: ((contractsJson as any).VESTED_VAULT || import.meta.env.VITE_VESTED_VAULT_ADDRESS) as `0x${string}`,
+  P2P_MARKET: ((contractsJson as any).P2P_MARKET || import.meta.env.VITE_P2P_MARKET_ADDRESS) as `0x${string}`,
+  STAKING: ((contractsJson as any).STAKING || import.meta.env.VITE_STAKING_ADDRESS) as `0x${string}`,
+  REAL_YIELD_ROUTER: ((contractsJson as any).REAL_YIELD_ROUTER || import.meta.env.VITE_REAL_YIELD_ROUTER_ADDRESS) as `0x${string}`,
+  YIELD_VAULT: ((contractsJson as any).YIELD_VAULT || import.meta.env.VITE_YIELD_STREAMING_VAULT_ADDRESS) as `0x${string}`,
+  CORPORATE_OPEX: ((contractsJson as any).CORPORATE_OPEX_VAULT) as `0x${string}`,
+  CORPORATE_PROFIT: ((contractsJson as any).CORPORATE_PROFIT_VAULT) as `0x${string}`,
+  PRICE_FEED: ((contractsJson as any).ORACLE_ROUTER || (contractsJson as any).PRICE_FEED) as `0x${string}`,
+  PROMOTIONAL_VAULT: ((contractsJson as any).PROMO_VAULT) as `0x${string}`
 };
 
 const anvilChain = {
@@ -68,7 +72,7 @@ export const ABIS = {
     { name: 'validateSanityBounds', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'bool' }] },
     { name: 'deposit', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'stableAmount', type: 'uint256' }], outputs: [{ name: 'sharesMinted', type: 'uint256' }] },
     { name: 'redeem', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'sharesAmount', type: 'uint256' }], outputs: [{ name: 'assetsReceived', type: 'uint256' }] },
-    { name: 'adjustWeights', type: 'function', stateMutability: 'nonpayable', inputs: [
+    { name: 'setAssetWeights', type: 'function', stateMutability: 'nonpayable', inputs: [
       { name: 'newWeights', type: 'tuple', components: [
         { name: 'stablecoins', type: 'uint256' },
         { name: 'wbtc', type: 'uint256' },
@@ -194,12 +198,15 @@ export const ABIS = {
     { name: 'resetBreaker', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'asset', type: 'address' }], outputs: [] }
   ] as const,
   PRICE_FEED: [
-    { name: 'latestRoundData', type: 'function', stateMutability: 'view', inputs: [], outputs: [
-      { name: 'roundId', type: 'uint80' },
-      { name: 'answer', type: 'int256' },
-      { name: 'startedAt', type: 'uint256' },
-      { name: 'updatedAt', type: 'uint256' },
-      { name: 'answeredInRound', type: 'uint80' }
-    ]}
+    {
+      name: 'getAssetUsdValue',
+      type: 'function',
+      stateMutability: 'view',
+      inputs: [
+        { name: 'asset', type: 'address' },
+        { name: 'assetBalance', type: 'uint256' }
+      ],
+      outputs: [{ name: 'usdValue', type: 'uint256' }]
+    }
   ] as const
 };

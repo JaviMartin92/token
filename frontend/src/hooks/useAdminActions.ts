@@ -89,7 +89,7 @@ export function useAdminActions({ activeKey, snapshotId, setSnapshotId, addLog, 
       const tx = await client.writeContract({
         address: CONTRACT_ADDRESSES.TREASURY,
         abi: ABIS.TREASURY,
-        functionName: 'adjustWeights',
+        functionName: 'setAssetWeights',
         args: [{ stablecoins: s, wbtc: b, weth: e, alphaProtocolStaking: a }]
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });

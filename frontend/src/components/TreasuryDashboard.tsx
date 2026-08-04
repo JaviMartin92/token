@@ -5,7 +5,7 @@ interface TreasuryDashboardProps {
   porLiabilities: string;
   porRatio: string;
   porBreakdown: { stables: number; wbtc: number; weth: number; alphaStaking: number };
-  targetWeights: { stables: number; wbtc: number; weth: number; alts: number };
+
   usdcBalance: string;
   sharesBalance: string;
   depositAmount: string;
@@ -25,7 +25,7 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
   porLiabilities,
   porRatio,
   porBreakdown,
-  targetWeights,
+
   usdcBalance,
   sharesBalance,
   depositAmount,

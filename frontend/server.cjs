@@ -40,6 +40,23 @@ const server = http.createServer((req, res) => {
     req.on('data', (chunk) => bodyChunks.push(chunk));
     req.on('end', () => {
       const bodyBuffer = Buffer.concat(bodyChunks);
+      
+      // Security: Parse RPC payload and block dangerous cheatcode methods
+      try {
+        const payload = JSON.parse(bodyBuffer.toString());
+        const isDangerous = Array.isArray(payload) 
+          ? payload.some(p => p.method && (p.method.startsWith('anvil_') || p.method.startsWith('evm_')))
+          : (payload.method && (payload.method.startsWith('anvil_') || payload.method.startsWith('evm_')));
+          
+        if (isDangerous && process.env.NODE_ENV === 'production') {
+          res.writeHead(403, { 'content-type': 'application/json', 'access-control-allow-origin': '*' });
+          res.end(JSON.stringify({ jsonrpc: '2.0', id: payload.id || null, error: { code: -32600, message: 'RPC method restricted in production' } }));
+          return;
+        }
+      } catch (err) {
+        // Ignore JSON parse error here; let the upstream RPC node handle invalid payloads
+      }
+
       const hostsToTry = [ANVIL_HOST, 'alpha-anvil', '127.0.0.1', 'localhost'];
 
       function tryProxy(hostIndex) {

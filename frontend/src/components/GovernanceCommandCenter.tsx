@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import type { Web3Data } from '../hooks/useWeb3State.js';
+import { CONTRACT_ADDRESSES } from '../utils/web3.js';
 
 interface GovernanceCommandCenterProps {
-  web3Data: Web3Data;
+  web3Data: any;
   adminActions: any;
   isAdmin: boolean;
 }
@@ -21,11 +21,9 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
   // Parameter sliders state
   const [depositFeeInput, setDepositFeeInput] = useState('0.50');
   const [redeemFeeInput, setRedeemFeeInput] = useState('1.00');
-  const [stakingFeeInput, setStakingFeeInput] = useState('1.00');
   const [p2pFeeInput, setP2pFeeInput] = useState('0.50');
 
   const {
-    nav,
     navPerShare,
     proofOfReserves,
     totalBurned,
@@ -268,7 +266,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                 <input
                   type="text"
                   readOnly
-                  value="0x9a9f2ccfde556a7e9ff0848998aa4a0cfd8863ae"
+                  value={CONTRACT_ADDRESSES.CORPORATE_OPEX || '0x...'}
                   style={{ width: '100%', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#a855f7', padding: '10px 14px', fontFamily: 'monospace', marginTop: '4px' }}
                 />
               </div>
@@ -278,7 +276,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                 <input
                   type="text"
                   readOnly
-                  value="0x68b1d87f95878fe05b998f19b66f4baba5de1aed"
+                  value={CONTRACT_ADDRESSES.CORPORATE_PROFIT || '0x...'}
                   style={{ width: '100%', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#4ade80', padding: '10px 14px', fontFamily: 'monospace', marginTop: '4px' }}
                 />
               </div>

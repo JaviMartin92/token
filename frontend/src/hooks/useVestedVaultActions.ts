@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { publicClient, getWalletClient, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
-import { parseEther, parseUnits } from 'viem';
+import { parseUnits } from 'viem';
 import type { TxConfirmDetails } from '../components/TransactionConfirmModal.js';
 
 interface VestedVaultActionsParams {
@@ -29,7 +29,7 @@ export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, 
         address: CONTRACT_ADDRESSES.USDC,
         abi: ABIS.ERC20,
         functionName: 'approve',
-        args: [CONTRACT_ADDRESSES.VESTED_VAULT, parseUnits('1000000', 6)]  // USDC = 6 decimals
+        args: [CONTRACT_ADDRESSES.VESTED_VAULT, principalWei]  // Exact approval
       });
       await publicClient.waitForTransactionReceipt({ hash: appHash });
 
@@ -43,7 +43,8 @@ export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, 
       addLog(`¡Bono Vestado adquirido! NFT de Posición acuñado.`);
       addToast('success', 'Bono Adquirido', 'NFT colateral acuñado en tu billetera');
       setBondPrincipal('1000');
-      fetchData();
+      await fetchData();
+      setTimeout(fetchData, 500);
     } catch (err: any) {
       addLog(`[Error] Compra de bono falló: ${err.message || err}`);
       addToast('error', 'Error Compra Bono', err.message || 'Fallo en compra');

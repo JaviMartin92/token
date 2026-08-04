@@ -136,23 +136,24 @@ contract GovernanceStaking is Ownable, ReentrancyGuard {
         totalStaked += netStake;
         stakedBalances[msg.sender] += netStake;
 
-        require(govToken.transferFrom(msg.sender, address(this), netStake), "Staking: Net stake transfer failed");
+        require(govToken.transferFrom(msg.sender, address(this), amount), "Staking: Stake transfer failed");
         if (fee > 0) {
             uint256 treasuryShare = fee / 2; // 50%
             uint256 opExShare = fee / 4;      // 25%
             uint256 profitShare = fee - treasuryShare - opExShare; // 25%
 
             if (treasuryShare > 0 && treasury != address(0)) {
-                require(govToken.transferFrom(msg.sender, treasury, treasuryShare), "Staking: Fee to Treasury failed");
+                require(govToken.transfer(treasury, treasuryShare), "Staking: Fee to Treasury failed");
                 if (treasury.code.length > 0) {
-                    try ITreasury(treasury).processStakingFee(treasuryShare) {} catch {}
+                    (bool success, ) = treasury.call(abi.encodeWithSignature("processStakingFee(uint256)", treasuryShare));
+                    (void)success;
                 }
             }
             if (opExShare > 0 && corporateOpExVault != address(0)) {
-                require(govToken.transferFrom(msg.sender, corporateOpExVault, opExShare), "Staking: Fee to OpEx Vault failed");
+                require(govToken.transfer(corporateOpExVault, opExShare), "Staking: Fee to OpEx Vault failed");
             }
             if (profitShare > 0 && corporateProfitVault != address(0)) {
-                require(govToken.transferFrom(msg.sender, corporateProfitVault, profitShare), "Staking: Fee to Profit Vault failed");
+                require(govToken.transfer(corporateProfitVault, profitShare), "Staking: Fee to Profit Vault failed");
             }
         }
 
