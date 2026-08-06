@@ -10,7 +10,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ logs }) => {
       <h4 className="activity-log-header">
         📋 Registro de Actividad On-Chain & Logs
       </h4>
-      <div className="activity-log-box">
+      <div data-testid="activity-log-container" className="activity-log-box">
         {logs.length === 0 ? (
           <span className="activity-log-empty">No se registraron transacciones recientes.</span>
         ) : (

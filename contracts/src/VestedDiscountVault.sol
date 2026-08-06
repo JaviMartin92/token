@@ -237,6 +237,10 @@ contract VestedDiscountVault is Ownable, ReentrancyGuard {
             totalInvested = 0;
         }
 
+        if (treasuryBunker != address(0) && pos.principalAmount > 0) {
+            try ITreasury(treasuryBunker).recordBurn(pos.principalAmount * 10**12) {} catch {}
+        }
+
         emit Ragequitted(tokenId, msg.sender, userReturn, penaltyTotal);
     }
 

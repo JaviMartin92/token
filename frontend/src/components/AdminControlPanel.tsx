@@ -54,6 +54,7 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
             <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Actualizar Precio Oráculo USDC Feed ($):</label>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <input
+                data-testid="admin-oracle-price-input"
                 type="number"
                 step="0.01"
                 value={oraclePrice}
@@ -61,7 +62,7 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
                 className="admin-input-dark"
                 style={{ flex: 1 }}
               />
-              <button className="btn-primary" style={{ background: '#6366f1' }} onClick={onUpdateOracle}>
+              <button data-testid="admin-oracle-update-btn" className="btn-primary" style={{ background: '#6366f1' }} onClick={onUpdateOracle}>
                 Actualizar Oráculo
               </button>
             </div>
@@ -72,22 +73,22 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
             <div className="admin-grid-4col">
               <div>
                 <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>USDC</span>
-                <input type="number" value={newStablesWeight} onChange={(e) => setNewStablesWeight(e.target.value)} className="admin-input-compact" />
+                <input data-testid="admin-weight-usdc-input" type="number" value={newStablesWeight} onChange={(e) => setNewStablesWeight(e.target.value)} className="admin-input-compact" />
               </div>
               <div>
                 <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>WBTC</span>
-                <input type="number" value={newWbtcWeight} onChange={(e) => setNewWbtcWeight(e.target.value)} className="admin-input-compact" />
+                <input data-testid="admin-weight-wbtc-input" type="number" value={newWbtcWeight} onChange={(e) => setNewWbtcWeight(e.target.value)} className="admin-input-compact" />
               </div>
               <div>
                 <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>WETH</span>
-                <input type="number" value={newWethWeight} onChange={(e) => setNewWethWeight(e.target.value)} className="admin-input-compact" />
+                <input data-testid="admin-weight-weth-input" type="number" value={newWethWeight} onChange={(e) => setNewWethWeight(e.target.value)} className="admin-input-compact" />
               </div>
               <div>
                 <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>ALPHA</span>
-                <input type="number" value={newAltsWeight} onChange={(e) => setNewAltsWeight(e.target.value)} className="admin-input-compact" />
+                <input data-testid="admin-weight-alpha-input" type="number" value={newAltsWeight} onChange={(e) => setNewAltsWeight(e.target.value)} className="admin-input-compact" />
               </div>
             </div>
-            <button className="btn-primary" style={{ width: '100%', background: '#4f46e5' }} onClick={onAdjustWeights}>
+            <button data-testid="admin-rebalance-btn" className="btn-primary" style={{ width: '100%', background: '#4f46e5' }} onClick={onAdjustWeights}>
               ⚖️ Rebalancear Cartera On-Chain
             </button>
           </div>
@@ -107,7 +108,7 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
               <button className="btn-secondary" style={{ borderColor: '#ef4444', color: '#ef4444' }} onClick={onSimulateDrop}>
                 📉 Evaluar Caída Oráculo
               </button>
-              <button className="btn-primary" style={{ background: '#22c55e' }} onClick={onResetBreaker}>
+              <button data-testid="admin-reset-governance-btn" className="btn-primary" style={{ background: '#22c55e' }} onClick={onResetBreaker}>
                 🔄 Reset Gobernanza
               </button>
             </div>
@@ -117,6 +118,7 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
             <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.3rem' }}>Inyección Corporativa TWAP (Buyback USDC):</label>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <input
+                data-testid="admin-twap-amount-input"
                 type="number"
                 placeholder="Monto USDC"
                 value={injectionAmount}
@@ -124,14 +126,14 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
                 className="admin-input-dark"
                 style={{ flex: 1 }}
               />
-              <button className="btn-primary" style={{ background: '#a855f7' }} onClick={onExecuteTWAP}>
+              <button data-testid="admin-twap-execute-btn" className="btn-primary" style={{ background: '#a855f7' }} onClick={onExecuteTWAP}>
                 Ejecutar TWAP
               </button>
             </div>
           </div>
 
           <div className="admin-section-divider">
-            <button className="btn-secondary" style={{ width: '100%', borderColor: '#eab308', color: '#eab308' }} onClick={onResetBlockchain}>
+            <button data-testid="admin-reset-anvil-btn" className="btn-secondary" style={{ width: '100%', borderColor: '#eab308', color: '#eab308' }} onClick={onResetBlockchain}>
               🔄 Reiniciar Entorno de Prueba Anvil
             </button>
           </div>

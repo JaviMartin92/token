@@ -63,6 +63,11 @@ interface ITreasury {
     function releaseVaultPayout(address to, uint256 amount) external;
 
     /**
+     * @notice Records the amount of tokens burned by external contracts (e.g. GovernanceStaking) to track total burned.
+     */
+    function recordBurn(uint256 amount) external;
+
+    /**
      * @notice Processes 1% staking entry fee ALPHA tokens, burning them and routing equivalent USDC yield to RealYieldRouter (50/25/25 flywheel).
      */
     function processStakingFee(uint256 feeShares) external;

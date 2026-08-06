@@ -23,6 +23,39 @@ pie title Reparto de Comisiones Protocolarias
 
 ---
 
+## 1.5. Mecanismo de Emisión Anti-Dilución: Dynamic Slippage Fee (NAV Protection)
+
+Para proteger la masa patrimonial del protocolo y evitar arbitrajes por volumen, la emisión de nuevos tokens ALPHA a valor NAV no utiliza una tarifa fija estática. En su lugar, aplica un algoritmo de Slippage Dinámico por Tamaño de Depósito integrado en la ejecución de la EVM.
+
+### 1. Lógica Financiera y Curva de Impacto:
+- **Depósitos Minoristas (Bajo Impacto):** Pagan únicamente la comisión base del 0.50%.
+- **Depósitos Masivos / Ballenas (Alto Impacto):** La comisión escala automáticamente en función del tamaño del depósito relativo a los Activos Exógenos de Reserva actuales ($A_0$).
+
+### 2. Formulación Matemática (Complejidad $O(1)$):
+$$\text{DynamicFeeBps} = \min\left( \text{FeeBase} + \left( \frac{\Delta A}{A_0 + \Delta A} \times \Gamma \right), \text{CapMax} \right)$$
+
+Donde:
+- $\text{FeeBase} = 50\text{ bps } (0.50\%)$
+- $\Delta A = \text{Monto bruto del depósito en USD}$
+- $A_0 = \text{Reserva Exógena Actual (USDC + WBTC + WETH)}$
+- $\Gamma = 500\text{ bps } (5.00\% - \text{Coeficiente de Sensibilidad})$
+- $\text{CapMax} = 500\text{ bps } (5.00\% - \text{Límite Máximo})$
+
+### 3. Escenarios de Ejecución:
+- **Retail:** Depósito $1,000 USD | Reserva $100,000 USD | Impacto 0.99% | Comisión 54 bps (0.54%)
+- **Mid-Tier:** Depósito $10,000 USD | Reserva $100,000 USD | Impacto 9.09% | Comisión 95 bps (0.95%)
+- **Whale:** Depósito $100,000 USD | Reserva $100,000 USD | Impacto 50.00% | Comisión 300 bps (3.00%)
+- **Institutional:** Depósito $500,000 USD | Reserva $100,000 USD | Impacto 83.33% | Comisión 466 bps (4.66%) [Cap 5.00%]
+
+### 4. Accreción Automática de NAV (Flywheel Benefit):
+El 100% del sobreprecio recaudado por depósitos de alto impacto se inyecta directamente como Real Yield de Tesorería:
+- **50% de la Comisión:** Se canaliza a las Bóvedas Corporativas (OpEx / Profit).
+- **50% de la Comisión:** Se distribuye como Real Yield (USDC) a los stakers de ALPHA.
+
+**Efecto Red:** Cada gran entrada de capital incrementa de forma instantánea el valor patrimonial (NAV) de todos los tokens en circulación, garantizando un suelo de rescate ascendente para la comunidad y bloqueando de forma absoluta cualquier ataque MEV o de Sandwich Minting.
+
+---
+
 ## 2. Matriz de Asignación de Activos (Asset Allocation Target)
 
 La reserva del protocolo no mantiene un único activo, sino un portafolio equilibrado con rebalanceo automático gestionado por la gobernanza:

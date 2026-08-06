@@ -5,6 +5,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./lib/security/ReentrancyGuard.sol";
 
+interface IGovernanceStakingProfit {
+    function stake(uint256 amount) external;
+    function unstake(uint256 amount) external;
+}
+
 /**
  * @title CorporateProfitVault
  * @notice Restricted corporate vault that automatically holds and stakes the 25% Profit protocol fees in ALPHA tokens.
@@ -12,11 +17,13 @@ import "./lib/security/ReentrancyGuard.sol";
  */
 contract CorporateProfitVault is Ownable, ReentrancyGuard {
     IERC20 public immutable alphaToken;
+    address public stakingPool;
 
     uint256 public totalStakedProfit;
 
     event ProfitStaked(address indexed source, uint256 amount);
     event ProfitWithdrawn(address indexed recipient, uint256 amount, string purpose);
+    event StakingPoolSet(address indexed stakingPool);
 
     constructor(address _alphaToken, address _initialOwner) Ownable() {
         require(_alphaToken != address(0), "CorporateProfitVault: Zero alpha token");
@@ -27,6 +34,11 @@ contract CorporateProfitVault is Ownable, ReentrancyGuard {
         }
     }
 
+    function setStakingPool(address _stakingPool) external onlyOwner {
+        stakingPool = _stakingPool;
+        emit StakingPoolSet(_stakingPool);
+    }
+
     /**
      * @notice Receives and registers ALPHA tokens from RealYieldRouter fee distributions into the Profit Staking Pool.
      */
@@ -34,6 +46,12 @@ contract CorporateProfitVault is Ownable, ReentrancyGuard {
         require(amount > 0, "CorporateProfitVault: Amount 0");
         require(alphaToken.transferFrom(msg.sender, address(this), amount), "CorporateProfitVault: Transfer failed");
         totalStakedProfit += amount;
+
+        if (stakingPool != address(0)) {
+            alphaToken.approve(stakingPool, amount);
+            try IGovernanceStakingProfit(stakingPool).stake(amount) {} catch {}
+        }
+
         emit ProfitStaked(msg.sender, amount);
     }
 
@@ -42,7 +60,15 @@ contract CorporateProfitVault is Ownable, ReentrancyGuard {
      */
     function withdrawProfit(address recipient, uint256 amount, string calldata purpose) external onlyOwner nonReentrant {
         require(recipient != address(0), "CorporateProfitVault: Zero recipient");
-        require(amount <= alphaToken.balanceOf(address(this)), "CorporateProfitVault: Insufficient balance");
+
+        uint256 currentBalance = alphaToken.balanceOf(address(this));
+        if (amount > currentBalance && stakingPool != address(0)) {
+            uint256 needed = amount - currentBalance;
+            try IGovernanceStakingProfit(stakingPool).unstake(needed) {} catch {}
+            currentBalance = alphaToken.balanceOf(address(this));
+        }
+
+        require(amount <= currentBalance, "CorporateProfitVault: Insufficient balance");
 
         if (amount <= totalStakedProfit) {
             totalStakedProfit -= amount;

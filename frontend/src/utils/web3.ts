@@ -22,6 +22,7 @@ export const CONTRACT_ADDRESSES = {
   YIELD_VAULT: ((contractsJson as any).YIELD_VAULT || import.meta.env.VITE_YIELD_STREAMING_VAULT_ADDRESS) as `0x${string}`,
   CORPORATE_OPEX: ((contractsJson as any).CORPORATE_OPEX_VAULT) as `0x${string}`,
   CORPORATE_PROFIT: ((contractsJson as any).CORPORATE_PROFIT_VAULT) as `0x${string}`,
+  ALPHA_VAULT: ((contractsJson as any).ALPHA_VAULT) as `0x${string}`,
   PRICE_FEED: ((contractsJson as any).ORACLE_ROUTER || (contractsJson as any).PRICE_FEED) as `0x${string}`,
   PROMOTIONAL_VAULT: ((contractsJson as any).PROMO_VAULT) as `0x${string}`
 };

@@ -58,6 +58,7 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
           <div>
             <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Valor Principal del Bono (USD):</label>
             <input
+              data-testid="bonds-principal-input"
               type="number"
               value={bondPrincipal}
               onChange={(e) => setBondPrincipal(e.target.value)}
@@ -68,6 +69,7 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
           <div>
             <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Años de Bloqueo (1 - 5 años):</label>
             <select
+              data-testid="bonds-years-select"
               value={bondLockYears}
               onChange={(e) => setBondLockYears(e.target.value)}
               style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff' }}
@@ -94,6 +96,7 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
               )}
             </div>
             <input
+              data-testid="bonds-referrer-input"
               type="text"
               placeholder="0x..."
               value={bondReferrer}
@@ -106,15 +109,15 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
           <div style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.25)', padding: '0.75rem', borderRadius: '10px', fontSize: '0.8rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
               <span>Descuento Calculado:</span>
-              <strong style={{ color: '#c084fc' }}>{discountPct}% OFF</strong>
+              <strong data-testid="bonds-discount-badge" style={{ color: '#c084fc' }}>{discountPct}% OFF</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Precio a Pagar Hoy:</span>
-              <strong style={{ color: '#4ade80' }}>${discountedPrice} USDC</strong>
+              <strong data-testid="bonds-price-today" style={{ color: '#4ade80' }}>${discountedPrice} USDC</strong>
             </div>
           </div>
 
-          <button className="btn-primary" style={{ width: '100%', background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)', marginTop: '0.2rem' }} onClick={onBuyBond}>
+          <button data-testid="bonds-buy-btn" className="btn-primary" style={{ width: '100%', background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)', marginTop: '0.2rem' }} onClick={onBuyBond}>
             💳 Comprar Bono Vestado & Mint NFT
           </button>
         </div>

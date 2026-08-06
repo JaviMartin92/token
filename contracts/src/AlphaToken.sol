@@ -38,7 +38,9 @@ contract AlphaToken is ERC20, AccessControl {
      * @notice Burns ALPHA tokens from a specific account. Restricted to BURNER_ROLE.
      */
     function burnFrom(address account, uint256 amount) external onlyRole(ProtocolRoles.BURNER_ROLE) {
-        _spendAllowance(account, msg.sender, amount);
+        if (account != msg.sender) {
+            _spendAllowance(account, msg.sender, amount);
+        }
         _burn(account, amount);
     }
 }

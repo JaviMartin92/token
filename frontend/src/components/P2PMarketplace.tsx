@@ -161,10 +161,10 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                 {loan.state === 1 && onRepayLoanById ? (
                   <button
                     className="btn-primary"
-                    style={{ width: '100%', padding: '0.6rem', fontSize: '0.85rem', fontWeight: 700, background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', boxShadow: '0 4px 12px rgba(59,130,246,0.3)' }}
-                    onClick={() => onRepayLoanById(loan.id)}
+                    style={{ background: '#3b82f6', width: '100%', marginTop: '0.4rem', fontSize: '0.78rem', padding: '0.4rem' }}
+                    onClick={() => onRepayLoanById(loan.id, loan)}
                   >
-                    💳 Reembolsar Préstamo #{loan.id} y Liberar Colateral
+                    💳 Reembolsar Deuda (+$ Interest)
                   </button>
                 ) : loan.state === 0 && onCancelLoanOffer ? (
                   <button
@@ -213,6 +213,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                   <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>NFT Token ID como Garantía:</label>
                   {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).length > 0 ? (
                     <select
+                      data-testid="p2p-treasury-nft-id-input"
                       value={p2pTokenId}
                       onChange={(e) => setP2pTokenId(e.target.value)}
                       style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: '8px', background: '#0f172a', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#fff' }}
@@ -226,6 +227,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                     </select>
                   ) : (
                     <input
+                      data-testid="p2p-treasury-nft-id-input"
                       type="number"
                       placeholder="ej. 1"
                       value={p2pTokenId}
@@ -254,6 +256,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
               <div>
                 <label style={{ fontSize: '0.75rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Monto USDC a Solicitar:</label>
                 <input
+                  data-testid="p2p-treasury-amount-input"
                   type="number"
                   placeholder="ej. 500"
                   value={p2pBorrowAmount}
@@ -264,6 +267,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
               <div>
                 <label style={{ fontSize: '0.75rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Duración (Días):</label>
                 <input
+                  data-testid="p2p-treasury-duration-input"
                   type="number"
                   value={p2pDays}
                   onChange={(e) => setP2pDays(e.target.value)}
@@ -273,6 +277,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
             </div>
 
             <button
+              data-testid="p2p-treasury-request-btn"
               className="btn-primary"
               style={{ width: '100%', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', marginTop: '0.2rem', padding: '0.7rem', fontWeight: 700, boxShadow: '0 4px 12px rgba(16,185,129,0.3)' }}
               onClick={() => onBorrowFromTreasury && onBorrowFromTreasury(treasuryColType, treasuryColType === 'nft' ? p2pTokenId : treasuryColAmount, p2pBorrowAmount, p2pDays)}
@@ -294,6 +299,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
               <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>NFT Token ID a Colateralizar:</label>
               {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).length > 0 ? (
                 <select
+                  data-testid="p2p-offer-nft-id-input"
                   value={p2pTokenId}
                   onChange={(e) => setP2pTokenId(e.target.value)}
                   style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: '8px', background: '#0f172a', border: '1px solid rgba(255,255,255,0.2)', color: '#fff' }}
@@ -307,6 +313,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                 </select>
               ) : (
                 <input
+                  data-testid="p2p-offer-nft-id-input"
                   type="number"
                   placeholder="ej. 1"
                   value={p2pTokenId}
@@ -319,6 +326,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
             <div>
               <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Monto a Pedir Prestado (USDC):</label>
               <input
+                data-testid="p2p-offer-amount-input"
                 type="number"
                 placeholder="ej. 500"
                 value={p2pBorrowAmount}
@@ -331,6 +339,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
               <div>
                 <label style={{ fontSize: '0.75rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Interés (BPS - 1000 = 10%):</label>
                 <input
+                  data-testid="p2p-offer-interest-input"
                   type="number"
                   value={p2pInterestBps}
                   onChange={(e) => setP2pInterestBps(e.target.value)}
@@ -340,6 +349,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
               <div>
                 <label style={{ fontSize: '0.75rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Duración (Días):</label>
                 <input
+                  data-testid="p2p-offer-duration-input"
                   type="number"
                   value={p2pDays}
                   onChange={(e) => setP2pDays(e.target.value)}
@@ -348,7 +358,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
               </div>
             </div>
 
-            <button className="btn-primary" style={{ width: '100%', background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', marginTop: '0.2rem', padding: '0.7rem' }} onClick={onCreateLoanOffer}>
+            <button data-testid="p2p-offer-create-btn" className="btn-primary" style={{ width: '100%', background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', marginTop: '0.2rem', padding: '0.7rem' }} onClick={onCreateLoanOffer}>
               🚀 Crear y Publicar Oferta de Préstamo
             </button>
           </div>
@@ -365,6 +375,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
             <div>
               <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>ID Préstamo Objetivo:</label>
               <input
+                data-testid="p2p-manual-loan-id-input"
                 type="number"
                 placeholder="ej. 1"
                 value={targetLoanId}
@@ -385,15 +396,15 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.2rem' }}>
-              <button className="btn-primary" style={{ background: '#22c55e' }} onClick={onAcceptLoan}>
+              <button data-testid="p2p-manual-fund-btn" className="btn-primary" style={{ background: '#22c55e' }} onClick={onAcceptLoan}>
                 ✅ Financiar
               </button>
-              <button className="btn-primary" style={{ background: '#3b82f6' }} onClick={onRepayLoan}>
+              <button data-testid="p2p-manual-repay-btn" className="btn-primary" style={{ background: '#3b82f6' }} onClick={onRepayLoan}>
                 💰 Reembolsar
               </button>
             </div>
 
-            <button className="btn-primary" style={{ width: '100%', background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)', marginTop: '0.2rem', padding: '0.6rem' }} onClick={onLiquidateLoan}>
+            <button data-testid="p2p-autoliquidate-btn" className="btn-primary" style={{ width: '100%', background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)', marginTop: '0.2rem', padding: '0.6rem' }} onClick={onLiquidateLoan}>
               ⚡ Auto-Liquidar si HF &lt; 115%
             </button>
           </div>

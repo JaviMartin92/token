@@ -24,15 +24,17 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
   const [p2pFeeInput, setP2pFeeInput] = useState('0.50');
 
   const {
-    navPerShare,
+    navPerShareNum,
     proofOfReserves,
-    totalBurned,
+    totalBurnedTokens,
     reserveBreakdown
   } = web3Data;
 
   const totalAssetsVal = parseFloat(proofOfReserves?.totalAssetsUSD || '0');
   const totalLiabVal = parseFloat(proofOfReserves?.totalLiabilitiesUSD || '0');
   const solvencyRatio = totalLiabVal > 0 ? ((totalAssetsVal / totalLiabVal) * 100).toFixed(2) : '100.00';
+  const navValueNum = navPerShareNum !== undefined ? navPerShareNum : 1.0;
+  const burnedTokensStr = totalBurnedTokens || '0.00';
 
   return (
     <div style={{
@@ -64,11 +66,11 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
         <div style={{ display: 'flex', gap: '12px' }}>
           <div style={{ background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)', padding: '8px 16px', borderRadius: '12px', textAlign: 'right' }}>
             <div style={{ fontSize: '0.75rem', color: '#86efac', fontWeight: 700 }}>RATIO SOLVENCIA PoR</div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#4ade80' }}>{solvencyRatio}%</div>
+            <div data-testid="admin-por-solvency-ratio" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#4ade80' }}>{solvencyRatio}%</div>
           </div>
           <div style={{ background: 'rgba(168, 85, 247, 0.15)', border: '1px solid rgba(168, 85, 247, 0.3)', padding: '8px 16px', borderRadius: '12px', textAlign: 'right' }}>
             <div style={{ fontSize: '0.75rem', color: '#d8b4fe', fontWeight: 700 }}>NAV / TOKEN ALPHA</div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#c084fc' }}>${parseFloat(navPerShare).toFixed(4)}</div>
+            <div data-testid="admin-nav-per-share" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#c084fc' }}>${navValueNum.toFixed(4)}</div>
           </div>
         </div>
       </div>
@@ -84,6 +86,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
         ].map(tab => (
           <button
             key={tab.key}
+            data-testid={`admin-subtab-${tab.key}`}
             onClick={() => setActiveSubTab(tab.key as any)}
             style={{
               background: activeSubTab === tab.key ? 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)' : 'rgba(30, 41, 59, 0.6)',
@@ -109,7 +112,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '24px' }}>
             <div style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '16px' }}>
               <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>ACTIVOS TOTALES (PoR)</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#38bdf8', marginTop: '4px' }}>
+              <div data-testid="admin-total-assets-por" style={{ fontSize: '1.5rem', fontWeight: 800, color: '#38bdf8', marginTop: '4px' }}>
                 ${totalAssetsVal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </div>
               <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>Cobertura On-Chain 100% Verificada</div>
@@ -117,8 +120,8 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
 
             <div style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '16px' }}>
               <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>DEFLACIÓN ACUMULADA</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ef4444', marginTop: '4px' }}>
-                🔥 {parseFloat(totalBurned).toFixed(2)} ALPHA
+              <div data-testid="admin-deflation-accumulated" style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ef4444', marginTop: '4px' }}>
+                🔥 {burnedTokensStr} ALPHA
               </div>
               <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>Tokens Destruidos por Fees Staking</div>
             </div>

@@ -78,9 +78,10 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
               <span style={{ fontSize: '1.5rem' }}>{txDetails.actionIcon}</span>
-              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>{txDetails.title}</h3>
+              <h3 data-testid="modal-title" style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>{txDetails.title}</h3>
             </div>
             <span
+              data-testid="modal-type-badge"
               style={{
                 fontSize: '0.75rem',
                 padding: '0.2rem 0.6rem',
@@ -95,6 +96,7 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
             </span>
           </div>
           <button
+            data-testid="modal-close-btn"
             onClick={onClose}
             disabled={isSubmitting}
             style={{
@@ -130,7 +132,7 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
         >
           <div>
             <div style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: '0.15rem' }}>ENVIAS / ENTRADA</div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#38bdf8' }}>
+            <div data-testid="modal-input-amount" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#38bdf8' }}>
               {txDetails.inputAmount} <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff' }}>{txDetails.inputSymbol}</span>
             </div>
           </div>
@@ -139,7 +141,7 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
 
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: '0.15rem' }}>RECIBES / ESTIMADO</div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#4ade80' }}>
+            <div data-testid="modal-expected-output" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#4ade80' }}>
               {txDetails.expectedOutput} <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff' }}>{txDetails.expectedOutputSymbol}</span>
             </div>
           </div>
@@ -189,7 +191,7 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
             }}
           >
             <span style={{ opacity: 0.6 }}>Contrato Objetivo:</span>
-            <span style={{ fontFamily: 'monospace', opacity: 0.85, color: '#38bdf8' }}>
+            <span data-testid="modal-contract-target" style={{ fontFamily: 'monospace', opacity: 0.85, color: '#38bdf8' }}>
               {txDetails.targetContractName} ({txDetails.targetContractAddress?.slice(0, 6)}...{txDetails.targetContractAddress?.slice(-4)})
             </span>
           </div>
@@ -220,6 +222,7 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
         {/* Action Buttons */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
           <button
+            data-testid="modal-cancel-btn"
             onClick={onClose}
             disabled={isSubmitting}
             style={{
@@ -237,6 +240,7 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
           </button>
 
           <button
+            data-testid="modal-confirm-btn"
             onClick={onConfirm}
             disabled={isSubmitting}
             style={{

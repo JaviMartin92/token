@@ -18,6 +18,10 @@
   --neon-purple: #a855f7;
   --neon-teal: #10b981;
   --neon-crimson: #ef4444;
+  --neon-cyan: #38bdf8;
+  --neon-amber: #f59e0b;
+  --neon-blue: #3b82f6;
+
   --cosmic-dark: #07080f;
   --glass-bg: rgba(18, 22, 41, 0.45);
   --glass-border: rgba(255, 255, 255, 0.08);
@@ -202,6 +206,291 @@ h1, h2, h3, h4 {
   padding: 1rem;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ==========================================================================
+   📊 PROTOCOL ANALYTICS CHARTS DESIGN SYSTEM (Extracted Classes)
+   ========================================================================== */
+
+.analytics-panel {
+  padding: 1.75rem;
+  border-radius: 24px;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  background: linear-gradient(160deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.98) 100%);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 35px rgba(168, 85, 247, 0.12);
+  backdrop-filter: blur(20px);
+}
+
+.analytics-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.analytics-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.analytics-icon-badge {
+  background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%);
+  padding: 0.55rem;
+  border-radius: 14px;
+  box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.analytics-main-title {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+.analytics-subtitle {
+  margin: 0.2rem 0 0 0;
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.analytics-por-badge-box {
+  padding: 0.35rem 0.85rem;
+  background: linear-gradient(135deg, rgba(16,185,129,0.25) 0%, rgba(5,150,105,0.15) 100%);
+  border: 1px solid rgba(52,211,153,0.5);
+  border-radius: 20px;
+  font-size: 0.78rem;
+  color: #34d399;
+  font-weight: 700;
+  box-shadow: 0 0 16px rgba(52,211,153,0.25);
+}
+
+.analytics-horizon-group {
+  display: flex;
+  gap: 0.35rem;
+  background: rgba(10, 15, 30, 0.8);
+  padding: 0.35rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.analytics-horizon-btn {
+  padding: 0.4rem 0.85rem;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.analytics-horizon-btn-active {
+  background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.4);
+}
+
+.analytics-tabs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.analytics-tab-card {
+  padding: 1.2rem;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.analytics-tab-card-reserves {
+  background: linear-gradient(135deg, rgba(52,211,153,0.18) 0%, rgba(15,23,42,0.95) 100%);
+  border: 1.5px solid rgba(52,211,153,0.7);
+  box-shadow: 0 10px 25px -5px rgba(52,211,153,0.3);
+}
+
+.analytics-tab-card-cashflow {
+  background: linear-gradient(135deg, rgba(96,165,250,0.18) 0%, rgba(15,23,42,0.95) 100%);
+  border: 1.5px solid rgba(96,165,250,0.7);
+  box-shadow: 0 10px 25px -5px rgba(96,165,250,0.3);
+}
+
+.analytics-tab-card-apy {
+  background: linear-gradient(135deg, rgba(192,132,252,0.18) 0%, rgba(15,23,42,0.95) 100%);
+  border: 1.5px solid rgba(192,132,252,0.7);
+  box-shadow: 0 10px 25px -5px rgba(192,132,252,0.3);
+}
+
+.analytics-tab-header-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  margin-bottom: 0.35rem;
+  font-weight: 800;
+}
+
+.analytics-tab-val-green {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #34d399;
+  letter-spacing: -0.02em;
+}
+
+.analytics-tab-val-blue {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #60a5fa;
+  letter-spacing: -0.02em;
+}
+
+.analytics-tab-val-purple {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #c084fc;
+  letter-spacing: -0.02em;
+}
+
+.analytics-canvas-container {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  background: linear-gradient(180deg, rgba(10,14,26,0.95) 0%, rgba(15,23,42,0.98) 100%);
+  border-radius: 18px;
+  padding: 0.5rem;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 4px 20px rgba(0,0,0,0.8);
+}
+
+.analytics-glass-tooltip {
+  position: absolute;
+  top: 16px;
+  background: rgba(15, 23, 42, 0.96);
+  border-top: 3.5px solid #38bdf8;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 0.85rem 1.1rem;
+  pointer-events: none;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.85), 0 0 25px rgba(56, 189, 248, 0.2);
+  backdrop-filter: blur(16px);
+  z-index: 10;
+}
+
+.analytics-legend-container {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+  font-size: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.analytics-legend-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255,255,255,0.03);
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* ==========================================================================
+   🏛️ TREASURY DASHBOARD DESIGN SYSTEM (Extracted Classes)
+   ========================================================================== */
+
+.treasury-main-container {
+  margin-bottom: 1.5rem;
+}
+
+.treasury-grid-two-col {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 1.5rem;
+}
+
+.treasury-por-panel {
+  padding: 1.5rem;
+  border-radius: 16px;
+}
+
+.por-table-styled {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.por-table-styled th {
+  padding: 0.4rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  opacity: 0.6;
+}
+
+.por-table-styled td {
+  padding: 0.45rem;
+}
+
+.por-table-td-value {
+  padding: 0.45rem;
+  text-align: right;
+  font-weight: 600;
+}
+
+.por-table-td-weight {
+  padding: 0.45rem;
+  text-align: right;
+  opacity: 0.7;
+}
+
+.treasury-shares-panel {
+  padding: 1.5rem;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.treasury-shares-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.treasury-shares-card-usdc {
+  background: rgba(255,255,255,0.03);
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+}
+
+.treasury-shares-card-shares {
+  background: rgba(255,255,255,0.03);
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+}
+
+.treasury-input-flex {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff;
 }
 
 /* App Layout & Access Control */

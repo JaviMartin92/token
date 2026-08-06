@@ -11,5 +11,8 @@
     "start": "powershell -ExecutionPolicy Bypass -File ./start_app.ps1",
     "dev": "docker-compose up -d",
     "dev:down": "docker-compose down"
+  },
+  "dependencies": {
+    "ethers": "^6.17.0"
   }
 }

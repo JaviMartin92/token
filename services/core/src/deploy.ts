@@ -151,10 +151,14 @@ async function main() {
   const idOracle = keccak256(toHex('ORACLE_HUB'));
   const idTm = keccak256(toHex('TREASURY_MANAGER'));
 
-  await walletClient.writeContract({ address: apAddr, abi: ProtocolAddressProvider.abi, functionName: 'setAddress', args: [idToken, alphaTokenAddr], account });
-  await walletClient.writeContract({ address: apAddr, abi: ProtocolAddressProvider.abi, functionName: 'setAddress', args: [idVault, vaultAddr], account });
-  await walletClient.writeContract({ address: apAddr, abi: ProtocolAddressProvider.abi, functionName: 'setAddress', args: [idOracle, oracleAddr], account });
-  await walletClient.writeContract({ address: apAddr, abi: ProtocolAddressProvider.abi, functionName: 'setAddress', args: [idTm, treasuryAddr], account });
+  const h1 = await walletClient.writeContract({ address: apAddr, abi: ProtocolAddressProvider.abi, functionName: 'setAddress', args: [idToken, alphaTokenAddr], account });
+  await publicClient.waitForTransactionReceipt({ hash: h1 });
+  const h2 = await walletClient.writeContract({ address: apAddr, abi: ProtocolAddressProvider.abi, functionName: 'setAddress', args: [idVault, vaultAddr], account });
+  await publicClient.waitForTransactionReceipt({ hash: h2 });
+  const h3 = await walletClient.writeContract({ address: apAddr, abi: ProtocolAddressProvider.abi, functionName: 'setAddress', args: [idOracle, oracleAddr], account });
+  await publicClient.waitForTransactionReceipt({ hash: h3 });
+  const h4 = await walletClient.writeContract({ address: apAddr, abi: ProtocolAddressProvider.abi, functionName: 'setAddress', args: [idTm, treasuryAddr], account });
+  await publicClient.waitForTransactionReceipt({ hash: h4 });
   console.log(`[+] Core Modules registered in ProtocolAddressProvider.`);
 
   const MINTER_ROLE = '0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6';
@@ -239,6 +243,15 @@ async function main() {
   const stakingAddr = (await publicClient.waitForTransactionReceipt({ hash: stakingTx })).contractAddress!;
   console.log(`[+] GovernanceStaking Contract deployed at: ${stakingAddr}`);
 
+  const idGovStaking = keccak256(toHex('GOVERNANCE_STAKING'));
+  const hGovStaking = await walletClient.writeContract({ address: apAddr, abi: ProtocolAddressProvider.abi, functionName: 'setAddress', args: [idGovStaking, stakingAddr], account });
+  await publicClient.waitForTransactionReceipt({ hash: hGovStaking });
+  console.log(`[+] Registered GOVERNANCE_STAKING in ProtocolAddressProvider.`);
+
+  const hashStakingBurn = await walletClient.writeContract({ address: alphaTokenAddr, abi: acAbi, functionName: 'grantRole', args: [BURNER_ROLE, stakingAddr], account });
+  await publicClient.waitForTransactionReceipt({ hash: hashStakingBurn });
+  console.log(`[+] Granted BURNER_ROLE to GovernanceStaking on AlphaToken.`);
+
   // 11. Deploy RealYieldRouter
   const routerYieldArtifact = loadArtifact('RealYieldRouter', 'RealYieldRouter.sol');
   const ryRouterTx = await walletClient.deployContract({
@@ -299,6 +312,24 @@ async function main() {
     args: [corpOpExAddr, corpProfitAddr]
   });
   await publicClient.waitForTransactionReceipt({ hash: setGovCorpHash });
+
+  // Configure GovernanceStaking address on Corporate OpEx and Profit Vaults for auto-staking
+  const setStakingOpEx = await walletClient.writeContract({
+    address: corpOpExAddr,
+    abi: opExArtifact.abi,
+    functionName: 'setStakingPool',
+    args: [stakingAddr]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: setStakingOpEx });
+
+  const setStakingProfit = await walletClient.writeContract({
+    address: corpProfitAddr,
+    abi: profitArtifact.abi,
+    functionName: 'setStakingPool',
+    args: [stakingAddr]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: setStakingProfit });
+
   console.log('[+] Configured 50/25/25 Corporate Auto-Staking Vaults on GovernanceStaking.');
 
   // 12. Deploy VestedDiscountVault
@@ -394,6 +425,19 @@ async function main() {
   });
   await publicClient.waitForTransactionReceipt({ hash: setStalenessHash });
   console.log('[+] Configured USDC, WBTC, and WETH as tracked reserve assets in OracleHub.');
+
+  const tmConfigAbi = [
+    { name: 'setConfig', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: '_wbtc', type: 'address' }, { name: '_weth', type: 'address' }, { name: '_swapRouter', type: 'address' }, { name: '_opsWallet', type: 'address' }, { name: '_corpWallet', type: 'address' }], outputs: [] }
+  ] as const;
+
+  const setTmConfigHash = await walletClient.writeContract({
+    address: treasuryAddr,
+    abi: tmConfigAbi,
+    functionName: 'setConfig',
+    args: [wbtcAddr, wethAddr, routerAddr, account.address, account.address]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: setTmConfigHash });
+  console.log('[+] Configured setConfig on TreasuryManager with SwapRouter, WBTC, WETH, and Corporate Wallets.');
 
   // Configure protocol modules for Proof of Reserves
   // Handled dynamically via AddressProvider now.
@@ -525,10 +569,14 @@ async function main() {
   const idVested = keccak256(toHex('VESTED_VAULT'));
   const idP2p = keccak256(toHex('P2P_MARKET'));
 
-  await walletClient.writeContract({ address: apAddr, abi: ProtocolAddressProvider.abi, functionName: 'setAddress', args: [idRouter, ryRouterAddr], account });
-  await walletClient.writeContract({ address: apAddr, abi: ProtocolAddressProvider.abi, functionName: 'setAddress', args: [idStaking, stakingAddr], account });
-  await walletClient.writeContract({ address: apAddr, abi: ProtocolAddressProvider.abi, functionName: 'setAddress', args: [idVested, vestedVaultAddr], account });
-  await walletClient.writeContract({ address: apAddr, abi: ProtocolAddressProvider.abi, functionName: 'setAddress', args: [idP2p, p2pAddr], account });
+  const hR = await walletClient.writeContract({ address: apAddr, abi: ProtocolAddressProvider.abi, functionName: 'setAddress', args: [idRouter, ryRouterAddr], account });
+  await publicClient.waitForTransactionReceipt({ hash: hR });
+  const hS = await walletClient.writeContract({ address: apAddr, abi: ProtocolAddressProvider.abi, functionName: 'setAddress', args: [idStaking, stakingAddr], account });
+  await publicClient.waitForTransactionReceipt({ hash: hS });
+  const hV = await walletClient.writeContract({ address: apAddr, abi: ProtocolAddressProvider.abi, functionName: 'setAddress', args: [idVested, vestedVaultAddr], account });
+  await publicClient.waitForTransactionReceipt({ hash: hV });
+  const hP = await walletClient.writeContract({ address: apAddr, abi: ProtocolAddressProvider.abi, functionName: 'setAddress', args: [idP2p, p2pAddr], account });
+  await publicClient.waitForTransactionReceipt({ hash: hP });
 
   const setTreasuryEngineHash = await walletClient.writeContract({
     address: apAddr,

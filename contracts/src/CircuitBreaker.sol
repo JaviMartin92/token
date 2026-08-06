@@ -25,7 +25,7 @@ contract CircuitBreaker is ICircuitBreaker, Ownable {
     mapping(address => uint256) public priceHistoryCount;
 
     // Default 365 days for Sandbox; set to 1 hour for production
-    uint256 public oracleStalenessLimit = 365 days;
+    uint256 public oracleStalenessLimit = 86400;
 
     constructor(address _initialOwner) {
         if (_initialOwner != msg.sender) {

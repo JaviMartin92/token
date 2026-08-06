@@ -11,6 +11,10 @@ import "./AlphaToken.sol";
 import "./OracleHub.sol";
 import "./interfaces/IYieldStrategy.sol";
 
+interface IGovernanceStakingOpEx {
+    function stake(uint256 amount) external;
+}
+
 // --- Interfaces ---
 interface IProtocolTokenomicsEngine {
     function calculateDeposit(uint256 actualDepositedUsdc, bool isRouterCall, uint8 redemptionTokenDecimals) external view returns (uint256 feeAmountUsdc, uint256 netDepositedUsdc, uint256 depositValueUSD18);
@@ -27,6 +31,8 @@ interface IGovernanceStaking {
     function totalStaked() external view returns (uint256);
     function stakedBalances(address account) external view returns (uint256);
     function stake(uint256 amount) external;
+    function corporateOpExVault() external view returns (address);
+    function corporateProfitVault() external view returns (address);
 }
 
 interface IRealYieldRouter {
@@ -137,18 +143,35 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
         tvlCap = newCap;
     }
 
+    function recordBurn(uint256 amount) external {
+        // GovernanceStaking directly calls this when executing deflationary burns
+        totalBurnedTokens += amount;
+    }
+
+    function notifyReserveFee(uint256 usdcFeeAmount) external {
+        // Sweep the reserve fee revenue directly into the AlphaVault to maintain PoR >= 100%
+        address vault = addressProvider.getAlphaVault();
+        if (vault != address(0) && usdcFeeAmount > 0) {
+            uint256 bal = IERC20(redemptionToken).balanceOf(address(this));
+            uint256 toTransfer = usdcFeeAmount > bal ? bal : usdcFeeAmount;
+            if (toTransfer > 0) {
+                IERC20(redemptionToken).transfer(vault, toTransfer);
+            }
+        }
+    }
+
     function getTotalNavUSD() public view returns (uint256) {
         (uint256 assets, , ) = getProofOfReserves();
         return assets;
     }
 
     function getProofOfReserves() public view returns (uint256 totalAssetsUSD, uint256 totalLiabilitiesUSD, uint256 collateralRatioBps) {
-        AlphaVault vault = AlphaVault(addressProvider.getAddress(addressProvider.ID_ALPHA_VAULT()));
-        OracleHub oracle = OracleHub(addressProvider.getAddress(addressProvider.ID_ORACLE_HUB()));
-        AlphaToken token = AlphaToken(addressProvider.getAddress(addressProvider.ID_ALPHA_TOKEN()));
+        AlphaVault vault = AlphaVault(addressProvider.getAlphaVault());
+        OracleHub oracle = OracleHub(addressProvider.getOracleHub());
+        AlphaToken token = AlphaToken(addressProvider.getAlphaToken());
         
-        // 1. Treasury Stablecoin Balance
-        uint256 treasuryStables = vault.getBalance(redemptionToken);
+        // 1. Treasury Stablecoin Balance (Vault + TreasuryManager contract)
+        uint256 treasuryStables = vault.getBalance(redemptionToken) + IERC20(redemptionToken).balanceOf(address(this));
         uint256 treasuryStablesUsd = oracle.getAssetUsdValue(redemptionToken, treasuryStables);
         totalAssetsUSD += treasuryStablesUsd;
 
@@ -162,21 +185,31 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
         }
 
         // 3. P2P Market
-        address p2pAddr = addressProvider.getAddress(addressProvider.ID_P2P_MARKET());
+        address p2pAddr = addressProvider.getP2PMarket();
         if (p2pAddr != address(0)) {
             try IP2PLendingMarket(p2pAddr).treasuryLoansReceivableUSD() returns (uint256 trl) {
-                totalAssetsUSD += trl;
+                totalAssetsUSD += trl * (10**(18 - redemptionTokenDecimals));
             } catch {}
         }
 
         // 5. Liabilities
-        address govAddr = addressProvider.getAddress(addressProvider.ID_GOVERNANCE_STAKING());
-        uint256 protocolOwnedAlpha = vault.getBalance(address(token));
+        address govAddr = addressProvider.getGovernanceStaking();
+        uint256 protocolOwnedAlpha = vault.getBalance(address(token)) + token.balanceOf(address(this));
         if (govAddr != address(0)) {
-            protocolOwnedAlpha += IGovernanceStaking(govAddr).stakedBalances(address(vault));
+            protocolOwnedAlpha += IGovernanceStaking(govAddr).stakedBalances(address(vault)) + IGovernanceStaking(govAddr).stakedBalances(address(this));
+            try IGovernanceStaking(govAddr).corporateOpExVault() returns (address opEx) {
+                if (opEx != address(0)) {
+                    protocolOwnedAlpha += token.balanceOf(opEx) + IGovernanceStaking(govAddr).stakedBalances(opEx);
+                }
+            } catch {}
+            try IGovernanceStaking(govAddr).corporateProfitVault() returns (address profit) {
+                if (profit != address(0)) {
+                    protocolOwnedAlpha += token.balanceOf(profit) + IGovernanceStaking(govAddr).stakedBalances(profit);
+                }
+            } catch {}
         }
 
-        uint256 circulatingAlpha = token.totalSupply() - totalBurnedTokens;
+        uint256 circulatingAlpha = token.totalSupply();
         if (circulatingAlpha > protocolOwnedAlpha) {
             uint256 netAlphaLiability = circulatingAlpha - protocolOwnedAlpha;
             if (netAlphaLiability > 0) {
@@ -185,14 +218,14 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
             }
         }
 
-        address vestedAddr = addressProvider.getAddress(addressProvider.ID_VESTED_VAULT());
+        address vestedAddr = addressProvider.getVestedVault();
         if (vestedAddr != address(0)) {
             try IVestedDiscountVault(vestedAddr).totalPresentLiability() returns (uint256 vL) {
                 totalLiabilitiesUSD += vL;
             } catch {}
         }
 
-        address engineAddr = addressProvider.getAddress(addressProvider.ID_TOKENOMICS_ENGINE());
+        address engineAddr = addressProvider.getTokenomicsEngine();
         if (engineAddr != address(0)) {
             try IProtocolTokenomicsEngine(engineAddr).calculateProofOfReserves(totalAssetsUSD, totalLiabilitiesUSD) returns (uint256 c, bool s) {
                 collateralRatioBps = c;
@@ -211,13 +244,63 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
         emit ProofOfReservesAudited(totalAssetsUSD, totalLiabilitiesUSD, collateralRatioBps, block.timestamp);
     }
 
+    function getNetCirculatingShares() public view returns (uint256) {
+        AlphaToken token = AlphaToken(addressProvider.getAddress(addressProvider.ID_ALPHA_TOKEN()));
+        AlphaVault vault = AlphaVault(addressProvider.getAlphaVault());
+        address govAddr = addressProvider.getGovernanceStaking();
+
+        uint256 totalShares = token.totalSupply();
+        uint256 protocolOwnedAlpha = vault.getBalance(address(token)) + token.balanceOf(address(this));
+
+        if (govAddr != address(0)) {
+            protocolOwnedAlpha += IGovernanceStaking(govAddr).stakedBalances(address(vault)) + IGovernanceStaking(govAddr).stakedBalances(address(this));
+            try IGovernanceStaking(govAddr).corporateOpExVault() returns (address opEx) {
+                if (opEx != address(0)) {
+                    protocolOwnedAlpha += token.balanceOf(opEx) + IGovernanceStaking(govAddr).stakedBalances(opEx);
+                }
+            } catch {}
+            try IGovernanceStaking(govAddr).corporateProfitVault() returns (address profit) {
+                if (profit != address(0)) {
+                    protocolOwnedAlpha += token.balanceOf(profit) + IGovernanceStaking(govAddr).stakedBalances(profit);
+                }
+            } catch {}
+        }
+
+        return totalShares > protocolOwnedAlpha ? totalShares - protocolOwnedAlpha : totalShares;
+    }
+
+    function getTotalAssetsExogenousUSD() public view returns (uint256) {
+        (uint256 assetsUSD, , ) = getProofOfReserves();
+        return assetsUSD;
+    }
+
+    function calculateDynamicFeeBps(uint256 grossDepositUSD, uint256 totalAssetsExogenousUSD) public pure returns (uint256) {
+        uint256 feeBase = 50; // 50 BPS (0.50%)
+        uint256 impactSensitivity = 500; // 500 BPS (5.00%)
+        
+        if (totalAssetsExogenousUSD == 0) return feeBase;
+
+        uint256 totalDenom = totalAssetsExogenousUSD + grossDepositUSD;
+        uint256 impactRatio = (grossDepositUSD * 10000) / totalDenom;
+        uint256 dynamicFeeBps = feeBase + ((impactRatio * impactSensitivity) / 10000);
+        if (dynamicFeeBps > 500) {
+            dynamicFeeBps = 500; // Capped at 500 BPS (5.00%)
+        }
+        return dynamicFeeBps;
+    }
+
     // --- Core Operations ---
     function deposit(uint256 stableAmount) external nonReentrant returns (uint256 sharesMinted) {
         require(stableAmount > 0, "TreasuryManager: Deposit amount must be > 0");
 
         (, , uint256 preRatioBps) = getProofOfReserves();
 
-        // 1. Send funds to Vault
+        // 1. Read Exogenous Assets and Net Circulating Shares BEFORE funds enter the vault
+        uint256 totalAssetsExogenous = getTotalAssetsExogenousUSD();
+        AlphaToken token = AlphaToken(addressProvider.getAddress(addressProvider.ID_ALPHA_TOKEN()));
+        uint256 currentShares = getNetCirculatingShares();
+
+        // 2. Send funds to Vault
         AlphaVault vault = AlphaVault(addressProvider.getAddress(addressProvider.ID_ALPHA_VAULT()));
         uint256 balanceBefore = vault.getBalance(redemptionToken);
         require(IERC20(redemptionToken).transferFrom(msg.sender, address(vault), stableAmount), "TreasuryManager: transferFrom failed");
@@ -225,18 +308,18 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
         require(actualDeposited > 0, "TreasuryManager: Actual deposited amount is 0");
 
         address routerAddr = addressProvider.getAddress(addressProvider.ID_REAL_YIELD_ROUTER());
-        uint256 feeAmount = (msg.sender == routerAddr) ? 0 : (actualDeposited * 50) / 10000;
+        
+        uint256 grossDepositUSD = actualDeposited * (10**(18 - redemptionTokenDecimals));
+        uint256 dynamicFeeBps = (msg.sender == routerAddr) ? 0 : calculateDynamicFeeBps(grossDepositUSD, totalAssetsExogenous);
+
+        uint256 feeAmount = (actualDeposited * dynamicFeeBps) / 10000;
         uint256 netDeposited = actualDeposited - feeAmount;
         uint256 depositValueUSD = netDeposited * (10**(18 - redemptionTokenDecimals));
 
-        uint256 navBefore = getTotalNavUSD();
-        AlphaToken token = AlphaToken(addressProvider.getAddress(addressProvider.ID_ALPHA_TOKEN()));
-        uint256 currentShares = token.totalSupply();
-
-        if (currentShares == 0 || navBefore == 0) {
+        if (currentShares == 0 || totalAssetsExogenous == 0) {
             sharesMinted = depositValueUSD;
         } else {
-            sharesMinted = (depositValueUSD * currentShares) / navBefore;
+            sharesMinted = (depositValueUSD * currentShares) / totalAssetsExogenous;
         }
 
         // Mint via AlphaToken
@@ -256,43 +339,113 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
         }
 
         // Reserve Auto-Allocations (Simplified for Modular Vault)
-        // Only executing the WBTC / WETH swap if router exists
-        if (swapRouter != address(0) && netDeposited > 0) {
-            uint256 btcUsdc = (netDeposited * currentWeights.wbtc) / 10000;
-            if (btcUsdc > 0 && wbtcToken != address(0)) {
-                vault.approveFunds(redemptionToken, swapRouter, btcUsdc);
-                try ISwapRouter(swapRouter).exactInputSingle(
-                    ISwapRouter.ExactInputSingleParams(redemptionToken, wbtcToken, 3000, address(vault), block.timestamp + 15 minutes, btcUsdc, 0, 0)
-                ) returns (uint256) {} catch {
-                    // Sandbox fallback
-                    uint256 btcBought = (btcUsdc * 10**8) / (60000 * (10**redemptionTokenDecimals));
-                    try IMockERC20(wbtcToken).mint(address(vault), btcBought) {} catch {}
+        if (netDeposited > 0) {
+            if (swapRouter != address(0)) {
+                uint256 btcUsdc = (netDeposited * currentWeights.wbtc) / 10000;
+                if (btcUsdc > 0 && wbtcToken != address(0)) {
+                    vault.approveFunds(redemptionToken, swapRouter, btcUsdc);
+                    try ISwapRouter(swapRouter).exactInputSingle(
+                        ISwapRouter.ExactInputSingleParams(redemptionToken, wbtcToken, 3000, address(vault), block.timestamp + 15 minutes, btcUsdc, 0, 0)
+                    ) returns (uint256) {} catch {
+                        // Sandbox fallback
+                        uint256 btcBought = (btcUsdc * 10**8) / (60000 * (10**redemptionTokenDecimals));
+                        try IMockERC20(wbtcToken).mint(address(vault), btcBought) {} catch {}
+                    }
+                }
+
+                uint256 ethUsdc = (netDeposited * currentWeights.weth) / 10000;
+                if (ethUsdc > 0 && wethToken != address(0)) {
+                    vault.approveFunds(redemptionToken, swapRouter, ethUsdc);
+                    try ISwapRouter(swapRouter).exactInputSingle(
+                        ISwapRouter.ExactInputSingleParams(redemptionToken, wethToken, 3000, address(vault), block.timestamp + 15 minutes, ethUsdc, 0, 0)
+                    ) returns (uint256) {} catch {
+                        uint256 ethBought = (ethUsdc * 10**18) / (3000 * (10**redemptionTokenDecimals));
+                        try IMockERC20(wethToken).mint(address(vault), ethBought) {} catch {}
+                    }
                 }
             }
 
-            uint256 ethUsdc = (netDeposited * currentWeights.weth) / 10000;
-            if (ethUsdc > 0 && wethToken != address(0)) {
-                vault.approveFunds(redemptionToken, swapRouter, ethUsdc);
-                try ISwapRouter(swapRouter).exactInputSingle(
-                    ISwapRouter.ExactInputSingleParams(redemptionToken, wethToken, 3000, address(vault), block.timestamp + 15 minutes, ethUsdc, 0, 0)
-                ) returns (uint256) {} catch {
-                    uint256 ethBought = (ethUsdc * 10**18) / (3000 * (10**redemptionTokenDecimals));
-                    try IMockERC20(wethToken).mint(address(vault), ethBought) {} catch {}
-                }
-            }
+            uint256 altsUsdc = (netDeposited * currentWeights.alphaProtocolStaking) / 10000;
+            _allocateAlphaReserve(altsUsdc, token);
         }
 
         (, , uint256 postRatioBps) = getProofOfReserves();
-        require(postRatioBps >= preRatioBps, "TreasuryManager: Security Violation");
+        require(postRatioBps >= preRatioBps, "TreasuryManager: Security Violation - Transaction reduced collateralization ratio");
 
         emit Deposited(msg.sender, actualDeposited, sharesMinted);
         return sharesMinted;
     }
 
+    /**
+     * @notice Dynamically allocates the 12.5% ALPHA sub-reserve via DEX swap (<= 0.5% max slippage)
+     *         with automatic Fallback NAV Mint if liquidity is missing or slippage > 0.5% (Genesis Sandbox).
+     */
+    function _allocateAlphaReserve(uint256 altsUsdc, AlphaToken token) internal {
+        if (altsUsdc == 0) return;
+
+        address alphaTokenAddr = address(token);
+        address stakingPool = addressProvider.getAddress(addressProvider.ID_GOVERNANCE_STAKING());
+        if (stakingPool == address(0)) return;
+
+        bool dexSuccess = false;
+        uint256 alphaObtained = 0;
+
+        // 1. Query DEX depth & calculate price impact (Slippage <= 0.5% BPS / 50 BPS)
+        if (swapRouter != address(0)) {
+            AlphaVault vault = AlphaVault(addressProvider.getAddress(addressProvider.ID_ALPHA_VAULT()));
+            
+            // Expected ALPHA amount at $1.00 USD peg / current NAV
+            uint256 expectedAlpha = (altsUsdc * 10**18) / (10**redemptionTokenDecimals);
+            // Minimum output for 0.5% max slippage (99.5% minimum received)
+            uint256 minAlphaOutput = (expectedAlpha * 9950) / 10000;
+
+            vault.approveFunds(redemptionToken, swapRouter, altsUsdc);
+
+            try ISwapRouter(swapRouter).exactInputSingle(
+                ISwapRouter.ExactInputSingleParams(
+                    redemptionToken,
+                    alphaTokenAddr,
+                    3000,
+                    address(this),
+                    block.timestamp + 15 minutes,
+                    altsUsdc,
+                    minAlphaOutput,
+                    0
+                )
+            ) returns (uint256 amountOut) {
+                if (amountOut >= minAlphaOutput) {
+                    dexSuccess = true;
+                    alphaObtained = amountOut;
+                }
+            } catch {}
+        }
+
+        // 2. Fallback (Genesis / Pool Inexistente / Slippage > 0.5% BPS):
+        // Retain USDC in reserve for 100% PoR backing, and mint ALPHA at official NAV (USDC_monto / NAV_actual)
+        if (!dexSuccess) {
+            uint256 totalShares = token.totalSupply();
+            uint256 totalNav = getTotalNavUSD();
+
+            if (totalShares == 0 || totalNav == 0) {
+                alphaObtained = (altsUsdc * 10**18) / (10**redemptionTokenDecimals);
+            } else {
+                uint256 depositValueUSD = altsUsdc * (10**(18 - redemptionTokenDecimals));
+                alphaObtained = (depositValueUSD * totalShares) / totalNav;
+            }
+            token.mint(address(this), alphaObtained);
+        }
+
+        // 3. Auto-stake acquired or minted ALPHA tokens in GovernanceStaking for Treasury
+        if (alphaObtained > 0) {
+            token.approve(stakingPool, alphaObtained);
+            try IGovernanceStakingOpEx(stakingPool).stake(alphaObtained) {} catch {}
+        }
+    }
+
     function redeem(uint256 sharesAmount) external nonReentrant returns (uint256 assetsReceived) {
         require(sharesAmount > 0, "TreasuryManager: Redeeming 0 shares");
         AlphaToken token = AlphaToken(addressProvider.getAddress(addressProvider.ID_ALPHA_TOKEN()));
-        uint256 totalShares = token.totalSupply();
+        uint256 totalShares = getNetCirculatingShares();
         
         (, , uint256 preRatioBps) = getProofOfReserves();
 
@@ -307,6 +460,7 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
         AlphaVault vault = AlphaVault(addressProvider.getAddress(addressProvider.ID_ALPHA_VAULT()));
         
         token.burnFrom(msg.sender, sharesAmount);
+        totalBurnedTokens += sharesAmount;
         vault.transferFunds(redemptionToken, msg.sender, assetsReceived);
 
         // Fee Distribution
@@ -321,9 +475,60 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
         }
 
         (, , uint256 postRatioBps) = getProofOfReserves();
-        require(postRatioBps >= preRatioBps, "TreasuryManager: Security Violation");
+        require(postRatioBps >= preRatioBps, "TreasuryManager: Security Violation - Transaction reduced collateralization ratio");
 
         emit Redeemed(msg.sender, sharesAmount, assetsReceived);
         return assetsReceived;
+    }
+
+    function mintCorporateFeeShares(uint256 stableAmount) external nonReentrant returns (uint256 sharesMinted) {
+        require(msg.sender == addressProvider.getAddress(addressProvider.ID_REAL_YIELD_ROUTER()), "TreasuryManager: Only RealYieldRouter");
+        require(stableAmount > 0, "TreasuryManager: Amount must be > 0");
+
+        AlphaVault vault = AlphaVault(addressProvider.getAddress(addressProvider.ID_ALPHA_VAULT()));
+        require(IERC20(redemptionToken).transferFrom(msg.sender, address(vault), stableAmount), "TreasuryManager: transferFrom failed");
+
+        uint256 depositValueUSD = stableAmount * (10**(18 - redemptionTokenDecimals));
+        uint256 navBefore = getTotalNavUSD();
+        AlphaToken token = AlphaToken(addressProvider.getAddress(addressProvider.ID_ALPHA_TOKEN()));
+        uint256 currentShares = token.totalSupply();
+
+        if (currentShares == 0 || navBefore == 0) {
+            sharesMinted = depositValueUSD;
+        } else {
+            sharesMinted = (depositValueUSD * currentShares) / navBefore;
+        }
+
+        token.mint(msg.sender, sharesMinted);
+        return sharesMinted;
+    }
+
+    function disburseTreasuryLoan(address recipient, uint256 amount) external nonReentrant {
+        require(msg.sender == addressProvider.getAddress(addressProvider.ID_P2P_MARKET()) || hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "TreasuryManager: Unauthorized to disburse loans");
+        require(amount > 0, "TreasuryManager: Loan amount must be > 0");
+        
+        AlphaVault vault = AlphaVault(addressProvider.getAddress(addressProvider.ID_ALPHA_VAULT()));
+        
+        // Ensure Treasury has enough stablecoin liquidity
+        uint256 available = vault.getBalance(redemptionToken);
+        require(available >= amount, "TreasuryManager: Insufficient liquidity for loan");
+        
+        vault.transferFunds(redemptionToken, recipient, amount);
+    }
+
+    function releaseVaultPayout(address recipient, uint256 amount) external nonReentrant {
+        require(
+            msg.sender == addressProvider.getVestedVault() ||
+            msg.sender == addressProvider.getAddress(addressProvider.ID_VESTED_VAULT()) ||
+            hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
+            "TreasuryManager: Unauthorized vault payout"
+        );
+        require(amount > 0, "TreasuryManager: Payout amount must be > 0");
+
+        AlphaVault vault = AlphaVault(addressProvider.getAlphaVault());
+        uint256 available = vault.getBalance(redemptionToken);
+        require(available >= amount, "TreasuryManager: Insufficient liquidity for payout");
+
+        vault.transferFunds(redemptionToken, recipient, amount);
     }
 }

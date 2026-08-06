@@ -6,6 +6,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./lib/security/ReentrancyGuard.sol";
 import "./interfaces/ITreasury.sol";
 
+interface IBurnable {
+    function burn(uint256 amount) external;
+}
+
 /**
  * @title GovernanceStaking
  * @notice Staking pool for ALPHA governance token holders to earn real yield from protocol fees.
@@ -142,11 +146,10 @@ contract GovernanceStaking is Ownable, ReentrancyGuard {
             uint256 opExShare = fee / 4;      // 25%
             uint256 profitShare = fee - treasuryShare - opExShare; // 25%
 
-            if (treasuryShare > 0 && treasury != address(0)) {
-                require(govToken.transfer(treasury, treasuryShare), "Staking: Fee to Treasury failed");
-                if (treasury.code.length > 0) {
-                    (bool success, ) = treasury.call(abi.encodeWithSignature("processStakingFee(uint256)", treasuryShare));
-                    (void)success;
+            if (treasuryShare > 0) {
+                IBurnable(address(govToken)).burn(treasuryShare);
+                if (treasury != address(0)) {
+                    ITreasury(treasury).recordBurn(treasuryShare);
                 }
             }
             if (opExShare > 0 && corporateOpExVault != address(0)) {

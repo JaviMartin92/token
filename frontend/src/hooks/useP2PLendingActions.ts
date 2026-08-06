@@ -27,7 +27,7 @@ async function getOnChainOraclePriceUSD(collateralType: string): Promise<number>
   } catch (e) {
     console.error('Oracle fetch failed:', e);
   }
-  return 1.0;
+  return 0.0;
 }
 
 // Max LTV per collateral type
@@ -272,18 +272,19 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
     }
   };
 
-  const executeRepayLoanById = async (loanId: number, totalToPay: number) => {
+  const executeRepayLoanById = async (loanId: number, _totalToPay: number) => {
     try {
       addLog(`Reembolsando préstamo P2P #${loanId}...`);
       addToast('info', 'Reembolso Préstamo', 'Aprobando pago en USDC e intereses...');
       const client = getWalletClient(activeKey);
 
-      // 1. Approve USDC repayment to P2PLendingMarket contract
+      // 1. Approve USDC repayment to P2PLendingMarket contract with safe max allowance
+      const appAmountWei = parseUnits('100000', 6); // Approve 100,000 USDC safe allowance
       const appHash = await client.writeContract({
         address: CONTRACT_ADDRESSES.USDC,
         abi: ABIS.ERC20,
         functionName: 'approve',
-        args: [CONTRACT_ADDRESSES.P2P_MARKET, parseUnits(totalToPay.toFixed(6), 6)]  // USDC = 6 decimals
+        args: [CONTRACT_ADDRESSES.P2P_MARKET, appAmountWei]
       });
       await publicClient.waitForTransactionReceipt({ hash: appHash });
 
@@ -342,7 +343,7 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
         details: [
           { label: 'ID del Préstamo', value: `#${loanId}` },
           { label: 'Capital Inicial Prestado (Principal)', value: `$${principalVal.toLocaleString('en-US', { minimumFractionDigits: 2 })} USDC` },
-          { label: 'Intereses Devengados (8.00% APR)', value: `+$${interestVal.toFixed(2)} USDC` },
+          { label: `Intereses Devengados (${aprVal.toFixed(2)}% APR)`, value: `+$${interestVal.toFixed(2)} USDC` },
           { label: 'Monto TOTAL a Pagar en USDC', value: `$${totalToPay.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC`, badge: 'Pago Total' },
           { label: 'Colateral en Custodia a Recibir', value: collateralStr, badge: 'Liberación 100%' },
           { label: 'Spread de Margen de Interés (10.00%)', value: `$${interestSpreadVal.toFixed(2)} USDC -> Flywheel Real Yield Stakers`, badge: 'Reparto a Stakers' },

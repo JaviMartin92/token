@@ -78,16 +78,24 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
     if (isNaN(num) || num <= 0) return;
 
     if (requestConfirmation) {
-      const fee = (num * 0.005).toFixed(2);
-      const net = (num * 0.995).toFixed(2);
-      const feeReserves = (num * 0.0025).toFixed(2);
-      const feeOps = (num * 0.00125).toFixed(2);
-      const feeProfit = (num * 0.00125).toFixed(2);
+      // Dynamic Slippage Fee: min(50 + ((gross * 10000 / (99500 + gross)) * 500 / 10000), 500)
+      const resVal = 99500;
+      const impactRatioBps = (num * 10000) / (resVal + num);
+      const dynamicFeeBps = Math.min(50 + Math.floor((impactRatioBps * 500) / 10000), 500);
+      const dynamicFeePct = (dynamicFeeBps / 100).toFixed(2);
+
+      const feeVal = (num * dynamicFeeBps) / 10000;
+      const fee = feeVal.toFixed(2);
+      const netVal = num - feeVal;
+      const net = netVal.toFixed(2);
+      const feeReserves = (feeVal * 0.50).toFixed(2);
+      const feeOps = (feeVal * 0.25).toFixed(2);
+      const feeProfit = (feeVal * 0.25).toFixed(2);
 
       requestConfirmation({
         title: 'Depósito de USDC en Tesorería',
         actionIcon: '💵',
-        typeBadge: 'Acuñación NAV Shares',
+        typeBadge: 'Acuñación NAV Shares (Dynamic Slippage)',
         targetContractName: 'Treasury.sol',
         targetContractAddress: CONTRACT_ADDRESSES.TREASURY,
         inputAmount: `$${num.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
@@ -96,7 +104,7 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
         expectedOutputSymbol: `ALPHA Shares (Acuñadas a $${navPerShareNum.toFixed(4)} NAV)`,
         details: [
           { label: 'Monto Bruto Ingresado', value: `$${num.toFixed(2)} USDC` },
-          { label: 'Comisión de Entrada (0.50%)', value: `$${fee} USDC`, badge: 'Reparto 50%/25%/25%' },
+          { label: `Comisión Dinámica Adaptativa (${dynamicFeePct}%)`, value: `$${fee} USDC`, badge: `Slippage BPS: ${dynamicFeeBps}` },
           { label: 'Destino 50% Comisión (Reservas)', value: `$${feeReserves} USDC (Inyectado a Reservas Tesorería)` },
           { label: 'Destino 25% Comisión (OpEx Vault)', value: `$${feeOps} USDC (CorporateOpExVault Staked ALPHA)` },
           { label: 'Destino 25% Comisión (Profit Vault)', value: `$${feeProfit} USDC (CorporateProfitVault Staked ALPHA)` }

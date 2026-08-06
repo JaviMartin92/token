@@ -75,19 +75,19 @@ export const Header: React.FC<HeaderProps> = ({
           {/* PoR Badge */}
           <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.4rem 0.8rem', borderRadius: '10px', textAlign: 'center' }}>
             <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>RATIO COLATERAL PoR</div>
-            <div style={{ fontWeight: 700, color: '#4ade80', fontSize: '0.95rem' }}>{porRatio}</div>
+            <div data-testid="header-por-ratio" style={{ fontWeight: 700, color: '#4ade80', fontSize: '0.95rem' }}>{porRatio}</div>
           </div>
 
           {/* NAV Pill */}
           <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.4rem 0.8rem', borderRadius: '10px', textAlign: 'center' }}>
             <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>VALOR NAV / SHARE</div>
-            <div style={{ fontWeight: 700, color: '#38bdf8', fontSize: '0.95rem' }}>${navValue} USD</div>
+            <div data-testid="header-nav-value" style={{ fontWeight: 700, color: '#38bdf8', fontSize: '0.95rem' }}>{navValue}</div>
           </div>
 
           {/* Wallet Status Badge */}
           <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.4rem 0.8rem', borderRadius: '10px', textAlign: 'center' }}>
             <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>ESTADO WALLET</div>
-            <div style={{ fontWeight: 600, color: walletConnected ? '#4ade80' : '#f87171', fontSize: '0.85rem' }}>
+            <div data-testid="header-wallet-status" style={{ fontWeight: 600, color: walletConnected ? '#4ade80' : '#f87171', fontSize: '0.85rem' }}>
               {walletConnected ? `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}` : 'Desconectado'}
             </div>
           </div>
@@ -97,6 +97,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>ROL CONECTADO:</div>
             <div style={{ display: 'flex', gap: '0.4rem', background: 'rgba(0,0,0,0.3)', padding: '0.25rem', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
               <button
+                data-testid="header-role-admin"
                 style={{
                   background: activeKey === ADMIN_KEY ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'transparent',
                   color: '#fff',
@@ -113,6 +114,7 @@ export const Header: React.FC<HeaderProps> = ({
                 👑 Admin / Owner
               </button>
               <button
+                data-testid="header-role-user"
                 style={{
                   background: activeKey === USER_KEY ? 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)' : 'transparent',
                   color: '#fff',
@@ -136,12 +138,14 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Navigation Tabs */}
       <div style={{ display: 'flex', gap: '1rem', marginTop: '1.25rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
         <button
+          data-testid="header-tab-portal"
           onClick={() => setActiveTab('client')}
           className={`header-nav-btn ${activeTab === 'client' ? 'header-nav-btn-active' : 'header-nav-btn-inactive'}`}
         >
           💎 Portal Cliente & Bonos
         </button>
         <button
+          data-testid="header-tab-governance"
           onClick={() => setActiveTab('governance')}
           className={`header-nav-btn ${activeTab === 'governance' ? 'header-nav-btn-active' : 'header-nav-btn-inactive'}`}
           style={{ opacity: activeKey !== ADMIN_KEY ? 0.7 : 1 }}

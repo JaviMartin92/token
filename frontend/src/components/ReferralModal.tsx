@@ -75,6 +75,7 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({
       }}>
         {/* Close Button */}
         <button
+          data-testid="referral-modal-close-btn"
           onClick={onClose}
           style={{
             position: 'absolute',
@@ -128,7 +129,7 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({
           <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.85rem', lineHeight: '1.6', opacity: 0.9 }}>
             <li><strong style={{ color: '#4ade80' }}>1.5% de Comisión Directa en USDC</strong> transferidos a tu wallet por cada amigo que compre un Bono.</li>
             <li><strong style={{ color: '#38bdf8' }}>Hasta 20% de Descuento</strong> para tus invitados en la compra de sus Bonos Vestados.</li>
-            <li><strong style={{ color: '#fbbf24' }}>Pago Instantáneo On-Chain</strong> sin intermediarios ni periodos de espera.</li>
+            <li><strong style={{ color: '#f0abfc' }}>Sin Límites de Ingresos</strong>: Gana comisiones recurrentes por cada referido activo.</li>
           </ul>
         </div>
 
@@ -139,6 +140,7 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({
           </label>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <input
+              data-testid="referral-link-input"
               type="text"
               readOnly
               value={referralLink}
@@ -154,6 +156,7 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({
               }}
             />
             <button
+              data-testid="referral-copy-btn"
               onClick={handleCopy}
               style={{
                 background: copied ? '#22c55e' : 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',

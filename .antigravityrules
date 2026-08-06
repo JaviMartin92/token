@@ -1,0 +1,14 @@
+# ⚡ DIRECTIVAS INMUTABLES DE OPTIMIZACIÓN Y CONTROL DE CUOTA
+
+## 1. EJECUCIÓN SILENCIOSA DE TEST Y LOGS DIRECTOS A DISCO
+- Al ejecutar suites de prueba (Playwright / Anvil / Foundry), NUNCA vuelques el informe de 106 campos ni traces extensos en el `stdout` de la conversación.
+- Configura las pruebas para escribir reportes detallados (`ui_audit_report.md`) directamente en disco usando `fs.writeFileSync`.
+- Si el test pasa con éxito, responde únicamente con 1 línea de confirmación. Si falla, reporta solo la aserción exacta con desviación > 0.1%.
+
+## 2. GESTIÓN MÍNIMA DE TOKENS EN CONTEXTO
+- NUNCA leas ni reescribas archivos completos para modificaciones puntuales; utiliza diffs localizados o reemplazos de funciones específicas.
+- Redirige la salida de comandos pesados a archivos locales (ej: `npm run build > build.log 2>&1`).
+- Restringe las búsquedas de código usando `grep` o `ripgrep` acotados a los directorios de trabajo (`src/`, `test/`, `contracts/`).
+
+## 3. ASYNC WAIT Y EVENTOS EN PLAYWRIGHT
+- Prohibidos los timeouts fijos (`waitForTimeout`). Sincroniza la dApp y los bloques de Anvil mediante esperas de eventos explícitas (`expect(locator).toHaveText(...)`).

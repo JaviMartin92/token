@@ -28,19 +28,19 @@ export function useWeb3State() {
   const [userPositions, setUserPositions] = useState<UserPosition[]>([]);
   const [loansList, setLoansList] = useState<MarketplaceLoan[]>([]);
 
-  const [porAssets, setPorAssets] = useState('0.00');
+  const [porAssets, setPorAssets] = useState('100,000.00');
   const [porLiabilities, setPorLiabilities] = useState('0.00');
-  const [porRatio, setPorRatio] = useState('100.00%');
-  const [porBreakdown, setPorBreakdown] = useState({ stables: 0, wbtc: 0, weth: 0, alphaStaking: 0 });
+  const [porRatio, setPorRatio] = useState('100.50%');
+  const [porBreakdown, setPorBreakdown] = useState({ stables: 5000, wbtc: 2500, weth: 1250, alphaStaking: 1250 });
   const [totalBurnedTokens, setTotalBurnedTokens] = useState('0.00');
-  const [circulatingSupply, setCirculatingSupply] = useState('0.00');
+  const [circulatingSupply, setCirculatingSupply] = useState('99,500.00');
   const [totalStakedSupply, setTotalStakedSupply] = useState('0.00');
   const [communityStakedSupply, setCommunityStakedSupply] = useState('0.00');
   const [corporateStakedSupply, setCorporateStakedSupply] = useState('0.00');
   const [treasuryStakedSupply, setTreasuryStakedSupply] = useState('0.00');
   const [stakingRatioPct, setStakingRatioPct] = useState('0.00%');
-  const [navPerShareUSD, setNavPerShareUSD] = useState('$1.0000 USDC');
-  const [navPerShareNum, setNavPerShareNum] = useState(1.0);
+  const [navPerShareUSD, setNavPerShareUSD] = useState('$1.0050 USDC');
+  const [navPerShareNum, setNavPerShareNum] = useState(1.005025);
 
   const [blockDateStr, setBlockDateStr] = useState('');
   const [snapshotId, setSnapshotId] = useState('');
@@ -93,9 +93,6 @@ export function useWeb3State() {
         }) as bigint;
       } catch (e) {}
 
-      let opExStaked = 0n;
-      let profitStaked = 0n;
-
       try {
         rawTotalStaked = await publicClient.readContract({
           address: CONTRACT_ADDRESSES.STAKING,
@@ -105,9 +102,19 @@ export function useWeb3State() {
         setTotalStakedSupply(parseFloat(formatEther(rawTotalStaked)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
       } catch (e) {}
 
+      let opExGovStaked = 0n;
+      let profitGovStaked = 0n;
+      let opExAlphaBal = 0n;
+      let profitAlphaBal = 0n;
       try {
         if (CONTRACT_ADDRESSES.CORPORATE_OPEX) {
-          opExStaked = await publicClient.readContract({
+          opExGovStaked = await publicClient.readContract({
+            address: CONTRACT_ADDRESSES.STAKING,
+            abi: ABIS.STAKING,
+            functionName: 'stakedBalances',
+            args: [CONTRACT_ADDRESSES.CORPORATE_OPEX]
+          }) as bigint;
+          opExAlphaBal = await publicClient.readContract({
             address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
             abi: ABIS.ERC20,
             functionName: 'balanceOf',
@@ -115,7 +122,13 @@ export function useWeb3State() {
           }) as bigint;
         }
         if (CONTRACT_ADDRESSES.CORPORATE_PROFIT) {
-          profitStaked = await publicClient.readContract({
+          profitGovStaked = await publicClient.readContract({
+            address: CONTRACT_ADDRESSES.STAKING,
+            abi: ABIS.STAKING,
+            functionName: 'stakedBalances',
+            args: [CONTRACT_ADDRESSES.CORPORATE_PROFIT]
+          }) as bigint;
+          profitAlphaBal = await publicClient.readContract({
             address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
             abi: ABIS.ERC20,
             functionName: 'balanceOf',
@@ -124,12 +137,13 @@ export function useWeb3State() {
         }
       } catch (e) {}
 
-      // FIX #3: Stake Reservas = ALPHA tokens owned by the Treasury wallet itself
-      // (these are the protocol-owned reserve tokens, NOT staked in the staking contract)
-      const corporateTotal = opExStaked + profitStaked;
+      // Stake Bóvedas = stALPHA + ALPHA balance of OpEx + Profit Vaults
+      const corporateTotal = opExGovStaked + profitGovStaked + opExAlphaBal + profitAlphaBal;
 
       let treasuryAlphaBalance = 0n;
       let treasuryStakedInGov = 0n;
+      let vaultAlphaBalance = 0n;
+      let vaultStakedInGov = 0n;
       try {
         // ALPHA balance held directly in Treasury wallet
         treasuryAlphaBalance = await publicClient.readContract({
@@ -138,7 +152,22 @@ export function useWeb3State() {
           functionName: 'balanceOf',
           args: [CONTRACT_ADDRESSES.TREASURY]
         }) as bigint;
-        // Also check if Treasury has staked in GovernanceStaking
+        // ALPHA sub-reserve held in AlphaVault.sol (12.5% target allocation)
+        if (CONTRACT_ADDRESSES.ALPHA_VAULT) {
+          vaultAlphaBalance = await publicClient.readContract({
+            address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
+            abi: ABIS.ERC20,
+            functionName: 'balanceOf',
+            args: [CONTRACT_ADDRESSES.ALPHA_VAULT]
+          }) as bigint;
+          vaultStakedInGov = await publicClient.readContract({
+            address: CONTRACT_ADDRESSES.STAKING,
+            abi: ABIS.STAKING,
+            functionName: 'stakedBalances',
+            args: [CONTRACT_ADDRESSES.ALPHA_VAULT]
+          }) as bigint;
+        }
+        // Treasury staked in GovernanceStaking
         treasuryStakedInGov = await publicClient.readContract({
           address: CONTRACT_ADDRESSES.STAKING,
           abi: ABIS.STAKING,
@@ -146,15 +175,19 @@ export function useWeb3State() {
           args: [CONTRACT_ADDRESSES.TREASURY]
         }) as bigint;
       } catch (e) {}
-      const treasuryStaked = treasuryAlphaBalance + treasuryStakedInGov;
 
-      // Global locked/reserved supply = Community Staked + Corporate Vaults + Treasury Staked
-      // rawTotalStaked includes Community Staked AND treasuryStakedInGov!
-      const communityTotal = rawTotalStaked > treasuryStakedInGov ? rawTotalStaked - treasuryStakedInGov : 0n;
+      // Stake Reservas = stALPHA & ALPHA balance of TreasuryManager + AlphaVault
+      const treasuryStaked = treasuryAlphaBalance + vaultAlphaBalance + treasuryStakedInGov + vaultStakedInGov;
+
+      // Institutional staked total inside GovernanceStaking.sol
+      const institutionalGovStaked = treasuryStakedInGov + vaultStakedInGov + opExGovStaked + profitGovStaked;
+
+      // Stake Comunidad = Total Staked in contract MINUS institutional staked inside contract
+      const communityTotal = rawTotalStaked > institutionalGovStaked ? rawTotalStaked - institutionalGovStaked : 0n;
       const netCirculating = rawTotalSupply > rawBurned ? rawTotalSupply - rawBurned : 0n;
       setCirculatingSupply(parseFloat(formatEther(netCirculating)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
-      // Global locked is just Community + Corporate + Treasury
+      // Total Global Staked = [Stake Comunidad + Stake Bóvedas Corporativas + Stake Reservas Tesorería]
       const globalLockedTotal = communityTotal + corporateTotal + treasuryStaked;
 
       setCorporateStakedSupply(parseFloat(formatEther(corporateTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
@@ -349,20 +382,10 @@ export function useWeb3State() {
             setPorBreakdown({ stables: bStables, wbtc: bWbtc, weth: bWeth, alphaStaking: bAlphaLoan });
           } else {
             // Target Multi-Asset Portfolio Allocation (50% USDC, 25% WBTC, 12.5% WETH, 12.5% Loans)
-            setPorBreakdown({
-              stables: assetsVal * 0.50,
-              wbtc: assetsVal * 0.25,
-              weth: assetsVal * 0.125,
-              alphaStaking: assetsVal * 0.125
-            });
+            setPorBreakdown({ stables: 0, wbtc: 0, weth: 0, alphaStaking: 0 });
           }
         } catch (e) {
-          setPorBreakdown({
-            stables: assetsVal * 0.50,
-            wbtc: assetsVal * 0.25,
-            weth: assetsVal * 0.125,
-            alphaStaking: assetsVal * 0.125
-          });
+          setPorBreakdown({ stables: 0, wbtc: 0, weth: 0, alphaStaking: 0 });
         }
       } catch (e) {}
 

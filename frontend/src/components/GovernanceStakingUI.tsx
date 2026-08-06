@@ -57,15 +57,15 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
           <div className="por-metric-box">
             <div className="por-metric-label">TU STAKING (stALPHA)</div>
-            <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#c084fc' }}>{stakedBalance} stALPHA</div>
+            <div data-testid="staking-stalpha-balance" style={{ fontWeight: 700, fontSize: '1.05rem', color: '#c084fc' }}>{stakedBalance} stALPHA</div>
           </div>
           <div className="por-metric-box">
             <div className="por-metric-label">REAL YIELD ACUMULADO</div>
-            <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#4ade80' }}>${claimableYield} USD</div>
+            <div data-testid="staking-real-yield" style={{ fontWeight: 700, fontSize: '1.05rem', color: '#4ade80' }}>${claimableYield} USD</div>
           </div>
           <div className="por-metric-box" style={{ background: 'rgba(239, 68, 68, 0.08)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
             <div className="por-metric-label" style={{ color: '#f87171' }}>🔥 TOTAL QUEMADOS</div>
-            <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#f87171' }}>{totalBurnedTokens} ALPHA</div>
+            <div data-testid="staking-total-burned" style={{ fontWeight: 700, fontSize: '1.05rem', color: '#f87171' }}>{totalBurnedTokens} ALPHA</div>
           </div>
         </div>
 
@@ -77,33 +77,33 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', gap: '0.5rem', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
             <div>
               <span style={{ opacity: 0.6, display: 'block', fontSize: '0.68rem' }}>🪙 En Circulación:</span>
-              <span style={{ fontWeight: 700, color: '#38bdf8' }}>{circulatingSupply} ALPHA</span>
+              <span data-testid="staking-circulating-supply" style={{ fontWeight: 700, color: '#38bdf8' }}>{circulatingSupply} ALPHA</span>
             </div>
             <div>
               <span style={{ opacity: 0.6, display: 'block', fontSize: '0.68rem' }}>👤 Stake Comunidad:</span>
-              <span style={{ fontWeight: 700, color: '#c084fc' }}>{communityStakedSupply} stALPHA</span>
+              <span data-testid="staking-community-staked" style={{ fontWeight: 700, color: '#c084fc' }}>{communityStakedSupply} stALPHA</span>
             </div>
             <div>
               <span style={{ opacity: 0.6, display: 'block', fontSize: '0.68rem' }}>🏢 Stake Bóvedas:</span>
-              <span style={{ fontWeight: 700, color: '#a855f7' }}>{corporateStakedSupply} stALPHA</span>
+              <span data-testid="staking-vaults-staked" style={{ fontWeight: 700, color: '#a855f7' }}>{corporateStakedSupply} stALPHA</span>
             </div>
             <div>
               <span style={{ opacity: 0.6, display: 'block', fontSize: '0.68rem' }}>🏛️ Stake Reservas:</span>
-              <span style={{ fontWeight: 700, color: '#38bdf8' }}>{treasuryStakedSupply} stALPHA</span>
+              <span data-testid="staking-reserves-staked" style={{ fontWeight: 700, color: '#38bdf8' }}>{treasuryStakedSupply} stALPHA</span>
             </div>
             <div>
               <span style={{ opacity: 0.6, display: 'block', fontSize: '0.68rem' }}>🥩 Total Global Staked:</span>
-              <span style={{ fontWeight: 700, color: '#eab308' }}>{totalStakedSupply} ALPHA ({stakingRatioPct})</span>
+              <span data-testid="staking-global-staked" style={{ fontWeight: 700, color: '#eab308' }}>{totalStakedSupply} ALPHA ({stakingRatioPct})</span>
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', fontSize: '0.8rem', borderTop: '1px dashed rgba(255,255,255,0.08)', paddingTop: '0.5rem' }}>
             <div>
               <span style={{ opacity: 0.6, display: 'block', fontSize: '0.7rem' }}>💎 Respaldo (NAV / ALPHA):</span>
-              <span style={{ fontWeight: 700, color: '#4ade80' }}>{navPerShareUSD}</span>
+              <span data-testid="staking-backing-nav" style={{ fontWeight: 700, color: '#4ade80' }}>{navPerShareUSD}</span>
             </div>
             <div>
               <span style={{ opacity: 0.6, display: 'block', fontSize: '0.7rem' }}>🔥 Deflación Acumulada:</span>
-              <span style={{ fontWeight: 700, color: '#f87171' }}>{totalBurnedTokens} ALPHA Destruidos</span>
+              <span data-testid="staking-deflation-destroyed" style={{ fontWeight: 700, color: '#f87171' }}>{totalBurnedTokens} ALPHA Destruidos</span>
             </div>
           </div>
         </div>
@@ -112,6 +112,7 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
           <div>
             <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Monto a Bloquear / Desbloquear (ALPHA):</label>
             <input
+              data-testid="staking-amount-input"
               type="number"
               placeholder="ej. 100"
               value={stakeAmount}
@@ -122,10 +123,10 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-            <button className="btn-primary" style={{ background: '#a855f7' }} onClick={onStake}>
+            <button data-testid="staking-stake-btn" className="btn-primary" style={{ background: '#a855f7' }} onClick={onStake}>
               🔒 Stake ALPHA
             </button>
-            <button className="btn-secondary" onClick={onUnstake}>
+            <button data-testid="staking-unstake-btn" className="btn-secondary" onClick={onUnstake}>
               🔓 Unstake
             </button>
           </div>
@@ -164,10 +165,10 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-          <button className="btn-primary" style={{ background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' }} onClick={onClaimYield}>
+          <button data-testid="yield-claim-btn" className="btn-primary" style={{ background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' }} onClick={onClaimYield}>
             💸 Reclamar Yield
           </button>
-          <button className="btn-secondary" style={{ borderColor: '#6366f1', color: '#818cf8' }} onClick={onGaslessClaim}>
+          <button data-testid="yield-gasless-btn" className="btn-secondary" style={{ borderColor: '#6366f1', color: '#818cf8' }} onClick={onGaslessClaim}>
             ⚡ Reclamo Gasless (EIP-712)
           </button>
         </div>

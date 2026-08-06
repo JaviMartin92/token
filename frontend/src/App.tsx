@@ -110,20 +110,26 @@ export default function App() {
   }, 0);
 
   const claimableYieldVal = parseFloat(web3.claimableYield.replace(/,/g, '')) || 0;
+  const activeLoansInterestSum = web3.loansList.reduce((acc, loan) => {
+    return acc + (loan.state === 1 ? (parseFloat(loan.borrowAmount.replace(/,/g, '')) || 0) * (loan.interestRateBps / 10000) : 0);
+  }, 0);
 
   // Gross cashflow = total principal in active vested bonds (real data, no hardcode)
   const grossCashflowUsd = web3.userPositions.reduce((acc, pos) => {
     return acc + (!pos.isRagequitted ? parseFloat(pos.principal || '0') || 0 : 0);
   }, 0);
 
+  const activeStakedAlpha = (parseFloat((web3.treasuryStakedSupply || '0').replace(/,/g, '')) > 0 ? web3.treasuryStakedSupply : (parseFloat((web3.totalStakedSupply || '0').replace(/,/g, '')) > 0 ? web3.totalStakedSupply : web3.stakedBalance));
+
   // Compute exact dynamic real-time APY from live Treasury reserve allocation (100% synchronized)
   const apyCalculated = calculateProtocolApyMath(
     web3.porAssets,
     web3.porBreakdown,
-    web3.stakedBalance,
+    activeStakedAlpha,
     grossCashflowUsd,
     activeLoansSum,
-    claimableYieldVal
+    claimableYieldVal,
+    activeLoansInterestSum
   );
   const liveApyStr = `${apyCalculated.totalApyPct}%`;
 
@@ -147,7 +153,7 @@ export default function App() {
       />
 
       <Header
-        navValue={web3.navValue}
+        navValue={web3.navPerShareUSD}
         porRatio={web3.porRatio}
         alphaApy={liveApyStr}
         blockDateStr={web3.blockDateStr}
@@ -169,10 +175,11 @@ export default function App() {
         onClose={() => setIsApyModalOpen(false)}
         porAssets={web3.porAssets}
         porBreakdown={web3.porBreakdown}
-        stakedBalance={web3.stakedBalance}
+        stakedBalance={activeStakedAlpha}
         grossCashflowUsd={grossCashflowUsd}
         activeLoansUsd={activeLoansSum}
         claimableYieldUsd={claimableYieldVal}
+        activeLoansInterestUsd={activeLoansInterestSum}
       />
 
       {activeTab === 'client' ? (
