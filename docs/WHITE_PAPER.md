@@ -17,10 +17,9 @@ El protocolo está diseñado para garantizar **solvencia matemáticamente demost
 graph TD
     User[Inversor / Usuario] -->|USDC| Treasury[Treasury.sol]
     Treasury -->|Mint ALPHA| User
-    Treasury -->|Allocation| Stables[50% Stables USDC/EURC]
-    Treasury -->|Allocation| WBTC[25% WBTC Target]
-    Treasury -->|Allocation| WETH[12.5% WETH Staking]
-    Treasury -->|Allocation| Staking[12.5% Native ALPHA Staking]
+    Treasury -->|Allocation| Stables[60.00% USDC / Búfer Líquido & Morpho]
+    Treasury -->|Allocation| WBTC[26.67% WBTC Target / Lombard]
+    Treasury -->|Allocation| WETH[13.33% WETH Target / Lido]
     
     User -->|USDC| VestedVault[VestedDiscountVault.sol]
     VestedVault -->|Mint NFT| NFT[VaultPositionNFT.sol]
@@ -43,7 +42,7 @@ graph TD
 4. **Falta de Liquidez en Períodos de Bloqueo**: Imposibilidad de monetizar posiciones en bonos bloqueados a largo plazo.
 
 ### 2.2. Solución Alpha Centauri V6
-- **Reserva Multinivel Respaldada por Activos**: Cada token ALPHA acuñado está respaldado $100\%$ por una cesta ponderada de activos de alta liquidez (USDC, WBTC, WETH y Staking).
+- **Reserva Exógena Pura Respaldada por Activos**: Cada token ALPHA acuñado está respaldado $100\%$ por una cesta ponderada de activos exógenos de alta liquidez (60.00% USDC, 26.67% WBTC, 13.33% WETH).
 - **Proof of Reserves (PoR) Continuo**: Verificación on-chain de solvencia instantánea con ratio de colateralización $\ge 100\%$.
 - **NFTs de Posición Dinámicos**: Los bonos vestados a 3 o 5 años se representan como NFTs ERC-721 transferibles y utilizables como colateral de préstamos P2P.
 - **Rendimiento Real (Real Yield)**: Distribución de dividendos generados por comisiones de protocolo en USDC o activos de reserva elegidos por el usuario.
