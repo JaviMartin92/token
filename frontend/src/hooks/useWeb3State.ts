@@ -137,9 +137,6 @@ export function useWeb3State() {
         }
       } catch (e) {}
 
-      // Stake Bóvedas = stALPHA + ALPHA balance of OpEx + Profit Vaults
-      const corporateTotal = opExGovStaked + profitGovStaked + opExAlphaBal + profitAlphaBal;
-
       let treasuryAlphaBalance = 0n;
       let treasuryStakedInGov = 0n;
       let vaultAlphaBalance = 0n;
@@ -176,23 +173,24 @@ export function useWeb3State() {
         }) as bigint;
       } catch (e) {}
 
-      // Stake Reservas = stALPHA & ALPHA balance of TreasuryManager + AlphaVault
-      const corporateGovStaked = opExGovStaked + profitGovStaked;
-      const treasuryGovStaked = treasuryStakedInGov + vaultStakedInGov;
-      const institutionalGovStaked = corporateGovStaked + treasuryGovStaked;
+      const corporateTotal = opExGovStaked + profitGovStaked + opExAlphaBal + profitAlphaBal;
+      const treasuryTotal = treasuryStakedInGov + vaultStakedInGov + treasuryAlphaBalance + vaultAlphaBalance;
+      const institutionalGovStaked = opExGovStaked + profitGovStaked + treasuryStakedInGov + vaultStakedInGov;
 
       // Stake Comunidad = Total Staked inside GovernanceStaking MINUS institutional staked inside contract
-      const communityTotal = rawTotalStaked > institutionalGovStaked ? rawTotalStaked - institutionalGovStaked : 0n;
+      const communityTotal = rawTotalStaked > institutionalGovStaked ? rawTotalStaked - institutionalGovStaked : rawTotalStaked;
       const netCirculating = rawTotalSupply > rawBurned ? rawTotalSupply - rawBurned : 0n;
       setCirculatingSupply(parseFloat(formatEther(netCirculating)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
-      setCorporateStakedSupply(parseFloat(formatEther(corporateGovStaked)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+      const globalLockedTotal = communityTotal + corporateTotal + treasuryTotal;
+
+      setCorporateStakedSupply(parseFloat(formatEther(corporateTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
       setCommunityStakedSupply(parseFloat(formatEther(communityTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-      setTreasuryStakedSupply(parseFloat(formatEther(treasuryGovStaked)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-      setTotalStakedSupply(parseFloat(formatEther(rawTotalStaked)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+      setTreasuryStakedSupply(parseFloat(formatEther(treasuryTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+      setTotalStakedSupply(parseFloat(formatEther(globalLockedTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
       if (netCirculating > 0n) {
-        const ratio = (Number(rawTotalStaked * 10000n / netCirculating) / 100).toFixed(2);
+        const ratio = (Number(globalLockedTotal * 10000n / netCirculating) / 100).toFixed(2);
         setStakingRatioPct(`${ratio}%`);
       } else {
         setStakingRatioPct('0.00%');
