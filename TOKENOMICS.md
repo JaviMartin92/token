@@ -5,16 +5,20 @@
 El Protocolo **Alpha Centauri** está gobernado por **3 Directivas Inmutables de Inmunidad Operativa**, codificadas a nivel de bytecode en la EVM y no modificables por ninguna entidad:
 
 ### 1. Directiva de Invariante de Colateralización Incondicional
+
 $$\mathbf{\text{Ratio}_{\text{post-tx}} \ge \text{Ratio}_{\text{pre-tx}}}$$
+
 - **Mecanismo On-Chain:** Evaluado en `TreasuryManager.sol` en las funciones `deposit()` y `redeem()`.
 - **Reversión Obligatoria:** Si cualquier transacción provocara una caída en el porcentaje de reservas (por redondeo, desajuste de oráculo o arbitraje), la EVM la revierte de inmediato con el mensaje:
   `"TreasuryManager: Security Violation - Transaction reduced collateralization ratio"`.
 
 ### 2. Prohibición Absoluta de Minteado Inflacionario Sin Respaldo
-- **Regla:** Ninguna billetera corporativa (`CorporateOpExVault`, `CorporateProfitVault`, equipo o fundadores) puede recibir tokens `ALPHA` minteados "de la nada".
+
+- **Regla:** Ninguna billetera corporativa (`CorporateOpExVault`, `CorporateProfitVault`, equipo o fundadores) puede recibir tokens `ALPHA` minteados sin ingreso patrimonial.
 - **Mecanismo:** La acuñación solo existe cuando ingresa colateral real en USDC en la Tesorería. Las comisiones asignadas a las bóvedas corporativas (25% OpEx / 25% Profit) provienen **exclusivamente de compras reales en el mercado DEX** efectuadas por `RealYieldRouter.sol`.
 
 ### 3. Invariante Deflacionario Incondicional (Quema Permanente)
+
 - **Staking:** El 50% de la comisión de entrada al pool de gobernanza (0.50% del total bloqueado) es **destruido de forma irreversible** mediante `_burn`.
 - **Ragequit:** Al cancelar anticipadamente un bono vestado (`VestedDiscountVault.sol`), el **100% de los tokens ALPHA asociados en vesting son destruidos de forma irreversible**, además de retener la penalización del 15% en USDC para las reservas.
 
@@ -22,7 +26,7 @@ $$\mathbf{\text{Ratio}_{\text{post-tx}} \ge \text{Ratio}_{\text{pre-tx}}}$$
 
 ## 🌟 Visión General y Filosofía de Real Yield
 
-El Protocolo **Alpha Centauri** opera bajo un modelo estricto de **Real Yield Respaldado por Activos** y **Proof of Reserves (PoR) en Tiempo Real**. Todos los tokens `ALPHA` emitidos cuentan con respaldo patrimonial verificable on-chain con un ratio de solvencia garantizado **$\ge 100.00\%$**.
+El Protocolo **Alpha Centauri** opera bajo un modelo estricto de **Real Yield Respaldado por Activos Exógenos** y **Proof of Reserves (PoR) en Tiempo Real**. Todos los tokens `ALPHA` emitidos cuentan con respaldo patrimonial verificable on-chain con un ratio de solvencia garantizado **$\ge 100.00\%$**.
 
 ---
 
@@ -38,16 +42,18 @@ Toda comisión generada por cualquier operativa de la plataforma (depósitos, re
 
 ---
 
-## 🏦 2. Composición de Activos y Sub-Reserva 80 / 20 de USDC
+## 🏦 2. Composición de Activos Exógenos Puros (100% Colateral Real)
 
-La Tesorería de `TreasuryManager.sol` mantiene una cartera diversificada multi-activo con las siguientes ponderaciones objetivo (`Target Asset Allocation`):
+La Tesorería de `TreasuryManager.sol` mantiene una cartera de reservas exclusivamente exógena con las siguientes ponderaciones objetivo (`Target Asset Allocation`):
 
 | Ponderación Target | Activo de Reserva | Estrategia de Liquidez y Rendimiento |
 | :---: | :--- | :--- |
-| **50.00%** | **USDC / Stablecoins** | **Sub-Reserva 80/20**: 80% auto-depositado en `MorphoYieldVaultAdapter.sol` (productos seguros con APY del ~6.45%) + 20% en Búfer Líquido de Tesorería (`treasuryLoanBuffer`) para originar Préstamos P2P y préstamos directos. |
-| **25.00%** | **Wrapped Bitcoin (WBTC)** | En Staking / Rendimiento valorado on-chain vía Oráculos Chainlink BTC/USD (`OracleHub.sol`). |
-| **12.50%** | **Wrapped Ethereum (WETH)** | Liquid Staking de ETH valorado on-chain vía Oráculos Chainlink ETH/USD (`OracleHub.sol`). |
-| **12.50%** | **Native ALPHA Staking** | Reserva en staking nativo `$ALPHA` para respaldo de liquidez. |
+| **60.00%** | **USDC / Stablecoins** | **Búfer y Rendimiento**: Auto-depositado en Bóvedas Morpho Blue (Rendimiento Real APY) y Búfer Líquido para originación de Préstamos P2P sobrecolateralizados. |
+| **26.67%** | **Wrapped Bitcoin (WBTC)** | **Staking Lombard (LBTC) / Morpho**: Valorado on-chain vía Oráculos Chainlink BTC/USD (`OracleHub.sol`). |
+| **13.33%** | **Wrapped Ethereum (WETH)** | **Liquid Staking Lido (stETH) / Morpho**: Valorado on-chain vía Oráculos Chainlink ETH/USD (`OracleHub.sol`). |
+
+> [!NOTE]
+> **Nota de Arquitectura**: Los tokens `$ALPHA` stakeados en Gobernanza forman parte de las sub-reservas internas del protocolo respaldadas 1:1 por USDC y **nunca se contabilizan dentro de la tabla de activos exógenos** para evitar doble contabilización.
 
 ---
 
@@ -73,8 +79,8 @@ Los usuarios stakers de `stALPHA` pueden configurar su preferencia de cobro de d
 
 | Operativa | Contrato Responsable | Comisión / Penalización | Reparto On-Chain |
 | :--- | :--- | :--- | :--- |
-| **Depósito en Tesorería** | `TreasuryManager.sol` | **0.50%** (50 BPS) | 50% Reservas / 25% OpEx / 25% Profit |
-| **Rescate (Redeem)** | `TreasuryManager.sol` | **1.00%** (100 BPS) | 50% Reservas / 25% OpEx / 25% Profit |
+| **Depósito en Tesorería** | `TreasuryManager.sol` | **Dinámico (0.50% a 5.00%)** (50 a 500 BPS) | 50% Reservas / 25% OpEx / 25% Profit |
+| **Rescate / Redeem** | `TreasuryManager.sol` | **1.00%** (100 BPS) | 50% Reservas / 25% OpEx / 25% Profit |
 | **Entrada a Staking** | `GovernanceStaking.sol` | **1.00%** (100 BPS) | **0.50% Quema Deflacionaria Permanente**, 0.25% OpEx, 0.25% Profit |
 | **Acuñación de Bonos** | `VestedDiscountVault.sol` | **1.50%** Mint Fee + **1.50%** Referidos | 50% Reservas / 25% OpEx / 25% Profit |
 | **Ragequit de Bonos** | `VestedDiscountVault.sol` | **15.00%** Penalización USDC | **100% de la penalización enrutada 50/25/25 + Quema 100% Unvested** |
@@ -89,10 +95,10 @@ Los bonos con descuento se mintean como **NFTs de Posición** (`VaultPositionNFT
 
 | Bloqueo | Descuento Base | Bonus VIP Staking Tier | Descuento Máximo Cap | Penalización Ragequit |
 | :---: | :---: | :---: | :---: | :---: |
-| **1 Año** | **5.00%** | **+1.00%** (>= 5k stALPHA) | **50.00%** | **15.00%** + Quema 100% Unvested |
-| **2 Años** | **10.00%** | **+2.00%** (>= 10k stALPHA) | **50.00%** | **15.00%** + Quema 100% Unvested |
-| **3 Años** | **15.00%** | **+3.00%** (>= 20k stALPHA) | **50.00%** | **15.00%** + Quema 100% Unvested |
-| **4 Años** | **20.00%** | **+3.00%** (>= 20k stALPHA) | **50.00%** | **15.00%** + Quema 100% Unvested |
+| **Bloqueo 1 Año** | **5.00%** | **+1.00%** ($\ge 5\text{k stALPHA}$) | **50.00%** | **15.00%** + Quema 100% Unvested |
+| **Bloqueo 2 Años** | **10.00%** | **+2.00%** ($\ge 10\text{k stALPHA}$) | **50.00%** | **15.00%** + Quema 100% Unvested |
+| **Bloqueo 3 Años** | **15.00%** | **+3.00%** ($\ge 20\text{k stALPHA}$) | **50.00%** | **15.00%** + Quema 100% Unvested |
+| **Bloqueo 4 Años** | **20.00%** | **+3.00%** ($\ge 20\text{k stALPHA}$) | **50.00%** | **15.00%** + Quema 100% Unvested |
 
 ---
 
@@ -100,7 +106,7 @@ Los bonos con descuento se mintean como **NFTs de Posición** (`VaultPositionNFT
 
 - **LTV Máximo:** **70.00%** para Activos Estándar / Position NFTs, **50.00%** para token ALPHA líquido.
 - **Liquidadibilidad Min Health Factor:** **115.00%** (`minHealthFactorBps = 11500`).
-- **Línea Directa de Tesorería:** Origen de fondos desde el 20% del Búfer Líquido de Tesorería.
+- **Línea Directa de Tesorería:** Origen de fondos desde el Búfer Líquido de Tesorería.
 - **Custodia en Escrow:** NFTs de posición retenidos en el mercado P2P como garantía hasta el pago total del principal + intereses.
 
 ---
@@ -116,8 +122,8 @@ Los bonos con descuento se mintean como **NFTs de Posición** (`VaultPositionNFT
 
 El contrato `TreasuryManager.sol` calcula en todo momento la solvencia del protocolo combinando los activos custodiados con las obligaciones vigentes:
 
-$$\text{Activos Totales USD} = \text{USDC Bóveda} + \text{Morpho Yield} + \text{WBTC/WETH} + \text{Préstamos P2P Activos}$$
+$$\text{Activos Totales Exógenos USD} = \text{USDC Bóveda} + \text{Morpho Yield} + \text{WBTC/WETH} + \text{Préstamos P2P Activos}$$
 
-$$\text{Pasivos Totales USD} = \text{Circulante ALPHA} \times \text{NAV} + \text{Obligaciones Bonos Vestados}$$
+$$\text{Pasivos Totales USD} = (\text{Circulante Neto ALPHA}) \times \text{NAV} + \text{Obligaciones Bonos Vestados}$$
 
-$$\text{Ratio PoR} = \left( \frac{\text{Activos Totales USD}}{\text{Pasivos Totales USD}} \right) \times 100 \ge \mathbf{100.00\%}$$
+$$\text{Ratio PoR} = \left( \frac{\text{Activos Totales Exógenos USD}}{\text{Pasivos Totales USD}} \right) \times 100 \ge \mathbf{100.00\%}$$
