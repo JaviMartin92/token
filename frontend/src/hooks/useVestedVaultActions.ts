@@ -142,7 +142,10 @@ export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, 
     }
   };
 
-  const handleClaimMatured = (tokenId: number) => {
+  const handleClaimMatured = (tokenId: number, positionObj?: any) => {
+    const principalVal = positionObj ? (parseFloat((positionObj.principalAmount || '0').toString().replace(/,/g, '')) || 0) : 0;
+    const outputStr = principalVal > 0 ? `$${principalVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '100%';
+
     if (requestConfirmation) {
       requestConfirmation({
         title: `Reclamo de Bono Vencido NFT #${tokenId}`,
@@ -152,11 +155,12 @@ export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, 
         targetContractAddress: CONTRACT_ADDRESSES.VESTED_VAULT,
         inputAmount: `NFT #${tokenId}`,
         inputSymbol: 'ERC-721 Token',
-        expectedOutput: '100%',
+        expectedOutput: outputStr,
         expectedOutputSymbol: 'Principal en USDC',
         details: [
+          ...(principalVal > 0 ? [{ label: 'Monto Principal Liberado', value: `$${principalVal.toLocaleString('en-US', { minimumFractionDigits: 2 })} USDC` }] : []),
           { label: 'Estado del Bono', value: 'Vencido (Periodo Cumplido)', badge: 'Sin Penalización' },
-          { label: 'Comisión de Liberación', value: '0.00%' }
+          { label: 'Comisión de Liberación', value: '0.00% ($0.00 USDC)' }
         ],
         confirmButtonText: '✍️ Confirmar Reclamo',
         confirmButtonColor: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
@@ -186,7 +190,16 @@ export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, 
     }
   };
 
-  const handleRagequit = (tokenId: number) => {
+  const handleRagequit = (tokenId: number, positionObj?: any) => {
+    const pricePaid = positionObj ? (parseFloat((positionObj.discountedPricePaid || positionObj.principalAmount || '0').toString().replace(/,/g, '')) || 0) : 0;
+    const netRefund = pricePaid * 0.85;
+    const penalty = pricePaid * 0.15;
+    const feeReserves = pricePaid * 0.075;
+    const feeOps = pricePaid * 0.0375;
+    const feeProfit = pricePaid * 0.0375;
+
+    const outputStr = pricePaid > 0 ? `$${netRefund.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '85%';
+
     if (requestConfirmation) {
       requestConfirmation({
         title: `Salida Anticipada (Ragequit) NFT #${tokenId}`,
@@ -196,13 +209,21 @@ export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, 
         targetContractAddress: CONTRACT_ADDRESSES.VESTED_VAULT,
         inputAmount: `NFT #${tokenId}`,
         inputSymbol: 'Posición Vestada',
-        expectedOutput: '85%',
+        expectedOutput: outputStr,
         expectedOutputSymbol: 'Principal Neto Reembolsado en USDC',
         details: [
-          { label: 'Penalización por Salida Anticipada', value: '15.00% del Precio Pagado (RAGEQUIT_PENALTY_BPS)', isHighlight: true },
-          { label: 'Destino 50% Penalización (Reservas)', value: '7.50% a Reservas Tesorería (Treasury.sol)' },
-          { label: 'Destino 25% Penalización (OpEx Vault)', value: '3.75% a CorporateOpExVault (Auto-Staked ALPHA)' },
-          { label: 'Destino 25% Penalización (Profit Vault)', value: '3.75% a CorporateProfitVault (Auto-Staked ALPHA)' }
+          ...(pricePaid > 0 ? [{ label: 'Precio Pagado / Valor del Bono', value: `$${pricePaid.toFixed(2)} USDC` }] : []),
+          { label: 'Penalización por Salida Anticipada (15.00%)', value: pricePaid > 0 ? `$${penalty.toFixed(2)} USDC` : '15.00% del Precio Pagado (RAGEQUIT_PENALTY_BPS)', isHighlight: true },
+          ...(pricePaid > 0 ? [
+            { label: 'Reembolso Neto en USDC (85.00%)', value: `$${netRefund.toFixed(2)} USDC`, badge: 'Transferencia Inmediata' },
+            { label: 'Destino 50% Penalización (Reservas)', value: `$${feeReserves.toFixed(2)} USDC (Treasury.sol)` },
+            { label: 'Destino 25% Penalización (OpEx Vault)', value: `$${feeOps.toFixed(2)} USDC (CorporateOpExVault)` },
+            { label: 'Destino 25% Penalización (Profit Vault)', value: `$${feeProfit.toFixed(2)} USDC (CorporateProfitVault)` }
+          ] : [
+            { label: 'Destino 50% Penalización (Reservas)', value: '7.50% a Reservas Tesorería (Treasury.sol)' },
+            { label: 'Destino 25% Penalización (OpEx Vault)', value: '3.75% a CorporateOpExVault (Auto-Staked ALPHA)' },
+            { label: 'Destino 25% Penalización (Profit Vault)', value: '3.75% a CorporateProfitVault (Auto-Staked ALPHA)' }
+          ])
         ],
         warningNote: '¡Atención! El contrato inteligente VestedDiscountVault.sol ejecutará una retención irreversible del 15.00% sobre el valor del bono.',
         confirmButtonText: '⚠️ Confirmar Ragequit (15% Penalty)',
