@@ -5,6 +5,7 @@
   "description": "Alpha Centauri Protocol Monorepo",
   "scripts": {
     "test:contracts": "docker run --rm -v \"%cd%\\contracts:/app\" -w /app --entrypoint forge ghcr.io/foundry-rs/foundry:latest test --force",
+    "test:50": "cd services && npx ts-node --project tsconfig.json core/src/run_50_tests.ts",
     "test:alignment": "npx tsx services/core/src/frontend-alignment-test.ts",
     "test:frontend": "cd frontend && npm run build && npx tsc --noEmit",
     "test": "npm run test:contracts && npm run test:alignment && npm run test:frontend",

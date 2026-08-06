@@ -50,11 +50,11 @@ Esta suite contiene **50 casos de prueba rigurosos** diseñados para verificar d
 - **Ejecución Automatizada AI:** `treasury.redeem(parseEther('100'))`
 - **Resultado Esperado:** Quemado de 100 ALPHA y recepción de USDC a valor NAV.
 
-### Test #07: Verificación de Pesos Objetivo (50/25/12.5/12.5)
+### Test #07: Verificación de Pesos Objetivo Exógenos (60/26.67/13.33)
 - **Categoría:** Tesorería / Portfolio
 - **Instrucción Humana:** Revisar la tabla de desglose colateral PoR.
 - **Ejecución Automatizada AI:** `treasury.currentWeights()`
-- **Resultado Esperado:** Pesos en puntos básicos `[5000, 2500, 1250, 1250]`.
+- **Resultado Esperado:** Pesos en puntos básicos `[6000, 2667, 1333]` (60.00% USDC, 26.67% WBTC, 13.33% WETH).
 
 ### Test #08: Rechazo de Depósito Nulo (0 USDC)
 - **Categoría:** Validación & Control de Errores
