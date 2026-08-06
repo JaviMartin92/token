@@ -115,10 +115,10 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
         tvlCap = 50_000_000 * (10**_redemptionTokenDecimals);
 
         currentWeights = AssetWeights({
-            stablecoins: 5000,
-            wbtc: 2500,
-            weth: 1250,
-            alphaProtocolStaking: 1250
+            stablecoins: 6000,
+            wbtc: 2667,
+            weth: 1333,
+            alphaProtocolStaking: 0
         });
     }
 
