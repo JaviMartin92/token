@@ -102,11 +102,11 @@ Esta suite contiene **50 casos de prueba rigurosos** diseñados para verificar d
 - **Ejecución Automatizada AI:** `vestedVault.claimMatured(1)`
 - **Resultado Esperado:** Transacción revertida por estar dentro del período de vestado.
 
-### Test #15: Salida Anticipada (Ragequit) con 30% Penalización
-- **Categoría:** Desintegración Anticipada
-- **Instrucción Humana:** Hacer clic en "Ejecutar Ragequit (30% Penalización)" en el NFT #2.
+### Test #15: Salida Anticipada (Ragequit) con 15% Penalización
+- **Precondición:** Billetera posee NFT #2 de posición vestada activa.
+- **Instrucción Humana:** Hacer clic en "Ejecutar Ragequit (15% Penalización)" en el NFT #2.
 - **Ejecución Automatizada AI:** `vestedVault.ragequit(2)`
-- **Resultado Esperado:** Retorno del $70\%$ del principal; $30\%$ penalizado y distribuido.
+- **Resultado Esperado:** Retorno del 85% del principal; 15% penalizado y enrutado 50/25/25 + quema del 100% de tokens unvested.
 
 ### Test #16: Rechazo de Doble Ragequit
 - **Categoría:** Invariante de Negocio
