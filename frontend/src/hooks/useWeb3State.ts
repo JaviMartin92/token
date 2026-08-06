@@ -106,76 +106,112 @@ export function useWeb3State() {
       let profitGovStaked = 0n;
       let opExAlphaBal = 0n;
       let profitAlphaBal = 0n;
-      try {
-        if (CONTRACT_ADDRESSES.CORPORATE_OPEX) {
+
+      if (CONTRACT_ADDRESSES.CORPORATE_OPEX) {
+        try {
           opExGovStaked = await publicClient.readContract({
             address: CONTRACT_ADDRESSES.STAKING,
             abi: ABIS.STAKING,
             functionName: 'stakedBalances',
             args: [CONTRACT_ADDRESSES.CORPORATE_OPEX]
           }) as bigint;
+        } catch (e) {}
+        try {
           opExAlphaBal = await publicClient.readContract({
             address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
             abi: ABIS.ERC20,
             functionName: 'balanceOf',
             args: [CONTRACT_ADDRESSES.CORPORATE_OPEX]
           }) as bigint;
-        }
-        if (CONTRACT_ADDRESSES.CORPORATE_PROFIT) {
+        } catch (e) {}
+      }
+
+      if (CONTRACT_ADDRESSES.CORPORATE_PROFIT) {
+        try {
           profitGovStaked = await publicClient.readContract({
             address: CONTRACT_ADDRESSES.STAKING,
             abi: ABIS.STAKING,
             functionName: 'stakedBalances',
             args: [CONTRACT_ADDRESSES.CORPORATE_PROFIT]
           }) as bigint;
+        } catch (e) {}
+        try {
           profitAlphaBal = await publicClient.readContract({
             address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
             abi: ABIS.ERC20,
             functionName: 'balanceOf',
             args: [CONTRACT_ADDRESSES.CORPORATE_PROFIT]
           }) as bigint;
-        }
-      } catch (e) {}
+        } catch (e) {}
+      }
 
       let treasuryAlphaBalance = 0n;
       let treasuryStakedInGov = 0n;
       let vaultAlphaBalance = 0n;
       let vaultStakedInGov = 0n;
-      try {
-        // ALPHA balance held directly in Treasury wallet
-        treasuryAlphaBalance = await publicClient.readContract({
-          address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
-          abi: ABIS.ERC20,
-          functionName: 'balanceOf',
-          args: [CONTRACT_ADDRESSES.TREASURY]
-        }) as bigint;
-        // ALPHA sub-reserve held in AlphaVault.sol (12.5% target allocation)
-        if (CONTRACT_ADDRESSES.ALPHA_VAULT) {
+      let promoAlphaBalance = 0n;
+      let promoStakedInGov = 0n;
+
+      if (CONTRACT_ADDRESSES.TREASURY) {
+        try {
+          treasuryAlphaBalance = await publicClient.readContract({
+            address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
+            abi: ABIS.ERC20,
+            functionName: 'balanceOf',
+            args: [CONTRACT_ADDRESSES.TREASURY]
+          }) as bigint;
+        } catch (e) {}
+        try {
+          treasuryStakedInGov = await publicClient.readContract({
+            address: CONTRACT_ADDRESSES.STAKING,
+            abi: ABIS.STAKING,
+            functionName: 'stakedBalances',
+            args: [CONTRACT_ADDRESSES.TREASURY]
+          }) as bigint;
+        } catch (e) {}
+      }
+
+      if (CONTRACT_ADDRESSES.ALPHA_VAULT) {
+        try {
           vaultAlphaBalance = await publicClient.readContract({
             address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
             abi: ABIS.ERC20,
             functionName: 'balanceOf',
             args: [CONTRACT_ADDRESSES.ALPHA_VAULT]
           }) as bigint;
+        } catch (e) {}
+        try {
           vaultStakedInGov = await publicClient.readContract({
             address: CONTRACT_ADDRESSES.STAKING,
             abi: ABIS.STAKING,
             functionName: 'stakedBalances',
             args: [CONTRACT_ADDRESSES.ALPHA_VAULT]
           }) as bigint;
-        }
-        // Treasury staked in GovernanceStaking
-        treasuryStakedInGov = await publicClient.readContract({
-          address: CONTRACT_ADDRESSES.STAKING,
-          abi: ABIS.STAKING,
-          functionName: 'stakedBalances',
-          args: [CONTRACT_ADDRESSES.TREASURY]
-        }) as bigint;
-      } catch (e) {}
+        } catch (e) {}
+      }
+
+      if (CONTRACT_ADDRESSES.PROMOTIONAL_VAULT) {
+        try {
+          promoAlphaBalance = await publicClient.readContract({
+            address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
+            abi: ABIS.ERC20,
+            functionName: 'balanceOf',
+            args: [CONTRACT_ADDRESSES.PROMOTIONAL_VAULT]
+          }) as bigint;
+        } catch (e) {}
+        try {
+          promoStakedInGov = await publicClient.readContract({
+            address: CONTRACT_ADDRESSES.STAKING,
+            abi: ABIS.STAKING,
+            functionName: 'stakedBalances',
+            args: [CONTRACT_ADDRESSES.PROMOTIONAL_VAULT]
+          }) as bigint;
+        } catch (e) {}
+      }
 
       const corporateTotal = opExGovStaked + profitGovStaked + opExAlphaBal + profitAlphaBal;
-      const treasuryTotal = treasuryStakedInGov + vaultStakedInGov + treasuryAlphaBalance + vaultAlphaBalance;
-      const institutionalGovStaked = opExGovStaked + profitGovStaked + treasuryStakedInGov + vaultStakedInGov;
+      const treasuryTotal = treasuryStakedInGov + vaultStakedInGov + promoStakedInGov + treasuryAlphaBalance + vaultAlphaBalance + promoAlphaBalance;
+      const institutionalGovStaked = opExGovStaked + profitGovStaked + treasuryStakedInGov + vaultStakedInGov + promoStakedInGov;
 
       // Stake Comunidad = Total Staked inside GovernanceStaking MINUS institutional staked inside contract
       const communityTotal = rawTotalStaked > institutionalGovStaked ? rawTotalStaked - institutionalGovStaked : rawTotalStaked;
