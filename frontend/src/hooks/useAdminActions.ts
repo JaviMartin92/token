@@ -17,10 +17,10 @@ export function useAdminActions({ activeKey, snapshotId, setSnapshotId, addLog, 
   const [injectionAmount, setInjectionAmount] = useState('');
   const [oraclePrice, setOraclePrice] = useState('1.00');
 
-  const [newStablesWeight, setNewStablesWeight] = useState('50');
-  const [newWbtcWeight, setNewWbtcWeight] = useState('25');
-  const [newWethWeight, setNewWethWeight] = useState('12.5');
-  const [newAltsWeight, setNewAltsWeight] = useState('12.5');
+  const [newStablesWeight, setNewStablesWeight] = useState('60');
+  const [newWbtcWeight, setNewWbtcWeight] = useState('26.67');
+  const [newWethWeight, setNewWethWeight] = useState('13.33');
+  const [newAltsWeight, setNewAltsWeight] = useState('0');
 
   const executeUpdateOracle = async () => {
     if (!oraclePrice) return;

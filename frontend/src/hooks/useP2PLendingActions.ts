@@ -197,6 +197,9 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
     const numBorrow = parseFloat(reqBorrowAmountStr.replace(/,/g, ''));
     const colVal = customCollateralStr ? parseFloat(customCollateralStr) : numBorrow * 1.4;
     const colWei = parseUnits(colVal.toFixed(6), 6);  // USDC = 6 decimals
+    const ratioPct = numBorrow > 0 ? ((colVal / numBorrow) * 100).toFixed(2) : '140.00';
+    const origFee = (numBorrow * 0.005).toFixed(2);
+    const netBorrow = (numBorrow * 0.995).toFixed(2);
 
     if (requestConfirmation) {
       requestConfirmation({
@@ -211,8 +214,9 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
         expectedOutputSymbol: 'USDC Transferido al Ofertante',
         details: [
           { label: 'ID Préstamo', value: `#${loanId}` },
-          { label: 'Ratio de Colateralización', value: '140.00%', badge: 'Seguro 130%-150%' },
-          { label: 'Comisión de Originación (0.5%)', value: `$${(numBorrow * 0.005).toFixed(2)} USDC` }
+          { label: 'Ratio de Colateralización Calculado', value: `${ratioPct}%`, badge: `LTV: ${(100 / parseFloat(ratioPct) * 100).toFixed(1)}%` },
+          { label: 'Comisión de Originación (0.5%)', value: `$${origFee} USDC (Destino: Real Yield Flywheel)` },
+          { label: 'Desembolso Neto al Prestatario', value: `$${netBorrow} USDC` }
         ],
         warningNote: 'Obtendrás derechos de cobro de intereses más principal. Si el prestatario entra en impago, podrás ejecutar auto-liquidación.',
         confirmButtonText: '✍️ Confirmar y Financiar',
@@ -249,7 +253,10 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
     }
   };
 
-  const handleCancelLoanOffer = (loanId: number) => {
+  const handleCancelLoanOffer = (loanId: number, loanObj?: any) => {
+    const borrowAmt = loanObj ? (parseFloat((loanObj.borrowAmount || '0').toString().replace(/,/g, '')) || 0) : 0;
+    const nftId = loanObj ? loanObj.positionTokenId : null;
+
     if (requestConfirmation) {
       requestConfirmation({
         title: `Cancelar Oferta de Préstamo #${loanId}`,
@@ -259,10 +266,12 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
         targetContractAddress: CONTRACT_ADDRESSES.P2P_MARKET,
         inputAmount: `Oferta #${loanId}`,
         inputSymbol: 'P2P Offer',
-        expectedOutput: 'NFT Colateral',
+        expectedOutput: nftId ? `NFT #${nftId}` : 'NFT Colateral',
         expectedOutputSymbol: 'Devuelto a la Billetera',
         details: [
-          { label: 'Estado de la Oferta', value: 'No Financiada (Disponible)' }
+          { label: 'Estado de la Oferta', value: 'No Financiada (Disponible en Mercado)' },
+          ...(borrowAmt > 0 ? [{ label: 'Monto de Préstamo Cancelado', value: `$${borrowAmt.toFixed(2)} USDC` }] : []),
+          { label: 'Comisión por Cancelación', value: '0.00% ($0.00 USDC)' }
         ],
         confirmButtonText: '✍️ Confirmar Cancelación',
         confirmButtonColor: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)'
@@ -383,7 +392,10 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
     }
   };
 
-  const handleLiquidateLoanById = (loanId: number) => {
+  const handleLiquidateLoanById = (loanId: number, loanObj?: any) => {
+    const borrowAmt = loanObj ? (parseFloat((loanObj.borrowAmount || '0').toString().replace(/,/g, '')) || 0) : 0;
+    const nftId = loanObj ? loanObj.positionTokenId : null;
+
     if (requestConfirmation) {
       requestConfirmation({
         title: `Auto-Liquidación de Préstamo #${loanId}`,
@@ -392,11 +404,12 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
         targetContractName: 'P2PLendingMarket.sol',
         targetContractAddress: CONTRACT_ADDRESSES.P2P_MARKET,
         inputAmount: `Préstamo #${loanId}`,
-        inputSymbol: 'Posición en Impago',
-        expectedOutput: 'NFT Colateral',
+        inputSymbol: borrowAmt > 0 ? `$${borrowAmt.toFixed(2)} Deuda Impagada` : 'Posición en Impago',
+        expectedOutput: nftId ? `NFT #${nftId}` : 'NFT Colateral',
         expectedOutputSymbol: 'Transferido a la Billetera del Prestamista',
         details: [
-          { label: 'Umbral de Liquidación', value: 'Health Factor < 115%', isHighlight: true }
+          { label: 'Umbral de Liquidación', value: 'Health Factor < 115% o Expiración de Plazo', isHighlight: true },
+          ...(borrowAmt > 0 ? [{ label: 'Deuda en Impago Afectada', value: `$${borrowAmt.toFixed(2)} USDC` }] : [])
         ],
         warningNote: 'Se ejecutará el embargo del colateral. La propiedad del NFT será transferida al prestamista.',
         confirmButtonText: '⚡ Confirmar Liquidación',

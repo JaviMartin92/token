@@ -36,11 +36,11 @@ export function calculateProtocolApyMath(
     wethUSD = porBreakdown.weth > 100 ? porBreakdown.weth : (numericAssetsUSD * porBreakdown.weth) / rawSum;
     loanPoolUSD = porBreakdown.alphaStaking > 100 ? porBreakdown.alphaStaking : (numericAssetsUSD * porBreakdown.alphaStaking) / rawSum;
   } else {
-    // Default Target Multi-Asset Portfolio Allocation (50% USDC, 25% WBTC, 12.5% WETH, 12.5% Loans)
-    stablesUSD = numericAssetsUSD * 0.50;
-    wbtcUSD = numericAssetsUSD * 0.25;
-    wethUSD = numericAssetsUSD * 0.125;
-    loanPoolUSD = numericAssetsUSD * 0.125;
+    // Default Target Multi-Asset Portfolio Allocation (60% USDC, 26.67% WBTC, 13.33% WETH)
+    stablesUSD = numericAssetsUSD * 0.60;
+    wbtcUSD = numericAssetsUSD * 0.2667;
+    wethUSD = numericAssetsUSD * 0.1333;
+    loanPoolUSD = 0;
   }
 
   const realActiveLoansUSD = Math.min(activeLoansUsd, loanPoolUSD);

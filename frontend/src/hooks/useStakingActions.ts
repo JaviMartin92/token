@@ -154,7 +154,10 @@ export function useStakingActions({ activeKey, account, userAddress, addLog, add
     }
   };
 
-  const handleClaimYield = () => {
+  const handleClaimYield = (claimableUsdNum?: number) => {
+    const yieldAmountStr = claimableUsdNum && claimableUsdNum > 0 ? `$${claimableUsdNum.toFixed(2)}` : 'Rendimiento Acumulado';
+    const outputStr = claimableUsdNum && claimableUsdNum > 0 ? `$${claimableUsdNum.toFixed(2)}` : 'Dividendos Netos';
+
     if (requestConfirmation) {
       requestConfirmation({
         title: 'Cobrar Dividendos de Real Yield',
@@ -162,12 +165,14 @@ export function useStakingActions({ activeKey, account, userAddress, addLog, add
         typeBadge: 'Distribución de Dividendos DAO',
         targetContractName: 'RealYieldRouter.sol',
         targetContractAddress: CONTRACT_ADDRESSES.REAL_YIELD_ROUTER,
-        inputAmount: 'Rendimiento Acumulado',
-        inputSymbol: 'Yield',
-        expectedOutput: 'Dividendos Netos',
-        expectedOutputSymbol: payoutPref === 0 ? 'USDC' : 'WBTC/WETH',
+        inputAmount: yieldAmountStr,
+        inputSymbol: 'Yield Acumulado On-Chain',
+        expectedOutput: outputStr,
+        expectedOutputSymbol: payoutPref === 0 ? 'USDC (Opción A)' : 'WBTC/WETH (Opción B)',
         details: [
-          { label: 'Opción de Cobro Seleccionada', value: payoutPref === 0 ? 'Opción A (USDC)' : 'Opción B (Reservas)' }
+          ...(claimableUsdNum && claimableUsdNum > 0 ? [{ label: 'Monto Total Dividendos Devengados', value: `$${claimableUsdNum.toFixed(2)} USD`, badge: 'Real Yield' }] : []),
+          { label: 'Opción de Cobro Seleccionada', value: payoutPref === 0 ? 'Opción A (USDC Directo)' : 'Opción B (Activos de Reserva WBTC/WETH)' },
+          { label: 'Comisión de Distribución', value: '0.00% (Transferencia Directa de Contrato)' }
         ],
         confirmButtonText: '✍️ Confirmar Cobro de Yield',
         confirmButtonColor: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
