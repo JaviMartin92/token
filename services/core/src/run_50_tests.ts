@@ -172,13 +172,21 @@ async function run50Tests() {
     await publicClient.waitForTransactionReceipt({ hash: tx });
   });
 
-  await test('Auditoría de Proof of Reserves (PoR)', async () => {
+  await test('Auditoría de Proof of Reserves (PoR) & Valuación NAV (getTotalNavUSD / PoR)', async () => {
     const [assets, liabilities, ratio] = await publicClient.readContract({
       address: addrs.TREASURY_MANAGER,
       abi: TreasuryManager.abi,
       functionName: 'getProofOfReserves'
     }) as [bigint, bigint, bigint];
     if (ratio < 10000n) throw new Error(`Ratio below 100%: ${ratio}`);
+
+    const navUsd = await publicClient.readContract({
+      address: addrs.TREASURY_MANAGER,
+      abi: TreasuryManager.abi,
+      functionName: 'getTotalNavUSD'
+    }) as bigint;
+
+    if (navUsd === 0n) throw new Error('NAV valuation is zero');
   });
 
   await test('Rescate de Shares ALPHA por USDC', async () => {
