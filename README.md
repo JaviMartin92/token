@@ -119,6 +119,6 @@ La carpeta [`docs/`](file:///C:/Users/Admin/Desktop/token/docs) contiene los man
 - 📖 [**Guía de Usuario & Tutoriales**](file:///C:/Users/Admin/Desktop/token/docs/USER_GUIDE.md)
 - 📑 [**Referencia de API & Smart Contracts**](file:///C:/Users/Admin/Desktop/token/docs/SMART_CONTRACTS_API.md)
 - 🔒 [**Seguridad, Auditoría & Operaciones**](file:///C:/Users/Admin/Desktop/token/docs/SECURITY_AND_OPERATIONS.md)
-- 📊 [**Modelo Económico & Tokenomics**](file:///C:/Users/Admin/Desktop/token/docs/TOKENOMICS.md)
+- 📊 [**Modelo Económico & Tokenomics (Biblia Canónica)**](file:///C:/Users/Admin/Desktop/token/TOKENOMICS.md)
 - 📄 [**Whitepaper Completo**](file:///C:/Users/Admin/Desktop/token/docs/WHITE_PAPER.md)
 - 🧪 [**Flujo de Simulación Master Playwright**](file:///C:/Users/Admin/Desktop/token/MASTER_TOKENOMICS_SIMULATION_FLOW.md)
