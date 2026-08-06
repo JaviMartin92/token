@@ -1,4 +1,4 @@
-# 📜 BIBLIA COMPLETA DE TOKENOMICS - ALPHA CENTAURI PROTOCOL
+# 📜 BIBLIA COMPLETA DE TOKENOMICS — ALPHA CENTAURI PROTOCOL
 
 ## 🛡️ 0. DIRECTIVAS INMUTABLES E INVARIANTES DEL PROTOCOLO
 
@@ -16,7 +16,7 @@ $$\mathbf{\text{Ratio}_{\text{post-tx}} \ge \text{Ratio}_{\text{pre-tx}}}$$
 
 ### 3. Invariante Deflacionario Incondicional (Quema Permanente)
 - **Staking:** El 50% de la comisión de entrada al pool de gobernanza (0.50% del total bloqueado) es **destruido de forma irreversible** mediante `_burn`.
-- **Ragequit:** Al cancelar anticipadamente un bono vestado (`VestedDiscountVault.sol`), el **100% de los tokens ALPHA asociados en vesting son destruidos de forma irreversible**, además de retener la penalización del 15% en USDC para las reservas.
+- **Ragequit:** Al cancelar anticipadamente un bono vestado (`VestedDiscountVault.sol`), el **100% de los tokens ALPHA asociados en vesting son destruidos de forma irreversible**, además de aplicar la penalización del 15% en USDC enrutada 50/25/25.
 
 ---
 
@@ -38,46 +38,26 @@ Toda comisión generada por cualquier operativa de la plataforma (depósitos, re
 
 ---
 
-## 🏦 2. Composición de Activos y Sub-Reserva 80 / 20 de USDC
+## 🏦 2. Composición de Reservas Exógenas Puras (100% Exógeno)
 
 La Tesorería de `TreasuryManager.sol` mantiene una cartera diversificada multi-activo con las siguientes ponderaciones objetivo (`Target Asset Allocation`):
 
-| Ponderación Target | Activo de Reserva | Estrategia de Liquidez y Rendimiento |
+| Ponderación Target | Activo de Reserva Exógeno | Estrategia de Liquidez y Rendimiento |
 | :---: | :--- | :--- |
-| **50.00%** | **USDC / Stablecoins** | **Sub-Reserva 80/20**: 80% auto-depositado en `MorphoYieldVaultAdapter.sol` (productos seguros con APY del ~6.45%) + 20% en Búfer Líquido de Tesorería (`treasuryLoanBuffer`) para originar Préstamos P2P y préstamos directos. |
-| **25.00%** | **Wrapped Bitcoin (WBTC)** | En Staking / Rendimiento valorado on-chain vía Oráculos Chainlink BTC/USD (`OracleHub.sol`). |
-| **12.50%** | **Wrapped Ethereum (WETH)** | Liquid Staking de ETH valorado on-chain vía Oráculos Chainlink ETH/USD (`OracleHub.sol`). |
-| **12.50%** | **Native ALPHA Staking** | Reserva en staking nativo `$ALPHA` para respaldo de liquidez. |
+| **60.00%** | **USDC / Stablecoins** | **Bóvedas Morpho Blue + Préstamos P2P**: Auto-depositado en Morpho Blue y Búfer Líquido para originar Préstamos P2P sobrecolateralizados. |
+| **26.67%** | **Wrapped Bitcoin (WBTC)** | **Staking Lombard (LBTC) & Morpho**: Valorado on-chain vía Oráculos Chainlink BTC/USD (`OracleHub.sol`). |
+| **13.33%** | **Wrapped Ethereum (WETH)** | **Liquid Staking Lido (stETH) & Vaults**: Valorado on-chain vía Oráculos Chainlink ETH/USD (`OracleHub.sol`). |
+
+> [!NOTE]
+> El token nativo $ALPHA$ está clasificado como activo endógeno de gobernanza y se encuentra **100% excluido** de las filas de respaldo de la tabla PoR, garantizando que el ratio de colateralización sea 100% exógeno y auditable.
 
 ---
 
-## 🔒 3. Bóvedas Corporativas Exclusivas en Token ALPHA
+## 🛡️ 3. Mecanismo Anti-MEV: Dynamic Slippage Fee (NAV Protection)
 
-Las carteras corporativas de OpEx y Beneficios no acumulan stablecoins ni activos heterogéneos:
+Para proteger la masa patrimonial del protocolo y evitar arbitrajes por volumen o ataques relámpago, la emisión de nuevos tokens ALPHA aplica un algoritmo de Slippage Dinámico por Tamaño de Depósito.
 
-1. **Moneda Única (`ALPHA`)**: Si una comisión ingresa en USDC u otro token, el `RealYieldRouter` efectúa una compra en mercado (DEX) del token `ALPHA`.
-2. **Auto-Staking**: El token `ALPHA` resultante se deposita inmediatamente en `GovernanceStaking.sol` asignado a las bóvedas segregadas `CorporateOpExVault` y `CorporateProfitVault`.
-
----
-
-## 🔀 4. Opciones de Cobro de Yield para Usuarios (`RealYieldRouter.sol`)
-
-Los usuarios stakers de `stALPHA` pueden configurar su preferencia de cobro de dividendos en cualquier momento:
-
-- **Opción A (`OPTION_A_STABLECOIN`)**: Cobro directo de dividendos en **USDC líquido** en su billetera.
-- **Opción B (`OPTION_B_RESERVE_ASSET`)**: Auto-compounding mediante la conversión de dividendos a activos de reserva **WBTC / WETH**.
-
----
-
-## 🛡️ Mecanismo de Emisión Anti-Dilución: Dynamic Slippage Fee (NAV Protection)
-
-Para proteger la masa patrimonial del protocolo y evitar arbitrajes por volumen, la emisión de nuevos tokens ALPHA a valor NAV no utiliza una tarifa fija estática. En su lugar, aplica un algoritmo de Slippage Dinámico por Tamaño de Depósito integrado en la ejecución de la EVM.
-
-### 1. Lógica Financiera y Curva de Impacto:
-- **Depósitos Minoristas (Bajo Impacto):** Pagan únicamente la comisión base del 0.50%.
-- **Depósitos Masivos / Ballenas (Alto Impacto):** La comisión escala automáticamente en función del tamaño del depósito relativo a los Activos Exógenos de Reserva actuales ($A_0$).
-
-### 2. Formulación Matemática (Complejidad $O(1)$):
+### 1. Formulación Matemática ($O(1)$):
 $$\text{DynamicFeeBps} = \min\left( \text{FeeBase} + \left( \frac{\Delta A}{A_0 + \Delta A} \times \Gamma \right), \text{CapMax} \right)$$
 
 Donde:
@@ -87,22 +67,12 @@ Donde:
 - $\Gamma = 500\text{ bps } (5.00\% - \text{Coeficiente de Sensibilidad})$
 - $\text{CapMax} = 500\text{ bps } (5.00\% - \text{Límite Máximo})$
 
-### 3. Escenarios de Ejecución:
-- **Retail:** Depósito $1,000 USD | Reserva $100,000 USD | Impacto 0.99% | Comisión 54 bps (0.54%)
-- **Mid-Tier:** Depósito $10,000 USD | Reserva $100,000 USD | Impacto 9.09% | Comisión 95 bps (0.95%)
-- **Whale:** Depósito $100,000 USD | Reserva $100,000 USD | Impacto 50.00% | Comisión 300 bps (3.00%)
-- **Institutional:** Depósito $500,000 USD | Reserva $100,000 USD | Impacto 83.33% | Comisión 466 bps (4.66%) [Cap 5.00%]
-
-### 4. Accreción Automática de NAV (Flywheel Benefit):
-El 100% del sobreprecio recaudado por depósitos de alto impacto se inyecta directamente como Real Yield de Tesorería:
-- **50% de la Comisión:** Se canaliza a las Bóvedas Corporativas (OpEx / Profit).
-- **50% de la Comisión:** Se distribuye como Real Yield (USDC) a los stakers de ALPHA.
-
-**Efecto Red:** Cada gran entrada de capital incrementa de forma instantánea el valor patrimonial (NAV) de todos los tokens en circulación, garantizando un suelo de rescate ascendente para la comunidad y bloqueando de forma absoluta cualquier ataque MEV o de Sandwich Minting.
+### 2. Demostración Anti-MEV (Pérdida Neta de Capital):
+Un atacante que intenta realizar un Flash Loan de $\$50,000\text{ USDC}$ sobre un vault de $\$100,000\text{ USDC}$ sufre una tarifa de entrada del $5.00\%$. Al intentar el rescate inmediato, el atacante recibe solo $\$48,782\text{ USDC}$, incurriendo en una **pérdida neta de $\$1,217\text{ USDC}$ ($\sim 2.44\%$)**, haciendo imposible el arbitraje de NAV.
 
 ---
 
-## 📊 5. Matriz Completa de Comisiones On-Chain (`ProtocolTokenomicsEngine.sol`)
+## 📊 4. Matriz Completa de Comisiones On-Chain (`ProtocolTokenomicsEngine.sol`)
 
 | Operativa | Contrato Responsable | Comisión / Penalización | Reparto On-Chain |
 | :--- | :--- | :--- | :--- |
@@ -116,7 +86,7 @@ El 100% del sobreprecio recaudado por depósitos de alto impacto se inyecta dire
 
 ---
 
-## 📜 6. Escala de Descuentos para Bonos Vestados y Tiers VIP
+## 📜 5. Escala de Descuentos para Bonos Vestados y Tiers VIP
 
 Los bonos con descuento se mintean como **NFTs de Posición** (`VaultPositionNFT.sol`):
 
@@ -129,28 +99,8 @@ Los bonos con descuento se mintean como **NFTs de Posición** (`VaultPositionNFT
 
 ---
 
-## 🤝 7. Parámetros de Préstamos P2P y Búfer de Tesorería (`P2PLendingMarket.sol`)
+## 🤝 6. Parámetros de Préstamos P2P (`P2PLendingMarket.sol`)
 
-- **LTV Máximo:** **70.00%** para Activos Estándar / Position NFTs, **50.00%** para token ALPHA líquido.
+- **LTV Máximo:** **70.00%** para Activos Estándar / Position NFTs (`maxLtvBps = 7000`).
 - **Liquidadibilidad Min Health Factor:** **115.00%** (`minHealthFactorBps = 11500`).
-- **Línea Directa de Tesorería:** Origen de fondos desde el 20% del Búfer Líquido de Tesorería.
 - **Custodia en Escrow:** NFTs de posición retenidos en el mercado P2P como garantía hasta el pago total del principal + intereses.
-
----
-
-## ⚡ 8. Control de Seguridad y Circuit Breaker (`CircuitBreaker.sol`)
-
-- **Pausa de Emergencia:** Congelación inmediata del protocolo ante obsolescencia de oráculos (`staleness > 86400s`) o anomalías de volatilidad.
-- **Invariante PoR Garantizado:** Evaluado dinámicamente antes y después de cada transacción de depósito/rescate (`postRatioBps >= preRatioBps`).
-
----
-
-## 🛡️ 9. Proof of Reserves (PoR) e Invariante de Solvencia
-
-El contrato `TreasuryManager.sol` calcula en todo momento la solvencia del protocolo combinando los activos custodiados con las obligaciones vigentes:
-
-$$\text{Activos Totales USD} = \text{USDC Bóveda} + \text{Morpho Yield} + \text{WBTC/WETH} + \text{Préstamos P2P Activos}$$
-
-$$\text{Pasivos Totales USD} = \text{Circulante ALPHA} \times \text{NAV} + \text{Obligaciones Bonos Vestados}$$
-
-$$\text{Ratio PoR} = \left( \frac{\text{Activos Totales USD}}{\text{Pasivos Totales USD}} \right) \times 100 \ge \mathbf{100.00\%}$$
