@@ -59,7 +59,7 @@ flowchart TD
     E --> F[Se Acuña un NFT ERC-721 en la Billetera]
     F --> G{Opciones del Usuario}
     G -->|Esperar Vencimiento| H[Claim 100% Principal sin Penalización]
-    G -->|Necesidad de Liquidez| I[Ejecutar Ragequit - 30% Penalización]
+    G -->|Necesidad de Liquidez| I[Ejecutar Ragequit - 15% Penalización]
     G -->|Usar en Mercado P2P| J[Publicar Oferta de Préstamo como Colateral]
 ```
 

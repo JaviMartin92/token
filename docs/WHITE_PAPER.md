@@ -106,7 +106,7 @@ $$\text{Invariante 1: Solvencia PoR} \quad \Rightarrow \quad \text{Total Assets 
 
 $$\text{Invariante 2: Ratio de Colateral} \quad \Rightarrow \quad Ratio_{bps} = \frac{\sum (Balance_i \times Price_i)}{Supply_{ALPHA} \times NAV} \times 10,000 \ge 10,000$$
 
-$$\text{Invariante 3: Penalización Ragequit} \quad \Rightarrow \quad Penalty = Principal \times 30\% = (Treasury_{15\%} + Stakers_{7.5\%} + Burn_{7.5\%})$$
+$$\text{Invariante 3: Penalización Ragequit} \quad \Rightarrow \quad Penalty = Principal \times 15\% = (Treasury_{7.5\%} + OpEx_{3.75\%} + Profit_{3.75\%}) + Burn_{100\%Unvested}$$
 
 ---
 
