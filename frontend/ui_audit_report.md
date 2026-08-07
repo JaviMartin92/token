@@ -1,6 +1,6 @@
 # AUDITORÍA DETALLADA DE INTERFAZ DE USUARIO (106 CAMPOS POR PASO)
 
-Generado el: 2026-08-07T17:08:40.395Z
+Generado el: 2026-08-07T17:27:19.886Z
 
 ======================================================================
 📊 INFORME DE ESTADO DE UI - PASO [0]: [PASO 0 (GENESIS BASELINE)]
@@ -30,7 +30,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 20,000.00 USDC
+- treasury-usdc-balance: 10,000.00 USDC
 - treasury-shares-balance: 0.00 ALPHA
 - treasury-deposit-input: 
 - treasury-deposit-btn: Depositar
@@ -101,7 +101,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:08:41 PM] Cambiado rol conectado a Usuario Retail
+- activity-log-container: [7:27:21 PM] Cambiado rol conectado a Usuario Retail
 
 ======================================================================
 ======================================================================
@@ -132,7 +132,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 30,000.00 USDC
+- treasury-usdc-balance: 20,000.00 USDC
 - treasury-shares-balance: 0.00 ALPHA
 - treasury-deposit-input: 
 - treasury-deposit-btn: Depositar
@@ -203,7 +203,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:08:45 PM] ¡10,000 USDC mock recibidos en tu billetera! [7:08:45 PM] Reclamando 10,00...
+- activity-log-container: [7:27:26 PM] ¡10,000 USDC mock recibidos en tu billetera! [7:27:26 PM] Reclamando 10,00...
 
 ======================================================================
 ======================================================================
@@ -234,7 +234,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 20,000.00 USDC
+- treasury-usdc-balance: 10,000.00 USDC
 - treasury-shares-balance: 9,855.48 ALPHA
 - treasury-deposit-input: 
 - treasury-deposit-btn: Depositar
@@ -305,7 +305,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:08:52 PM] Depósito completado. Shares ALPHA acuñadas a valor NAV. [7:08:52 PM] Depos...
+- activity-log-container: [7:27:33 PM] Depósito completado. Shares ALPHA acuñadas a valor NAV. [7:27:33 PM] Depos...
 
 ======================================================================
 ======================================================================
@@ -336,7 +336,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 20,000.00 USDC
+- treasury-usdc-balance: 10,000.00 USDC
 - treasury-shares-balance: 6,855.48 ALPHA
 - treasury-deposit-input: 
 - treasury-deposit-btn: Depositar
@@ -407,7 +407,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:09:01 PM] ¡Stake de 3000 ALPHA realizado con éxito! [7:09:01 PM] Haciendo stake de 3...
+- activity-log-container: [7:27:42 PM] ¡Stake de 3000 ALPHA realizado con éxito! [7:27:41 PM] Haciendo stake de 3...
 
 ======================================================================
 ======================================================================
@@ -438,7 +438,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 20,000.00 USDC
+- treasury-usdc-balance: 10,000.00 USDC
 - treasury-shares-balance: 6,855.48 ALPHA
 - treasury-deposit-input: 
 - treasury-deposit-btn: Depositar
@@ -509,7 +509,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:09:01 PM] ¡Stake de 3000 ALPHA realizado con éxito! [7:09:01 PM] Haciendo stake de 3...
+- activity-log-container: [7:27:42 PM] ¡Stake de 3000 ALPHA realizado con éxito! [7:27:41 PM] Haciendo stake de 3...
 
 ======================================================================
 ======================================================================
@@ -540,7 +540,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 19,150.00 USDC
+- treasury-usdc-balance: 9,150.00 USDC
 - treasury-shares-balance: 6,855.48 ALPHA
 - treasury-deposit-input: 
 - treasury-deposit-btn: Depositar
@@ -611,7 +611,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:09:12 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [7:09:11 PM] Adquiriendo...
+- activity-log-container: [7:27:52 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [7:27:52 PM] Adquiriendo...
 
 ======================================================================
 ======================================================================
@@ -642,7 +642,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 18,200.00 USDC
+- treasury-usdc-balance: 8,200.00 USDC
 - treasury-shares-balance: 6,855.48 ALPHA
 - treasury-deposit-input: 
 - treasury-deposit-btn: Depositar
@@ -713,7 +713,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:09:19 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [7:09:18 PM] Adquiriendo...
+- activity-log-container: [7:27:59 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [7:27:59 PM] Adquiriendo...
 
 ======================================================================
 ======================================================================
@@ -744,7 +744,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 18,200.00 USDC
+- treasury-usdc-balance: 8,200.00 USDC
 - treasury-shares-balance: 6,855.48 ALPHA
 - treasury-deposit-input: 
 - treasury-deposit-btn: Depositar
@@ -815,7 +815,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:09:25 PM] ¡Oferta P2P creada! NFT #1 en escrow. Publicada en el Marketplace. [7:09:2...
+- activity-log-container: [7:28:07 PM] ¡Oferta P2P creada! NFT #1 en escrow. Publicada en el Marketplace. [7:28:0...
 
 ======================================================================
 ======================================================================
@@ -846,7 +846,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 18,197.50 USDC
+- treasury-usdc-balance: 8,197.50 USDC
 - treasury-shares-balance: 6,855.48 ALPHA
 - treasury-deposit-input: 
 - treasury-deposit-btn: Depositar
@@ -917,7 +917,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:09:29 PM] ¡Préstamo #1 financiado con éxito! [7:09:29 PM] Financiando préstamo P2P #...
+- activity-log-container: [7:28:11 PM] ¡Préstamo #1 financiado con éxito! [7:28:10 PM] Financiando préstamo P2P #...
 
 ======================================================================
 ======================================================================
@@ -948,7 +948,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 18,496.00 USDC
+- treasury-usdc-balance: 8,496.00 USDC
 - treasury-shares-balance: 6,855.48 ALPHA
 - treasury-deposit-input: 
 - treasury-deposit-btn: Depositar
@@ -1019,7 +1019,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:09:36 PM] ¡Préstamo #2 desembolsado por la Tesorería! $300 USDC acreditados en tu bi...
+- activity-log-container: [7:28:19 PM] ¡Préstamo #2 desembolsado por la Tesorería! $300 USDC acreditados en tu bi...
 
 ======================================================================
 ======================================================================
@@ -1050,7 +1050,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 18,195.93 USDC
+- treasury-usdc-balance: 8,195.93 USDC
 - treasury-shares-balance: 6,855.48 ALPHA
 - treasury-deposit-input: 
 - treasury-deposit-btn: Depositar
@@ -1121,7 +1121,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:09:44 PM] ¡Préstamo #2 reembolsado totalmente! Principal e intereses acreditados a l...
+- activity-log-container: [7:28:26 PM] ¡Préstamo #2 reembolsado totalmente! Principal e intereses acreditados a l...
 
 ======================================================================
 ======================================================================
@@ -1152,7 +1152,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 18,195.93 USDC
+- treasury-usdc-balance: 8,195.93 USDC
 - treasury-shares-balance: 6,855.48 ALPHA
 - treasury-deposit-input: 
 - treasury-deposit-btn: Depositar
@@ -1223,7 +1223,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:09:50 PM] ¡Préstamo #1 liquidado! NFT transferido al prestamista. [7:09:50 PM] Ejecu...
+- activity-log-container: [7:28:36 PM] ¡Préstamo #1 liquidado! NFT transferido al prestamista. [7:28:34 PM] Ejecu...
 
 ======================================================================
 ======================================================================
@@ -1254,7 +1254,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 18,918.43 USDC
+- treasury-usdc-balance: 8,918.43 USDC
 - treasury-shares-balance: 6,855.48 ALPHA
 - treasury-deposit-input: 
 - treasury-deposit-btn: Depositar
@@ -1325,7 +1325,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:09:54 PM] Ragequit ejecutado en NFT #1. Reembolso recibido. [7:09:54 PM] Ejecutando ...
+- activity-log-container: [7:28:40 PM] Ragequit ejecutado en NFT #1. Reembolso recibido. [7:28:40 PM] Ejecutando ...
 
 ======================================================================
 ======================================================================
@@ -1356,7 +1356,7 @@ Generado el: 2026-08-07T17:08:40.395Z
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 20,642.95 USDC
+- treasury-usdc-balance: 10,642.95 USDC
 - treasury-shares-balance: 5,141.08 ALPHA
 - treasury-deposit-input: 
 - treasury-deposit-btn: Depositar
@@ -1427,6 +1427,6 @@ Generado el: 2026-08-07T17:08:40.395Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:10:02 PM] Rescate completado. USDC transferidos a tu billetera. [7:10:02 PM] Rescata...
+- activity-log-container: [7:28:49 PM] Rescate completado. USDC transferidos a tu billetera. [7:28:48 PM] Rescata...
 
 ======================================================================

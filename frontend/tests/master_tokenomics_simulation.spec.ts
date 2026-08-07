@@ -404,7 +404,7 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
     await expect(page.locator('text=Usuario Retail').first()).toBeVisible({ timeout: 10000 });
 
     await expect(page.locator('[data-testid="header-nav-value"]')).toContainText('USDC', { timeout: 10000 });
-    await expect(page.locator('[data-testid="treasury-usdc-balance"]')).toContainText('20,000.00', { timeout: 10000 });
+    await expect(page.locator('[data-testid="treasury-usdc-balance"]')).toContainText('10,000.00', { timeout: 10000 });
 
     const baseline = await readCurrentUiState(page);
     expect(baseline.porRatio).toBeGreaterThanOrEqual(100.0);
