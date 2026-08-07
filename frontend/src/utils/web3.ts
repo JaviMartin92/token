@@ -156,6 +156,18 @@ export const ABIS = {
       ]}
     ]},
     { name: 'nextLoanId', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
+    { name: 'loans', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'uint256' }], outputs: [
+      { name: 'id', type: 'uint256' },
+      { name: 'lender', type: 'address' },
+      { name: 'borrower', type: 'address' },
+      { name: 'positionTokenId', type: 'uint256' },
+      { name: 'borrowAmount', type: 'uint256' },
+      { name: 'collateralAmount', type: 'uint256' },
+      { name: 'interestRateBps', type: 'uint256' },
+      { name: 'durationDays', type: 'uint256' },
+      { name: 'startTime', type: 'uint256' },
+      { name: 'state', type: 'uint8' }
+    ]},
     { name: 'cancelLoanOffer', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'loanId', type: 'uint256' }], outputs: [] }
   ] as const,
   STAKING: [
