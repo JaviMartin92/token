@@ -508,7 +508,7 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
         return assetsReceived;
     }
 
-    function mintCorporateFeeShares(uint256 stableAmount) external nonReentrant returns (uint256 sharesMinted) {
+    function mintCorporateFeeShares(uint256 stableAmount) external returns (uint256 sharesMinted) {
         require(msg.sender == addressProvider.getAddress(addressProvider.ID_REAL_YIELD_ROUTER()), "TreasuryManager: Only RealYieldRouter");
         require(stableAmount > 0, "TreasuryManager: Amount must be > 0");
 
