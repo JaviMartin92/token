@@ -183,4 +183,46 @@ contract GovernanceStaking is Ownable, ReentrancyGuard {
             emit RewardClaimed(user, reward);
         }
     }
+
+    struct StakingBreakdown {
+        uint256 communityStaked;
+        uint256 corporateStaked;
+        uint256 treasuryStaked;
+        uint256 globalTotalStaked;
+        uint256 netCirculatingSupply;
+        uint256 totalBurned;
+    }
+
+    function getStakingBreakdown() external view returns (StakingBreakdown memory breakdown) {
+        uint256 opExStaked = corporateOpExVault != address(0) ? stakedBalances[corporateOpExVault] : 0;
+        uint256 profitStaked = corporateProfitVault != address(0) ? stakedBalances[corporateProfitVault] : 0;
+        uint256 opExBal = corporateOpExVault != address(0) ? govToken.balanceOf(corporateOpExVault) : 0;
+        uint256 profitBal = corporateProfitVault != address(0) ? govToken.balanceOf(corporateProfitVault) : 0;
+
+        breakdown.corporateStaked = opExStaked + profitStaked + opExBal + profitBal;
+
+        uint256 tmStaked = treasury != address(0) ? stakedBalances[treasury] : 0;
+        uint256 tmBal = treasury != address(0) ? govToken.balanceOf(treasury) : 0;
+
+        breakdown.treasuryStaked = tmStaked + tmBal;
+
+        uint256 instGovStaked = opExStaked + profitStaked + tmStaked;
+        breakdown.communityStaked = totalStaked > instGovStaked ? totalStaked - instGovStaked : totalStaked;
+        breakdown.globalTotalStaked = breakdown.communityStaked + breakdown.corporateStaked + breakdown.treasuryStaked;
+
+        uint256 totalSupply = govToken.totalSupply();
+        uint256 burned = 0;
+        if (treasury != address(0)) {
+            try ITreasury(treasury).totalBurnedTokens() returns (uint256 b) {
+                burned = b;
+            } catch {}
+        }
+        breakdown.totalBurned = burned;
+        breakdown.netCirculatingSupply = totalSupply > burned ? totalSupply - burned : totalSupply;
+    }
+
+    function getUserStakingInfo(address account) external view returns (uint256 stakedBalance, uint256 claimableYieldUSD) {
+        stakedBalance = stakedBalances[account];
+        claimableYieldUSD = earned(account);
+    }
 }

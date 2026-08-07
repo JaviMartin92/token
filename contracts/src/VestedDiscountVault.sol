@@ -302,4 +302,31 @@ contract VestedDiscountVault is Ownable, ReentrancyGuard {
             } catch {}
         }
     }
+
+    struct UserVestedOverview {
+        uint256 baseDiscount1YearBps;
+        uint256 baseDiscount3YearsBps;
+        uint256 baseDiscount5YearsBps;
+        uint256 vipBonusBps;
+        uint256 userStalphaBalance;
+    }
+
+    function getUserVestedOverview(address account) external view returns (UserVestedOverview memory overview) {
+        overview.baseDiscount1YearBps = calculateDiscountBps(account, 1);
+        overview.baseDiscount3YearsBps = calculateDiscountBps(account, 3);
+        overview.baseDiscount5YearsBps = calculateDiscountBps(account, 5);
+
+        if (governanceStaking != address(0)) {
+            try IGovStakingForVault(governanceStaking).stakedBalances(account) returns (uint256 stBal) {
+                overview.userStalphaBalance = stBal;
+                if (stBal >= 100_000 * 1e18) {
+                    overview.vipBonusBps = 300; // Tier 3: +3.00%
+                } else if (stBal >= 25_000 * 1e18) {
+                    overview.vipBonusBps = 200; // Tier 2: +2.00%
+                } else if (stBal >= 5_000 * 1e18) {
+                    overview.vipBonusBps = 100; // Tier 1: +1.00%
+                }
+            } catch {}
+        }
+    }
 }
