@@ -193,6 +193,14 @@ contract GovernanceStaking is Ownable, ReentrancyGuard {
         uint256 totalBurned;
     }
 
+    address public alphaVault;
+    address public promoVault;
+
+    function setReserveVaults(address _alphaVault, address _promoVault) external onlyOwner {
+        alphaVault = _alphaVault;
+        promoVault = _promoVault;
+    }
+
     function getStakingBreakdown() external view returns (StakingBreakdown memory breakdown) {
         uint256 opExStaked = corporateOpExVault != address(0) ? stakedBalances[corporateOpExVault] : 0;
         uint256 profitStaked = corporateProfitVault != address(0) ? stakedBalances[corporateProfitVault] : 0;
@@ -203,10 +211,14 @@ contract GovernanceStaking is Ownable, ReentrancyGuard {
 
         uint256 tmStaked = treasury != address(0) ? stakedBalances[treasury] : 0;
         uint256 tmBal = treasury != address(0) ? govToken.balanceOf(treasury) : 0;
+        uint256 avStaked = alphaVault != address(0) ? stakedBalances[alphaVault] : 0;
+        uint256 avBal = alphaVault != address(0) ? govToken.balanceOf(alphaVault) : 0;
+        uint256 pvStaked = promoVault != address(0) ? stakedBalances[promoVault] : 0;
+        uint256 pvBal = promoVault != address(0) ? govToken.balanceOf(promoVault) : 0;
 
-        breakdown.treasuryStaked = tmStaked + tmBal;
+        breakdown.treasuryStaked = tmStaked + tmBal + avStaked + avBal + pvStaked + pvBal;
 
-        uint256 instGovStaked = opExStaked + profitStaked + tmStaked;
+        uint256 instGovStaked = opExStaked + profitStaked + tmStaked + avStaked + pvStaked;
         breakdown.communityStaked = totalStaked > instGovStaked ? totalStaked - instGovStaked : totalStaked;
         breakdown.globalTotalStaked = breakdown.communityStaked + breakdown.corporateStaked + breakdown.treasuryStaked;
 
