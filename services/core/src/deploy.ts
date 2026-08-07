@@ -33,8 +33,8 @@ const walletClient = createWalletClient({
 });
 
 function loadArtifact(name: string, file: string) {
-  const p1 = path.resolve(__dirname, `../../../contracts/out/${file}/${name}.json`);
-  const p2 = path.resolve(__dirname, `../../../contracts/out/src/${file}/${name}.json`);
+  const p1 = path.resolve(__dirname, `../../../contracts/out/src/${file}/${name}.json`);
+  const p2 = path.resolve(__dirname, `../../../contracts/out/${file}/${name}.json`);
   const p3 = path.resolve(__dirname, `../../../contracts/out/test/${file}/${name}.json`);
   const p4 = path.resolve(__dirname, `../../../contracts/out/adapters/${file}/${name}.json`);
   const p5 = path.resolve(__dirname, `../../../contracts/out/${name}.sol/${name}.json`);
@@ -531,6 +531,15 @@ async function main() {
   });
   const promoAddr = (await publicClient.waitForTransactionReceipt({ hash: promoTx })).contractAddress!;
   console.log(`[+] PromotionalIncentiveVault Contract deployed at: ${promoAddr}`);
+
+  const setResVaultsHash = await walletClient.writeContract({
+    address: stakingAddr,
+    abi: loadArtifact('GovernanceStaking', 'GovernanceStaking.sol').abi,
+    functionName: 'setReserveVaults',
+    args: [vaultAddr, promoAddr]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: setResVaultsHash });
+  console.log('[+] Configured AlphaVault and PromotionalIncentiveVault on GovernanceStaking.');
 
   // 16. Deploy DynamicYieldOracleRouter (Autonomous APY Engine)
   const oracleArtifact = loadArtifact('DynamicYieldOracleRouter', 'DynamicYieldOracleRouter.sol');
