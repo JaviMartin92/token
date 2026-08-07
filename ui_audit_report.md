@@ -1,6 +1,6 @@
 # AUDITORÍA DETALLADA DE INTERFAZ DE USUARIO (106 CAMPOS POR PASO)
 
-Generado el: 2026-08-07T17:27:19.886Z
+Generado el: 2026-08-07T17:37:33.750Z
 
 ======================================================================
 📊 INFORME DE ESTADO DE UI - PASO [0]: [PASO 0 (GENESIS BASELINE)]
@@ -63,7 +63,7 @@ Generado el: 2026-08-07T17:27:19.886Z
 - escrow-total-lent: [No visible / N/A]
 - escrow-total-collateral: [No visible / N/A]
 - escrow-coverage-ratio: [No visible / N/A]
-- p2p-treasury-nft-id-input: 
+- p2p-treasury-nft-id-input: [No visible / N/A]
 - p2p-treasury-amount-input: 
 - p2p-treasury-duration-input: 
 - p2p-treasury-request-btn: 🏛️ Solicitar Crédito a la Tesorería (NFT)
@@ -101,7 +101,7 @@ Generado el: 2026-08-07T17:27:19.886Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:27:21 PM] Cambiado rol conectado a Usuario Retail
+- activity-log-container: [7:37:35 PM] Cambiado rol conectado a Usuario Retail
 
 ======================================================================
 ======================================================================
@@ -165,7 +165,7 @@ Generado el: 2026-08-07T17:27:19.886Z
 - escrow-total-lent: [No visible / N/A]
 - escrow-total-collateral: [No visible / N/A]
 - escrow-coverage-ratio: [No visible / N/A]
-- p2p-treasury-nft-id-input: 
+- p2p-treasury-nft-id-input: [No visible / N/A]
 - p2p-treasury-amount-input: 
 - p2p-treasury-duration-input: 
 - p2p-treasury-request-btn: 🏛️ Solicitar Crédito a la Tesorería (NFT)
@@ -203,7 +203,7 @@ Generado el: 2026-08-07T17:27:19.886Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:27:26 PM] ¡10,000 USDC mock recibidos en tu billetera! [7:27:26 PM] Reclamando 10,00...
+- activity-log-container: [7:37:40 PM] ¡10,000 USDC mock recibidos en tu billetera! [7:37:40 PM] Reclamando 10,00...
 
 ======================================================================
 ======================================================================
@@ -267,7 +267,7 @@ Generado el: 2026-08-07T17:27:19.886Z
 - escrow-total-lent: [No visible / N/A]
 - escrow-total-collateral: [No visible / N/A]
 - escrow-coverage-ratio: [No visible / N/A]
-- p2p-treasury-nft-id-input: 
+- p2p-treasury-nft-id-input: [No visible / N/A]
 - p2p-treasury-amount-input: 
 - p2p-treasury-duration-input: 
 - p2p-treasury-request-btn: 🏛️ Solicitar Crédito a la Tesorería (NFT)
@@ -305,7 +305,7 @@ Generado el: 2026-08-07T17:27:19.886Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:27:33 PM] Depósito completado. Shares ALPHA acuñadas a valor NAV. [7:27:33 PM] Depos...
+- activity-log-container: [7:37:47 PM] Depósito completado. Shares ALPHA acuñadas a valor NAV. [7:37:46 PM] Depos...
 
 ======================================================================
 ======================================================================
@@ -369,7 +369,7 @@ Generado el: 2026-08-07T17:27:19.886Z
 - escrow-total-lent: [No visible / N/A]
 - escrow-total-collateral: [No visible / N/A]
 - escrow-coverage-ratio: [No visible / N/A]
-- p2p-treasury-nft-id-input: 
+- p2p-treasury-nft-id-input: [No visible / N/A]
 - p2p-treasury-amount-input: 
 - p2p-treasury-duration-input: 
 - p2p-treasury-request-btn: 🏛️ Solicitar Crédito a la Tesorería (NFT)
@@ -407,7 +407,7 @@ Generado el: 2026-08-07T17:27:19.886Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:27:42 PM] ¡Stake de 3000 ALPHA realizado con éxito! [7:27:41 PM] Haciendo stake de 3...
+- activity-log-container: [7:37:55 PM] ¡Stake de 3000 ALPHA realizado con éxito! [7:37:55 PM] Haciendo stake de 3...
 
 ======================================================================
 ======================================================================
@@ -471,7 +471,7 @@ Generado el: 2026-08-07T17:27:19.886Z
 - escrow-total-lent: [No visible / N/A]
 - escrow-total-collateral: [No visible / N/A]
 - escrow-coverage-ratio: [No visible / N/A]
-- p2p-treasury-nft-id-input: 
+- p2p-treasury-nft-id-input: [No visible / N/A]
 - p2p-treasury-amount-input: 
 - p2p-treasury-duration-input: 
 - p2p-treasury-request-btn: 🏛️ Solicitar Crédito a la Tesorería (NFT)
@@ -509,7 +509,7 @@ Generado el: 2026-08-07T17:27:19.886Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:27:42 PM] ¡Stake de 3000 ALPHA realizado con éxito! [7:27:41 PM] Haciendo stake de 3...
+- activity-log-container: [7:37:55 PM] ¡Stake de 3000 ALPHA realizado con éxito! [7:37:55 PM] Haciendo stake de 3...
 
 ======================================================================
 ======================================================================
@@ -611,7 +611,7 @@ Generado el: 2026-08-07T17:27:19.886Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:27:52 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [7:27:52 PM] Adquiriendo...
+- activity-log-container: [7:38:06 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [7:38:05 PM] Adquiriendo...
 
 ======================================================================
 ======================================================================
@@ -713,7 +713,7 @@ Generado el: 2026-08-07T17:27:19.886Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:27:59 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [7:27:59 PM] Adquiriendo...
+- activity-log-container: [7:38:13 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [7:38:12 PM] Adquiriendo...
 
 ======================================================================
 ======================================================================
@@ -815,7 +815,7 @@ Generado el: 2026-08-07T17:27:19.886Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:28:07 PM] ¡Oferta P2P creada! NFT #1 en escrow. Publicada en el Marketplace. [7:28:0...
+- activity-log-container: [7:38:20 PM] ¡Oferta P2P creada! NFT #1 en escrow. Publicada en el Marketplace. [7:38:1...
 
 ======================================================================
 ======================================================================
@@ -917,7 +917,7 @@ Generado el: 2026-08-07T17:27:19.886Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:28:11 PM] ¡Préstamo #1 financiado con éxito! [7:28:10 PM] Financiando préstamo P2P #...
+- activity-log-container: [7:38:26 PM] ¡Préstamo #1 financiado con éxito! [7:38:25 PM] Financiando préstamo P2P #...
 
 ======================================================================
 ======================================================================
@@ -981,7 +981,7 @@ Generado el: 2026-08-07T17:27:19.886Z
 - escrow-total-lent: [No visible / N/A]
 - escrow-total-collateral: [No visible / N/A]
 - escrow-coverage-ratio: [No visible / N/A]
-- p2p-treasury-nft-id-input: 
+- p2p-treasury-nft-id-input: [No visible / N/A]
 - p2p-treasury-amount-input: 
 - p2p-treasury-duration-input: 
 - p2p-treasury-request-btn: 🏛️ Solicitar Crédito a la Tesorería (NFT)
@@ -1019,7 +1019,7 @@ Generado el: 2026-08-07T17:27:19.886Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:28:19 PM] ¡Préstamo #2 desembolsado por la Tesorería! $300 USDC acreditados en tu bi...
+- activity-log-container: [7:38:32 PM] ¡Préstamo #2 desembolsado por la Tesorería! $300 USDC acreditados en tu bi...
 
 ======================================================================
 ======================================================================
@@ -1121,7 +1121,7 @@ Generado el: 2026-08-07T17:27:19.886Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:28:26 PM] ¡Préstamo #2 reembolsado totalmente! Principal e intereses acreditados a l...
+- activity-log-container: [7:38:39 PM] ¡Préstamo #2 reembolsado totalmente! Principal e intereses acreditados a l...
 
 ======================================================================
 ======================================================================
@@ -1223,7 +1223,7 @@ Generado el: 2026-08-07T17:27:19.886Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:28:36 PM] ¡Préstamo #1 liquidado! NFT transferido al prestamista. [7:28:34 PM] Ejecu...
+- activity-log-container: [7:38:45 PM] ¡Préstamo #1 liquidado! NFT transferido al prestamista. [7:38:45 PM] Ejecu...
 
 ======================================================================
 ======================================================================
@@ -1325,7 +1325,7 @@ Generado el: 2026-08-07T17:27:19.886Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:28:40 PM] Ragequit ejecutado en NFT #1. Reembolso recibido. [7:28:40 PM] Ejecutando ...
+- activity-log-container: [7:38:48 PM] Ragequit ejecutado en NFT #1. Reembolso recibido. [7:38:48 PM] Ejecutando ...
 
 ======================================================================
 ======================================================================
@@ -1427,6 +1427,6 @@ Generado el: 2026-08-07T17:27:19.886Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:28:49 PM] Rescate completado. USDC transferidos a tu billetera. [7:28:48 PM] Rescata...
+- activity-log-container: [7:38:57 PM] Rescate completado. USDC transferidos a tu billetera. [7:38:57 PM] Rescata...
 
 ======================================================================

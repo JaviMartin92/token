@@ -436,7 +436,30 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
       let tokenIdBig: bigint;
 
       if (collateralType === 'nft') {
-        tokenIdBig = BigInt(tokenIdOrAmountStr || '1');
+        tokenIdBig = BigInt(tokenIdOrAmountStr || '0');
+        if (tokenIdBig === 0n) {
+          addToast('warning', 'NFT No Válido', 'Por favor selecciona un NFT de Posición válido de tu billetera o usa colateral ERC20 (ALPHA/WBTC/WETH).');
+          return;
+        }
+
+        // Pre-validate NFT ownership on-chain to avoid EVM revert
+        try {
+          const nftOwner = await publicClient.readContract({
+            address: CONTRACT_ADDRESSES.POSITION_NFT,
+            abi: [{ inputs: [{ type: 'uint256', name: 'tokenId' }], name: 'ownerOf', outputs: [{ type: 'address', name: '' }], stateMutability: 'view', type: 'function' }],
+            functionName: 'ownerOf',
+            args: [tokenIdBig]
+          }) as string;
+
+          if (nftOwner.toLowerCase() !== userClient.account.address.toLowerCase()) {
+            addToast('warning', 'Sin Propiedad del NFT', `El NFT #${tokenIdBig} pertenece a otra dirección y no a tu billetera activa (${userClient.account.address.slice(0, 6)}...). Selecciona un NFT propio o colateral ERC20.`);
+            return;
+          }
+        } catch (e) {
+          addToast('error', 'NFT Inexistente', `El NFT #${tokenIdBig} no existe on-chain. Adquiere un Bono con Descuento primero para obtener un NFT o selecciona colateral ERC20.`);
+          return;
+        }
+
         addLog(`[Tesorería APY Booster] Solicitando préstamo de $${amountStr} USDC con NFT #${tokenIdOrAmountStr}...`);
         addToast('info', 'Préstamo Tesorería', 'Enviando solicitud y aprobando NFT...');
       } else {

@@ -226,14 +226,9 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                       ))}
                     </select>
                   ) : (
-                    <input
-                      data-testid="p2p-treasury-nft-id-input"
-                      type="number"
-                      placeholder="ej. 1"
-                      value={p2pTokenId}
-                      onChange={(e) => setP2pTokenId(e.target.value)}
-                      style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#fff' }}
-                    />
+                    <div style={{ background: 'rgba(234, 179, 8, 0.12)', border: '1px solid rgba(234, 179, 8, 0.3)', borderRadius: '8px', padding: '0.65rem 0.75rem', fontSize: '0.78rem', color: '#fde047' }}>
+                      ⚠️ No tienes NFTs de Posición activos en tu billetera. Selecciona colateral <strong>ALPHA / WBTC / WETH</strong> arriba o adquiere un Bono con Descuento.
+                    </div>
                   )}
                 </>
               ) : (
@@ -280,7 +275,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
               data-testid="p2p-treasury-request-btn"
               className="btn-primary"
               style={{ width: '100%', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', marginTop: '0.2rem', padding: '0.7rem', fontWeight: 700, boxShadow: '0 4px 12px rgba(16,185,129,0.3)' }}
-              onClick={() => onBorrowFromTreasury && onBorrowFromTreasury(treasuryColType, treasuryColType === 'nft' ? p2pTokenId : treasuryColAmount, p2pBorrowAmount, p2pDays)}
+              onClick={() => onBorrowFromTreasury && onBorrowFromTreasury(treasuryColType, treasuryColType === 'nft' ? (p2pTokenId || userPositions.find(p => !p.isRagequitted && !p.isMaturedClaimed)?.id.toString() || '') : treasuryColAmount, p2pBorrowAmount, p2pDays)}
             >
               🏛️ Solicitar Crédito a la Tesorería ({treasuryColType.toUpperCase()})
             </button>
