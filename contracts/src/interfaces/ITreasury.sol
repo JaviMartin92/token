@@ -76,4 +76,9 @@ interface ITreasury {
      * @notice Disburses a Treasury reserve loan (up to 20% max of total reserves) to P2PLendingMarket.
      */
     function disburseTreasuryLoan(address recipient, uint256 amount) external;
+
+    /**
+     * @notice Returns the total amount of burned tokens recorded by the Treasury.
+     */
+    function totalBurnedTokens() external view returns (uint256);
 }

@@ -94,143 +94,31 @@ export function useWeb3State() {
       } catch (e) {}
 
       try {
-        rawTotalStaked = await publicClient.readContract({
+        const breakdown = await publicClient.readContract({
           address: CONTRACT_ADDRESSES.STAKING,
           abi: ABIS.STAKING,
-          functionName: 'totalStaked'
-        }) as bigint;
-        setTotalStakedSupply(parseFloat(formatEther(rawTotalStaked)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+          functionName: 'getStakingBreakdown'
+        }) as any;
+
+        const communityTotal = breakdown.communityStaked;
+        const corporateTotal = breakdown.corporateStaked;
+        const treasuryTotal = breakdown.treasuryStaked;
+        const globalLockedTotal = breakdown.globalTotalStaked;
+        const netCirculating = breakdown.netCirculatingSupply;
+
+        setCirculatingSupply(parseFloat(formatEther(netCirculating)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        setCorporateStakedSupply(parseFloat(formatEther(corporateTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        setCommunityStakedSupply(parseFloat(formatEther(communityTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        setTreasuryStakedSupply(parseFloat(formatEther(treasuryTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        setTotalStakedSupply(parseFloat(formatEther(globalLockedTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+
+        if (netCirculating > 0n) {
+          const ratio = (Number(globalLockedTotal * 10000n / netCirculating) / 100).toFixed(2);
+          setStakingRatioPct(`${ratio}%`);
+        } else {
+          setStakingRatioPct('0.00%');
+        }
       } catch (e) {}
-
-      let opExGovStaked = 0n;
-      let profitGovStaked = 0n;
-      let opExAlphaBal = 0n;
-      let profitAlphaBal = 0n;
-
-      if (CONTRACT_ADDRESSES.CORPORATE_OPEX) {
-        try {
-          opExGovStaked = await publicClient.readContract({
-            address: CONTRACT_ADDRESSES.STAKING,
-            abi: ABIS.STAKING,
-            functionName: 'stakedBalances',
-            args: [CONTRACT_ADDRESSES.CORPORATE_OPEX]
-          }) as bigint;
-        } catch (e) {}
-        try {
-          opExAlphaBal = await publicClient.readContract({
-            address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
-            abi: ABIS.ERC20,
-            functionName: 'balanceOf',
-            args: [CONTRACT_ADDRESSES.CORPORATE_OPEX]
-          }) as bigint;
-        } catch (e) {}
-      }
-
-      if (CONTRACT_ADDRESSES.CORPORATE_PROFIT) {
-        try {
-          profitGovStaked = await publicClient.readContract({
-            address: CONTRACT_ADDRESSES.STAKING,
-            abi: ABIS.STAKING,
-            functionName: 'stakedBalances',
-            args: [CONTRACT_ADDRESSES.CORPORATE_PROFIT]
-          }) as bigint;
-        } catch (e) {}
-        try {
-          profitAlphaBal = await publicClient.readContract({
-            address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
-            abi: ABIS.ERC20,
-            functionName: 'balanceOf',
-            args: [CONTRACT_ADDRESSES.CORPORATE_PROFIT]
-          }) as bigint;
-        } catch (e) {}
-      }
-
-      let treasuryAlphaBalance = 0n;
-      let treasuryStakedInGov = 0n;
-      let vaultAlphaBalance = 0n;
-      let vaultStakedInGov = 0n;
-      let promoAlphaBalance = 0n;
-      let promoStakedInGov = 0n;
-
-      if (CONTRACT_ADDRESSES.TREASURY) {
-        try {
-          treasuryAlphaBalance = await publicClient.readContract({
-            address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
-            abi: ABIS.ERC20,
-            functionName: 'balanceOf',
-            args: [CONTRACT_ADDRESSES.TREASURY]
-          }) as bigint;
-        } catch (e) {}
-        try {
-          treasuryStakedInGov = await publicClient.readContract({
-            address: CONTRACT_ADDRESSES.STAKING,
-            abi: ABIS.STAKING,
-            functionName: 'stakedBalances',
-            args: [CONTRACT_ADDRESSES.TREASURY]
-          }) as bigint;
-        } catch (e) {}
-      }
-
-      if (CONTRACT_ADDRESSES.ALPHA_VAULT) {
-        try {
-          vaultAlphaBalance = await publicClient.readContract({
-            address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
-            abi: ABIS.ERC20,
-            functionName: 'balanceOf',
-            args: [CONTRACT_ADDRESSES.ALPHA_VAULT]
-          }) as bigint;
-        } catch (e) {}
-        try {
-          vaultStakedInGov = await publicClient.readContract({
-            address: CONTRACT_ADDRESSES.STAKING,
-            abi: ABIS.STAKING,
-            functionName: 'stakedBalances',
-            args: [CONTRACT_ADDRESSES.ALPHA_VAULT]
-          }) as bigint;
-        } catch (e) {}
-      }
-
-      if (CONTRACT_ADDRESSES.PROMOTIONAL_VAULT) {
-        try {
-          promoAlphaBalance = await publicClient.readContract({
-            address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
-            abi: ABIS.ERC20,
-            functionName: 'balanceOf',
-            args: [CONTRACT_ADDRESSES.PROMOTIONAL_VAULT]
-          }) as bigint;
-        } catch (e) {}
-        try {
-          promoStakedInGov = await publicClient.readContract({
-            address: CONTRACT_ADDRESSES.STAKING,
-            abi: ABIS.STAKING,
-            functionName: 'stakedBalances',
-            args: [CONTRACT_ADDRESSES.PROMOTIONAL_VAULT]
-          }) as bigint;
-        } catch (e) {}
-      }
-
-      const corporateTotal = opExGovStaked + profitGovStaked + opExAlphaBal + profitAlphaBal;
-      const treasuryTotal = treasuryStakedInGov + vaultStakedInGov + promoStakedInGov + treasuryAlphaBalance + vaultAlphaBalance + promoAlphaBalance;
-      const institutionalGovStaked = opExGovStaked + profitGovStaked + treasuryStakedInGov + vaultStakedInGov + promoStakedInGov;
-
-      // Stake Comunidad = Total Staked inside GovernanceStaking MINUS institutional staked inside contract
-      const communityTotal = rawTotalStaked > institutionalGovStaked ? rawTotalStaked - institutionalGovStaked : rawTotalStaked;
-      const netCirculating = rawTotalSupply > rawBurned ? rawTotalSupply - rawBurned : 0n;
-      setCirculatingSupply(parseFloat(formatEther(netCirculating)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-
-      const globalLockedTotal = communityTotal + corporateTotal + treasuryTotal;
-
-      setCorporateStakedSupply(parseFloat(formatEther(corporateTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-      setCommunityStakedSupply(parseFloat(formatEther(communityTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-      setTreasuryStakedSupply(parseFloat(formatEther(treasuryTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-      setTotalStakedSupply(parseFloat(formatEther(globalLockedTotal)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-
-      if (netCirculating > 0n) {
-        const ratio = (Number(globalLockedTotal * 10000n / netCirculating) / 100).toFixed(2);
-        setStakingRatioPct(`${ratio}%`);
-      } else {
-        setStakingRatioPct('0.00%');
-      }
 
       try {
         const nav = await publicClient.readContract({

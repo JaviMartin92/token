@@ -338,4 +338,36 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
 
         emit LoanLiquidated(loanId, msg.sender, totalCollateral);
     }
+
+    struct MarketplaceOverview {
+        uint256 totalActiveLoans;
+        uint256 totalVolumeUSD;
+        uint256 activeBorrowUSD;
+        uint256 activeCollateralUSD;
+        uint256 activeInterestUSD;
+    }
+
+    function getMarketplaceOverview() external view returns (MarketplaceOverview memory stats) {
+        for (uint256 i = 1; i < nextLoanId; i++) {
+            Loan memory loan = loans[i];
+            if (loan.state == LoanState.ACTIVE || loan.state == LoanState.REPAID || loan.state == LoanState.LIQUIDATED) {
+                stats.totalVolumeUSD += loan.borrowAmount;
+            }
+            if (loan.state == LoanState.ACTIVE) {
+                stats.totalActiveLoans++;
+                stats.activeBorrowUSD += loan.borrowAmount;
+                stats.activeCollateralUSD += loan.collateralAmount;
+                (, uint256 interest) = calculateTotalOwed(i);
+                stats.activeInterestUSD += interest;
+            }
+        }
+    }
+
+    function getAllLoans() external view returns (Loan[] memory allLoans) {
+        uint256 count = nextLoanId > 1 ? nextLoanId - 1 : 0;
+        allLoans = new Loan[](count);
+        for (uint256 i = 1; i < nextLoanId; i++) {
+            allLoans[i - 1] = loans[i];
+        }
+    }
 }

@@ -176,6 +176,22 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
         return (totalAssetsUSD * 1e18) / circulatingShares;
     }
 
+    struct ProtocolOverview {
+        uint256 totalAssetsUSD;
+        uint256 totalLiabilitiesUSD;
+        uint256 collateralRatioBps;
+        uint256 navPerShareUSD;
+        uint256 netCirculatingShares;
+        uint256 totalBurnedTokens;
+    }
+
+    function getProtocolOverview() external view returns (ProtocolOverview memory overview) {
+        (overview.totalAssetsUSD, overview.totalLiabilitiesUSD, overview.collateralRatioBps) = getProofOfReserves();
+        overview.navPerShareUSD = getNAVPerShare();
+        overview.netCirculatingShares = getNetCirculatingShares();
+        overview.totalBurnedTokens = totalBurnedTokens;
+    }
+
     function getProofOfReserves() public view returns (uint256 totalAssetsUSD, uint256 totalLiabilitiesUSD, uint256 collateralRatioBps) {
         AlphaVault vault = AlphaVault(addressProvider.getAlphaVault());
         OracleHub oracle = OracleHub(addressProvider.getOracleHub());

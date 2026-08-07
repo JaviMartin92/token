@@ -72,6 +72,16 @@ export const ABIS = {
   ] as const,
   TREASURY: [
     { name: 'getNAV', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
+    { name: 'getProtocolOverview', type: 'function', stateMutability: 'view', inputs: [], outputs: [
+      { name: 'overview', type: 'tuple', components: [
+        { name: 'totalAssetsUSD', type: 'uint256' },
+        { name: 'totalLiabilitiesUSD', type: 'uint256' },
+        { name: 'collateralRatioBps', type: 'uint256' },
+        { name: 'navPerShareUSD', type: 'uint256' },
+        { name: 'netCirculatingShares', type: 'uint256' },
+        { name: 'totalBurnedTokens', type: 'uint256' }
+      ]}
+    ]},
     { name: 'validateSanityBounds', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'bool' }] },
     { name: 'deposit', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'stableAmount', type: 'uint256' }], outputs: [{ name: 'sharesMinted', type: 'uint256' }] },
     { name: 'redeem', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'sharesAmount', type: 'uint256' }], outputs: [{ name: 'assetsReceived', type: 'uint256' }] },
@@ -109,6 +119,15 @@ export const ABIS = {
       { name: 'user', type: 'address' },
       { name: 'lockYears', type: 'uint256' }
     ], outputs: [{ name: 'discountBps', type: 'uint256' }] },
+    { name: 'getUserVestedOverview', type: 'function', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [
+      { name: 'overview', type: 'tuple', components: [
+        { name: 'baseDiscount1YearBps', type: 'uint256' },
+        { name: 'baseDiscount3YearsBps', type: 'uint256' },
+        { name: 'baseDiscount5YearsBps', type: 'uint256' },
+        { name: 'vipBonusBps', type: 'uint256' },
+        { name: 'userStalphaBalance', type: 'uint256' }
+      ]}
+    ]},
     { name: 'totalInvested', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
     { name: 'tvlCap', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] }
   ] as const,
@@ -127,27 +146,38 @@ export const ABIS = {
     { name: 'repayLoan', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'loanId', type: 'uint256' }], outputs: [] },
     { name: 'liquidateLoan', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'loanId', type: 'uint256' }], outputs: [] },
     { name: 'calculateHealthFactor', type: 'function', stateMutability: 'view', inputs: [{ name: 'loanId', type: 'uint256' }], outputs: [{ name: 'healthFactorRatio', type: 'uint256' }] },
+    { name: 'getMarketplaceOverview', type: 'function', stateMutability: 'view', inputs: [], outputs: [
+      { name: 'stats', type: 'tuple', components: [
+        { name: 'totalActiveLoans', type: 'uint256' },
+        { name: 'totalVolumeUSD', type: 'uint256' },
+        { name: 'activeBorrowUSD', type: 'uint256' },
+        { name: 'activeCollateralUSD', type: 'uint256' },
+        { name: 'activeInterestUSD', type: 'uint256' }
+      ]}
+    ]},
     { name: 'nextLoanId', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
-    { name: 'cancelLoanOffer', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'loanId', type: 'uint256' }], outputs: [] },
-    { name: 'loans', type: 'function', stateMutability: 'view', inputs: [{ name: 'loanId', type: 'uint256' }], outputs: [
-      { name: 'id', type: 'uint256' },
-      { name: 'lender', type: 'address' },
-      { name: 'borrower', type: 'address' },
-      { name: 'positionTokenId', type: 'uint256' },
-      { name: 'borrowAmount', type: 'uint256' },
-      { name: 'collateralAmount', type: 'uint256' },
-      { name: 'interestRateBps', type: 'uint256' },
-      { name: 'durationDays', type: 'uint256' },
-      { name: 'startTime', type: 'uint256' },
-      { name: 'state', type: 'uint8' }
-    ]}
+    { name: 'cancelLoanOffer', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'loanId', type: 'uint256' }], outputs: [] }
   ] as const,
   STAKING: [
     { name: 'stake', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'amount', type: 'uint256' }], outputs: [] },
     { name: 'unstake', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'amount', type: 'uint256' }], outputs: [] },
     { name: 'stakedBalances', type: 'function', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [{ name: '', type: 'uint256' }] },
     { name: 'totalStaked', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
-    { name: 'earned', type: 'function', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [{ name: '', type: 'uint256' }] }
+    { name: 'earned', type: 'function', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [{ name: '', type: 'uint256' }] },
+    { name: 'getStakingBreakdown', type: 'function', stateMutability: 'view', inputs: [], outputs: [
+      { name: 'breakdown', type: 'tuple', components: [
+        { name: 'communityStaked', type: 'uint256' },
+        { name: 'corporateStaked', type: 'uint256' },
+        { name: 'treasuryStaked', type: 'uint256' },
+        { name: 'globalTotalStaked', type: 'uint256' },
+        { name: 'netCirculatingSupply', type: 'uint256' },
+        { name: 'totalBurned', type: 'uint256' }
+      ]}
+    ]},
+    { name: 'getUserStakingInfo', type: 'function', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [
+      { name: 'stakedBalance', type: 'uint256' },
+      { name: 'claimableYieldUSD', type: 'uint256' }
+    ]}
   ] as const,
   REAL_YIELD_ROUTER: [
     { name: 'setPayoutPreference', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'preference', type: 'uint8' }], outputs: [] },
