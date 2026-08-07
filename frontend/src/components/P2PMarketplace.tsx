@@ -129,18 +129,18 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
         </div>
       </div>
 
-      {/* ACTIVE LOANS QUICK REPAYMENT PANEL - only show user's own loans */}
-      {loansList.filter(l => (l.state === 1 && l.borrower.toLowerCase() === userAddress.toLowerCase()) || (l.state === 0 && l.lender.toLowerCase() === userAddress.toLowerCase())).length > 0 && (
+      {/* ACTIVE LOANS QUICK REPAYMENT PANEL - show user's created and active loans */}
+      {loansList.filter(l => (l.borrower.toLowerCase() === userAddress.toLowerCase() || l.lender.toLowerCase() === userAddress.toLowerCase()) && (l.state === 0 || l.state === 1)).length > 0 && (
         <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', borderRadius: '16px', border: '1px solid rgba(59, 130, 246, 0.4)', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(15, 23, 42, 0.6) 100%)' }}>
           <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            💳 Mis Préstamos Solicitados & Activos ({loansList.filter(l => (l.state === 1 && l.borrower.toLowerCase() === userAddress.toLowerCase()) || (l.state === 0 && l.lender.toLowerCase() === userAddress.toLowerCase())).length})
+            💳 Mis Préstamos Solicitados & Activos ({loansList.filter(l => (l.borrower.toLowerCase() === userAddress.toLowerCase() || l.lender.toLowerCase() === userAddress.toLowerCase()) && (l.state === 0 || l.state === 1)).length})
           </h3>
           <p style={{ margin: '0 0 1rem 0', fontSize: '0.8rem', opacity: 0.85 }}>
-            Aquí puedes ver claramente todos los préstamos solicitados u ofertas activas y <strong>reembolsarlos fácilmente en 1-clic</strong> para recuperar tu colateral en custodia (NFT, ALPHA, WBTC, WETH).
+            Aquí puedes ver claramente todos los préstamos solicitados u ofertas activas y <strong>reembolsarlos o cancelarlos en 1-clic</strong> para gestionar tu custodia.
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
-            {loansList.filter(l => (l.state === 1 && l.borrower.toLowerCase() === userAddress.toLowerCase()) || (l.state === 0 && l.lender.toLowerCase() === userAddress.toLowerCase())).map((loan) => (
+            {loansList.filter(l => (l.borrower.toLowerCase() === userAddress.toLowerCase() || l.lender.toLowerCase() === userAddress.toLowerCase()) && (l.state === 0 || l.state === 1)).map((loan) => (
               <div key={loan.id} style={{ background: 'rgba(0,0,0,0.3)', border: loan.state === 1 ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid rgba(234, 179, 8, 0.4)', borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.75rem' }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
@@ -148,17 +148,17 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                     {getStatusBadge(loan.state)}
                   </div>
                   <div style={{ fontSize: '0.82rem', color: '#38bdf8', fontWeight: 600 }}>
-                    Deuda: <strong>${loan.borrowAmount} USDC</strong> @ {loan.interestRateApr}% APR
+                    Monto: <strong>${loan.borrowAmount} USDC</strong> @ {loan.interestRateApr}% APR
                   </div>
                   <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.2rem' }}>
-                    Colateral Custodiado: <strong style={{ color: '#f0abfc' }}>NFT #{loan.positionTokenId} / ERC20 en Escrow</strong>
+                    Garantía Garantizada: <strong style={{ color: '#f0abfc' }}>NFT #{loan.positionTokenId} en Custodia</strong>
                   </div>
                   <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '0.1rem' }}>
                     Plazo: {loan.durationDays} días • Factor Salud: <strong style={{ color: '#4ade80' }}>{loan.healthFactor || '140% (Seguro)'}</strong>
                   </div>
                 </div>
 
-                {loan.state === 1 && onRepayLoanById ? (
+                {loan.state === 1 && loan.borrower.toLowerCase() === userAddress.toLowerCase() && onRepayLoanById ? (
                   <button
                     className="btn-primary"
                     style={{ background: '#3b82f6', width: '100%', marginTop: '0.4rem', fontSize: '0.78rem', padding: '0.4rem' }}
@@ -166,7 +166,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                   >
                     💳 Reembolsar Deuda (+$ Interest)
                   </button>
-                ) : loan.state === 0 && onCancelLoanOffer ? (
+                ) : loan.state === 0 && loan.borrower.toLowerCase() === userAddress.toLowerCase() && onCancelLoanOffer ? (
                   <button
                     className="btn-primary"
                     style={{ width: '100%', padding: '0.55rem', fontSize: '0.8rem', background: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', color: '#fca5a5' }}
@@ -476,6 +476,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
               </thead>
               <tbody>
                 {filteredLoans.map((loan) => {
+                  const isBorrower = loan.borrower.toLowerCase() === userAddress.toLowerCase();
                   const isLender = loan.lender.toLowerCase() === userAddress.toLowerCase();
 
                   return (
@@ -495,7 +496,13 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                       </td>
                       <td style={{ padding: '0.85rem 1rem' }}>{loan.durationDays} días</td>
                       <td style={{ padding: '0.85rem 1rem', opacity: 0.8, fontSize: '0.78rem' }}>
-                        {isLender ? <span style={{ color: '#facc15', fontWeight: 600 }}>Tú (Creador)</span> : `${loan.lender.slice(0, 6)}...${loan.lender.slice(-4)}`}
+                        {isBorrower ? (
+                          <span style={{ color: '#facc15', fontWeight: 600 }}>Tú (Solicitante)</span>
+                        ) : isLender ? (
+                          <span style={{ color: '#38bdf8', fontWeight: 600 }}>Tú (Prestamista)</span>
+                        ) : (
+                          `${loan.borrower.slice(0, 6)}...${loan.borrower.slice(-4)}`
+                        )}
                       </td>
                       <td style={{ padding: '0.85rem 1rem' }}>
                         {loan.state === 1 ? (
@@ -508,7 +515,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                       </td>
                       <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
                         {/* Action Buttons based on Loan State */}
-                        {loan.state === 0 && !isLender && onAcceptLoanById && (
+                        {loan.state === 0 && !isBorrower && onAcceptLoanById && (
                           <button
                             className="btn-primary"
                             style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' }}
@@ -518,7 +525,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                           </button>
                         )}
 
-                        {loan.state === 0 && isLender && onCancelLoanOffer && (
+                        {loan.state === 0 && isBorrower && onCancelLoanOffer && (
                           <button
                             className="btn-primary"
                             style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: 'rgba(239, 68, 68, 0.3)', border: '1px solid #ef4444', color: '#fca5a5' }}
@@ -528,7 +535,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                           </button>
                         )}
 
-                        {loan.state === 1 && onRepayLoanById && (
+                        {loan.state === 1 && isBorrower && onRepayLoanById && (
                           <button
                             className="btn-primary"
                             style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' }}
