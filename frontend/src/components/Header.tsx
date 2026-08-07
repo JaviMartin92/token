@@ -5,8 +5,8 @@ interface HeaderProps {
   porRatio: string;
   alphaApy?: string;
   blockDateStr: string;
-  activeTab: 'client' | 'governance';
-  setActiveTab: (tab: 'client' | 'governance') => void;
+  activeTab: 'client' | 'metrics' | 'governance';
+  setActiveTab: (tab: 'client' | 'metrics' | 'governance') => void;
   activeKey: string;
   ADMIN_KEY: string;
   USER_KEY: string;
@@ -143,6 +143,13 @@ export const Header: React.FC<HeaderProps> = ({
           className={`header-nav-btn ${activeTab === 'client' ? 'header-nav-btn-active' : 'header-nav-btn-inactive'}`}
         >
           💎 Portal Cliente & Bonos
+        </button>
+        <button
+          data-testid="header-tab-metrics"
+          onClick={() => setActiveTab('metrics')}
+          className={`header-nav-btn ${activeTab === 'metrics' ? 'header-nav-btn-active' : 'header-nav-btn-inactive'}`}
+        >
+          📊 Métricas & Analítica
         </button>
         <button
           data-testid="header-tab-governance"

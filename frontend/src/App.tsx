@@ -19,10 +19,11 @@ import { NotificationToast, type ToastMessage } from './components/NotificationT
 import { ReferralModal } from './components/ReferralModal.js';
 import { TransactionConfirmModal } from './components/TransactionConfirmModal.js';
 import { ProtocolAnalyticsCharts } from './components/ProtocolAnalyticsCharts.js';
+import { MetricsDashboard } from './components/MetricsDashboard.js';
 import { ApyBreakdownModal, calculateProtocolApyMath } from './components/ApyBreakdownModal.js';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'client' | 'governance'>('client');
+  const [activeTab, setActiveTab] = useState<'client' | 'metrics' | 'governance'>('client');
   const [isReferralOpen, setIsReferralOpen] = useState(false);
   const [isApyModalOpen, setIsApyModalOpen] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
@@ -278,6 +279,29 @@ export default function App() {
             onBorrowFromTreasury={p2p.handleBorrowFromTreasury}
           />
         </>
+      ) : activeTab === 'metrics' ? (
+        <MetricsDashboard
+          porAssets={web3.porAssets}
+          porLiabilities={web3.porLiabilities}
+          porRatio={web3.porRatio}
+          porBreakdown={web3.porBreakdown}
+          usdcBalance={web3.usdcBalance}
+          sharesBalance={web3.sharesBalance}
+          stakedBalance={web3.stakedBalance}
+          claimableYield={web3.claimableYield}
+          totalBurnedTokens={web3.totalBurnedTokens}
+          circulatingSupply={web3.circulatingSupply}
+          totalStakedSupply={web3.totalStakedSupply}
+          communityStakedSupply={web3.communityStakedSupply}
+          corporateStakedSupply={web3.corporateStakedSupply}
+          treasuryStakedSupply={web3.treasuryStakedSupply}
+          stakingRatioPct={web3.stakingRatioPct}
+          navPerShareUSD={web3.navPerShareUSD}
+          userPositions={web3.userPositions}
+          loansList={web3.loansList}
+          onOpenApyModal={() => setIsApyModalOpen(true)}
+          liveApyStr={liveApyStr}
+        />
       ) : web3.activeKey !== web3.ADMIN_KEY ? (
         <div className="restricted-access-card">
           <div className="restricted-access-icon">🔒</div>
