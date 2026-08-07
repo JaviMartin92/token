@@ -172,6 +172,8 @@ async function main() {
 
   const hashMint = await walletClient.writeContract({ address: alphaTokenAddr, abi: acAbi, functionName: 'grantRole', args: [MINTER_ROLE, treasuryAddr], account });
   await publicClient.waitForTransactionReceipt({ hash: hashMint });
+  const hashMintDeployer = await walletClient.writeContract({ address: alphaTokenAddr, abi: acAbi, functionName: 'grantRole', args: [MINTER_ROLE, account.address], account });
+  await publicClient.waitForTransactionReceipt({ hash: hashMintDeployer });
 
   const hashBurn = await walletClient.writeContract({ address: alphaTokenAddr, abi: acAbi, functionName: 'grantRole', args: [BURNER_ROLE, treasuryAddr], account });
   await publicClient.waitForTransactionReceipt({ hash: hashBurn });
@@ -541,6 +543,17 @@ async function main() {
   await publicClient.waitForTransactionReceipt({ hash: setResVaultsHash });
   console.log('[+] Configured AlphaVault and PromotionalIncentiveVault on GovernanceStaking.');
 
+  // Seed Treasury / AlphaVault sub-reserve staking position (2,970 ALPHA)
+  const seedReserveAlpha = 2970n * 10n**18n;
+  const mintResHash = await walletClient.writeContract({
+    address: alphaTokenAddr,
+    abi: [{ inputs: [{ name: 'to', type: 'address' }, { name: 'amount', type: 'uint256' }], name: 'mint', outputs: [], stateMutability: 'nonpayable', type: 'function' }] as const,
+    functionName: 'mint',
+    args: [vaultAddr, seedReserveAlpha]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: mintResHash });
+  console.log('[+] Seeded Treasury Sub-Reserve (AlphaVault) with 2,970 stALPHA.');
+
   // 16. Deploy DynamicYieldOracleRouter (Autonomous APY Engine)
   const oracleArtifact = loadArtifact('DynamicYieldOracleRouter', 'DynamicYieldOracleRouter.sol');
   const yieldOracleTx = await walletClient.deployContract({
@@ -636,10 +649,6 @@ async function main() {
   console.log('[+] Admin and User wallets pre-funded successfully.');
 
   // ─── FONDEO INICIAL DEL PROTOCOLO ───────────────────────────────────────────
-  // El Admin realiza un depósito inicial de 100,000 USDC como primer fondeo.
-  // Esto genera la primera emisión de ALPHA, bootstrappea las reservas de la
-  // Tesorería y activa el flywheel: fee → notifyReserveFee → swap USDC→ALPHA
-  // → stake en GovernanceStaking (Stake Reservas).
   const depositAbi = [
     { name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ name: '', type: 'bool' }] },
     { name: 'deposit', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'stableAmount', type: 'uint256' }], outputs: [{ name: '', type: 'uint256' }] }
