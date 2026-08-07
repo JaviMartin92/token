@@ -77,136 +77,47 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
       weight: '26.67%', 
       testId: 'por-row-wbtc-val', 
       weightId: 'por-row-wbtc-weight' 
-    },
-    { 
-      symbol: 'WETH', 
-      name: 'Ξ Wrapped Ethereum (Staking Lido)', 
-      val: breakdownWeth, 
-      weight: '13.33%', 
-      testId: 'por-row-weth-val', 
-      weightId: 'por-row-weth-weight' 
     }
   ];
 
   return (
-    <div className="treasury-main-container">
-      <div className="treasury-grid-two-col">
-        
-        {/* Bóveda 1: Proof of Reserves */}
-        <div className="glass-panel treasury-por-panel">
-          <div className="por-header">
-            <h3 style={{ margin: 0, fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              🛡️ Proof of Reserves (Reserva On-Chain Exógena)
-            </h3>
-            <button data-testid="por-audit-btn" className="btn-secondary" style={{ padding: '0.3rem 0.7rem', fontSize: '0.75rem' }} onClick={onAuditPoR}>
-              🔄 Auditar On-Chain
-            </button>
-          </div>
-
-          <div className="por-metrics-trio">
-            <div className="por-metric-box">
-              <div className="por-metric-label">ACTIVOS TOTALES EXÓGENOS</div>
-              <div data-testid="por-assets-total" className="por-metric-value-assets">${porAssets} USD</div>
+    <div className="treasury-main-container" style={{ maxWidth: '900px', margin: '0 auto' }}>
+      <div className="glass-panel treasury-shares-panel" style={{ width: '100%' }}>
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.75rem' }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>🏛️ Emisión y Rescate de ALPHA Shares (NAV)</h3>
+              <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: '#94a3b8' }}>
+                Opera directamente contra las reservas del protocolo a NAV (Net Asset Value).
+              </p>
             </div>
-            <div className="por-metric-box">
-              <div className="por-metric-label">PASIVOS TOTALES</div>
-              <div data-testid="por-liabilities-total" className="por-metric-value-liabilities">${porLiabilities} USD</div>
-            </div>
-            <div className="por-metric-box">
-              <div className="por-metric-label">COLATERALIZACIÓN</div>
-              <div data-testid="por-collateral-ratio" style={{ fontWeight: 700, fontSize: '1.05rem', color: solvencyColor }}>{porRatio}</div>
-              <div style={{ fontSize: '0.62rem', marginTop: '0.2rem', padding: '0.15rem 0.4rem', borderRadius: '4px', background: solvencyBg, color: solvencyColor, fontWeight: 600, display: 'inline-block' }}>
-                {solvencyLabel}
-              </div>
-            </div>
-          </div>
-
-          <div className="banner-bond-coverage">
-            <span><strong>Reserva Emisión de Bonos (NPV):</strong> Cobertura Inicial 1:1</span>
-            <span style={{ color: '#4ade80', fontWeight: 600 }}>✓ {porRatio} Respaldado</span>
-          </div>
-
-          {/* Tabla de Reservas Exógenas Puras (Exactamente 3 Filas) */}
-          <h4 style={{ margin: '0 0 0.6rem 0', fontSize: '0.85rem', opacity: 0.8 }}>Desglose Transparente de Reservas Exógenas por Activo:</h4>
-          <table className="por-table-styled">
-            <thead>
-              <tr>
-                <th>Activo Reserva Exógeno</th>
-                <th style={{ textAlign: 'right' }}>Valor USD Real</th>
-                <th style={{ textAlign: 'right' }}>Ponderación Target</th>
-              </tr>
-            </thead>
-            <tbody>
-              {exogenousTokens.map((t, idx) => (
-                <tr key={t.symbol} style={{ borderBottom: idx < exogenousTokens.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                  <td>{t.name}</td>
-                  <td data-testid={t.testId} className="por-table-td-value">${t.val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
-                  <td data-testid={t.weightId} className="por-table-td-weight">{t.weight}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {/* Créditos y Garantías Escrow */}
-          <div style={{ marginTop: '0.9rem', background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(15, 23, 42, 0.5) 100%)', border: '1px solid rgba(168, 85, 247, 0.25)', padding: '0.85rem', borderRadius: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', flexWrap: 'wrap', gap: '0.4rem' }}>
-              <span style={{ fontSize: '0.85rem', color: '#c084fc', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                🏦 Créditos de Tesorería y Garantías en Escrow
-              </span>
-              <span style={{ fontSize: '0.68rem', padding: '0.15rem 0.45rem', borderRadius: '4px', background: 'rgba(168, 85, 247, 0.2)', color: '#e9d5ff', fontWeight: 600 }}>
-                🔒 Custodias Sobrecolateralizadas
-              </span>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem', textAlign: 'center' }}>
-              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.55rem', borderRadius: '8px' }}>
-                <div style={{ fontSize: '0.62rem', opacity: 0.75, color: '#cbd5e1' }}>CANTIDAD PRESTADA</div>
-                <div data-testid="escrow-total-lent" style={{ fontWeight: 700, fontSize: '0.95rem', color: '#38bdf8', marginTop: '0.1rem' }}>
-                  ${totalLentUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </div>
-              </div>
-
-              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.55rem', borderRadius: '8px' }}>
-                <div style={{ fontSize: '0.62rem', opacity: 0.75, color: '#cbd5e1' }}>COLATERAL EN ESCROW</div>
-                <div data-testid="escrow-total-collateral" style={{ fontWeight: 700, fontSize: '0.95rem', color: '#4ade80', marginTop: '0.1rem' }}>
-                  ${totalCollateralUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </div>
-              </div>
-
-              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.55rem', borderRadius: '8px' }}>
-                <div style={{ fontSize: '0.62rem', opacity: 0.75, color: '#cbd5e1' }}>COBERTURA GARANTÍA</div>
-                <div data-testid="escrow-coverage-ratio" style={{ fontWeight: 700, fontSize: '0.95rem', color: '#c084fc', marginTop: '0.1rem' }}>
-                  {overCollateralRatio.toFixed(2)}%
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Bóveda 2: Emisión y Rescate de Shares */}
-        <div className="glass-panel treasury-shares-panel">
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ margin: 0, fontSize: '1.15rem' }}>🏛️ Emisión y Rescate de Shares (NAV)</h3>
-              <button data-testid="treasury-faucet-btn" className="btn-secondary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }} onClick={onFaucetUSDC}>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <button data-testid="por-audit-btn" className="btn-secondary" style={{ padding: '0.35rem 0.7rem', fontSize: '0.75rem' }} onClick={onAuditPoR}>
+                🔄 Auditar PoR
+              </button>
+              <button data-testid="treasury-faucet-btn" className="btn-secondary" style={{ padding: '0.35rem 0.7rem', fontSize: '0.75rem', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.3)' }} onClick={onFaucetUSDC}>
                 🚰 Faucet 10k USDC
               </button>
             </div>
+          </div>
 
-            <div className="treasury-shares-grid">
-              <div className="treasury-shares-card-usdc">
-                <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>SALDO USDC DISPONIBLE</div>
-                <div data-testid="treasury-usdc-balance" style={{ fontWeight: 700, fontSize: '1rem', color: '#4ade80' }}>{usdcBalance} USDC</div>
-              </div>
-              <div className="treasury-shares-card-shares">
-                <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>MIS ALPHA SHARES</div>
-                <div data-testid="treasury-shares-balance" style={{ fontWeight: 700, fontSize: '1rem', color: '#c084fc' }}>{sharesBalance} ALPHA</div>
-              </div>
+          {/* User Balances */}
+          <div className="treasury-shares-grid" style={{ marginBottom: '1.25rem' }}>
+            <div className="treasury-shares-card-usdc" style={{ background: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.2)', padding: '1rem', borderRadius: '12px' }}>
+              <div style={{ fontSize: '0.75rem', opacity: 0.7, fontWeight: 600 }}>SALDO USDC DISPONIBLE</div>
+              <div data-testid="treasury-usdc-balance" style={{ fontWeight: 800, fontSize: '1.4rem', color: '#4ade80', marginTop: '0.2rem' }}>{usdcBalance} USDC</div>
             </div>
+            <div className="treasury-shares-card-shares" style={{ background: 'rgba(192, 132, 252, 0.08)', border: '1px solid rgba(192, 132, 252, 0.2)', padding: '1rem', borderRadius: '12px' }}>
+              <div style={{ fontSize: '0.75rem', opacity: 0.7, fontWeight: 600 }}>MIS ALPHA SHARES</div>
+              <div data-testid="treasury-shares-balance" style={{ fontWeight: 800, fontSize: '1.4rem', color: '#c084fc', marginTop: '0.2rem' }}>{sharesBalance} ALPHA</div>
+            </div>
+          </div>
 
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.3rem' }}>
-                Depositar USDC para Acuñar Shares:
+          {/* Actions Forms */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+            <div style={{ background: 'rgba(15, 23, 42, 0.4)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#f8fafc', display: 'block', marginBottom: '0.5rem' }}>
+                💳 Depositar USDC para Acuñar Shares:
               </label>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <input
@@ -216,27 +127,29 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
                   value={depositAmount}
                   onChange={(e) => setDepositAmount(e.target.value)}
                   className="treasury-input-flex"
+                  style={{ width: '100%', background: 'rgba(30, 41, 59, 0.8)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '0.6rem', borderRadius: '8px' }}
                 />
-                <button data-testid="treasury-deposit-btn" className="btn-primary" onClick={onDeposit} style={{ background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)', whiteSpace: 'nowrap' }}>
+                <button data-testid="treasury-deposit-btn" className="btn-primary" onClick={onDeposit} style={{ background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)', whiteSpace: 'nowrap', padding: '0.6rem 1.2rem', fontWeight: 700 }}>
                   Depositar
                 </button>
               </div>
             </div>
 
-            <div>
-              <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.3rem' }}>
-                Rescatar ALPHA Shares a NAV:
+            <div style={{ background: 'rgba(15, 23, 42, 0.4)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#f8fafc', display: 'block', marginBottom: '0.5rem' }}>
+                🔥 Rescatar ALPHA Shares a NAV:
               </label>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <input
                   data-testid="treasury-redeem-input"
                   type="number"
-                  placeholder="Shares a Rescatar (ej. 500)"
+                  placeholder="Monto ALPHA (ej. 500)"
                   value={redeemAmount}
                   onChange={(e) => setRedeemAmount(e.target.value)}
                   className="treasury-input-flex"
+                  style={{ width: '100%', background: 'rgba(30, 41, 59, 0.8)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '0.6rem', borderRadius: '8px' }}
                 />
-                <button data-testid="treasury-redeem-btn" className="btn-primary" onClick={onRedeem} style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', whiteSpace: 'nowrap' }}>
+                <button data-testid="treasury-redeem-btn" className="btn-primary" onClick={onRedeem} style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', whiteSpace: 'nowrap', padding: '0.6rem 1.2rem', fontWeight: 700 }}>
                   Rescatar
                 </button>
               </div>

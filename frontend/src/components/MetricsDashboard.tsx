@@ -157,7 +157,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
           <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
             <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>🏢 Stake Bóvedas</div>
             <div data-testid="staking-corporate-staked" style={{ fontSize: '1.3rem', fontWeight: 700, color: '#f472b6', marginTop: '0.3rem' }}>
-              {corporateStakedSupply} stALPHA
+              <span data-testid="staking-vaults-staked">{corporateStakedSupply}</span> stALPHA
             </div>
             <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>OpEx & Profit Vaults</div>
           </div>
@@ -173,7 +173,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
           <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
             <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>🥩 Total Global Staked</div>
             <div data-testid="staking-total-staked" style={{ fontSize: '1.3rem', fontWeight: 700, color: '#a855f7', marginTop: '0.3rem' }}>
-              {totalStakedSupply} ALPHA ({stakingRatioPct}%)
+              <span data-testid="staking-global-staked">{totalStakedSupply}</span> ALPHA ({stakingRatioPct}%)
             </div>
             <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>Total stALPHA en Gobernanza</div>
           </div>
@@ -181,7 +181,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
           <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
             <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>🔥 Deflación Acumulada</div>
             <div data-testid="staking-deflation-burned" style={{ fontSize: '1.3rem', fontWeight: 700, color: '#ef4444', marginTop: '0.3rem' }}>
-              {totalBurnedTokens} ALPHA Destruidos
+              <span data-testid="staking-deflation-destroyed">{totalBurnedTokens}</span> ALPHA Destruidos
             </div>
             <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>Quema Definitiva Irreversible</div>
           </div>
@@ -208,19 +208,19 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <td style={{ padding: '0.75rem', fontWeight: 600, color: '#38bdf8' }}>💵 USDC / Stablecoins</td>
                 <td style={{ padding: '0.75rem' }}>60.00% Target</td>
-                <td style={{ padding: '0.75rem', fontWeight: 700 }}>${stablesUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
+                <td data-testid="por-row-usdc-val" style={{ padding: '0.75rem', fontWeight: 700 }}>${stablesUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
                 <td style={{ padding: '0.75rem', color: '#94a3b8' }}>Morpho Blue (80% MetaMorpho Vault @ 6.45% APY)</td>
               </tr>
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <td style={{ padding: '0.75rem', fontWeight: 600, color: '#f59e0b' }}>🪙 Wrapped Bitcoin (WBTC)</td>
                 <td style={{ padding: '0.75rem' }}>26.67% Target</td>
-                <td style={{ padding: '0.75rem', fontWeight: 700 }}>${btcUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
+                <td data-testid="por-row-wbtc-val" style={{ padding: '0.75rem', fontWeight: 700 }}>${btcUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
                 <td style={{ padding: '0.75rem', color: '#94a3b8' }}>Staking Lombard LBTC / Chainlink Feed</td>
               </tr>
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <td style={{ padding: '0.75rem', fontWeight: 600, color: '#6366f1' }}>🔷 Wrapped Ethereum (WETH)</td>
                 <td style={{ padding: '0.75rem' }}>13.33% Target</td>
-                <td style={{ padding: '0.75rem', fontWeight: 700 }}>${ethUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
+                <td data-testid="por-row-weth-val" style={{ padding: '0.75rem', fontWeight: 700 }}>${ethUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
                 <td style={{ padding: '0.75rem', color: '#94a3b8' }}>Lido Liquid Staking stETH / Chainlink Feed</td>
               </tr>
             </tbody>

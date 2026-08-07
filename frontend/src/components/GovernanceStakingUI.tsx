@@ -69,45 +69,6 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
           </div>
         </div>
 
-        {/* Global Deflationary Tokenomics Breakdown */}
-        <div style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '12px', padding: '0.85rem 1rem', marginBottom: '1.25rem', border: '1px solid rgba(255,255,255,0.06)' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
-            📊 Tokenomics & Estado de Oferta Deflacionaria
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', gap: '0.5rem', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
-            <div>
-              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.68rem' }}>🪙 En Circulación:</span>
-              <span data-testid="staking-circulating-supply" style={{ fontWeight: 700, color: '#38bdf8' }}>{circulatingSupply} ALPHA</span>
-            </div>
-            <div>
-              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.68rem' }}>👤 Stake Comunidad:</span>
-              <span data-testid="staking-community-staked" style={{ fontWeight: 700, color: '#c084fc' }}>{communityStakedSupply} stALPHA</span>
-            </div>
-            <div>
-              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.68rem' }}>🏢 Stake Bóvedas:</span>
-              <span data-testid="staking-vaults-staked" style={{ fontWeight: 700, color: '#a855f7' }}>{corporateStakedSupply} stALPHA</span>
-            </div>
-            <div>
-              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.68rem' }}>🏛️ Stake Reservas:</span>
-              <span data-testid="staking-reserves-staked" style={{ fontWeight: 700, color: '#38bdf8' }}>{treasuryStakedSupply} stALPHA</span>
-            </div>
-            <div>
-              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.68rem' }}>🥩 Total Global Staked:</span>
-              <span data-testid="staking-global-staked" style={{ fontWeight: 700, color: '#eab308' }}>{totalStakedSupply} ALPHA ({stakingRatioPct})</span>
-            </div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', fontSize: '0.8rem', borderTop: '1px dashed rgba(255,255,255,0.08)', paddingTop: '0.5rem' }}>
-            <div>
-              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.7rem' }}>💎 Respaldo (NAV / ALPHA):</span>
-              <span data-testid="staking-backing-nav" style={{ fontWeight: 700, color: '#4ade80' }}>{navPerShareUSD}</span>
-            </div>
-            <div>
-              <span style={{ opacity: 0.6, display: 'block', fontSize: '0.7rem' }}>🔥 Deflación Acumulada:</span>
-              <span data-testid="staking-deflation-destroyed" style={{ fontWeight: 700, color: '#f87171' }}>{totalBurnedTokens} ALPHA Destruidos</span>
-            </div>
-          </div>
-        </div>
-
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <div>
             <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Monto a Bloquear / Desbloquear (ALPHA):</label>
