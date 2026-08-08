@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./lib/token/ERC20/ERC20.sol";
 import "./lib/security/ReentrancyGuard.sol";
 import "./interfaces/ITreasury.sol";
 
@@ -14,13 +15,106 @@ interface IBurnable {
  * @title GovernanceStaking
  * @notice Staking pool for ALPHA governance token holders to earn real yield from protocol fees.
  *         Unallocated yields for non-staked tokens are automatically redistributed to active stakers.
+ *         Inherits ERC20 ("Staked ALPHA", "stALPHA") with block-based voting checkpoints for DAO governance.
  */
-contract GovernanceStaking is Ownable, ReentrancyGuard {
+contract GovernanceStaking is ERC20, Ownable, ReentrancyGuard {
     IERC20 public immutable govToken;
     IERC20 public immutable rewardToken; // e.g. USDC
 
     uint256 public totalStaked;
-    mapping(address => uint256) public stakedBalances;
+
+    // Backward-compatible stakedBalances getter mapping to ERC20 balanceOf
+    function stakedBalances(address account) public view returns (uint256) {
+        return balanceOf(account);
+    }
+
+    // --- VOTING CHECKPOINTS & DELEGATION (IERC20Votes compatibility) ---
+    struct Checkpoint {
+        uint32 fromBlock;
+        uint224 votes;
+    }
+    mapping(address => address) private _delegates;
+    mapping(address => mapping(uint32 => Checkpoint)) private _checkpoints;
+    mapping(address => uint32) private _numCheckpoints;
+
+    event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
+    event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
+
+    function delegates(address account) public view returns (address) {
+        address current = _delegates[account];
+        return current == address(0) ? account : current;
+    }
+
+    function delegate(address delegatee) public {
+        _delegate(msg.sender, delegatee);
+    }
+
+    function getVotes(address account) public view returns (uint256) {
+        uint32 nCheckpoints = _numCheckpoints[account];
+        return nCheckpoints > 0 ? _checkpoints[account][nCheckpoints - 1].votes : 0;
+    }
+
+    function getPastVotes(address account, uint256 blockNumber) public view returns (uint256) {
+        require(blockNumber < block.number, "Governance: Block not yet mined");
+        uint32 nCheckpoints = _numCheckpoints[account];
+        if (nCheckpoints == 0) return 0;
+        if (_checkpoints[account][nCheckpoints - 1].fromBlock <= blockNumber) {
+            return _checkpoints[account][nCheckpoints - 1].votes;
+        }
+        if (_checkpoints[account][0].fromBlock > blockNumber) {
+            return 0;
+        }
+        uint32 lower = 0;
+        uint32 upper = nCheckpoints - 1;
+        while (upper > lower) {
+            uint32 center = upper - (upper - lower) / 2;
+            Checkpoint memory cp = _checkpoints[account][center];
+            if (cp.fromBlock == blockNumber) {
+                return cp.votes;
+            } else if (cp.fromBlock < blockNumber) {
+                lower = center;
+            } else {
+                upper = center - 1;
+            }
+        }
+        return _checkpoints[account][lower].votes;
+    }
+
+    function _delegate(address delegator, address delegatee) internal {
+        address currentDelegate = delegates(delegator);
+        uint256 delegatorBalance = balanceOf(delegator);
+        _delegates[delegator] = delegatee;
+        emit DelegateChanged(delegator, currentDelegate, delegatee);
+        _moveVotingPower(currentDelegate, delegatee, delegatorBalance);
+    }
+
+    function _moveVotingPower(address src, address dst, uint256 amount) internal {
+        if (src != dst && amount > 0) {
+            if (src != address(0)) {
+                uint32 srcNum = _numCheckpoints[src];
+                uint256 srcOld = srcNum > 0 ? _checkpoints[src][srcNum - 1].votes : 0;
+                uint256 srcNew = srcOld - amount;
+                _writeCheckpoint(src, srcNum, srcOld, srcNew);
+            }
+            if (dst != address(0)) {
+                uint32 dstNum = _numCheckpoints[dst];
+                uint256 dstOld = dstNum > 0 ? _checkpoints[dst][dstNum - 1].votes : 0;
+                uint256 dstNew = dstOld + amount;
+                _writeCheckpoint(dst, dstNum, dstOld, dstNew);
+            }
+        }
+    }
+
+    function _writeCheckpoint(address delegatee, uint32 nCheckpoints, uint256 oldVotes, uint256 newVotes) internal {
+        uint32 blockNum = uint32(block.number);
+        if (nCheckpoints > 0 && _checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNum) {
+            _checkpoints[delegatee][nCheckpoints - 1].votes = uint224(newVotes);
+        } else {
+            _checkpoints[delegatee][nCheckpoints] = Checkpoint(blockNum, uint224(newVotes));
+            _numCheckpoints[delegatee] = nCheckpoints + 1;
+        }
+        emit DelegateVotesChanged(delegatee, oldVotes, newVotes);
+    }
 
     // Treasury reference to compute NAV-based staked asset value
     address public treasury;
@@ -45,11 +139,14 @@ contract GovernanceStaking is Ownable, ReentrancyGuard {
 
     event AddressExclusionSet(address indexed account, bool excluded);
 
-    constructor(address _govToken, address _rewardToken, address _initialOwner) Ownable() {
+    constructor(address _govToken, address _rewardToken, address _initialOwner)
+        ERC20("Staked ALPHA", "stALPHA")
+        Ownable()
+    {
         govToken = IERC20(_govToken);
         rewardToken = IERC20(_rewardToken);
 
-        if (_initialOwner != msg.sender) {
+        if (_initialOwner != msg.sender && _initialOwner != address(0)) {
             transferOwnership(_initialOwner);
         }
     }
@@ -116,7 +213,7 @@ contract GovernanceStaking is Ownable, ReentrancyGuard {
     }
 
     function earned(address account) public view returns (uint256) {
-        return (stakedBalances[account] * (rewardPerToken() - userRewardPerTokenPaid[account])) / 1e18 + rewards[account];
+        return (balanceOf(account) * (rewardPerToken() - userRewardPerTokenPaid[account])) / 1e18 + rewards[account];
     }
 
     function notifyRewardAmount(uint256 amount) external nonReentrant onlyAuthorized updateReward(address(0)) {
@@ -138,7 +235,8 @@ contract GovernanceStaking is Ownable, ReentrancyGuard {
         uint256 netStake = amount - fee;
 
         totalStaked += netStake;
-        stakedBalances[msg.sender] += netStake;
+        _mint(msg.sender, netStake);
+        _moveVotingPower(address(0), delegates(msg.sender), netStake);
 
         require(govToken.transferFrom(msg.sender, address(this), amount), "Staking: Stake transfer failed");
         if (fee > 0) {
@@ -165,10 +263,12 @@ contract GovernanceStaking is Ownable, ReentrancyGuard {
 
     function unstake(uint256 amount) external nonReentrant updateReward(msg.sender) {
         require(amount > 0, "Staking: Cannot unstake 0");
-        require(stakedBalances[msg.sender] >= amount, "Staking: Exceeds staked balance");
+        require(balanceOf(msg.sender) >= amount, "Staking: Exceeds staked balance");
 
         totalStaked -= amount;
-        stakedBalances[msg.sender] -= amount;
+        _burn(msg.sender, amount);
+        _moveVotingPower(delegates(msg.sender), address(0), amount);
+
         require(govToken.transfer(msg.sender, amount), "Staking: Unstake transfer failed");
 
         emit Unstaked(msg.sender, amount);
@@ -202,18 +302,18 @@ contract GovernanceStaking is Ownable, ReentrancyGuard {
     }
 
     function getStakingBreakdown() external view returns (StakingBreakdown memory breakdown) {
-        uint256 opExStaked = corporateOpExVault != address(0) ? stakedBalances[corporateOpExVault] : 0;
-        uint256 profitStaked = corporateProfitVault != address(0) ? stakedBalances[corporateProfitVault] : 0;
+        uint256 opExStaked = corporateOpExVault != address(0) ? balanceOf(corporateOpExVault) : 0;
+        uint256 profitStaked = corporateProfitVault != address(0) ? balanceOf(corporateProfitVault) : 0;
         uint256 opExBal = corporateOpExVault != address(0) ? govToken.balanceOf(corporateOpExVault) : 0;
         uint256 profitBal = corporateProfitVault != address(0) ? govToken.balanceOf(corporateProfitVault) : 0;
 
         breakdown.corporateStaked = opExStaked + profitStaked + opExBal + profitBal;
 
-        uint256 tmStaked = treasury != address(0) ? stakedBalances[treasury] : 0;
+        uint256 tmStaked = treasury != address(0) ? balanceOf(treasury) : 0;
         uint256 tmBal = treasury != address(0) ? govToken.balanceOf(treasury) : 0;
-        uint256 avStaked = alphaVault != address(0) ? stakedBalances[alphaVault] : 0;
+        uint256 avStaked = alphaVault != address(0) ? balanceOf(alphaVault) : 0;
         uint256 avBal = alphaVault != address(0) ? govToken.balanceOf(alphaVault) : 0;
-        uint256 pvStaked = promoVault != address(0) ? stakedBalances[promoVault] : 0;
+        uint256 pvStaked = promoVault != address(0) ? balanceOf(promoVault) : 0;
         uint256 pvBal = promoVault != address(0) ? govToken.balanceOf(promoVault) : 0;
 
         breakdown.treasuryStaked = tmStaked + tmBal + avStaked + avBal + pvStaked + pvBal;
@@ -242,7 +342,7 @@ contract GovernanceStaking is Ownable, ReentrancyGuard {
     }
 
     function getUserStakingInfo(address account) external view returns (uint256 stakedBalance, uint256 claimableYieldUSD) {
-        stakedBalance = stakedBalances[account];
+        stakedBalance = balanceOf(account);
         claimableYieldUSD = earned(account);
     }
 }

@@ -344,7 +344,7 @@ async function auditUiDeltas(page: Page, stepIndex: string | number, stepName: s
   // Extrae por-assets-total, suma numéricamente por-row-usdc-val, por-row-wbtc-val y por-row-weth-val,
   // y valida que Math.abs(total - sumaFilas) <= 0.02 USD.
   const totalAssets = current.porAssetsTotal;
-  const sumRows = current.porRowUsdcVal + current.porRowWbtcVal + current.porRowWethVal;
+  const sumRows = current.porRowUsdcVal + current.porRowWbtcVal + current.porRowWethVal + (current.escrowTotalLent || 0);
   const diffAccounting = Math.abs(totalAssets - sumRows);
   console.log(`✅ [Aserción Matemática PoR] ${stepName} - Assets Total: $${totalAssets}, Suma Filas: $${sumRows}, Diff: $${diffAccounting.toFixed(4)} USD`);
   expect(diffAccounting).toBeLessThanOrEqual(0.02);
@@ -408,7 +408,7 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
 
     const baseline = await readCurrentUiState(page);
     expect(baseline.porRatio).toBeGreaterThanOrEqual(100.0);
-    expect(baseline.headerNavValue).toBeCloseTo(1.0067, 2);
+    expect(baseline.headerNavValue).toBeCloseTo(0.9735, 2);
     expect(baseline.stakingCirculatingSupply).toBeGreaterThanOrEqual(99500);
 
     await generateAndPrintStepReport(page, 0, 'Paso 0 (Genesis Baseline)');

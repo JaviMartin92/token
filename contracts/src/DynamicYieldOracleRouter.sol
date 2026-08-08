@@ -234,8 +234,8 @@ contract DynamicYieldOracleRouter is Ownable {
         address bestVaultAddress,
         uint256 highestApyBps
     ) {
+        ProtocolYieldInfo[] storage list = protocolOptions[assetClass];
         if (manualOverrideEnabled[assetClass] && adminSelectedVault[assetClass] != address(0)) {
-            ProtocolYieldInfo[] storage list = protocolOptions[assetClass];
             for (uint256 i = 0; i < list.length; i++) {
                 if (list[i].vaultAddress == adminSelectedVault[assetClass]) {
                     return (list[i].name, list[i].vaultAddress, list[i].apyBps);
@@ -244,7 +244,6 @@ contract DynamicYieldOracleRouter is Ownable {
             return (adminSelectedName[assetClass], adminSelectedVault[assetClass], 645);
         }
 
-        ProtocolYieldInfo[] storage list = protocolOptions[assetClass];
         require(list.length > 0, "YieldOracle: No protocols registered");
 
         uint256 maxApy = 0;

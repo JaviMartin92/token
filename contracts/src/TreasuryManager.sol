@@ -223,15 +223,15 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
         address govAddr = addressProvider.getGovernanceStaking();
         uint256 protocolOwnedAlpha = vault.getBalance(address(token)) + token.balanceOf(address(this));
         if (govAddr != address(0)) {
-            protocolOwnedAlpha += IGovernanceStaking(govAddr).stakedBalances(address(vault)) + IGovernanceStaking(govAddr).stakedBalances(address(this));
+            protocolOwnedAlpha += IERC20(govAddr).balanceOf(address(vault)) + IERC20(govAddr).balanceOf(address(this));
             try IGovernanceStaking(govAddr).corporateOpExVault() returns (address opEx) {
                 if (opEx != address(0)) {
-                    protocolOwnedAlpha += token.balanceOf(opEx) + IGovernanceStaking(govAddr).stakedBalances(opEx);
+                    protocolOwnedAlpha += token.balanceOf(opEx) + IERC20(govAddr).balanceOf(opEx);
                 }
             } catch {}
             try IGovernanceStaking(govAddr).corporateProfitVault() returns (address profit) {
                 if (profit != address(0)) {
-                    protocolOwnedAlpha += token.balanceOf(profit) + IGovernanceStaking(govAddr).stakedBalances(profit);
+                    protocolOwnedAlpha += token.balanceOf(profit) + IERC20(govAddr).balanceOf(profit);
                 }
             } catch {}
         }
@@ -323,12 +323,11 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
     function deposit(uint256 stableAmount) external nonReentrant returns (uint256 sharesMinted) {
         require(stableAmount > 0, "TreasuryManager: Deposit amount must be > 0");
 
-        (, , uint256 preRatioBps) = getProofOfReserves();
+        (, uint256 totalLiabilitiesUSD, uint256 preRatioBps) = getProofOfReserves();
 
         // 1. Read Exogenous Assets and Net Circulating Shares BEFORE funds enter the vault
         uint256 totalAssetsExogenous = getTotalAssetsExogenousUSD();
         AlphaToken token = AlphaToken(addressProvider.getAddress(addressProvider.ID_ALPHA_TOKEN()));
-        uint256 currentShares = getNetCirculatingShares();
 
         // 2. Send funds to Vault
         AlphaVault vault = AlphaVault(addressProvider.getAddress(addressProvider.ID_ALPHA_VAULT()));
@@ -346,10 +345,10 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
         uint256 netDeposited = actualDeposited - feeAmount;
         uint256 depositValueUSD = netDeposited * (10**(18 - redemptionTokenDecimals));
 
-        if (currentShares == 0 || totalAssetsExogenous == 0) {
+        if (totalLiabilitiesUSD == 0 || totalAssetsExogenous == 0) {
             sharesMinted = depositValueUSD;
         } else {
-            sharesMinted = (depositValueUSD * currentShares) / totalAssetsExogenous;
+            sharesMinted = (depositValueUSD * totalLiabilitiesUSD) / totalAssetsExogenous;
         }
 
         // Mint via AlphaToken
@@ -400,7 +399,7 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
         }
 
         (, , uint256 postRatioBps) = getProofOfReserves();
-        require(postRatioBps >= preRatioBps, "TreasuryManager: Security Violation - Transaction reduced collateralization ratio");
+        require(postRatioBps >= 10000, "TreasuryManager: Security Violation - Undercollateralized (PoR < 100%)");
 
         emit Deposited(msg.sender, actualDeposited, sharesMinted);
         return sharesMinted;

@@ -109,6 +109,11 @@ export default function App() {
     return acc + (loan.state === 1 ? parseFloat(loan.borrowAmount.replace(/,/g, '')) || 0 : 0);
   }, 0);
 
+  const activeTreasuryLoansSum = web3.loansList.reduce((acc, loan) => {
+    const isTreasury = loan.lender && loan.lender.toLowerCase() === CONTRACT_ADDRESSES.TREASURY.toLowerCase();
+    return acc + (loan.state === 1 && isTreasury ? parseFloat(loan.borrowAmount.replace(/,/g, '')) || 0 : 0);
+  }, 0);
+
   const claimableYieldVal = parseFloat(web3.claimableYield.replace(/,/g, '')) || 0;
   const activeLoansInterestSum = web3.loansList.reduce((acc, loan) => {
     return acc + (loan.state === 1 ? (parseFloat(loan.borrowAmount.replace(/,/g, '')) || 0) * (loan.interestRateBps / 10000) : 0);
@@ -366,6 +371,7 @@ export default function App() {
         <span data-testid="staking-global-staked">{web3.totalStakedSupply} ALPHA ({web3.stakingRatioPct})</span>
         <span data-testid="staking-deflation-burned">{web3.totalBurnedTokens} ALPHA</span>
         <span data-testid="staking-deflation-destroyed">{web3.totalBurnedTokens} ALPHA</span>
+        <span data-testid="escrow-total-lent">${activeTreasuryLoansSum.toFixed(2)} USD</span>
       </div>
 
       <ActivityLog logs={logs} />

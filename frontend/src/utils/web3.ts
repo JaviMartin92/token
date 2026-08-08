@@ -27,7 +27,9 @@ export const CONTRACT_ADDRESSES = {
   ALPHA_VAULT: ((contractsJson as any).ALPHA_VAULT) as `0x${string}`,
   PRICE_FEED: ((contractsJson as any).ORACLE_ROUTER || (contractsJson as any).PRICE_FEED) as `0x${string}`,
   PROMOTIONAL_VAULT: ((contractsJson as any).PROMO_VAULT) as `0x${string}`,
-  DYNAMIC_YIELD_ORACLE: ((contractsJson as any).DYNAMIC_YIELD_ORACLE) as `0x${string}`
+  DYNAMIC_YIELD_ORACLE: ((contractsJson as any).DYNAMIC_YIELD_ORACLE) as `0x${string}`,
+  GOVERNOR: ((contractsJson as any).GOVERNOR) as `0x${string}`,
+  TIMELOCK: ((contractsJson as any).TIMELOCK) as `0x${string}`
 };
 
 const anvilChain = {
