@@ -91,7 +91,9 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
   const currentLtv = MAX_LTV_MAP[treasuryColType] || 0.50;
   const currentPrice = ASSET_PRICE_MAP[treasuryColType] || 1.0;
   const requiredUsdBacking = borrowAmtNum > 0 ? borrowAmtNum / currentLtv : 0;
-  const autoCalculatedColAmount = currentPrice > 0 ? (requiredUsdBacking / currentPrice).toFixed(treasuryColType === 'alpha' ? 2 : 4) : '0.00';
+  const rawColTokens = currentPrice > 0 ? requiredUsdBacking / currentPrice : 0;
+  const colDecimalsMult = treasuryColType === 'alpha' ? 100 : 10000;
+  const autoCalculatedColAmount = rawColTokens > 0 ? (Math.ceil(rawColTokens * colDecimalsMult) / colDecimalsMult).toFixed(treasuryColType === 'alpha' ? 2 : 4) : '0.00';
 
   const filteredLoans = loansList.filter((loan) => {
     if (filterTab === 'created') return loan.state === 0;
