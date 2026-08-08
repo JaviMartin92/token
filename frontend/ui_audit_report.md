@@ -1,13 +1,13 @@
 # AUDITORÍA DETALLADA DE INTERFAZ DE USUARIO (106 CAMPOS POR PASO)
 
-Generado el: 2026-08-08T18:48:23.908Z
+Generado el: 2026-08-08T23:15:07.193Z
 
 ======================================================================
 📊 INFORME DE ESTADO DE UI - PASO [0]: [PASO 0 (GENESIS BASELINE)]
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 100.50%
-- header-nav-value: $0.9735 USDC
+- header-nav-value: $1.0050 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -39,11 +39,11 @@ Generado el: 2026-08-08T18:48:23.908Z
 - staking-stalpha-balance: 0.00 stALPHA
 - staking-real-yield: $0.00 USD
 - staking-total-burned: 0.00 ALPHA
-- staking-circulating-supply: 102,726.18 ALPHA
+- staking-circulating-supply: 99,500.00 ALPHA
 - staking-community-staked: 0.00 stALPHA
 - staking-vaults-staked: 256.18 stALPHA
 - staking-reserves-staked: 2,970.00 stALPHA
-- staking-global-staked: 3,226.18 ALPHA (3.14%)
+- staking-global-staked: 3,226.18 ALPHA (3.24%)
 - staking-backing-nav: [No visible / N/A]
 - staking-deflation-destroyed: 0.00 ALPHA
 - staking-amount-input: 
@@ -101,7 +101,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 - modal-apy-base-apr: 5.160%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [8:48:27 PM] Cambiado rol conectado a Usuario Retail
+- activity-log-container: [1:15:08 AM] Cambiado rol conectado a Usuario Retail
 
 ======================================================================
 ======================================================================
@@ -109,7 +109,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 100.50%
-- header-nav-value: $0.9735 USDC
+- header-nav-value: $1.0050 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -141,11 +141,11 @@ Generado el: 2026-08-08T18:48:23.908Z
 - staking-stalpha-balance: 0.00 stALPHA
 - staking-real-yield: $0.00 USD
 - staking-total-burned: 0.00 ALPHA
-- staking-circulating-supply: 102,726.18 ALPHA
+- staking-circulating-supply: 99,500.00 ALPHA
 - staking-community-staked: 0.00 stALPHA
 - staking-vaults-staked: 256.18 stALPHA
 - staking-reserves-staked: 2,970.00 stALPHA
-- staking-global-staked: 3,226.18 ALPHA (3.14%)
+- staking-global-staked: 3,226.18 ALPHA (3.24%)
 - staking-backing-nav: [No visible / N/A]
 - staking-deflation-destroyed: 0.00 ALPHA
 - staking-amount-input: 
@@ -203,7 +203,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 - modal-apy-base-apr: 5.160%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [8:48:34 PM] ¡10,000 USDC mock recibidos en tu billetera! [8:48:33 PM] Reclamando 10,00...
+- activity-log-container: [1:15:12 AM] ¡10,000 USDC mock recibidos en tu billetera! [1:15:12 AM] Reclamando 10,00...
 
 ======================================================================
 ======================================================================
@@ -211,7 +211,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 100.58%
-- header-nav-value: $0.9766 USDC
+- header-nav-value: $1.0059 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -243,11 +243,11 @@ Generado el: 2026-08-08T18:48:23.908Z
 - staking-stalpha-balance: 0.00 stALPHA
 - staking-real-yield: $0.00 USD
 - staking-total-burned: 0.00 ALPHA
-- staking-circulating-supply: 112,630.26 ALPHA
+- staking-circulating-supply: 109,355.48 ALPHA
 - staking-community-staked: 0.00 stALPHA
 - staking-vaults-staked: 304.79 stALPHA
 - staking-reserves-staked: 2,970.00 stALPHA
-- staking-global-staked: 3,274.79 ALPHA (2.90%)
+- staking-global-staked: 3,274.79 ALPHA (2.99%)
 - staking-backing-nav: [No visible / N/A]
 - staking-deflation-destroyed: 0.00 ALPHA
 - staking-amount-input: 
@@ -305,7 +305,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 - modal-apy-base-apr: 5.160%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [8:48:42 PM] Depósito completado. Shares ALPHA acuñadas a valor NAV. [8:48:42 PM] Depos...
+- activity-log-container: [1:15:20 AM] Depósito completado. Shares ALPHA acuñadas a valor NAV. [1:15:19 AM] Depos...
 
 ======================================================================
 ======================================================================
@@ -313,7 +313,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 100.61%
-- header-nav-value: $0.9768 USDC
+- header-nav-value: $1.0062 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -345,11 +345,11 @@ Generado el: 2026-08-08T18:48:23.908Z
 - staking-stalpha-balance: 2,970.00 stALPHA
 - staking-real-yield: $0.00 USD
 - staking-total-burned: 15.00 ALPHA
-- staking-circulating-supply: 112,615.26 ALPHA
+- staking-circulating-supply: 109,325.48 ALPHA
 - staking-community-staked: 2,970.00 stALPHA
 - staking-vaults-staked: 319.79 stALPHA
 - staking-reserves-staked: 2,970.00 stALPHA
-- staking-global-staked: 6,259.79 ALPHA (5.55%)
+- staking-global-staked: 6,259.79 ALPHA (5.72%)
 - staking-backing-nav: [No visible / N/A]
 - staking-deflation-destroyed: 15.00 ALPHA
 - staking-amount-input: 
@@ -407,7 +407,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 - modal-apy-base-apr: 5.160%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [8:48:52 PM] ¡Stake de 3000 ALPHA realizado con éxito! [8:48:51 PM] Haciendo stake de 3...
+- activity-log-container: [1:15:28 AM] ¡Stake de 3000 ALPHA realizado con éxito! [1:15:28 AM] Haciendo stake de 3...
 
 ======================================================================
 ======================================================================
@@ -415,7 +415,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 100.61%
-- header-nav-value: $0.9768 USDC
+- header-nav-value: $1.0062 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -447,11 +447,11 @@ Generado el: 2026-08-08T18:48:23.908Z
 - staking-stalpha-balance: 2,970.00 stALPHA
 - staking-real-yield: $0.00 USD
 - staking-total-burned: 15.00 ALPHA
-- staking-circulating-supply: 112,615.26 ALPHA
+- staking-circulating-supply: 109,325.48 ALPHA
 - staking-community-staked: 2,970.00 stALPHA
 - staking-vaults-staked: 319.79 stALPHA
 - staking-reserves-staked: 2,970.00 stALPHA
-- staking-global-staked: 6,259.79 ALPHA (5.55%)
+- staking-global-staked: 6,259.79 ALPHA (5.72%)
 - staking-backing-nav: [No visible / N/A]
 - staking-deflation-destroyed: 15.00 ALPHA
 - staking-amount-input: 
@@ -509,7 +509,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 - modal-apy-base-apr: 5.160%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [8:48:52 PM] ¡Stake de 3000 ALPHA realizado con éxito! [8:48:51 PM] Haciendo stake de 3...
+- activity-log-container: [1:15:28 AM] ¡Stake de 3000 ALPHA realizado con éxito! [1:15:28 AM] Haciendo stake de 3...
 
 ======================================================================
 ======================================================================
@@ -517,7 +517,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 101.39%
-- header-nav-value: $0.9843 USDC
+- header-nav-value: $1.0139 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -549,11 +549,11 @@ Generado el: 2026-08-08T18:48:23.908Z
 - staking-stalpha-balance: 2,970.00 stALPHA
 - staking-real-yield: $0.00 USD
 - staking-total-burned: 15.00 ALPHA
-- staking-circulating-supply: 112,621.79 ALPHA
+- staking-circulating-supply: 109,325.48 ALPHA
 - staking-community-staked: 2,970.00 stALPHA
 - staking-vaults-staked: 326.32 stALPHA
 - staking-reserves-staked: 2,970.00 stALPHA
-- staking-global-staked: 6,266.32 ALPHA (5.56%)
+- staking-global-staked: 6,266.32 ALPHA (5.73%)
 - staking-backing-nav: [No visible / N/A]
 - staking-deflation-destroyed: 15.00 ALPHA
 - staking-amount-input: 
@@ -611,7 +611,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 - modal-apy-base-apr: 5.160%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [8:49:05 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [8:49:04 PM] Adquiriendo...
+- activity-log-container: [1:15:41 AM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [1:15:40 AM] Adquiriendo...
 
 ======================================================================
 ======================================================================
@@ -619,7 +619,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 102.26%
-- header-nav-value: $0.9926 USDC
+- header-nav-value: $1.0226 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -651,11 +651,11 @@ Generado el: 2026-08-08T18:48:23.908Z
 - staking-stalpha-balance: 2,970.00 stALPHA
 - staking-real-yield: $0.00 USD
 - staking-total-burned: 15.00 ALPHA
-- staking-circulating-supply: 112,629.03 ALPHA
+- staking-circulating-supply: 109,325.48 ALPHA
 - staking-community-staked: 2,970.00 stALPHA
 - staking-vaults-staked: 333.55 stALPHA
 - staking-reserves-staked: 2,970.00 stALPHA
-- staking-global-staked: 6,273.55 ALPHA (5.57%)
+- staking-global-staked: 6,273.55 ALPHA (5.73%)
 - staking-backing-nav: [No visible / N/A]
 - staking-deflation-destroyed: 15.00 ALPHA
 - staking-amount-input: 
@@ -713,7 +713,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 - modal-apy-base-apr: 5.160%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [8:49:13 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [8:49:12 PM] Adquiriendo...
+- activity-log-container: [1:15:50 AM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [1:15:49 AM] Adquiriendo...
 
 ======================================================================
 ======================================================================
@@ -721,7 +721,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 102.26%
-- header-nav-value: $0.9926 USDC
+- header-nav-value: $1.0226 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -753,11 +753,11 @@ Generado el: 2026-08-08T18:48:23.908Z
 - staking-stalpha-balance: 2,970.00 stALPHA
 - staking-real-yield: $0.00 USD
 - staking-total-burned: 15.00 ALPHA
-- staking-circulating-supply: 112,629.03 ALPHA
+- staking-circulating-supply: 109,325.48 ALPHA
 - staking-community-staked: 2,970.00 stALPHA
 - staking-vaults-staked: 333.55 stALPHA
 - staking-reserves-staked: 2,970.00 stALPHA
-- staking-global-staked: 6,273.55 ALPHA (5.57%)
+- staking-global-staked: 6,273.55 ALPHA (5.73%)
 - staking-backing-nav: [No visible / N/A]
 - staking-deflation-destroyed: 15.00 ALPHA
 - staking-amount-input: 
@@ -815,7 +815,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 - modal-apy-base-apr: 5.160%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [8:49:21 PM] ¡Oferta P2P creada! NFT #1 en escrow. Publicada en el Marketplace. [8:49:2...
+- activity-log-container: [1:16:00 AM] ¡Oferta P2P creada! NFT #1 en escrow. Publicada en el Marketplace. [1:15:5...
 
 ======================================================================
 ======================================================================
@@ -823,7 +823,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 102.26%
-- header-nav-value: $0.9926 USDC
+- header-nav-value: $1.0226 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -855,11 +855,11 @@ Generado el: 2026-08-08T18:48:23.908Z
 - staking-stalpha-balance: 2,970.00 stALPHA
 - staking-real-yield: $0.00 USD
 - staking-total-burned: 15.00 ALPHA
-- staking-circulating-supply: 112,629.03 ALPHA
+- staking-circulating-supply: 109,325.48 ALPHA
 - staking-community-staked: 2,970.00 stALPHA
 - staking-vaults-staked: 333.55 stALPHA
 - staking-reserves-staked: 2,970.00 stALPHA
-- staking-global-staked: 6,273.55 ALPHA (5.57%)
+- staking-global-staked: 6,273.55 ALPHA (5.73%)
 - staking-backing-nav: [No visible / N/A]
 - staking-deflation-destroyed: 15.00 ALPHA
 - staking-amount-input: 
@@ -917,7 +917,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 - modal-apy-base-apr: 5.205%
 - modal-apy-flywheel-apr: 0.080%
 - modal-apy-close-btn: ✕
-- activity-log-container: [8:49:26 PM] ¡Préstamo #1 financiado con éxito! [8:49:26 PM] Financiando préstamo P2P #...
+- activity-log-container: [1:16:03 AM] ¡Préstamo #1 financiado con éxito! [1:16:03 AM] Financiando préstamo P2P #...
 
 ======================================================================
 ======================================================================
@@ -925,7 +925,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 102.26%
-- header-nav-value: $0.9926 USDC
+- header-nav-value: $1.0226 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -957,11 +957,11 @@ Generado el: 2026-08-08T18:48:23.908Z
 - staking-stalpha-balance: 2,970.00 stALPHA
 - staking-real-yield: $0.00 USD
 - staking-total-burned: 15.00 ALPHA
-- staking-circulating-supply: 112,629.03 ALPHA
+- staking-circulating-supply: 109,325.48 ALPHA
 - staking-community-staked: 2,970.00 stALPHA
 - staking-vaults-staked: 333.55 stALPHA
 - staking-reserves-staked: 2,970.00 stALPHA
-- staking-global-staked: 6,273.55 ALPHA (5.57%)
+- staking-global-staked: 6,273.55 ALPHA (5.73%)
 - staking-backing-nav: [No visible / N/A]
 - staking-deflation-destroyed: 15.00 ALPHA
 - staking-amount-input: 
@@ -1019,7 +1019,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 - modal-apy-base-apr: 5.212%
 - modal-apy-flywheel-apr: 0.142%
 - modal-apy-close-btn: ✕
-- activity-log-container: [8:49:36 PM] ¡Préstamo #2 desembolsado por la Tesorería! $300 USDC acreditados en tu bi...
+- activity-log-container: [1:16:11 AM] ¡Préstamo #2 desembolsado por la Tesorería! $300 USDC acreditados en tu bi...
 
 ======================================================================
 ======================================================================
@@ -1027,7 +1027,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 102.26%
-- header-nav-value: $0.9927 USDC
+- header-nav-value: $1.0227 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -1059,11 +1059,11 @@ Generado el: 2026-08-08T18:48:23.908Z
 - staking-stalpha-balance: 2,970.00 stALPHA
 - staking-real-yield: $0.00 USD
 - staking-total-burned: 15.00 ALPHA
-- staking-circulating-supply: 112,631.08 ALPHA
+- staking-circulating-supply: 109,325.48 ALPHA
 - staking-community-staked: 2,970.00 stALPHA
 - staking-vaults-staked: 335.60 stALPHA
 - staking-reserves-staked: 2,970.00 stALPHA
-- staking-global-staked: 6,275.60 ALPHA (5.57%)
+- staking-global-staked: 6,275.60 ALPHA (5.74%)
 - staking-backing-nav: [No visible / N/A]
 - staking-deflation-destroyed: 15.00 ALPHA
 - staking-amount-input: 
@@ -1121,7 +1121,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 - modal-apy-base-apr: 5.205%
 - modal-apy-flywheel-apr: 0.080%
 - modal-apy-close-btn: ✕
-- activity-log-container: [8:49:45 PM] ¡Préstamo #2 reembolsado totalmente! Principal e intereses acreditados a l...
+- activity-log-container: [1:16:19 AM] ¡Préstamo #2 reembolsado totalmente! Principal e intereses acreditados a l...
 
 ======================================================================
 ======================================================================
@@ -1129,7 +1129,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 102.26%
-- header-nav-value: $0.9927 USDC
+- header-nav-value: $1.0227 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -1161,11 +1161,11 @@ Generado el: 2026-08-08T18:48:23.908Z
 - staking-stalpha-balance: 2,970.00 stALPHA
 - staking-real-yield: $0.00 USD
 - staking-total-burned: 15.00 ALPHA
-- staking-circulating-supply: 112,631.08 ALPHA
+- staking-circulating-supply: 109,325.48 ALPHA
 - staking-community-staked: 2,970.00 stALPHA
 - staking-vaults-staked: 335.60 stALPHA
 - staking-reserves-staked: 2,970.00 stALPHA
-- staking-global-staked: 6,275.60 ALPHA (5.57%)
+- staking-global-staked: 6,275.60 ALPHA (5.74%)
 - staking-backing-nav: [No visible / N/A]
 - staking-deflation-destroyed: 15.00 ALPHA
 - staking-amount-input: 
@@ -1223,7 +1223,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 - modal-apy-base-apr: 5.160%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [8:49:54 PM] ¡Préstamo #1 liquidado! NFT transferido al prestamista. [8:49:54 PM] Ejecu...
+- activity-log-container: [1:16:29 AM] ¡Préstamo #1 liquidado! NFT transferido al prestamista. [1:16:29 AM] Ejecu...
 
 ======================================================================
 ======================================================================
@@ -1231,7 +1231,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 101.60%
-- header-nav-value: $0.9857 USDC
+- header-nav-value: $1.0161 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -1263,11 +1263,11 @@ Generado el: 2026-08-08T18:48:23.908Z
 - staking-stalpha-balance: 2,970.00 stALPHA
 - staking-real-yield: $0.00 USD
 - staking-total-burned: 1,015.00 ALPHA
-- staking-circulating-supply: 112,695.72 ALPHA
+- staking-circulating-supply: 109,325.48 ALPHA
 - staking-community-staked: 2,970.00 stALPHA
 - staking-vaults-staked: 400.24 stALPHA
 - staking-reserves-staked: 2,970.00 stALPHA
-- staking-global-staked: 6,340.24 ALPHA (5.62%)
+- staking-global-staked: 6,340.24 ALPHA (5.79%)
 - staking-backing-nav: [No visible / N/A]
 - staking-deflation-destroyed: 1,015.00 ALPHA
 - staking-amount-input: 
@@ -1325,15 +1325,15 @@ Generado el: 2026-08-08T18:48:23.908Z
 - modal-apy-base-apr: 5.160%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [8:50:00 PM] Ragequit ejecutado en NFT #1. Reembolso recibido. [8:49:59 PM] Ejecutando ...
+- activity-log-container: [1:16:37 AM] Ragequit ejecutado en NFT #1. Reembolso recibido. [1:16:36 AM] Ejecutando ...
 
 ======================================================================
 ======================================================================
 📊 INFORME DE ESTADO DE UI - PASO [15]: [PASO 15 (POST-RESCATE FINAL)]
 ======================================================================
 [HEADER & GLOBAL]
-- header-por-ratio: 101.67%
-- header-nav-value: $0.9858 USDC
+- header-por-ratio: 101.62%
+- header-nav-value: $1.0162 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -1345,10 +1345,10 @@ Generado el: 2026-08-08T18:48:23.908Z
 - analytics-liabilities-usd: [No visible / N/A]
 - analytics-gross-cashflow: [No visible / N/A]
 - analytics-apy-weighted: [No visible / N/A]
-- por-collateral-ratio: 101.67%
-- por-assets-total: $109,408.62 USD
+- por-collateral-ratio: 101.62%
+- por-assets-total: $109,357.05 USD
 - por-liabilities-total: $107,611.08 USD
-- por-row-usdc-val: $109,408.62 USD
+- por-row-usdc-val: $109,357.05 USD
 - por-row-wbtc-val: $0.00 USD
 - por-row-weth-val: $0.00 USD
 - por-row-alpha-val: [No visible / N/A]
@@ -1356,7 +1356,7 @@ Generado el: 2026-08-08T18:48:23.908Z
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 10,591.38 USDC
+- treasury-usdc-balance: 10,642.95 USDC
 - treasury-shares-balance: 5,141.08 ALPHA
 - treasury-deposit-input: 
 - treasury-deposit-btn: Depositar
@@ -1365,11 +1365,11 @@ Generado el: 2026-08-08T18:48:23.908Z
 - staking-stalpha-balance: 2,970.00 stALPHA
 - staking-real-yield: $0.00 USD
 - staking-total-burned: 2,729.40 ALPHA
-- staking-circulating-supply: 110,989.89 ALPHA
+- staking-circulating-supply: 107,611.08 ALPHA
 - staking-community-staked: 2,970.00 stALPHA
-- staking-vaults-staked: 408.81 stALPHA
+- staking-vaults-staked: 409.08 stALPHA
 - staking-reserves-staked: 2,970.00 stALPHA
-- staking-global-staked: 6,348.81 ALPHA (5.72%)
+- staking-global-staked: 6,349.08 ALPHA (5.90%)
 - staking-backing-nav: [No visible / N/A]
 - staking-deflation-destroyed: 2,729.40 ALPHA
 - staking-amount-input: 
@@ -1423,10 +1423,10 @@ Generado el: 2026-08-08T18:48:23.908Z
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
 - modal-apy-total-apr: 5.16% APR
-- modal-apy-annual-yield-usd: +$5,645.48 USD / año generados por las Reservas
+- modal-apy-annual-yield-usd: +$5,642.82 USD / año generados por las Reservas
 - modal-apy-base-apr: 5.160%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [8:50:09 PM] Rescate completado. USDC transferidos a tu billetera. [8:50:09 PM] Rescata...
+- activity-log-container: [1:16:46 AM] Rescate completado. USDC transferidos a tu billetera. [1:16:45 AM] Rescata...
 
 ======================================================================

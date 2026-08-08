@@ -57,8 +57,6 @@ interface ITreasury {
      */
     function redeem(uint256 sharesAmount) external returns (uint256 assetsReceived);
 
-    function getNAVPerShare() external view returns (uint256);
-
     function getProofOfReserves() external view returns (uint256 totalAssetsUSD, uint256 totalLiabilitiesUSD, uint256 collateralRatioBps);
 
     /**

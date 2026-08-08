@@ -272,15 +272,25 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
     }
 
     function getNetCirculatingShares() public view returns (uint256) {
-        AlphaToken token = AlphaToken(addressProvider.getAddress(addressProvider.ID_ALPHA_TOKEN()));
-        AlphaVault vault = AlphaVault(addressProvider.getAlphaVault());
+        address tokenAddr = addressProvider.getAlphaToken();
+        address vaultAddr = addressProvider.getAlphaVault();
         address govAddr = addressProvider.getGovernanceStaking();
 
+        if (tokenAddr == address(0)) return 0;
+
+        AlphaToken token = AlphaToken(tokenAddr);
+        AlphaVault vault = AlphaVault(vaultAddr);
+
         uint256 total = token.totalSupply();
-        uint256 protocolOwned = vault.getBalance(address(token)) + token.balanceOf(address(this));
+        uint256 protocolOwned = (vaultAddr != address(0)) ? vault.getBalance(tokenAddr) : 0;
+        protocolOwned += token.balanceOf(address(this));
 
         if (govAddr != address(0)) {
-            protocolOwned += IERC20(govAddr).balanceOf(address(vault)) + IERC20(govAddr).balanceOf(address(this));
+            if (vaultAddr != address(0)) {
+                protocolOwned += IERC20(govAddr).balanceOf(vaultAddr);
+            }
+            protocolOwned += IERC20(govAddr).balanceOf(address(this));
+
             try IGovernanceStaking(govAddr).corporateOpExVault() returns (address opEx) {
                 if (opEx != address(0)) {
                     protocolOwned += token.balanceOf(opEx) + IERC20(govAddr).balanceOf(opEx);
