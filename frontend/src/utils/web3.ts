@@ -104,6 +104,16 @@ export const ABIS = {
       { name: 'totalLiabilitiesUSD', type: 'uint256' },
       { name: 'collateralRatioBps', type: 'uint256' }
     ]},
+    { name: 'getAssetBreakdown', type: 'function', stateMutability: 'view', inputs: [], outputs: [
+      { name: 'stablesUsd', type: 'uint256' },
+      { name: 'wbtcUsd', type: 'uint256' },
+      { name: 'wethUsd', type: 'uint256' },
+      { name: 'loansUsd', type: 'uint256' }
+    ]},
+    { name: 'calculateDynamicFeeBps', type: 'function', stateMutability: 'pure', inputs: [
+      { name: 'grossDepositUSD', type: 'uint256' },
+      { name: 'totalAssetsExogenousUSD', type: 'uint256' }
+    ], outputs: [{ name: '', type: 'uint256' }] },
     { name: 'tvlCap', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
     { name: 'priceFeeds', type: 'function', stateMutability: 'view', inputs: [{ name: 'asset', type: 'address' }], outputs: [{ name: '', type: 'address' }] }
   ] as const,

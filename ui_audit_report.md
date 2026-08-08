@@ -1,6 +1,6 @@
 # AUDITORÍA DETALLADA DE INTERFAZ DE USUARIO (106 CAMPOS POR PASO)
 
-Generado el: 2026-08-08T11:55:49.827Z
+Generado el: 2026-08-08T12:04:10.128Z
 
 ======================================================================
 📊 INFORME DE ESTADO DE UI - PASO [0]: [PASO 0 (GENESIS BASELINE)]
@@ -31,7 +31,7 @@ Generado el: 2026-08-08T11:55:49.827Z
 
 [DESGLOSE DE OFERTA & STAKING]
 - treasury-usdc-balance: 10,000.00 USDC
-- treasury-shares-balance: 99,500.00 ALPHA
+- treasury-shares-balance: 0.00 ALPHA
 - treasury-deposit-input: 
 - treasury-deposit-btn: Depositar
 - treasury-redeem-input: 
@@ -101,7 +101,7 @@ Generado el: 2026-08-08T11:55:49.827Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:55:53 PM] Cambiado rol conectado a Usuario Retail
+- activity-log-container: [2:04:11 PM] Cambiado rol conectado a Usuario Retail
 
 ======================================================================
 ======================================================================
@@ -203,14 +203,14 @@ Generado el: 2026-08-08T11:55:49.827Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:55:59 PM] ¡10,000 USDC mock recibidos en tu billetera! [1:55:59 PM] Reclamando 10,00...
+- activity-log-container: [2:04:15 PM] ¡10,000 USDC mock recibidos en tu billetera! [2:04:15 PM] Reclamando 10,00...
 
 ======================================================================
 ======================================================================
 📊 INFORME DE ESTADO DE UI - PASO [3]: [PASO 3 (POST-DEPÓSITO)]
 ======================================================================
 [HEADER & GLOBAL]
-- header-por-ratio: 100.59%
+- header-por-ratio: 100.58%
 - header-nav-value: $1.0059 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
@@ -223,7 +223,7 @@ Generado el: 2026-08-08T11:55:49.827Z
 - analytics-liabilities-usd: [No visible / N/A]
 - analytics-gross-cashflow: [No visible / N/A]
 - analytics-apy-weighted: [No visible / N/A]
-- por-collateral-ratio: 100.59%
+- por-collateral-ratio: 100.58%
 - por-assets-total: $110,000.00 USD
 - por-liabilities-total: $109,355.48 USD
 - por-row-usdc-val: $66,000.00 USD
@@ -305,14 +305,14 @@ Generado el: 2026-08-08T11:55:49.827Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:56:06 PM] Depósito completado. Shares ALPHA acuñadas a valor NAV. [1:56:06 PM] Depos...
+- activity-log-container: [2:04:23 PM] Depósito completado. Shares ALPHA acuñadas a valor NAV. [2:04:22 PM] Depos...
 
 ======================================================================
 ======================================================================
 📊 INFORME DE ESTADO DE UI - PASO [4]: [PASO 4 (POST-STAKING)]
 ======================================================================
 [HEADER & GLOBAL]
-- header-por-ratio: 100.62%
+- header-por-ratio: 100.61%
 - header-nav-value: $1.0062 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
@@ -325,7 +325,7 @@ Generado el: 2026-08-08T11:55:49.827Z
 - analytics-liabilities-usd: [No visible / N/A]
 - analytics-gross-cashflow: [No visible / N/A]
 - analytics-apy-weighted: [No visible / N/A]
-- por-collateral-ratio: 100.62%
+- por-collateral-ratio: 100.61%
 - por-assets-total: $110,000.00 USD
 - por-liabilities-total: $109,325.48 USD
 - por-row-usdc-val: $66,000.00 USD
@@ -407,14 +407,14 @@ Generado el: 2026-08-08T11:55:49.827Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:56:15 PM] ¡Stake de 3000 ALPHA realizado con éxito! [1:56:15 PM] Haciendo stake de 3...
+- activity-log-container: [2:04:32 PM] ¡Stake de 3000 ALPHA realizado con éxito! [2:04:32 PM] Haciendo stake de 3...
 
 ======================================================================
 ======================================================================
 📊 INFORME DE ESTADO DE UI - PASO [5]: [PASO 5 (PREFERENCIA DE COBRO OPCIÓN A)]
 ======================================================================
 [HEADER & GLOBAL]
-- header-por-ratio: 100.62%
+- header-por-ratio: 100.61%
 - header-nav-value: $1.0062 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
@@ -427,7 +427,7 @@ Generado el: 2026-08-08T11:55:49.827Z
 - analytics-liabilities-usd: [No visible / N/A]
 - analytics-gross-cashflow: [No visible / N/A]
 - analytics-apy-weighted: [No visible / N/A]
-- por-collateral-ratio: 100.62%
+- por-collateral-ratio: 100.61%
 - por-assets-total: $110,000.00 USD
 - por-liabilities-total: $109,325.48 USD
 - por-row-usdc-val: $66,000.00 USD
@@ -509,7 +509,7 @@ Generado el: 2026-08-08T11:55:49.827Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:56:15 PM] ¡Stake de 3000 ALPHA realizado con éxito! [1:56:15 PM] Haciendo stake de 3...
+- activity-log-container: [2:04:32 PM] ¡Stake de 3000 ALPHA realizado con éxito! [2:04:32 PM] Haciendo stake de 3...
 
 ======================================================================
 ======================================================================
@@ -573,7 +573,7 @@ Generado el: 2026-08-08T11:55:49.827Z
 - escrow-total-lent: [No visible / N/A]
 - escrow-total-collateral: [No visible / N/A]
 - escrow-coverage-ratio: [No visible / N/A]
-- p2p-treasury-nft-id-input: -- Selecciona un NFT de tu Billetera -- NFT #1 (Principal: $1,000 USDC — LTV Máx ~$1 USDC)
+- p2p-treasury-nft-id-input: -- Selecciona un NFT de tu Billetera -- NFT #1 (Principal: $1,000 USDC)
 - p2p-treasury-amount-input: 
 - p2p-treasury-duration-input: 
 - p2p-treasury-request-btn: 🏛️ Solicitar Crédito a la Tesorería (NFT)
@@ -611,7 +611,7 @@ Generado el: 2026-08-08T11:55:49.827Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:56:28 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [1:56:27 PM] Adquiriendo...
+- activity-log-container: [2:04:43 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [2:04:42 PM] Adquiriendo...
 
 ======================================================================
 ======================================================================
@@ -675,7 +675,7 @@ Generado el: 2026-08-08T11:55:49.827Z
 - escrow-total-lent: [No visible / N/A]
 - escrow-total-collateral: [No visible / N/A]
 - escrow-coverage-ratio: [No visible / N/A]
-- p2p-treasury-nft-id-input: -- Selecciona un NFT de tu Billetera -- NFT #1 (Principal: $1,000 USDC — LTV Máx ~$1 US...
+- p2p-treasury-nft-id-input: -- Selecciona un NFT de tu Billetera -- NFT #1 (Principal: $1,000 USDC) NFT #2 (Princip...
 - p2p-treasury-amount-input: 
 - p2p-treasury-duration-input: 
 - p2p-treasury-request-btn: 🏛️ Solicitar Crédito a la Tesorería (NFT)
@@ -713,7 +713,7 @@ Generado el: 2026-08-08T11:55:49.827Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:56:34 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [1:56:34 PM] Adquiriendo...
+- activity-log-container: [2:04:50 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [2:04:49 PM] Adquiriendo...
 
 ======================================================================
 ======================================================================
@@ -777,7 +777,7 @@ Generado el: 2026-08-08T11:55:49.827Z
 - escrow-total-lent: [No visible / N/A]
 - escrow-total-collateral: [No visible / N/A]
 - escrow-coverage-ratio: [No visible / N/A]
-- p2p-treasury-nft-id-input: -- Selecciona un NFT de tu Billetera -- NFT #2 (Principal: $1,000 USDC — LTV Máx ~$1 USDC)
+- p2p-treasury-nft-id-input: -- Selecciona un NFT de tu Billetera -- NFT #2 (Principal: $1,000 USDC)
 - p2p-treasury-amount-input: 
 - p2p-treasury-duration-input: 
 - p2p-treasury-request-btn: 🏛️ Solicitar Crédito a la Tesorería (NFT)
@@ -815,7 +815,7 @@ Generado el: 2026-08-08T11:55:49.827Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:56:41 PM] ¡Oferta P2P creada! NFT #1 en escrow. Publicada en el Marketplace. [1:56:4...
+- activity-log-container: [2:04:57 PM] ¡Oferta P2P creada! NFT #1 en escrow. Publicada en el Marketplace. [2:04:5...
 
 ======================================================================
 ======================================================================
@@ -879,7 +879,7 @@ Generado el: 2026-08-08T11:55:49.827Z
 - escrow-total-lent: [No visible / N/A]
 - escrow-total-collateral: [No visible / N/A]
 - escrow-coverage-ratio: [No visible / N/A]
-- p2p-treasury-nft-id-input: -- Selecciona un NFT de tu Billetera -- NFT #2 (Principal: $1,000 USDC — LTV Máx ~$1 USDC)
+- p2p-treasury-nft-id-input: -- Selecciona un NFT de tu Billetera -- NFT #2 (Principal: $1,000 USDC)
 - p2p-treasury-amount-input: 
 - p2p-treasury-duration-input: 
 - p2p-treasury-request-btn: 🏛️ Solicitar Crédito a la Tesorería (NFT)
@@ -917,7 +917,7 @@ Generado el: 2026-08-08T11:55:49.827Z
 - modal-apy-base-apr: 4.921%
 - modal-apy-flywheel-apr: 0.169%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:56:44 PM] ¡Préstamo #1 financiado con éxito! [1:56:44 PM] Financiando préstamo P2P #...
+- activity-log-container: [2:05:02 PM] ¡Préstamo #1 financiado con éxito! [2:05:01 PM] Financiando préstamo P2P #...
 
 ======================================================================
 ======================================================================
@@ -1019,14 +1019,14 @@ Generado el: 2026-08-08T11:55:49.827Z
 - modal-apy-base-apr: 4.942%
 - modal-apy-flywheel-apr: 0.249%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:56:52 PM] ¡Préstamo #2 desembolsado por la Tesorería! $300 USDC acreditados en tu bi...
+- activity-log-container: [2:05:10 PM] ¡Préstamo #2 desembolsado por la Tesorería! $300 USDC acreditados en tu bi...
 
 ======================================================================
 ======================================================================
 📊 INFORME DE ESTADO DE UI - PASO [12]: [PASO 12 (POST-REPAGO TESORERÍA)]
 ======================================================================
 [HEADER & GLOBAL]
-- header-por-ratio: 102.27%
+- header-por-ratio: 102.26%
 - header-nav-value: $1.0227 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
@@ -1039,11 +1039,11 @@ Generado el: 2026-08-08T11:55:49.827Z
 - analytics-liabilities-usd: [No visible / N/A]
 - analytics-gross-cashflow: [No visible / N/A]
 - analytics-apy-weighted: [No visible / N/A]
-- por-collateral-ratio: 102.27%
+- por-collateral-ratio: 102.26%
 - por-assets-total: $111,804.07 USD
 - por-liabilities-total: $109,325.48 USD
 - por-row-usdc-val: $67,082.44 USD
-- por-row-wbtc-val: $29,818.15 USD
+- por-row-wbtc-val: $29,818.14 USD
 - por-row-weth-val: $14,903.48 USD
 - por-row-alpha-val: [No visible / N/A]
 - treasury-faucet-btn: 🚰 Faucet 10k USDC
@@ -1083,7 +1083,7 @@ Generado el: 2026-08-08T11:55:49.827Z
 - escrow-total-lent: [No visible / N/A]
 - escrow-total-collateral: [No visible / N/A]
 - escrow-coverage-ratio: [No visible / N/A]
-- p2p-treasury-nft-id-input: -- Selecciona un NFT de tu Billetera -- NFT #2 (Principal: $1,000 USDC — LTV Máx ~$1 USDC)
+- p2p-treasury-nft-id-input: -- Selecciona un NFT de tu Billetera -- NFT #2 (Principal: $1,000 USDC)
 - p2p-treasury-amount-input: 
 - p2p-treasury-duration-input: 
 - p2p-treasury-request-btn: 🏛️ Solicitar Crédito a la Tesorería (NFT)
@@ -1121,14 +1121,14 @@ Generado el: 2026-08-08T11:55:49.827Z
 - modal-apy-base-apr: 4.921%
 - modal-apy-flywheel-apr: 0.169%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:56:59 PM] ¡Préstamo #2 reembolsado totalmente! Principal e intereses acreditados a l...
+- activity-log-container: [2:05:17 PM] ¡Préstamo #2 reembolsado totalmente! Principal e intereses acreditados a l...
 
 ======================================================================
 ======================================================================
 📊 INFORME DE ESTADO DE UI - PASO [13]: [PASO 13 (LIQUIDACIÓN P2P)]
 ======================================================================
 [HEADER & GLOBAL]
-- header-por-ratio: 102.27%
+- header-por-ratio: 102.26%
 - header-nav-value: $1.0227 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
@@ -1141,11 +1141,11 @@ Generado el: 2026-08-08T11:55:49.827Z
 - analytics-liabilities-usd: [No visible / N/A]
 - analytics-gross-cashflow: [No visible / N/A]
 - analytics-apy-weighted: [No visible / N/A]
-- por-collateral-ratio: 102.27%
+- por-collateral-ratio: 102.26%
 - por-assets-total: $111,804.07 USD
 - por-liabilities-total: $109,325.48 USD
 - por-row-usdc-val: $67,082.44 USD
-- por-row-wbtc-val: $29,818.15 USD
+- por-row-wbtc-val: $29,818.14 USD
 - por-row-weth-val: $14,903.48 USD
 - por-row-alpha-val: [No visible / N/A]
 - treasury-faucet-btn: 🚰 Faucet 10k USDC
@@ -1185,7 +1185,7 @@ Generado el: 2026-08-08T11:55:49.827Z
 - escrow-total-lent: [No visible / N/A]
 - escrow-total-collateral: [No visible / N/A]
 - escrow-coverage-ratio: [No visible / N/A]
-- p2p-treasury-nft-id-input: -- Selecciona un NFT de tu Billetera -- NFT #1 (Principal: $1,000 USDC — LTV Máx ~$1 US...
+- p2p-treasury-nft-id-input: -- Selecciona un NFT de tu Billetera -- NFT #1 (Principal: $1,000 USDC) NFT #2 (Princip...
 - p2p-treasury-amount-input: 
 - p2p-treasury-duration-input: 
 - p2p-treasury-request-btn: 🏛️ Solicitar Crédito a la Tesorería (NFT)
@@ -1223,14 +1223,14 @@ Generado el: 2026-08-08T11:55:49.827Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:57:05 PM] ¡Préstamo #1 liquidado! NFT transferido al prestamista. [1:57:05 PM] Ejecu...
+- activity-log-container: [2:05:24 PM] ¡Préstamo #1 liquidado! NFT transferido al prestamista. [2:05:24 PM] Ejecu...
 
 ======================================================================
 ======================================================================
 📊 INFORME DE ESTADO DE UI - PASO [14]: [PASO 14 (POST-RAGEQUIT)]
 ======================================================================
 [HEADER & GLOBAL]
-- header-por-ratio: 101.61%
+- header-por-ratio: 101.60%
 - header-nav-value: $1.0161 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
@@ -1243,7 +1243,7 @@ Generado el: 2026-08-08T11:55:49.827Z
 - analytics-liabilities-usd: [No visible / N/A]
 - analytics-gross-cashflow: [No visible / N/A]
 - analytics-apy-weighted: [No visible / N/A]
-- por-collateral-ratio: 101.61%
+- por-collateral-ratio: 101.60%
 - por-assets-total: $111,081.57 USD
 - por-liabilities-total: $109,325.48 USD
 - por-row-usdc-val: $66,648.94 USD
@@ -1287,7 +1287,7 @@ Generado el: 2026-08-08T11:55:49.827Z
 - escrow-total-lent: [No visible / N/A]
 - escrow-total-collateral: [No visible / N/A]
 - escrow-coverage-ratio: [No visible / N/A]
-- p2p-treasury-nft-id-input: -- Selecciona un NFT de tu Billetera -- NFT #2 (Principal: $1,000 USDC — LTV Máx ~$1 USDC)
+- p2p-treasury-nft-id-input: -- Selecciona un NFT de tu Billetera -- NFT #2 (Principal: $1,000 USDC)
 - p2p-treasury-amount-input: 
 - p2p-treasury-duration-input: 
 - p2p-treasury-request-btn: 🏛️ Solicitar Crédito a la Tesorería (NFT)
@@ -1325,7 +1325,7 @@ Generado el: 2026-08-08T11:55:49.827Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:57:09 PM] Ragequit ejecutado en NFT #1. Reembolso recibido. [1:57:09 PM] Ejecutando ...
+- activity-log-container: [2:05:29 PM] Ragequit ejecutado en NFT #1. Reembolso recibido. [2:05:28 PM] Ejecutando ...
 
 ======================================================================
 ======================================================================
@@ -1349,7 +1349,7 @@ Generado el: 2026-08-08T11:55:49.827Z
 - por-assets-total: $109,357.05 USD
 - por-liabilities-total: $107,611.08 USD
 - por-row-usdc-val: $65,614.23 USD
-- por-row-wbtc-val: $29,165.53 USD
+- por-row-wbtc-val: $29,165.52 USD
 - por-row-weth-val: $14,577.29 USD
 - por-row-alpha-val: [No visible / N/A]
 - treasury-faucet-btn: 🚰 Faucet 10k USDC
@@ -1389,7 +1389,7 @@ Generado el: 2026-08-08T11:55:49.827Z
 - escrow-total-lent: [No visible / N/A]
 - escrow-total-collateral: [No visible / N/A]
 - escrow-coverage-ratio: [No visible / N/A]
-- p2p-treasury-nft-id-input: -- Selecciona un NFT de tu Billetera -- NFT #2 (Principal: $1,000 USDC — LTV Máx ~$1 USDC)
+- p2p-treasury-nft-id-input: -- Selecciona un NFT de tu Billetera -- NFT #2 (Principal: $1,000 USDC)
 - p2p-treasury-amount-input: 
 - p2p-treasury-duration-input: 
 - p2p-treasury-request-btn: 🏛️ Solicitar Crédito a la Tesorería (NFT)
@@ -1427,6 +1427,6 @@ Generado el: 2026-08-08T11:55:49.827Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:57:18 PM] Rescate completado. USDC transferidos a tu billetera. [1:57:18 PM] Rescata...
+- activity-log-container: [2:05:37 PM] Rescate completado. USDC transferidos a tu billetera. [2:05:36 PM] Rescata...
 
 ======================================================================

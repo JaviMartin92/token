@@ -221,7 +221,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                       <option value="">-- Selecciona un NFT de tu Billetera --</option>
                       {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).map((pos) => (
                         <option key={pos.id} value={pos.id.toString()}>
-                          NFT #{pos.id} (Principal: ${pos.principal} USDC — LTV Máx ~${(parseFloat(pos.principal) * 0.7).toFixed(0)} USDC)
+                          NFT #{pos.id} (Principal: ${pos.principal} USDC)
                         </option>
                       ))}
                     </select>

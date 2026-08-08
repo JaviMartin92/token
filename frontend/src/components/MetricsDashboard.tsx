@@ -48,11 +48,10 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   const numericLiabilitiesUSD = parseFloat((porLiabilities || '0').replace(/,/g, '')) || 0;
   const numericRatioPct = parseFloat((porRatio || '100').replace(/,/g, '')) || 100.0;
 
-  // Exogenous reserves breakdown
-  const rawSum = porBreakdown.stables + porBreakdown.wbtc + porBreakdown.weth + porBreakdown.alphaStaking;
-  const stablesUSD = rawSum > 0 ? (porBreakdown.stables > 100 ? porBreakdown.stables : (numericAssetsUSD * porBreakdown.stables) / rawSum) : numericAssetsUSD * 0.60;
-  const btcUSD = rawSum > 0 ? (porBreakdown.wbtc > 100 ? porBreakdown.wbtc : (numericAssetsUSD * porBreakdown.wbtc) / rawSum) : numericAssetsUSD * 0.2667;
-  const ethUSD = rawSum > 0 ? (porBreakdown.weth > 100 ? porBreakdown.weth : (numericAssetsUSD * porBreakdown.weth) / rawSum) : numericAssetsUSD * 0.1333;
+  // Exogenous reserves breakdown directly from Treasury.sol getAssetBreakdown()
+  const stablesUSD = porBreakdown.stables;
+  const btcUSD = porBreakdown.wbtc;
+  const ethUSD = porBreakdown.weth;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '1.5rem' }}>

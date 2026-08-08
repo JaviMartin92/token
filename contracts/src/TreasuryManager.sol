@@ -301,6 +301,29 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
         return assetsUSD;
     }
 
+    function getAssetBreakdown() external view returns (uint256 stablesUsd, uint256 wbtcUsd, uint256 wethUsd, uint256 loansUsd) {
+        AlphaVault vault = AlphaVault(addressProvider.getAlphaVault());
+        OracleHub oracle = OracleHub(addressProvider.getOracleHub());
+
+        uint256 treasuryStables = vault.getBalance(redemptionToken) + IERC20(redemptionToken).balanceOf(address(this));
+        stablesUsd = oracle.getAssetUsdValue(redemptionToken, treasuryStables);
+
+        if (wbtcToken != address(0)) {
+            wbtcUsd = oracle.getAssetUsdValue(wbtcToken, vault.getBalance(wbtcToken));
+        }
+
+        if (wethToken != address(0)) {
+            wethUsd = oracle.getAssetUsdValue(wethToken, vault.getBalance(wethToken));
+        }
+
+        address p2pAddr = addressProvider.getP2PMarket();
+        if (p2pAddr != address(0)) {
+            try IP2PLendingMarket(p2pAddr).treasuryLoansReceivableUSD() returns (uint256 trl) {
+                loansUsd = trl * (10**(18 - redemptionTokenDecimals));
+            } catch {}
+        }
+    }
+
     function calculateDynamicFeeBps(uint256 grossDepositUSD, uint256 totalAssetsExogenousUSD) public pure returns (uint256) {
         uint256 feeBase = 50; // 50 BPS (0.50%)
         uint256 impactSensitivity = 500; // 500 BPS (5.00%)

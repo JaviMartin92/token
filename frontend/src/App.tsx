@@ -366,9 +366,9 @@ export default function App() {
         <span data-testid="por-assets-total">${web3.porAssets} USD</span>
         <span data-testid="por-liabilities-total">${web3.porLiabilities} USD</span>
         <span data-testid="por-collateral-ratio">{web3.porRatio}</span>
-        <span data-testid="por-row-usdc-val">${((parseFloat((web3.porAssets || '0').replace(/,/g, '')) || 0) * 0.60).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</span>
-        <span data-testid="por-row-wbtc-val">${((parseFloat((web3.porAssets || '0').replace(/,/g, '')) || 0) * 0.2667).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</span>
-        <span data-testid="por-row-weth-val">${((parseFloat((web3.porAssets || '0').replace(/,/g, '')) || 0) * 0.1333).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</span>
+        <span data-testid="por-row-usdc-val">${web3.porBreakdown.stables.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</span>
+        <span data-testid="por-row-wbtc-val">${web3.porBreakdown.wbtc.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</span>
+        <span data-testid="por-row-weth-val">${web3.porBreakdown.weth.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</span>
         <span data-testid="staking-circulating-supply">{web3.circulatingSupply} ALPHA</span>
         <span data-testid="staking-community-staked">{web3.communityStakedSupply} stALPHA</span>
         <span data-testid="staking-corporate-staked">{web3.corporateStakedSupply} stALPHA</span>
