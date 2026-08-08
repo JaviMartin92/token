@@ -174,6 +174,7 @@ export default function App() {
         activeLoansUsd={activeLoansSum}
         claimableYieldUsd={claimableYieldVal}
         activeLoansInterestUsd={activeLoansInterestSum}
+        assetRates={web3.assetRates}
       />
 
       {activeTab === 'client' ? (

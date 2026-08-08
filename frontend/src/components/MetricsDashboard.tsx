@@ -156,7 +156,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
             <div data-testid="staking-corporate-staked" style={{ fontSize: '1.3rem', fontWeight: 700, color: '#f472b6', marginTop: '0.3rem' }}>
               <span data-testid="staking-vaults-staked">{corporateStakedSupply}</span> stALPHA
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>OpEx & Profit Vaults</div>
+            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>Protocol OpEx & Community Yield</div>
           </div>
 
           <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>

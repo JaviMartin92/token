@@ -95,9 +95,9 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
         </div>
       </div>
 
-      {/* Circuit Breaker & Corporate TWAP Card */}
+      {/* Circuit Breaker & Protocol TWAP Card */}
       <div className="glass-panel admin-card">
-        <h3 className="admin-title-breaker">⚡ Circuit Breaker & Inyección Corporativa</h3>
+        <h3 className="admin-title-breaker">⚡ Circuit Breaker & Inyección del Protocolo</h3>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
           <div>
@@ -115,7 +115,7 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
           </div>
 
           <div className="admin-section-divider">
-            <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.3rem' }}>Inyección Corporativa TWAP (Buyback USDC):</label>
+            <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.3rem' }}>Inyección del Protocolo TWAP (Buyback USDC):</label>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <input
                 data-testid="admin-twap-amount-input"

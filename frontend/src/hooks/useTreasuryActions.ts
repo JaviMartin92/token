@@ -121,8 +121,8 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
           { label: 'Monto Bruto Ingresado', value: `$${num.toFixed(2)} USDC` },
           { label: `Comisión Dinámica Adaptativa (${dynamicFeePct}%)`, value: `$${fee} USDC`, badge: `Slippage BPS: ${dynamicFeeBps}` },
           { label: 'Destino 50% Comisión (Reservas)', value: `$${feeReserves} USDC (Inyectado a Reservas Tesorería)` },
-          { label: 'Destino 25% Comisión (OpEx Vault)', value: `$${feeOps} USDC (CorporateOpExVault Staked ALPHA)` },
-          { label: 'Destino 25% Comisión (Profit Vault)', value: `$${feeProfit} USDC (CorporateProfitVault Staked ALPHA)` }
+          { label: 'Destino 25% Comisión (Protocol OpEx Vault)', value: `$${feeOps} USDC (ProtocolOpExVault Infra & Grants)` },
+          { label: 'Destino 25% Comisión (Community Yield Vault)', value: `$${feeProfit} USDC (CommunityYieldVault Liquid Real Yield)` }
         ],
         warningNote: 'El 80% de tu depósito en USDC ingresará automáticamente a Morpho Yield Vault Adapter para APY pasivo, y el 20% se mantendrá como búfer líquido para préstamos P2P.',
         confirmButtonText: '✍️ Confirmar Depósito',
@@ -193,8 +193,8 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
           { label: 'Shares Presentadas para Rescate', value: `${num.toFixed(2)} ALPHA Shares` },
           { label: 'Comisión de Rescate (1.00%)', value: `$${fee} USDC`, badge: 'Reparto 50%/25%/25%' },
           { label: 'Destino 50% Comisión (Reservas)', value: `$${feeReserves} USDC (Acrece NAV del Protocolo)` },
-          { label: 'Destino 25% Comisión (OpEx Vault)', value: `$${feeOps} USDC (CorporateOpExVault Staked ALPHA)` },
-          { label: 'Destino 25% Comisión (Profit Vault)', value: `$${feeProfit} USDC (CorporateProfitVault Staked ALPHA)` }
+          { label: 'Destino 25% Comisión (Protocol OpEx Vault)', value: `$${feeOps} USDC (ProtocolOpExVault Infra & Grants)` },
+          { label: 'Destino 25% Comisión (Community Yield Vault)', value: `$${feeProfit} USDC (CommunityYieldVault Liquid Real Yield)` }
         ],
         warningNote: 'Tus participaciones ALPHA serán quemadas y recibirás el monto neto en USDC a valor NAV.',
         confirmButtonText: '✍️ Confirmar Rescate',

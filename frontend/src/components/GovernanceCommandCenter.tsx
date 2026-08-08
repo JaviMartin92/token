@@ -265,21 +265,21 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
               </div>
 
               <div>
-                <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>💼 VAULT CORPORATIVO OPEX (25% GASTOS OPERATIVOS)</label>
+                <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>🛡️ BÓVEDA PROTOCOL OPEX (25% DAO INFRAESTRUCTURA & GRANTS)</label>
                 <input
                   type="text"
                   readOnly
-                  value={CONTRACT_ADDRESSES.CORPORATE_OPEX || '0x...'}
+                  value={CONTRACT_ADDRESSES.PROTOCOL_OPEX_VAULT || CONTRACT_ADDRESSES.CORPORATE_OPEX || '0x...'}
                   style={{ width: '100%', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#a855f7', padding: '10px 14px', fontFamily: 'monospace', marginTop: '4px' }}
                 />
               </div>
 
               <div>
-                <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>🏦 VAULT CORPORATIVO BENEFICIOS (25% PROFIT EMPRESA)</label>
+                <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>💎 BÓVEDA COMMUNITY REAL YIELD (25% REAL YIELD STAKERS)</label>
                 <input
                   type="text"
                   readOnly
-                  value={CONTRACT_ADDRESSES.CORPORATE_PROFIT || '0x...'}
+                  value={CONTRACT_ADDRESSES.COMMUNITY_YIELD_VAULT || CONTRACT_ADDRESSES.CORPORATE_PROFIT || '0x...'}
                   style={{ width: '100%', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#4ade80', padding: '10px 14px', fontFamily: 'monospace', marginTop: '4px' }}
                 />
               </div>

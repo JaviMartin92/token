@@ -54,7 +54,7 @@ async function main() {
   const CircuitBreaker = loadArtifact('CircuitBreaker', 'CircuitBreaker.sol');
   const AtomicSwapReceiver = loadArtifact('AtomicSwapReceiver', 'AtomicSwapReceiver.sol');
   const YieldStreamingVault = loadArtifact('YieldStreamingVault', 'YieldStreamingVault.sol');
-  const CorporateContribution = loadArtifact('CorporateContribution', 'CorporateContribution.sol');
+  const ProtocolContribution = loadArtifact('ProtocolContribution', 'ProtocolContribution.sol');
 
   // 1. Deploy Mock USDC and Mock USDT with CORRECT decimals (6)
   const usdcTx = await walletClient.deployContract({
@@ -216,14 +216,14 @@ async function main() {
   const yieldAddr = (await publicClient.waitForTransactionReceipt({ hash: yieldTx })).contractAddress!;
   console.log(`[+] YieldStreamingVault Contract deployed at: ${yieldAddr}`);
 
-  // 8. Deploy CorporateContribution
+  // 8. Deploy ProtocolContribution
   const corpTx = await walletClient.deployContract({
-    abi: CorporateContribution.abi,
-    bytecode: CorporateContribution.bytecode.object,
+    abi: ProtocolContribution.abi,
+    bytecode: ProtocolContribution.bytecode.object,
     args: [usdcAddr, address(0x999), address(0x888), routerAddr, account.address]
   });
   const corpAddr = (await publicClient.waitForTransactionReceipt({ hash: corpTx })).contractAddress!;
-  console.log(`[+] CorporateContribution Contract deployed at: ${corpAddr}`);
+  console.log(`[+] ProtocolContribution Contract deployed at: ${corpAddr}`);
 
   // 9. Deploy VaultPositionNFT
   const nftArtifact = loadArtifact('VaultPositionNFT', 'VaultPositionNFT.sol');

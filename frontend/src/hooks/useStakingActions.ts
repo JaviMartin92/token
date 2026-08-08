@@ -70,14 +70,14 @@ export function useStakingActions({ activeKey, account, userAddress, addLog, add
           { label: 'Monto Bruto Ingresado', value: `${num.toLocaleString('en-US')} ALPHA Tokens` },
           { label: 'Comisión de Entrada a Staking (1.00%)', value: `${fee} ALPHA`, badge: 'Reparto 50%/25%/25%' },
           { label: 'Destino 50% Comisión (Quema Deflacionaria)', value: `${(num * 0.005).toFixed(2)} ALPHA (Quema permanente en Tesorería)`, isHighlight: true },
-          { label: 'Destino 25% Comisión (OpEx Vault)', value: `${(num * 0.0025).toFixed(2)} ALPHA (CorporateOpExVault Auto-Staked)` },
-          { label: 'Destino 25% Comisión (Profit Vault)', value: `${(num * 0.0025).toFixed(2)} ALPHA (CorporateProfitVault Auto-Staked)` },
+          { label: 'Destino 25% Comisión (Protocol OpEx Vault)', value: `${(num * 0.0025).toFixed(2)} ALPHA (ProtocolOpExVault Infra Grants)` },
+          { label: 'Destino 25% Comisión (Community Yield Vault)', value: `${(num * 0.0025).toFixed(2)} ALPHA (CommunityYieldVault Real Yield Pool)` },
           { label: 'Balance Neto Acreditado', value: `${net} stALPHA (Balance Staked On-Chain)`, badge: '100% Reembolsable en Unstake' },
-          { label: 'Rendimiento Pasivo Asignado', value: 'Reparto Pro-Rata del APY de Reservas Morpho (8%-12%) e Inyecciones de Comisiones en USDC', badge: 'Cobro en Tiempo Real' },
+          { label: 'Rendimiento Pasivo Asignado', value: 'Reparto Pro-Rata del APY de Reservas e Inyecciones de Comisiones en Liquid USDC', badge: 'Cobro en Tiempo Real' },
           { label: 'Beneficio Exclusivo Staking', value: 'Loyalty Tier Status: Hasta +5.00% Extra de Descuento en Bonos Vestados', badge: 'VIP Holder' },
-          { label: 'Productividad del Yield', value: 'Auto-Compounding Activo: El Yield no reclamado sigue generando 6.45% APY pasivo', badge: '🔄 Auto-Compound' }
+          { label: 'Productividad del Yield', value: 'Auto-Compounding Activo: El Yield no reclamado sigue generando APY pasivo', badge: '🔄 Auto-Compound' }
         ],
-        warningNote: 'El contrato inteligente GovernanceStaking.sol aplica la comisión del 1.00% enviando el 50% a quema permanente (elevando el valor NAV por token) y el 50% a las bóvedas corporativas. El APY no reclamado auto-compone diariamente.',
+        warningNote: 'El contrato inteligente GovernanceStaking.sol aplica la comisión del 1.00% enviando el 50% a quema permanente (elevando el valor NAV por token) y el 50% a las bóvedas del protocolo.',
         confirmButtonText: '✍️ Confirmar y Bloquear Staking',
         confirmButtonColor: 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)'
       }, executeStake);

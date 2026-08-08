@@ -196,12 +196,12 @@ export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, 
           ...(pricePaid > 0 ? [
             { label: 'Reembolso Neto en USDC (85.00%)', value: `$${netRefund.toFixed(2)} USDC`, badge: 'Transferencia Inmediata' },
             { label: 'Destino 50% Penalización (Reservas)', value: `$${feeReserves.toFixed(2)} USDC (Treasury.sol)` },
-            { label: 'Destino 25% Penalización (OpEx Vault)', value: `$${feeOps.toFixed(2)} USDC (CorporateOpExVault)` },
-            { label: 'Destino 25% Penalización (Profit Vault)', value: `$${feeProfit.toFixed(2)} USDC (CorporateProfitVault)` }
+            { label: 'Destino 25% Penalización (Protocol OpEx Vault)', value: `$${feeOps.toFixed(2)} USDC (ProtocolOpExVault)` },
+            { label: 'Destino 25% Penalización (Community Yield Vault)', value: `$${feeProfit.toFixed(2)} USDC (CommunityYieldVault)` }
           ] : [
             { label: 'Destino 50% Penalización (Reservas)', value: '7.50% a Reservas Tesorería (Treasury.sol)' },
-            { label: 'Destino 25% Penalización (OpEx Vault)', value: '3.75% a CorporateOpExVault (Auto-Staked ALPHA)' },
-            { label: 'Destino 25% Penalización (Profit Vault)', value: '3.75% a CorporateProfitVault (Auto-Staked ALPHA)' }
+            { label: 'Destino 25% Penalización (Protocol OpEx Vault)', value: '3.75% a ProtocolOpExVault (Liquid USDC Grants)' },
+            { label: 'Destino 25% Penalización (Community Yield Vault)', value: '3.75% a CommunityYieldVault (Liquid USDC Real Yield)' }
           ])
         ],
         warningNote: '¡Atención! El contrato inteligente VestedDiscountVault.sol ejecutará una retención irreversible del 15.00% sobre el valor del bono.',

@@ -40,6 +40,7 @@ export function useWeb3State() {
   const [navPerShareNum, setNavPerShareNum] = useState(1.005025);
 
   const [liveApyStr, setLiveApyStr] = useState('5.72%');
+  const [assetRates, setAssetRates] = useState({ stablesApyPct: 0.0645, ethApyPct: 0.0420, btcApyPct: 0.0380 });
   const [blockDateStr, setBlockDateStr] = useState('');
   const [snapshotId, setSnapshotId] = useState('');
   const [circuitBreakerFrozen, setCircuitBreakerFrozen] = useState(false);
@@ -282,11 +283,7 @@ export function useWeb3State() {
           const bWeth = parseFloat(formatEther(wethWei));
           const bLoans = parseFloat(formatEther(loansWei));
 
-          if (bStables > 0 || bWbtc > 0 || bWeth > 0 || bLoans > 0) {
-            setPorBreakdown({ stables: bStables, wbtc: bWbtc, weth: bWeth, alphaStaking: bLoans });
-          } else {
-            setPorBreakdown({ stables: assetsVal * 0.60, wbtc: assetsVal * 0.2667, weth: assetsVal * 0.1333, alphaStaking: 0 });
-          }
+          setPorBreakdown({ stables: bStables, wbtc: bWbtc, weth: bWeth, alphaStaking: bLoans });
 
           if (CONTRACT_ADDRESSES.DYNAMIC_YIELD_ORACLE) {
             try {
@@ -298,10 +295,24 @@ export function useWeb3State() {
               }) as bigint;
               const apyPct = (Number(weightedApyBps) / 100).toFixed(2);
               setLiveApyStr(`${apyPct}%`);
+
+              const sVault = await publicClient.readContract({ address: CONTRACT_ADDRESSES.DYNAMIC_YIELD_ORACLE, abi: ABIS.DYNAMIC_YIELD_ORACLE, functionName: 'getBestYieldVault', args: [0] }) as any;
+              const eVault = await publicClient.readContract({ address: CONTRACT_ADDRESSES.DYNAMIC_YIELD_ORACLE, abi: ABIS.DYNAMIC_YIELD_ORACLE, functionName: 'getBestYieldVault', args: [1] }) as any;
+              const bVault = await publicClient.readContract({ address: CONTRACT_ADDRESSES.DYNAMIC_YIELD_ORACLE, abi: ABIS.DYNAMIC_YIELD_ORACLE, functionName: 'getBestYieldVault', args: [2] }) as any;
+
+              const sBps = Number(Array.isArray(sVault) ? sVault[2] : (sVault?.highestApyBps || 645));
+              const eBps = Number(Array.isArray(eVault) ? eVault[2] : (eVault?.highestApyBps || 420));
+              const bBps = Number(Array.isArray(bVault) ? bVault[2] : (bVault?.highestApyBps || 380));
+
+              setAssetRates({
+                stablesApyPct: sBps / 10000,
+                ethApyPct: eBps / 10000,
+                btcApyPct: bBps / 10000
+              });
             } catch (e) {}
           }
         } catch (e) {
-          setPorBreakdown({ stables: assetsVal * 0.60, wbtc: assetsVal * 0.2667, weth: assetsVal * 0.1333, alphaStaking: 0 });
+          setPorBreakdown({ stables: 0, wbtc: 0, weth: 0, alphaStaking: 0 });
         }
       } catch (e) {}
 
@@ -427,6 +438,7 @@ export function useWeb3State() {
     navPerShareUSD,
     navPerShareNum,
     liveApyStr,
+    assetRates,
     blockDateStr,
     snapshotId,
     setSnapshotId,

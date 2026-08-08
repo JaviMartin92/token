@@ -10,6 +10,7 @@ interface ApyBreakdownModalProps {
   activeLoansUsd?: number;
   claimableYieldUsd?: number;
   activeLoansInterestUsd?: number;
+  assetRates?: { stablesApyPct: number; ethApyPct: number; btcApyPct: number };
 }
 
 export function calculateProtocolApyMath(
@@ -19,7 +20,8 @@ export function calculateProtocolApyMath(
   grossCashflowUsd: number = 0,
   activeLoansUsd: number = 0,
   claimableYieldUsd: number = 0,
-  activeLoansInterestUsd: number = 0
+  activeLoansInterestUsd: number = 0,
+  assetRates = { stablesApyPct: 0.0645, ethApyPct: 0.0420, btcApyPct: 0.0380 }
 ) {
   const numericAssetsUSD = parseFloat(porAssets.replace(/,/g, '')) || 0;
   const numericStakedAlpha = parseFloat(stakedBalance.replace(/,/g, '')) || 0;
@@ -37,15 +39,15 @@ export function calculateProtocolApyMath(
 
   const treasuryLoanUSDYield = activeLoanInterestUSD;
 
-  // 1. Morpho Blue (USDC): 80% of USDC stablecoin reserve deployed to MetaMorpho Vault @ ~6.45% APR
+  // 1. Morpho Blue (USDC): 80% of USDC stablecoin reserve deployed to MetaMorpho Vault @ Dynamic On-Chain Oracle APR
   const morphoUSDPool = stablesUSD * 0.80;
-  const morphoUSDYield = morphoUSDPool * 0.0645;
+  const morphoUSDYield = morphoUSDPool * assetRates.stablesApyPct;
 
-  // 2. Lombard LBTC (WBTC): 100% of WBTC reserve @ ~4.85% APR
-  const lbtcUSDYield = wbtcUSD * 0.0485;
+  // 2. Lombard LBTC (WBTC): 100% of WBTC reserve @ Dynamic On-Chain Oracle APR
+  const lbtcUSDYield = wbtcUSD * assetRates.btcApyPct;
 
-  // 3. Lido wstETH (WETH): 100% of WETH reserve @ ~3.65% APR
-  const wstEthUSDYield = wethUSD * 0.0365;
+  // 3. Lido wstETH (WETH): 100% of WETH reserve @ Dynamic On-Chain Oracle APR
+  const wstEthUSDYield = wethUSD * assetRates.ethApyPct;
 
   const totalAnnualYieldUSD = morphoUSDYield + lbtcUSDYield + wstEthUSDYield + treasuryLoanUSDYield;
   const realTimeBaseApyPct = numericAssetsUSD > 0 ? (totalAnnualYieldUSD / numericAssetsUSD) * 100 : 0;
@@ -105,7 +107,8 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
   grossCashflowUsd = 0,
   activeLoansUsd = 0,
   claimableYieldUsd = 0,
-  activeLoansInterestUsd = 0
+  activeLoansInterestUsd = 0,
+  assetRates = { stablesApyPct: 0.0645, ethApyPct: 0.0420, btcApyPct: 0.0380 }
 }) => {
   if (!isOpen) return null;
 
@@ -143,7 +146,8 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
     grossCashflowUsd,
     activeLoansUsd,
     claimableYieldUsd,
-    activeLoansInterestUsd
+    activeLoansInterestUsd,
+    assetRates
   );
 
   return (
