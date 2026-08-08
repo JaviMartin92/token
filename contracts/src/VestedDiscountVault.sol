@@ -155,6 +155,11 @@ contract VestedDiscountVault is Ownable, ReentrancyGuard {
             require(!ICircuitBreaker(circuitBreaker).isFrozen(stablecoin), "VestedVault: Circuit breaker active for payment asset");
         }
 
+        uint256 preNavUSD = 0;
+        if (treasuryBunker != address(0) && treasuryBunker.code.length > 0) {
+            try ITreasury(treasuryBunker).getNAVPerShare() returns (uint256 nav) { preNavUSD = nav; } catch {}
+        }
+
         uint256 discountBps = calculateDiscountBps(msg.sender, lockYears);
         uint256 discountedPrice = (principalAmount * (10000 - discountBps)) / 10000;
 
@@ -195,6 +200,12 @@ contract VestedDiscountVault is Ownable, ReentrancyGuard {
         );
 
         isVestedBond[tokenId] = true;
+
+        if (treasuryBunker != address(0) && treasuryBunker.code.length > 0 && preNavUSD > 0) {
+            try ITreasury(treasuryBunker).getNAVPerShare() returns (uint256 postNavUSD) {
+                require(postNavUSD >= preNavUSD, "VestedVault: Invariant Violation - Bond purchase reduced NAV per share");
+            } catch {}
+        }
 
         emit BondPurchased(msg.sender, tokenId, principalAmount, discountedPrice, lockYears, referrer);
     }

@@ -344,6 +344,7 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
         require(stableAmount > 0, "TreasuryManager: Deposit amount must be > 0");
 
         (, uint256 totalLiabilitiesUSD, uint256 preRatioBps) = getProofOfReserves();
+        uint256 preNavUSD = getNAVPerShare();
 
         // 1. Read Exogenous Assets and Net Circulating Shares BEFORE funds enter the vault
         uint256 totalAssetsExogenous = getTotalAssetsExogenousUSD();
@@ -418,8 +419,12 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
             _allocateAlphaReserve(altsUsdc, token);
         }
 
-        (, , uint256 postRatioBps) = getProofOfReserves();
+        (uint256 postAssetsUSD, , uint256 postRatioBps) = getProofOfReserves();
+        uint256 postNavUSD = getNAVPerShare();
+
         require(postRatioBps >= 10000, "TreasuryManager: Security Violation - Undercollateralized (PoR < 100%)");
+        require(postNavUSD >= preNavUSD, "TreasuryManager: Invariant Violation - NAV per share decreased");
+        require(postRatioBps >= preRatioBps, "TreasuryManager: Invariant Violation - Solvency ratio decreased");
 
         emit Deposited(msg.sender, actualDeposited, sharesMinted);
         return sharesMinted;
@@ -497,6 +502,7 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
         uint256 totalShares = getNetCirculatingShares();
         
         (, , uint256 preRatioBps) = getProofOfReserves();
+        uint256 preNavUSD = getNAVPerShare();
 
         uint256 nav = getTotalNavUSD();
         uint256 grossAssetValueUSD = (sharesAmount * nav) / totalShares;
@@ -524,7 +530,9 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
         }
 
         (, , uint256 postRatioBps) = getProofOfReserves();
+        uint256 postNavUSD = getNAVPerShare();
         require(postRatioBps >= preRatioBps, "TreasuryManager: Security Violation - Transaction reduced collateralization ratio");
+        require(postNavUSD >= preNavUSD, "TreasuryManager: Invariant Violation - NAV per share decreased");
 
         emit Redeemed(msg.sender, sharesAmount, assetsReceived);
         return assetsReceived;
