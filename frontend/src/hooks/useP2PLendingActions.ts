@@ -632,10 +632,10 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
       const collateralValUSD = colAmt * priceUsd;
       const maxBorrowUSD = collateralValUSD * maxLtv;
 
-      if (numAmt > maxBorrowUSD) {
+      if (numAmt > maxBorrowUSD + 0.50) {
         const requiredColateralAmt = numAmt / (priceUsd * maxLtv);
         addLog(`[Error LTV] Colateral insuficiente. Con ${colAmt} ${colSymbol} ($${collateralValUSD.toFixed(2)} USD) solo puedes pedir un máximo de $${maxBorrowUSD.toFixed(2)} USDC (${(maxLtv * 100).toFixed(0)}% LTV).`);
-        addToast('error', 'Colateral Insuficiente', `Para pedir $${numAmt} USDC necesitas al menos ${requiredColateralAmt.toFixed(collateralType === 'alpha' ? 0 : 4)} ${colSymbol} ($${(numAmt / maxLtv).toFixed(2)} USD de garantía al ${(maxLtv * 100).toFixed(0)}% LTV).`);
+        addToast('error', 'Colateral Insuficiente', `Para pedir $${numAmt} USDC necesitas al menos ${requiredColateralAmt.toFixed(collateralType === 'alpha' ? 2 : 4)} ${colSymbol} ($${(numAmt / maxLtv).toFixed(2)} USD de garantía al ${(maxLtv * 100).toFixed(0)}% LTV).`);
         return;
       }
     }
