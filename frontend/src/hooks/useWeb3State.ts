@@ -121,19 +121,19 @@ export function useWeb3State() {
       } catch (e) {}
 
       try {
-        const nav = await publicClient.readContract({
+        const overview = await publicClient.readContract({
           address: CONTRACT_ADDRESSES.TREASURY,
           abi: ABIS.TREASURY,
-          functionName: 'getNAV'
-        }) as bigint;
-        const navNum = parseFloat(formatEther(nav));
-        setNavValue(navNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+          functionName: 'getProtocolOverview'
+        }) as any;
 
-        const netCirculatingNum = parseFloat(formatEther(netCirculating));
-        if (netCirculatingNum > 0) {
-          const navPerShare = (navNum / netCirculatingNum).toFixed(4);
-          setNavPerShareUSD(`$${navPerShare} USDC`);
-          setNavPerShareNum(navNum / netCirculatingNum);
+        const navAssetsNum = parseFloat(formatEther(overview.totalAssetsUSD));
+        const navPerShareNumVal = parseFloat(formatEther(overview.navPerShareUSD));
+
+        setNavValue(navAssetsNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        if (navPerShareNumVal > 0) {
+          setNavPerShareUSD(`$${navPerShareNumVal.toFixed(4)} USDC`);
+          setNavPerShareNum(navPerShareNumVal);
         } else {
           setNavPerShareUSD('$1.0000 USDC');
           setNavPerShareNum(1.0);
