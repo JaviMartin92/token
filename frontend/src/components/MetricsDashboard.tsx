@@ -89,7 +89,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
           <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
             <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>🛡️ Solvencia Global PoR</div>
             <div data-testid="por-collateral-ratio" style={{ fontSize: '1.6rem', fontWeight: 800, color: numericRatioPct >= 100 ? '#4ade80' : '#f87171', marginTop: '0.2rem' }}>
-              {porRatio}%
+              {porRatio.includes('%') ? porRatio : `${porRatio}%`}
             </div>
             <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
               Ratio Solvencia = Total Activos / Pasivos
@@ -99,7 +99,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
           <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
             <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>💎 Respaldo (NAV / ALPHA)</div>
             <div data-testid="header-nav-value" style={{ fontSize: '1.6rem', fontWeight: 800, color: '#38bdf8', marginTop: '0.2rem' }}>
-              ${navPerShareUSD} USDC
+              {navPerShareUSD.startsWith('$') ? navPerShareUSD : `$${navPerShareUSD} USDC`}
             </div>
             <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
               Valor Patrimonial Neto On-Chain
@@ -170,7 +170,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
           <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
             <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>🥩 Total Global Staked</div>
             <div data-testid="staking-total-staked" style={{ fontSize: '1.3rem', fontWeight: 700, color: '#a855f7', marginTop: '0.3rem' }}>
-              <span data-testid="staking-global-staked">{totalStakedSupply}</span> ALPHA ({stakingRatioPct}%)
+              <span data-testid="staking-global-staked">{totalStakedSupply}</span> ALPHA ({stakingRatioPct.includes('%') ? stakingRatioPct : `${stakingRatioPct}%`})
             </div>
             <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>Total stALPHA en Gobernanza</div>
           </div>
