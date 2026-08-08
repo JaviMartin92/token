@@ -72,18 +72,33 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
     }
   };
 
-  const handleDeposit = () => {
+  const handleDeposit = async () => {
     if (!depositAmount) return;
     const num = parseFloat(depositAmount);
     if (isNaN(num) || num <= 0) return;
 
     if (requestConfirmation) {
-      // Dynamic Slippage Fee: min(50 + ((gross * 10000 / (99500 + gross)) * 500 / 10000), 500)
-      const resVal = 99500;
-      const impactRatioBps = (num * 10000) / (resVal + num);
-      const dynamicFeeBps = Math.min(50 + Math.floor((impactRatioBps * 500) / 10000), 500);
-      const dynamicFeePct = (dynamicFeeBps / 100).toFixed(2);
+      let dynamicFeeBps = 50;
+      try {
+        const totalAssetsExo = await publicClient.readContract({
+          address: CONTRACT_ADDRESSES.TREASURY,
+          abi: [
+            { name: 'getTotalAssetsExogenousUSD', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] }
+          ] as const,
+          functionName: 'getTotalAssetsExogenousUSD'
+        }) as bigint;
 
+        const feeBps = await publicClient.readContract({
+          address: CONTRACT_ADDRESSES.TREASURY,
+          abi: ABIS.TREASURY,
+          functionName: 'calculateDynamicFeeBps',
+          args: [parseEther(depositAmount), totalAssetsExo]
+        }) as bigint;
+
+        dynamicFeeBps = Number(feeBps);
+      } catch (e) {}
+
+      const dynamicFeePct = (dynamicFeeBps / 100).toFixed(2);
       const feeVal = (num * dynamicFeeBps) / 10000;
       const fee = feeVal.toFixed(2);
       const netVal = num - feeVal;

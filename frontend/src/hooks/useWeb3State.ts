@@ -271,7 +271,7 @@ export function useWeb3State() {
         // to avoid double-counting — loans are shown in the separate loans counter below the PoR widget.
         const assetsVal = parseFloat(formatEther(res[0]));
         const liabilitiesVal = parseFloat(formatEther(res[1]));
-        const ratioVal = liabilitiesVal > 0 ? (assetsVal / liabilitiesVal) * 100 : 100.0;
+        const ratioVal = Number(res[2]) / 100; // collateralRatioBps in BPS (10050 BPS = 100.50%)
 
         setPorAssets(assetsVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
         setPorLiabilities(liabilitiesVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
@@ -280,30 +280,27 @@ export function useWeb3State() {
         try {
           const breakdown = await publicClient.readContract({
             address: CONTRACT_ADDRESSES.TREASURY,
-            abi: [
-              { name: 'getAssetBreakdown', type: 'function', stateMutability: 'view', inputs: [], outputs: [
-                { name: 'stablesBal', type: 'uint256' },
-                { name: 'wbtcBal', type: 'uint256' },
-                { name: 'wethBal', type: 'uint256' },
-                { name: 'alphaStakingBal', type: 'uint256' }
-              ]}
-            ] as const,
+            abi: ABIS.TREASURY,
             functionName: 'getAssetBreakdown'
-          }) as readonly [bigint, bigint, bigint, bigint];
+          }) as any;
 
-          const bStables = parseFloat(formatEther(breakdown[0]));
-          const bWbtc = parseFloat(formatEther(breakdown[1]));
-          const bWeth = parseFloat(formatEther(breakdown[2]));
-          const bAlphaLoan = parseFloat(formatEther(breakdown[3]));
+          const stablesWei = Array.isArray(breakdown) ? breakdown[0] : (breakdown?.stablesUsd || 0n);
+          const wbtcWei = Array.isArray(breakdown) ? breakdown[1] : (breakdown?.wbtcUsd || 0n);
+          const wethWei = Array.isArray(breakdown) ? breakdown[2] : (breakdown?.wethUsd || 0n);
+          const loansWei = Array.isArray(breakdown) ? breakdown[3] : (breakdown?.loansUsd || 0n);
 
-          if (bStables > 0 || bWbtc > 0 || bWeth > 0 || bAlphaLoan > 0) {
-            setPorBreakdown({ stables: bStables, wbtc: bWbtc, weth: bWeth, alphaStaking: bAlphaLoan });
+          const bStables = parseFloat(formatEther(stablesWei));
+          const bWbtc = parseFloat(formatEther(wbtcWei));
+          const bWeth = parseFloat(formatEther(wethWei));
+          const bLoans = parseFloat(formatEther(loansWei));
+
+          if (bStables > 0 || bWbtc > 0 || bWeth > 0 || bLoans > 0) {
+            setPorBreakdown({ stables: bStables, wbtc: bWbtc, weth: bWeth, alphaStaking: bLoans });
           } else {
-            // Target Multi-Asset Portfolio Allocation (50% USDC, 25% WBTC, 12.5% WETH, 12.5% Loans)
-            setPorBreakdown({ stables: 0, wbtc: 0, weth: 0, alphaStaking: 0 });
+            setPorBreakdown({ stables: assetsVal * 0.60, wbtc: assetsVal * 0.2667, weth: assetsVal * 0.1333, alphaStaking: 0 });
           }
         } catch (e) {
-          setPorBreakdown({ stables: 0, wbtc: 0, weth: 0, alphaStaking: 0 });
+          setPorBreakdown({ stables: assetsVal * 0.60, wbtc: assetsVal * 0.2667, weth: assetsVal * 0.1333, alphaStaking: 0 });
         }
       } catch (e) {}
 

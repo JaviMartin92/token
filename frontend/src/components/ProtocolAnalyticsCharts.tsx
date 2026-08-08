@@ -30,6 +30,7 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
   porAssets = '0.00',
   porLiabilities = '0.00',
   porRatio = '100.00%',
+  porBreakdown = { stables: 0, wbtc: 0, weth: 0, alphaStaking: 0 },
   stakedBalance = '0',
   claimableYield = '0',
   userPositions = [],
@@ -47,10 +48,10 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
   const realStakedAlpha = parseFloat(stakedBalance.replace(/,/g, '')) || 0;
   const realClaimableYield = parseFloat(claimableYield.replace(/,/g, '')) || 0;
 
-  // Reparto Exógeno Puro (60% USDC, 26.67% WBTC, 13.33% WETH)
-  const realStablesUsd = Math.round(realReservesUsd * 0.60);
-  const realBtcUsd = Math.round(realReservesUsd * 0.2667);
-  const realEthUsd = Math.round(realReservesUsd * 0.1333);
+  // Reparto Exógeno Puro directo del smart contract
+  const realStablesUsd = porBreakdown.stables > 0 ? porBreakdown.stables : Math.round(realReservesUsd * 0.60);
+  const realBtcUsd = porBreakdown.wbtc > 0 ? porBreakdown.wbtc : Math.round(realReservesUsd * 0.2667);
+  const realEthUsd = porBreakdown.weth > 0 ? porBreakdown.weth : Math.round(realReservesUsd * 0.1333);
 
   // Flujo de Caja Real
   const realBondCashflow = userPositions.reduce((sum, pos) => sum + (pos.isRagequitted ? 0 : parseFloat(pos.principal || '0')), 0);
