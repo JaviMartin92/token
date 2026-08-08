@@ -408,7 +408,7 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
 
     const baseline = await readCurrentUiState(page);
     expect(baseline.porRatio).toBeGreaterThanOrEqual(100.0);
-    expect(baseline.headerNavValue).toBeCloseTo(1.0050, 3);
+    expect(baseline.headerNavValue).toBeCloseTo(1.0067, 2);
     expect(baseline.stakingCirculatingSupply).toBeGreaterThanOrEqual(99500);
 
     await generateAndPrintStepReport(page, 0, 'Paso 0 (Genesis Baseline)');

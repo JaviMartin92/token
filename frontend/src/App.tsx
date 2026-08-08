@@ -248,6 +248,7 @@ export default function App() {
             loansList={web3.loansList}
             userPositions={web3.userPositions}
             userAddress={web3.userAddress}
+            navPerShareNum={web3.navPerShareNum}
             onAcceptLoanById={p2p.handleAcceptLoanById}
             onCancelLoanOffer={p2p.handleCancelLoanOffer}
             onRepayLoanById={p2p.handleRepayLoanById}

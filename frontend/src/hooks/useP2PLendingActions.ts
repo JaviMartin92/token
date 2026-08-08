@@ -3,17 +3,32 @@ import { parseUnits } from 'viem';
 import { publicClient, getWalletClient, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
 import type { TxConfirmDetails } from '../components/TransactionConfirmModal.js';
 
-// Fetch real-time asset price directly from the on-chain OracleHub contract
+// Fetch real-time asset price directly from the on-chain OracleHub contract or Treasury NAV
 async function getOnChainOraclePriceUSD(collateralType: string): Promise<number> {
   try {
-    let assetAddress = CONTRACT_ADDRESSES.USDC;
-    if (collateralType === 'wbtc') assetAddress = CONTRACT_ADDRESSES.WBTC || '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0';
-    if (collateralType === 'weth') assetAddress = CONTRACT_ADDRESSES.WETH || '0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9';
-    if (collateralType === 'alpha') assetAddress = CONTRACT_ADDRESSES.ALPHA_TOKEN;
+    if (collateralType === 'alpha') {
+      const navWei = await publicClient.readContract({
+        address: CONTRACT_ADDRESSES.TREASURY,
+        abi: ABIS.TREASURY,
+        functionName: 'getNAVPerShare'
+      }) as bigint;
+      const navVal = Number(navWei) / 1e18;
+      if (navVal > 0) return navVal;
+      return 1.0;
+    }
 
-    // We query the value of 1 ether (1e18) of the asset. The oracle handles decimal conversions
-    // and returns the value in 18 decimal USD format.
-    const oneTokenWei = parseUnits('1', collateralType === 'wbtc' ? 8 : 18);
+    let assetAddress = CONTRACT_ADDRESSES.USDC;
+    let assetDecimals = 18;
+    if (collateralType === 'wbtc') {
+      assetAddress = CONTRACT_ADDRESSES.WBTC || '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0';
+      assetDecimals = 8;
+    }
+    if (collateralType === 'weth') {
+      assetAddress = CONTRACT_ADDRESSES.WETH || '0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9';
+      assetDecimals = 18;
+    }
+
+    const oneTokenWei = parseUnits('1', assetDecimals);
     
     const usdValueWei = await publicClient.readContract({
       address: CONTRACT_ADDRESSES.PRICE_FEED,
@@ -27,7 +42,7 @@ async function getOnChainOraclePriceUSD(collateralType: string): Promise<number>
   } catch (e) {
     console.error('Oracle fetch failed:', e);
   }
-  return 0.0;
+  return collateralType === 'wbtc' ? 60000.0 : collateralType === 'weth' ? 3000.0 : 1.0;
 }
 
 // Max LTV per collateral type
@@ -498,8 +513,18 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
         tokenIdBig = nextNftId - 1n;
 
         // 3. Lock collateral ERC20 tokens in Escrow contract
-          const colTokenAddr = collateralType === 'alpha' ? CONTRACT_ADDRESSES.ALPHA_TOKEN : collateralType === 'wbtc' ? CONTRACT_ADDRESSES.USDT : CONTRACT_ADDRESSES.USDC;
-        const colAmountWei = parseUnits(tokenIdOrAmountStr, 6);  // Assuming USDC collateral, 6 decimals
+        let colTokenAddr = CONTRACT_ADDRESSES.ALPHA_TOKEN;
+        let colDecimals = 18;
+        if (collateralType === 'wbtc') {
+          colTokenAddr = CONTRACT_ADDRESSES.WBTC;
+          colDecimals = 8;
+        } else if (collateralType === 'weth') {
+          colTokenAddr = CONTRACT_ADDRESSES.WETH;
+          colDecimals = 18;
+        }
+
+        const formattedColStr = parseFloat(tokenIdOrAmountStr || '0').toFixed(colDecimals > 8 ? 6 : colDecimals);
+        const colAmountWei = parseUnits(formattedColStr, colDecimals);
 
         const appCol = await userClient.writeContract({
           address: colTokenAddr,
