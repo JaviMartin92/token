@@ -37,6 +37,7 @@ interface P2PMarketplaceProps {
   loansList?: MarketplaceLoan[];
   userPositions?: UserPosition[];
   userAddress?: string;
+  navPerShareNum?: number;
   onAcceptLoanById?: (loanId: number, borrowAmount: string) => void;
   onCancelLoanOffer?: (loanId: number) => void;
   onRepayLoanById?: (loanId: number, loanObj?: any) => void;
@@ -64,6 +65,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
   loansList = [],
   userPositions = [],
   userAddress = '',
+  navPerShareNum = 1.0098,
   onAcceptLoanById,
   onCancelLoanOffer,
   onRepayLoanById,
@@ -72,7 +74,24 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
 }) => {
   const [filterTab, setFilterTab] = useState<'all' | 'created' | 'active' | 'my'>('all');
   const [treasuryColType, setTreasuryColType] = useState<string>('nft');
-  const [treasuryColAmount, setTreasuryColAmount] = useState<string>('5000');
+
+  const MAX_LTV_MAP: Record<string, number> = {
+    alpha: 0.50,
+    wbtc: 0.70,
+    weth: 0.75
+  };
+
+  const ASSET_PRICE_MAP: Record<string, number> = {
+    alpha: navPerShareNum && navPerShareNum > 0 ? navPerShareNum : 1.0098,
+    wbtc: 60000.0,
+    weth: 3000.0
+  };
+
+  const borrowAmtNum = parseFloat(p2pBorrowAmount || '0') || 0;
+  const currentLtv = MAX_LTV_MAP[treasuryColType] || 0.50;
+  const currentPrice = ASSET_PRICE_MAP[treasuryColType] || 1.0;
+  const requiredUsdBacking = borrowAmtNum > 0 ? borrowAmtNum / currentLtv : 0;
+  const autoCalculatedColAmount = currentPrice > 0 ? (requiredUsdBacking / currentPrice).toFixed(treasuryColType === 'alpha' ? 2 : 4) : '0.00';
 
   const filteredLoans = loansList.filter((loan) => {
     if (filterTab === 'created') return loan.state === 0;
@@ -232,18 +251,14 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                   )}
                 </>
               ) : (
-                <>
+                <div>
                   <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>
-                    Monto de {treasuryColType.toUpperCase()} a Depositar como Garantía:
+                    Garantía Requerida en {treasuryColType.toUpperCase()} (Calculada Automáticamente):
                   </label>
-                  <input
-                    type="text"
-                    placeholder={treasuryColType === 'alpha' ? 'ej. 5000 ALPHA' : treasuryColType === 'wbtc' ? 'ej. 0.02 WBTC' : 'ej. 0.5 WETH'}
-                    value={treasuryColAmount}
-                    onChange={(e) => setTreasuryColAmount(e.target.value)}
-                    style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#34d399', fontWeight: 600 }}
-                  />
-                </>
+                  <div style={{ padding: '0.65rem 0.85rem', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#34d399', fontWeight: 700, fontSize: '0.85rem' }}>
+                    ⚡ {autoCalculatedColAmount} {treasuryColType.toUpperCase()} (${requiredUsdBacking.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD Respaldo @ {(currentLtv * 100).toFixed(0)}% LTV)
+                  </div>
+                </div>
               )}
             </div>
 
@@ -275,7 +290,14 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
               data-testid="p2p-treasury-request-btn"
               className="btn-primary"
               style={{ width: '100%', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', marginTop: '0.2rem', padding: '0.7rem', fontWeight: 700, boxShadow: '0 4px 12px rgba(16,185,129,0.3)' }}
-              onClick={() => onBorrowFromTreasury && onBorrowFromTreasury(treasuryColType, treasuryColType === 'nft' ? (p2pTokenId || userPositions.find(p => !p.isRagequitted && !p.isMaturedClaimed)?.id.toString() || '') : treasuryColAmount, p2pBorrowAmount, p2pDays)}
+              onClick={() => onBorrowFromTreasury && onBorrowFromTreasury(
+                treasuryColType,
+                treasuryColType === 'nft'
+                  ? (p2pTokenId || userPositions.find(p => !p.isRagequitted && !p.isMaturedClaimed)?.id.toString() || '')
+                  : autoCalculatedColAmount,
+                p2pBorrowAmount,
+                p2pDays
+              )}
             >
               🏛️ Solicitar Crédito a la Tesorería ({treasuryColType.toUpperCase()})
             </button>

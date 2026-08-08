@@ -115,6 +115,7 @@ export const ABIS = {
       { name: 'grossDepositUSD', type: 'uint256' },
       { name: 'totalAssetsExogenousUSD', type: 'uint256' }
     ], outputs: [{ name: '', type: 'uint256' }] },
+    { name: 'getNAVPerShare', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
     { name: 'tvlCap', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
     { name: 'priceFeeds', type: 'function', stateMutability: 'view', inputs: [{ name: 'asset', type: 'address' }], outputs: [{ name: '', type: 'address' }] }
   ] as const,
