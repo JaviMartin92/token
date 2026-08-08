@@ -31,8 +31,8 @@ interface IGovernanceStaking {
     function totalStaked() external view returns (uint256);
     function stakedBalances(address account) external view returns (uint256);
     function stake(uint256 amount) external;
-    function corporateOpExVault() external view returns (address);
-    function corporateProfitVault() external view returns (address);
+    function protocolOpExVault() external view returns (address);
+    function communityYieldVault() external view returns (address);
 }
 
 interface IRealYieldRouter {
@@ -224,14 +224,14 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
         uint256 protocolOwnedAlpha = vault.getBalance(address(token)) + token.balanceOf(address(this));
         if (govAddr != address(0)) {
             protocolOwnedAlpha += IERC20(govAddr).balanceOf(address(vault)) + IERC20(govAddr).balanceOf(address(this));
-            try IGovernanceStaking(govAddr).corporateOpExVault() returns (address opEx) {
+            try IGovernanceStaking(govAddr).protocolOpExVault() returns (address opEx) {
                 if (opEx != address(0)) {
                     protocolOwnedAlpha += token.balanceOf(opEx) + IERC20(govAddr).balanceOf(opEx);
                 }
             } catch {}
-            try IGovernanceStaking(govAddr).corporateProfitVault() returns (address profit) {
-                if (profit != address(0)) {
-                    protocolOwnedAlpha += token.balanceOf(profit) + IERC20(govAddr).balanceOf(profit);
+            try IGovernanceStaking(govAddr).communityYieldVault() returns (address yieldVault) {
+                if (yieldVault != address(0)) {
+                    protocolOwnedAlpha += token.balanceOf(yieldVault) + IERC20(govAddr).balanceOf(yieldVault);
                 }
             } catch {}
         }
@@ -291,14 +291,14 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
             }
             protocolOwned += IERC20(govAddr).balanceOf(address(this));
 
-            try IGovernanceStaking(govAddr).corporateOpExVault() returns (address opEx) {
+            try IGovernanceStaking(govAddr).protocolOpExVault() returns (address opEx) {
                 if (opEx != address(0)) {
                     protocolOwned += token.balanceOf(opEx) + IERC20(govAddr).balanceOf(opEx);
                 }
             } catch {}
-            try IGovernanceStaking(govAddr).corporateProfitVault() returns (address profit) {
-                if (profit != address(0)) {
-                    protocolOwned += token.balanceOf(profit) + IERC20(govAddr).balanceOf(profit);
+            try IGovernanceStaking(govAddr).communityYieldVault() returns (address yieldVault) {
+                if (yieldVault != address(0)) {
+                    protocolOwned += token.balanceOf(yieldVault) + IERC20(govAddr).balanceOf(yieldVault);
                 }
             } catch {}
         }

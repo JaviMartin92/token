@@ -20,6 +20,8 @@ contract ProtocolAddressProvider is AccessControl {
     bytes32 public constant ID_REAL_YIELD_ROUTER = keccak256("REAL_YIELD_ROUTER");
     bytes32 public constant ID_P2P_MARKET = keccak256("P2P_MARKET");
     bytes32 public constant ID_VESTED_VAULT = keccak256("VESTED_VAULT");
+    bytes32 public constant ID_PROTOCOL_OPEX_VAULT = keccak256("PROTOCOL_OPEX_VAULT");
+    bytes32 public constant ID_COMMUNITY_YIELD_VAULT = keccak256("COMMUNITY_YIELD_VAULT");
 
     mapping(bytes32 => address) private _addresses;
 

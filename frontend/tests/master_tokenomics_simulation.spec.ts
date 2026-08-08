@@ -445,16 +445,16 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
     const confirmDepBtn = page.locator('button:has-text("Confirmar Depósito")').first();
     await confirmDepBtn.click({ force: true });
     await expect(depositModal).toBeHidden({ timeout: 15000 });
-    await expect(page.locator('[data-testid="treasury-shares-balance"]')).toHaveText('9,855.48 ALPHA', { timeout: 10000 });
+    await expect(page.locator('[data-testid="treasury-shares-balance"]')).toHaveText('9,880.18 ALPHA', { timeout: 10000 });
 
     await auditUiDeltas(page, 3, 'PASO 3 (Post-Depósito)', statePostFaucet, {
       usdcDelta: -10000.00,
-      sharesDelta: 9855.48,
+      sharesDelta: 9880.18,
       minPor: 100.0
     });
 
     const statePostDeposit = await readCurrentUiState(page);
-    expect(statePostDeposit.alphaShares).toBeCloseTo(9855.48, 1);
+    expect(statePostDeposit.alphaShares).toBeCloseTo(9880.18, 1);
 
     // -------------------------------------------------------------------------
     // PASO 4: STAKING DE 3,000 ALPHA (SNAPSHOT EXACTO EN PRE-STAKE)

@@ -275,55 +275,47 @@ async function main() {
   await publicClient.waitForTransactionReceipt({ hash: authStakingTx });
   console.log(`[+] Authorized RealYieldRouter on GovernanceStaking.`);
 
-  // 11.5 Deploy Corporate OpEx and Profit Vaults
-  const opExArtifact = loadArtifact('CorporateOpExVault', 'CorporateOpExVault.sol');
+  // 11.5 Deploy Protocol OpEx and Community Yield Vaults (Pure DeFi MiCA Compliance)
+  const opExArtifact = loadArtifact('ProtocolOpExVault', 'ProtocolOpExVault.sol');
   const opExTx = await walletClient.deployContract({
     abi: opExArtifact.abi,
     bytecode: opExArtifact.bytecode.object,
-    args: [treasuryAddr, account.address],
+    args: [usdcAddr, account.address],
     account
   });
   const corpOpExAddr = (await publicClient.waitForTransactionReceipt({ hash: opExTx })).contractAddress!;
-  console.log(`[+] CorporateOpExVault Contract deployed at: ${corpOpExAddr}`);
+  console.log(`[+] ProtocolOpExVault Contract deployed at: ${corpOpExAddr}`);
 
-  const profitArtifact = loadArtifact('CorporateProfitVault', 'CorporateProfitVault.sol');
+  const profitArtifact = loadArtifact('CommunityYieldVault', 'CommunityYieldVault.sol');
   const profitTx = await walletClient.deployContract({
     abi: profitArtifact.abi,
     bytecode: profitArtifact.bytecode.object,
-    args: [treasuryAddr, account.address],
+    args: [usdcAddr, account.address],
     account
   });
   const corpProfitAddr = (await publicClient.waitForTransactionReceipt({ hash: profitTx })).contractAddress!;
-  console.log(`[+] CorporateProfitVault Contract deployed at: ${corpProfitAddr}`);
+  console.log(`[+] CommunityYieldVault Contract deployed at: ${corpProfitAddr}`);
 
-  // Set Treasury, Corporate OpEx Vault, Corporate Profit Vault on RealYieldRouter for 50/25/25 fee split with Auto-Swap
+  // Set Treasury, Protocol OpEx Vault, Community Yield Vault on RealYieldRouter for 50/25/25 liquid USDC fee split
   const setRyWalletsTx = await walletClient.writeContract({
     address: ryRouterAddr,
     abi: routerYieldArtifact.abi,
-    functionName: 'setCorporateVaults',
-    args: [treasuryAddr, corpOpExAddr, corpProfitAddr, alphaTokenAddr],
+    functionName: 'setProtocolVaults',
+    args: [treasuryAddr, corpOpExAddr, corpProfitAddr],
     account
   });
   await publicClient.waitForTransactionReceipt({ hash: setRyWalletsTx });
-  console.log(`[+] Configured 50/25/25 Corporate Auto-Staking Vaults (50% Treasury, 25% OpEx ALPHA Vault, 25% Profit ALPHA Vault) on RealYieldRouter.`);
+  console.log(`[+] Configured 50/25/25 Liquid USDC Vaults (50% Treasury, 25% Protocol OpEx, 25% Community Real Yield) on RealYieldRouter.`);
 
   const setGovCorpHash = await walletClient.writeContract({
     address: stakingAddr,
     abi: stakingArtifact.abi,
-    functionName: 'setCorporateVaults',
+    functionName: 'setProtocolVaults',
     args: [corpOpExAddr, corpProfitAddr]
   });
   await publicClient.waitForTransactionReceipt({ hash: setGovCorpHash });
 
-  // Configure GovernanceStaking address on Corporate OpEx and Profit Vaults for auto-staking
-  const setStakingOpEx = await walletClient.writeContract({
-    address: corpOpExAddr,
-    abi: opExArtifact.abi,
-    functionName: 'setStakingPool',
-    args: [stakingAddr]
-  });
-  await publicClient.waitForTransactionReceipt({ hash: setStakingOpEx });
-
+  // Configure GovernanceStaking address on Community Yield Vault for liquid USDC reward distribution
   const setStakingProfit = await walletClient.writeContract({
     address: corpProfitAddr,
     abi: profitArtifact.abi,
@@ -332,7 +324,7 @@ async function main() {
   });
   await publicClient.waitForTransactionReceipt({ hash: setStakingProfit });
 
-  console.log('[+] Configured 50/25/25 Corporate Auto-Staking Vaults on GovernanceStaking.');
+  console.log('[+] Configured 50/25/25 Protocol Vaults on GovernanceStaking.');
 
   // 12. Deploy VestedDiscountVault
   const vaultArtifact = loadArtifact('VestedDiscountVault', 'VestedDiscountVault.sol');
@@ -733,8 +725,8 @@ async function main() {
   updateEnvVar('VITE_VESTED_VAULT_ADDRESS', vestedVaultAddr);
   updateEnvVar('VITE_P2P_MARKET_ADDRESS', p2pAddr);
   updateEnvVar('VITE_STAKING_ADDRESS', stakingAddr);
-  updateEnvVar('VITE_CORPORATE_OPEX_VAULT_ADDRESS', corpOpExAddr);
-  updateEnvVar('VITE_CORPORATE_PROFIT_VAULT_ADDRESS', corpProfitAddr);
+  updateEnvVar('VITE_PROTOCOL_OPEX_VAULT_ADDRESS', corpOpExAddr);
+  updateEnvVar('VITE_COMMUNITY_YIELD_VAULT_ADDRESS', corpProfitAddr);
   
   // Inject Anvil Private Keys for Frontend E2E & Development
   updateEnvVar('VITE_ADMIN_KEY', '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80');
@@ -765,8 +757,8 @@ async function main() {
     STAKING: stakingAddr,
     REAL_YIELD_ROUTER: ryRouterAddr,
     TOKENOMICS_ENGINE: engineAddr,
-    CORPORATE_OPEX_VAULT: corpOpExAddr,
-    CORPORATE_PROFIT_VAULT: corpProfitAddr,
+    PROTOCOL_OPEX_VAULT: corpOpExAddr,
+    COMMUNITY_YIELD_VAULT: corpProfitAddr,
     MORPHO_ADAPTER: morphoAddr,
     PROMO_VAULT: promoAddr,
     DYNAMIC_YIELD_ORACLE: yieldOracleAddr,

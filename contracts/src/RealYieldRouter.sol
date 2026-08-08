@@ -5,16 +5,16 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./lib/security/ReentrancyGuard.sol";
 import "./GovernanceStaking.sol";
-import "./CorporateOpExVault.sol";
-import "./CorporateProfitVault.sol";
+import "./ProtocolOpExVault.sol";
+import "./CommunityYieldVault.sol";
 import "./interfaces/ISwapRouter.sol";
 
 /**
  * @title RealYieldRouter
- * @notice Universal Fee Router enforcing the strict 50 / 25 / 25 Tokenomics Specification:
- *         - 50%: Strategic Reserve (Treasury.sol)
- *         - 25%: Corporate OpEx Vault (Auto-Swapped to ALPHA & Auto-Staked)
- *         - 25%: Corporate Profit Vault (Auto-Swapped to ALPHA & Auto-Staked)
+ * @notice Universal Fee Router enforcing Pure DeFi MiCA Compliance:
+ *         - 50%: Strategic Reserve (Treasury.sol - Subida inmediata de NAV)
+ *         - 25%: Protocol OpEx Vault (Liquid USDC for RPCs, Oracles, Dev Grants)
+ *         - 25%: Community Yield Vault (Liquid USDC for stALPHA stakers real-time dividend claims)
  */
 contract RealYieldRouter is Ownable, ReentrancyGuard {
     enum PayoutPreference { OPTION_A_STABLECOIN, OPTION_B_RESERVE_ASSET }
@@ -25,16 +25,15 @@ contract RealYieldRouter is Ownable, ReentrancyGuard {
     GovernanceStaking public immutable stakingPool;
 
     address public treasuryBunker;
-    address public corporateOpExVault;
-    address public corporateProfitVault;
-    address public alphaToken;
+    address public protocolOpExVault;
+    address public communityYieldVault;
 
     mapping(address => PayoutPreference) public userPreferences;
     mapping(address => bool) public authorizedYieldCallers;
 
     event PayoutPreferenceSet(address indexed user, PayoutPreference preference);
     event YieldClaimed(address indexed user, uint256 yieldAmount, PayoutPreference preference, uint256 payoutAmount);
-    event UniversalFeeRouted(address indexed feeToken, uint256 totalAmount, uint256 toTreasury, uint256 toOpExAlpha, uint256 toProfitAlpha);
+    event UniversalFeeRouted(address indexed feeToken, uint256 totalAmount, uint256 toTreasury, uint256 toOpExUsdc, uint256 toCommunityYieldUsdc);
 
     modifier onlyAuthorizedYield() {
         require(authorizedYieldCallers[msg.sender] || msg.sender == owner(), "RealYieldRouter: Not authorized");
@@ -58,17 +57,16 @@ contract RealYieldRouter is Ownable, ReentrancyGuard {
         }
     }
 
-    function setCorporateVaults(address _treasuryBunker, address _opExVault, address _profitVault, address _alphaToken) external onlyOwner {
+    function setProtocolVaults(address _treasuryBunker, address _opExVault, address _communityYieldVault) external onlyOwner {
         treasuryBunker = _treasuryBunker;
-        corporateOpExVault = _opExVault;
-        corporateProfitVault = _profitVault;
-        alphaToken = _alphaToken;
+        protocolOpExVault = _opExVault;
+        communityYieldVault = _communityYieldVault;
     }
 
-    function setWallets(address _treasuryBunker, address _opsWallet, address _corporateRevenueWallet) external onlyOwner {
+    function setWallets(address _treasuryBunker, address _opsWallet, address _communityVault) external onlyOwner {
         treasuryBunker = _treasuryBunker;
-        corporateOpExVault = _opsWallet;
-        corporateProfitVault = _corporateRevenueWallet;
+        protocolOpExVault = _opsWallet;
+        communityYieldVault = _communityVault;
     }
 
     function setAuthorizedYieldCaller(address caller, bool authorized) external onlyOwner {
@@ -81,8 +79,8 @@ contract RealYieldRouter is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Routes incoming fees according to the 50/25/25 Tokenomics Specification:
-     *         50% Strategic Reserve, 25% OpEx (Auto-Swapped to ALPHA & Auto-Staked), 25% Profit (Auto-Swapped to ALPHA & Auto-Staked).
+     * @notice Routes incoming fees according to 50 / 25 / 25 Liquid USDC Specification:
+     *         50% Strategic Reserve, 25% Protocol OpEx (Liquid USDC), 25% Community Real Yield (Liquid USDC).
      */
     function notifyYield(uint256 /* amount */) external onlyAuthorizedYield {
         routeUniversalFee(stablecoin);
@@ -96,7 +94,7 @@ contract RealYieldRouter is Ownable, ReentrancyGuard {
         if (bal == 0) return;
 
         uint256 toTreasury = (treasuryBunker != address(0)) ? (bal * 5000) / 10000 : 0;
-        uint256 corporateShare = bal - toTreasury; // 50% for OpEx + Profit
+        uint256 communitySharePool = bal - toTreasury; // 50% for OpEx + Community Yield
 
         if (toTreasury > 0 && treasuryBunker != address(0)) {
             require(IERC20(feeToken).transfer(treasuryBunker, toTreasury), "RealYieldRouter: Treasury transfer failed");
@@ -105,64 +103,30 @@ contract RealYieldRouter is Ownable, ReentrancyGuard {
             }
         }
 
-        if (corporateShare > 0) {
-            uint256 alphaAmount = 0;
+        if (communitySharePool > 0) {
+            uint256 opExShare = communitySharePool / 2;               // 25%
+            uint256 communityShare = communitySharePool - opExShare; // 25%
 
-            // Auto-Swap non-ALPHA fee tokens into ALPHA tokens on secondary market
-            if (feeToken == alphaToken || alphaToken == address(0)) {
-                alphaAmount = corporateShare;
-            } else {
-                bool swapped = false;
-                if (swapRouter != address(0)) {
-                    IERC20(feeToken).approve(swapRouter, corporateShare);
-                    try ISwapRouter(swapRouter).exactInputSingle(
-                        ISwapRouter.ExactInputSingleParams({
-                            tokenIn: feeToken,
-                            tokenOut: alphaToken,
-                            fee: 3000,
-                            recipient: address(this),
-                            deadline: block.timestamp + 15 minutes,
-                            amountIn: corporateShare,
-                            amountOutMinimum: 0,
-                            sqrtPriceLimitX96: 0
-                        })
-                    ) returns (uint256 tokensBought) {
-                        if (tokensBought > 0) {
-                            alphaAmount = tokensBought;
-                            swapped = true;
-                        }
-                    } catch {}
-                }
-
-                if (!swapped && treasuryBunker != address(0)) {
-                    IERC20(feeToken).approve(treasuryBunker, corporateShare);
-                    try ITreasury(treasuryBunker).mintCorporateFeeShares(corporateShare) returns (uint256 sharesMinted) {
-                        alphaAmount = sharesMinted;
-                    } catch {
-                        IERC20(feeToken).transfer(treasuryBunker, corporateShare);
-                        alphaAmount = 0;
-                    }
+            if (opExShare > 0 && protocolOpExVault != address(0)) {
+                IERC20(feeToken).approve(protocolOpExVault, opExShare);
+                try ProtocolOpExVault(protocolOpExVault).depositOpEx(opExShare) {} catch {
+                    IERC20(feeToken).transfer(protocolOpExVault, opExShare);
                 }
             }
 
-            uint256 opExShare = alphaAmount / 2;       // 25%
-            uint256 profitShare = alphaAmount - opExShare; // 25%
-
-            if (opExShare > 0 && corporateOpExVault != address(0)) {
-                IERC20(alphaToken).approve(corporateOpExVault, opExShare);
-                try CorporateOpExVault(corporateOpExVault).depositStaking(opExShare) {} catch {
-                    IERC20(alphaToken).transfer(corporateOpExVault, opExShare);
+            if (communityShare > 0 && communityYieldVault != address(0)) {
+                IERC20(feeToken).approve(communityYieldVault, communityShare);
+                try CommunityYieldVault(communityYieldVault).depositYield(communityShare) {} catch {
+                    IERC20(feeToken).transfer(communityYieldVault, communityShare);
+                }
+            } else if (communityShare > 0 && address(stakingPool) != address(0) && feeToken == stablecoin) {
+                IERC20(feeToken).approve(address(stakingPool), communityShare);
+                try stakingPool.notifyRewardAmount(communityShare) {} catch {
+                    IERC20(feeToken).transfer(address(stakingPool), communityShare);
                 }
             }
 
-            if (profitShare > 0 && corporateProfitVault != address(0)) {
-                IERC20(alphaToken).approve(corporateProfitVault, profitShare);
-                try CorporateProfitVault(corporateProfitVault).depositStaking(profitShare) {} catch {
-                    IERC20(alphaToken).transfer(corporateProfitVault, profitShare);
-                }
-            }
-
-            emit UniversalFeeRouted(feeToken, bal, toTreasury, opExShare, profitShare);
+            emit UniversalFeeRouted(feeToken, bal, toTreasury, opExShare, communityShare);
         }
     }
 
@@ -193,11 +157,11 @@ contract RealYieldRouter is Ownable, ReentrancyGuard {
                     payoutAmount = tokensBought;
                 } catch {
                     payoutAmount = yieldAmount;
-                    require(IERC20(stablecoin).transfer(msg.sender, payoutAmount), "RealYieldRouter: Fallback payout failed");
+                    require(IERC20(stablecoin).transfer(msg.sender, payoutAmount), "RealYieldRouter: Fallback stablecoin transfer failed");
                 }
             } else {
                 payoutAmount = yieldAmount;
-                require(IERC20(stablecoin).transfer(msg.sender, payoutAmount), "RealYieldRouter: Direct payout failed");
+                require(IERC20(stablecoin).transfer(msg.sender, payoutAmount), "RealYieldRouter: Fallback stablecoin transfer failed");
             }
         }
 

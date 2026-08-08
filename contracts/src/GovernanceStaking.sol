@@ -119,9 +119,13 @@ contract GovernanceStaking is ERC20, Ownable, ReentrancyGuard {
     // Treasury reference to compute NAV-based staked asset value
     address public treasury;
 
-    // Corporate Vaults for 50/25/25 Staking Fee distribution
-    address public corporateOpExVault;
-    address public corporateProfitVault;
+    // Protocol Vaults for 50/25/25 Staking Fee distribution
+    address public protocolOpExVault;
+    address public communityYieldVault;
+
+    // Backward compatible getters
+    function corporateOpExVault() external view returns (address) { return protocolOpExVault; }
+    function corporateProfitVault() external view returns (address) { return communityYieldVault; }
 
     // Authorized callers allowed to notify new reward amounts (Treasury, RealYieldRouter)
     mapping(address => bool) public authorizedCallers;
@@ -168,11 +172,16 @@ contract GovernanceStaking is ERC20, Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Sets Corporate OpEx and Profit Vaults for 50/25/25 Staking Fee distribution.
+     * @notice Sets Protocol OpEx and Community Yield Vaults for 50/25/25 Staking Fee distribution.
      */
+    function setProtocolVaults(address _opExVault, address _communityYieldVault) external onlyOwner {
+        protocolOpExVault = _opExVault;
+        communityYieldVault = _communityYieldVault;
+    }
+
     function setCorporateVaults(address _opExVault, address _profitVault) external onlyOwner {
-        corporateOpExVault = _opExVault;
-        corporateProfitVault = _profitVault;
+        protocolOpExVault = _opExVault;
+        communityYieldVault = _profitVault;
     }
 
     /**
@@ -250,11 +259,11 @@ contract GovernanceStaking is ERC20, Ownable, ReentrancyGuard {
                     ITreasury(treasury).recordBurn(treasuryShare);
                 }
             }
-            if (opExShare > 0 && corporateOpExVault != address(0)) {
-                require(govToken.transfer(corporateOpExVault, opExShare), "Staking: Fee to OpEx Vault failed");
+            if (opExShare > 0 && protocolOpExVault != address(0)) {
+                require(govToken.transfer(protocolOpExVault, opExShare), "Staking: Fee to OpEx Vault failed");
             }
-            if (profitShare > 0 && corporateProfitVault != address(0)) {
-                require(govToken.transfer(corporateProfitVault, profitShare), "Staking: Fee to Profit Vault failed");
+            if (profitShare > 0 && communityYieldVault != address(0)) {
+                require(govToken.transfer(communityYieldVault, profitShare), "Staking: Fee to Community Vault failed");
             }
         }
 
@@ -302,10 +311,10 @@ contract GovernanceStaking is ERC20, Ownable, ReentrancyGuard {
     }
 
     function getStakingBreakdown() external view returns (StakingBreakdown memory breakdown) {
-        uint256 opExStaked = corporateOpExVault != address(0) ? balanceOf(corporateOpExVault) : 0;
-        uint256 profitStaked = corporateProfitVault != address(0) ? balanceOf(corporateProfitVault) : 0;
-        uint256 opExBal = corporateOpExVault != address(0) ? govToken.balanceOf(corporateOpExVault) : 0;
-        uint256 profitBal = corporateProfitVault != address(0) ? govToken.balanceOf(corporateProfitVault) : 0;
+        uint256 opExStaked = protocolOpExVault != address(0) ? balanceOf(protocolOpExVault) : 0;
+        uint256 profitStaked = communityYieldVault != address(0) ? balanceOf(communityYieldVault) : 0;
+        uint256 opExBal = protocolOpExVault != address(0) ? govToken.balanceOf(protocolOpExVault) : 0;
+        uint256 profitBal = communityYieldVault != address(0) ? govToken.balanceOf(communityYieldVault) : 0;
 
         breakdown.corporateStaked = opExStaked + profitStaked + opExBal + profitBal;
 
