@@ -18,9 +18,8 @@ import { ActivityLog } from './components/ActivityLog.js';
 import { NotificationToast, type ToastMessage } from './components/NotificationToast.js';
 import { ReferralModal } from './components/ReferralModal.js';
 import { TransactionConfirmModal } from './components/TransactionConfirmModal.js';
-import { ProtocolAnalyticsCharts } from './components/ProtocolAnalyticsCharts.js';
 import { MetricsDashboard } from './components/MetricsDashboard.js';
-import { ApyBreakdownModal, calculateProtocolApyMath } from './components/ApyBreakdownModal.js';
+import { ApyBreakdownModal } from './components/ApyBreakdownModal.js';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'client' | 'metrics' | 'governance'>('client');
@@ -120,19 +119,7 @@ export default function App() {
     return acc + (!pos.isRagequitted ? parseFloat(pos.principal || '0') || 0 : 0);
   }, 0);
 
-  const activeStakedAlpha = (parseFloat((web3.treasuryStakedSupply || '0').replace(/,/g, '')) > 0 ? web3.treasuryStakedSupply : (parseFloat((web3.totalStakedSupply || '0').replace(/,/g, '')) > 0 ? web3.totalStakedSupply : web3.stakedBalance));
-
-  // Compute exact dynamic real-time APY from live Treasury reserve allocation (100% synchronized)
-  const apyCalculated = calculateProtocolApyMath(
-    web3.porAssets,
-    web3.porBreakdown,
-    activeStakedAlpha,
-    grossCashflowUsd,
-    activeLoansSum,
-    claimableYieldVal,
-    activeLoansInterestSum
-  );
-  const liveApyStr = `${apyCalculated.totalApyPct}%`;
+  const liveApyStr = web3.liveApyStr || '5.72%';
 
   return (
     <div style={{ minHeight: '100vh', padding: '1.5rem', background: 'radial-gradient(ellipse at top, #1e1b4b 0%, #0f172a 100%)', color: '#fff' }}>
@@ -176,7 +163,7 @@ export default function App() {
         onClose={() => setIsApyModalOpen(false)}
         porAssets={web3.porAssets}
         porBreakdown={web3.porBreakdown}
-        stakedBalance={activeStakedAlpha}
+        stakedBalance={web3.totalStakedSupply}
         grossCashflowUsd={grossCashflowUsd}
         activeLoansUsd={activeLoansSum}
         claimableYieldUsd={claimableYieldVal}

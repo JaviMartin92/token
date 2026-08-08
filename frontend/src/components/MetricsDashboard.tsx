@@ -44,9 +44,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   onOpenApyModal,
   liveApyStr
 }) => {
-  const numericAssetsUSD = parseFloat((porAssets || '0').replace(/,/g, '')) || 0;
-  const numericLiabilitiesUSD = parseFloat((porLiabilities || '0').replace(/,/g, '')) || 0;
-  const numericRatioPct = parseFloat((porRatio || '100').replace(/,/g, '')) || 100.0;
+  const numericRatioPct = parseFloat((porRatio || '100').replace(/,/g, '').replace('%', '')) || 100.0;
 
   // Exogenous reserves breakdown directly from Treasury.sol getAssetBreakdown()
   const stablesUSD = porBreakdown.stables;
@@ -58,7 +56,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
       
       {/* 📊 SECCIÓN 1: PANEL SUPERIOR DE KPI METRICS */}
       <div className="card" style={{ background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.9) 100%)', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '16px', padding: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.08)', pb: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '1rem' }}>
           <div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, background: 'linear-gradient(135deg, #a855f7 0%, #38bdf8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>
               📊 Panel Consolidado de Métricas & Contadores On-Chain

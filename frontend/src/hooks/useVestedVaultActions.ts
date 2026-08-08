@@ -57,7 +57,7 @@ export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, 
     if (isNaN(principalNum) || principalNum <= 0) return;
 
     const yearsNum = parseInt(bondLockYears) || 1;
-    let baseDiscountBps = Math.min(800 * yearsNum + 200, 4000); // 8% per year + 2% bonus (Max 40%)
+    let totalDiscountBps = Math.min(yearsNum * 500, 2500);
     try {
       const userAddr = activeKey ? getWalletClient(activeKey).account.address : '0x0000000000000000000000000000000000000000';
       const onChainBps = await publicClient.readContract({
@@ -67,29 +67,10 @@ export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, 
         args: [userAddr, BigInt(yearsNum)]
       }) as bigint;
       if (onChainBps > 0n) {
-        baseDiscountBps = Number(onChainBps);
+        totalDiscountBps = Number(onChainBps);
       }
     } catch (e) {}
 
-    const basePct = Math.min(8 * yearsNum + 2, 40);
-    let stakingBonusPct = 0;
-    try {
-      const userAddr = activeKey ? getWalletClient(activeKey).account.address : '0x0000000000000000000000000000000000000000';
-      if (CONTRACT_ADDRESSES.STAKING) {
-        const stakedBal = await publicClient.readContract({
-          address: CONTRACT_ADDRESSES.STAKING,
-          abi: ABIS.STAKING,
-          functionName: 'stakedBalances',
-          args: [userAddr]
-        }) as bigint;
-        const stakedNum = Number(stakedBal / 10n**18n);
-        if (stakedNum >= 20000) stakingBonusPct = 3.0;
-        else if (stakedNum >= 10000) stakingBonusPct = 2.0;
-        else if (stakedNum >= 5000) stakingBonusPct = 1.0;
-      }
-    } catch (e) {}
-
-    const totalDiscountBps = baseDiscountBps;
     const discountPct = (totalDiscountBps / 100).toFixed(1);
     const paidAmount = principalNum * (1 - totalDiscountBps / 10000);
     const savingsAmount = principalNum - paidAmount;
@@ -107,8 +88,6 @@ export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, 
         expectedOutputSymbol: 'Principal en NFT de Posición',
         details: [
           { label: 'Plazo de Bloqueo', value: `${yearsNum} ${yearsNum === 1 ? 'Año' : 'Años'}` },
-          { label: 'Descuento Base por Duración', value: `${basePct.toFixed(1)}%` },
-          { label: 'Bonus Extra Loyalty Staking ALPHA', value: `+${stakingBonusPct.toFixed(1)}% Extra Descuento`, badge: stakingBonusPct > 0 ? `Tier Staking (+${stakingBonusPct}%)` : 'Requiere >=5,000 ALPHA Staked' },
           { label: 'Descuento Total Consolidado', value: `${discountPct}% Total sobre NAV`, badge: `Ahorras $${savingsAmount.toFixed(2)} USDC` },
           { label: 'Comisión de Emisión de Bono (1.50%)', value: `$${(paidAmount * 0.015).toFixed(2)} USDC`, badge: '100% Inyectado a Flywheel Real Yield' },
           { label: 'Referido Asignado', value: bondReferrer ? `${bondReferrer.slice(0, 6)}...` : 'Ninguno (0x00)' }

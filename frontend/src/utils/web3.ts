@@ -26,7 +26,8 @@ export const CONTRACT_ADDRESSES = {
   CORPORATE_PROFIT_VAULT: ((contractsJson as any).CORPORATE_PROFIT_VAULT || (contractsJson as any).CORPORATE_PROFIT) as `0x${string}`,
   ALPHA_VAULT: ((contractsJson as any).ALPHA_VAULT) as `0x${string}`,
   PRICE_FEED: ((contractsJson as any).ORACLE_ROUTER || (contractsJson as any).PRICE_FEED) as `0x${string}`,
-  PROMOTIONAL_VAULT: ((contractsJson as any).PROMO_VAULT) as `0x${string}`
+  PROMOTIONAL_VAULT: ((contractsJson as any).PROMO_VAULT) as `0x${string}`,
+  DYNAMIC_YIELD_ORACLE: ((contractsJson as any).DYNAMIC_YIELD_ORACLE) as `0x${string}`
 };
 
 const anvilChain = {
@@ -205,6 +206,18 @@ export const ABIS = {
     { name: 'setPayoutPreference', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'preference', type: 'uint8' }], outputs: [] },
     { name: 'claimRealYield', type: 'function', stateMutability: 'nonpayable', inputs: [], outputs: [{ name: 'payoutAmount', type: 'uint256' }] },
     { name: 'userPreferences', type: 'function', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [{ name: '', type: 'uint8' }] }
+  ] as const,
+  DYNAMIC_YIELD_ORACLE: [
+    { name: 'calculateWeightedYieldBps', type: 'function', stateMutability: 'view', inputs: [
+      { name: 'stablesUsd', type: 'uint256' },
+      { name: 'wbtcUsd', type: 'uint256' },
+      { name: 'wethUsd', type: 'uint256' }
+    ], outputs: [{ name: 'weightedApyBps', type: 'uint256' }] },
+    { name: 'getBestYieldVault', type: 'function', stateMutability: 'view', inputs: [{ name: 'assetClass', type: 'uint8' }], outputs: [
+      { name: 'bestName', type: 'string' },
+      { name: 'bestVaultAddress', type: 'address' },
+      { name: 'highestApyBps', type: 'uint256' }
+    ]}
   ] as const,
   POSITION_NFT: [
     { name: 'balanceOf', type: 'function', stateMutability: 'view', inputs: [{ name: 'owner', type: 'address' }], outputs: [{ name: '', type: 'uint256' }] },

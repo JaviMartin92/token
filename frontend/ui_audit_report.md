@@ -1,6 +1,6 @@
 # AUDITORÍA DETALLADA DE INTERFAZ DE USUARIO (106 CAMPOS POR PASO)
 
-Generado el: 2026-08-08T12:04:10.129Z
+Generado el: 2026-08-08T12:16:47.178Z
 
 ======================================================================
 📊 INFORME DE ESTADO DE UI - PASO [0]: [PASO 0 (GENESIS BASELINE)]
@@ -53,7 +53,7 @@ Generado el: 2026-08-08T12:04:10.129Z
 - yield-gasless-btn: ⚡ Reclamo Gasless (EIP-712)
 
 [BÓVEDA DE DESCUENTO (BONOS)]
-- bonds-price-today: $740.00 USDC
+- bonds-price-today: $850.00 USDC
 - bonds-principal-input: 
 - bonds-years-select: 1 Año (Descuento ~10%) 2 Años (Descuento ~18%) 3 Años (Descuento ~26%) 4 Años (Descuent...
 - bonds-buy-btn: 💳 Comprar Bono Vestado & Mint NFT
@@ -101,7 +101,7 @@ Generado el: 2026-08-08T12:04:10.129Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:04:11 PM] Cambiado rol conectado a Usuario Retail
+- activity-log-container: [2:16:49 PM] Cambiado rol conectado a Usuario Retail
 
 ======================================================================
 ======================================================================
@@ -155,7 +155,7 @@ Generado el: 2026-08-08T12:04:10.129Z
 - yield-gasless-btn: ⚡ Reclamo Gasless (EIP-712)
 
 [BÓVEDA DE DESCUENTO (BONOS)]
-- bonds-price-today: $740.00 USDC
+- bonds-price-today: $850.00 USDC
 - bonds-principal-input: 
 - bonds-years-select: 1 Año (Descuento ~10%) 2 Años (Descuento ~18%) 3 Años (Descuento ~26%) 4 Años (Descuent...
 - bonds-buy-btn: 💳 Comprar Bono Vestado & Mint NFT
@@ -203,7 +203,7 @@ Generado el: 2026-08-08T12:04:10.129Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:04:15 PM] ¡10,000 USDC mock recibidos en tu billetera! [2:04:15 PM] Reclamando 10,00...
+- activity-log-container: [2:16:54 PM] ¡10,000 USDC mock recibidos en tu billetera! [2:16:54 PM] Reclamando 10,00...
 
 ======================================================================
 ======================================================================
@@ -257,7 +257,7 @@ Generado el: 2026-08-08T12:04:10.129Z
 - yield-gasless-btn: ⚡ Reclamo Gasless (EIP-712)
 
 [BÓVEDA DE DESCUENTO (BONOS)]
-- bonds-price-today: $740.00 USDC
+- bonds-price-today: $850.00 USDC
 - bonds-principal-input: 
 - bonds-years-select: 1 Año (Descuento ~10%) 2 Años (Descuento ~18%) 3 Años (Descuento ~26%) 4 Años (Descuent...
 - bonds-buy-btn: 💳 Comprar Bono Vestado & Mint NFT
@@ -305,7 +305,7 @@ Generado el: 2026-08-08T12:04:10.129Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:04:23 PM] Depósito completado. Shares ALPHA acuñadas a valor NAV. [2:04:22 PM] Depos...
+- activity-log-container: [2:17:03 PM] Depósito completado. Shares ALPHA acuñadas a valor NAV. [2:17:02 PM] Depos...
 
 ======================================================================
 ======================================================================
@@ -359,7 +359,7 @@ Generado el: 2026-08-08T12:04:10.129Z
 - yield-gasless-btn: ⚡ Reclamo Gasless (EIP-712)
 
 [BÓVEDA DE DESCUENTO (BONOS)]
-- bonds-price-today: $740.00 USDC
+- bonds-price-today: $850.00 USDC
 - bonds-principal-input: 
 - bonds-years-select: 1 Año (Descuento ~10%) 2 Años (Descuento ~18%) 3 Años (Descuento ~26%) 4 Años (Descuent...
 - bonds-buy-btn: 💳 Comprar Bono Vestado & Mint NFT
@@ -407,7 +407,7 @@ Generado el: 2026-08-08T12:04:10.129Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:04:32 PM] ¡Stake de 3000 ALPHA realizado con éxito! [2:04:32 PM] Haciendo stake de 3...
+- activity-log-container: [2:17:12 PM] ¡Stake de 3000 ALPHA realizado con éxito! [2:17:12 PM] Haciendo stake de 3...
 
 ======================================================================
 ======================================================================
@@ -461,7 +461,7 @@ Generado el: 2026-08-08T12:04:10.129Z
 - yield-gasless-btn: ⚡ Reclamo Gasless (EIP-712)
 
 [BÓVEDA DE DESCUENTO (BONOS)]
-- bonds-price-today: $740.00 USDC
+- bonds-price-today: $850.00 USDC
 - bonds-principal-input: 
 - bonds-years-select: 1 Año (Descuento ~10%) 2 Años (Descuento ~18%) 3 Años (Descuento ~26%) 4 Años (Descuent...
 - bonds-buy-btn: 💳 Comprar Bono Vestado & Mint NFT
@@ -509,7 +509,7 @@ Generado el: 2026-08-08T12:04:10.129Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:04:32 PM] ¡Stake de 3000 ALPHA realizado con éxito! [2:04:32 PM] Haciendo stake de 3...
+- activity-log-container: [2:17:12 PM] ¡Stake de 3000 ALPHA realizado con éxito! [2:17:12 PM] Haciendo stake de 3...
 
 ======================================================================
 ======================================================================
@@ -563,7 +563,7 @@ Generado el: 2026-08-08T12:04:10.129Z
 - yield-gasless-btn: ⚡ Reclamo Gasless (EIP-712)
 
 [BÓVEDA DE DESCUENTO (BONOS)]
-- bonds-price-today: $740.00 USDC
+- bonds-price-today: $850.00 USDC
 - bonds-principal-input: 
 - bonds-years-select: 1 Año (Descuento ~10%) 2 Años (Descuento ~18%) 3 Años (Descuento ~26%) 4 Años (Descuent...
 - bonds-buy-btn: 💳 Comprar Bono Vestado & Mint NFT
@@ -609,9 +609,9 @@ Generado el: 2026-08-08T12:04:10.129Z
 - modal-apy-total-apr: 4.88% APR
 - modal-apy-annual-yield-usd: +$5,405.09 USD / año generados por las Reservas
 - modal-apy-base-apr: 4.876%
-- modal-apy-flywheel-apr: 0.001%
+- modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:04:43 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [2:04:42 PM] Adquiriendo...
+- activity-log-container: [2:17:23 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [2:17:22 PM] Adquiriendo...
 
 ======================================================================
 ======================================================================
@@ -665,7 +665,7 @@ Generado el: 2026-08-08T12:04:10.129Z
 - yield-gasless-btn: ⚡ Reclamo Gasless (EIP-712)
 
 [BÓVEDA DE DESCUENTO (BONOS)]
-- bonds-price-today: $900.00 USDC
+- bonds-price-today: $950.00 USDC
 - bonds-principal-input: 
 - bonds-years-select: 1 Año (Descuento ~10%) 2 Años (Descuento ~18%) 3 Años (Descuento ~26%) 4 Años (Descuent...
 - bonds-buy-btn: 💳 Comprar Bono Vestado & Mint NFT
@@ -711,9 +711,9 @@ Generado el: 2026-08-08T12:04:10.129Z
 - modal-apy-total-apr: 4.88% APR
 - modal-apy-annual-yield-usd: +$5,451.41 USD / año generados por las Reservas
 - modal-apy-base-apr: 4.876%
-- modal-apy-flywheel-apr: 0.001%
+- modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:04:50 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [2:04:49 PM] Adquiriendo...
+- activity-log-container: [2:17:29 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [2:17:29 PM] Adquiriendo...
 
 ======================================================================
 ======================================================================
@@ -767,7 +767,7 @@ Generado el: 2026-08-08T12:04:10.129Z
 - yield-gasless-btn: ⚡ Reclamo Gasless (EIP-712)
 
 [BÓVEDA DE DESCUENTO (BONOS)]
-- bonds-price-today: $900.00 USDC
+- bonds-price-today: $950.00 USDC
 - bonds-principal-input: 
 - bonds-years-select: 1 Año (Descuento ~10%) 2 Años (Descuento ~18%) 3 Años (Descuento ~26%) 4 Años (Descuent...
 - bonds-buy-btn: 💳 Comprar Bono Vestado & Mint NFT
@@ -813,9 +813,9 @@ Generado el: 2026-08-08T12:04:10.129Z
 - modal-apy-total-apr: 4.88% APR
 - modal-apy-annual-yield-usd: +$5,451.41 USD / año generados por las Reservas
 - modal-apy-base-apr: 4.876%
-- modal-apy-flywheel-apr: 0.001%
+- modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:04:57 PM] ¡Oferta P2P creada! NFT #1 en escrow. Publicada en el Marketplace. [2:04:5...
+- activity-log-container: [2:17:35 PM] ¡Oferta P2P creada! NFT #1 en escrow. Publicada en el Marketplace. [2:17:3...
 
 ======================================================================
 ======================================================================
@@ -869,7 +869,7 @@ Generado el: 2026-08-08T12:04:10.129Z
 - yield-gasless-btn: ⚡ Reclamo Gasless (EIP-712)
 
 [BÓVEDA DE DESCUENTO (BONOS)]
-- bonds-price-today: $900.00 USDC
+- bonds-price-today: $950.00 USDC
 - bonds-principal-input: 
 - bonds-years-select: 1 Año (Descuento ~10%) 2 Años (Descuento ~18%) 3 Años (Descuento ~26%) 4 Años (Descuent...
 - bonds-buy-btn: 💳 Comprar Bono Vestado & Mint NFT
@@ -912,12 +912,12 @@ Generado el: 2026-08-08T12:04:10.129Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 5.09% APR
+- modal-apy-total-apr: 5.00% APR
 - modal-apy-annual-yield-usd: +$5,501.41 USD / año generados por las Reservas
 - modal-apy-base-apr: 4.921%
-- modal-apy-flywheel-apr: 0.169%
+- modal-apy-flywheel-apr: 0.080%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:05:02 PM] ¡Préstamo #1 financiado con éxito! [2:05:01 PM] Financiando préstamo P2P #...
+- activity-log-container: [2:17:41 PM] ¡Préstamo #1 financiado con éxito! [2:17:40 PM] Financiando préstamo P2P #...
 
 ======================================================================
 ======================================================================
@@ -971,7 +971,7 @@ Generado el: 2026-08-08T12:04:10.129Z
 - yield-gasless-btn: ⚡ Reclamo Gasless (EIP-712)
 
 [BÓVEDA DE DESCUENTO (BONOS)]
-- bonds-price-today: $900.00 USDC
+- bonds-price-today: $950.00 USDC
 - bonds-principal-input: 
 - bonds-years-select: 1 Año (Descuento ~10%) 2 Años (Descuento ~18%) 3 Años (Descuento ~26%) 4 Años (Descuent...
 - bonds-buy-btn: 💳 Comprar Bono Vestado & Mint NFT
@@ -1014,12 +1014,12 @@ Generado el: 2026-08-08T12:04:10.129Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 5.19% APR
+- modal-apy-total-apr: 5.06% APR
 - modal-apy-annual-yield-usd: +$5,525.41 USD / año generados por las Reservas
 - modal-apy-base-apr: 4.942%
-- modal-apy-flywheel-apr: 0.249%
+- modal-apy-flywheel-apr: 0.118%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:05:10 PM] ¡Préstamo #2 desembolsado por la Tesorería! $300 USDC acreditados en tu bi...
+- activity-log-container: [2:17:50 PM] ¡Préstamo #2 desembolsado por la Tesorería! $300 USDC acreditados en tu bi...
 
 ======================================================================
 ======================================================================
@@ -1073,7 +1073,7 @@ Generado el: 2026-08-08T12:04:10.129Z
 - yield-gasless-btn: ⚡ Reclamo Gasless (EIP-712)
 
 [BÓVEDA DE DESCUENTO (BONOS)]
-- bonds-price-today: $900.00 USDC
+- bonds-price-today: $950.00 USDC
 - bonds-principal-input: 
 - bonds-years-select: 1 Año (Descuento ~10%) 2 Años (Descuento ~18%) 3 Años (Descuento ~26%) 4 Años (Descuent...
 - bonds-buy-btn: 💳 Comprar Bono Vestado & Mint NFT
@@ -1116,12 +1116,12 @@ Generado el: 2026-08-08T12:04:10.129Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 5.09% APR
+- modal-apy-total-apr: 5.00% APR
 - modal-apy-annual-yield-usd: +$5,501.61 USD / año generados por las Reservas
 - modal-apy-base-apr: 4.921%
-- modal-apy-flywheel-apr: 0.169%
+- modal-apy-flywheel-apr: 0.080%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:05:17 PM] ¡Préstamo #2 reembolsado totalmente! Principal e intereses acreditados a l...
+- activity-log-container: [2:17:56 PM] ¡Préstamo #2 reembolsado totalmente! Principal e intereses acreditados a l...
 
 ======================================================================
 ======================================================================
@@ -1175,7 +1175,7 @@ Generado el: 2026-08-08T12:04:10.129Z
 - yield-gasless-btn: ⚡ Reclamo Gasless (EIP-712)
 
 [BÓVEDA DE DESCUENTO (BONOS)]
-- bonds-price-today: $900.00 USDC
+- bonds-price-today: $950.00 USDC
 - bonds-principal-input: 
 - bonds-years-select: 1 Año (Descuento ~10%) 2 Años (Descuento ~18%) 3 Años (Descuento ~26%) 4 Años (Descuent...
 - bonds-buy-btn: 💳 Comprar Bono Vestado & Mint NFT
@@ -1221,9 +1221,9 @@ Generado el: 2026-08-08T12:04:10.129Z
 - modal-apy-total-apr: 4.88% APR
 - modal-apy-annual-yield-usd: +$5,451.61 USD / año generados por las Reservas
 - modal-apy-base-apr: 4.876%
-- modal-apy-flywheel-apr: 0.001%
+- modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:05:24 PM] ¡Préstamo #1 liquidado! NFT transferido al prestamista. [2:05:24 PM] Ejecu...
+- activity-log-container: [2:18:03 PM] ¡Préstamo #1 liquidado! NFT transferido al prestamista. [2:18:02 PM] Ejecu...
 
 ======================================================================
 ======================================================================
@@ -1277,7 +1277,7 @@ Generado el: 2026-08-08T12:04:10.129Z
 - yield-gasless-btn: ⚡ Reclamo Gasless (EIP-712)
 
 [BÓVEDA DE DESCUENTO (BONOS)]
-- bonds-price-today: $900.00 USDC
+- bonds-price-today: $950.00 USDC
 - bonds-principal-input: 
 - bonds-years-select: 1 Año (Descuento ~10%) 2 Años (Descuento ~18%) 3 Años (Descuento ~26%) 4 Años (Descuent...
 - bonds-buy-btn: 💳 Comprar Bono Vestado & Mint NFT
@@ -1323,9 +1323,9 @@ Generado el: 2026-08-08T12:04:10.129Z
 - modal-apy-total-apr: 4.88% APR
 - modal-apy-annual-yield-usd: +$5,416.38 USD / año generados por las Reservas
 - modal-apy-base-apr: 4.876%
-- modal-apy-flywheel-apr: 0.001%
+- modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:05:29 PM] Ragequit ejecutado en NFT #1. Reembolso recibido. [2:05:28 PM] Ejecutando ...
+- activity-log-container: [2:18:08 PM] Ragequit ejecutado en NFT #1. Reembolso recibido. [2:18:07 PM] Ejecutando ...
 
 ======================================================================
 ======================================================================
@@ -1379,7 +1379,7 @@ Generado el: 2026-08-08T12:04:10.129Z
 - yield-gasless-btn: ⚡ Reclamo Gasless (EIP-712)
 
 [BÓVEDA DE DESCUENTO (BONOS)]
-- bonds-price-today: $900.00 USDC
+- bonds-price-today: $950.00 USDC
 - bonds-principal-input: 
 - bonds-years-select: 1 Año (Descuento ~10%) 2 Años (Descuento ~18%) 3 Años (Descuento ~26%) 4 Años (Descuent...
 - bonds-buy-btn: 💳 Comprar Bono Vestado & Mint NFT
@@ -1425,8 +1425,8 @@ Generado el: 2026-08-08T12:04:10.129Z
 - modal-apy-total-apr: 4.88% APR
 - modal-apy-annual-yield-usd: +$5,332.29 USD / año generados por las Reservas
 - modal-apy-base-apr: 4.876%
-- modal-apy-flywheel-apr: 0.001%
+- modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:05:37 PM] Rescate completado. USDC transferidos a tu billetera. [2:05:36 PM] Rescata...
+- activity-log-container: [2:18:15 PM] Rescate completado. USDC transferidos a tu billetera. [2:18:15 PM] Rescata...
 
 ======================================================================

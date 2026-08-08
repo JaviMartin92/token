@@ -1,9 +1,9 @@
 import React from 'react';
 
 interface TreasuryDashboardProps {
-  porAssets: string;
-  porLiabilities: string;
-  porRatio: string;
+  porAssets?: string;
+  porLiabilities?: string;
+  porRatio?: string;
   porBreakdown?: { stables: number; wbtc: number; weth: number; alphaStaking: number };
 
   usdcBalance: string;
@@ -21,10 +21,7 @@ interface TreasuryDashboardProps {
 }
 
 export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
-  porAssets,
-  porLiabilities,
-  porRatio,
-
+  porBreakdown = { stables: 0, wbtc: 0, weth: 0, alphaStaking: 0 },
   usdcBalance,
   sharesBalance,
   depositAmount,
@@ -40,45 +37,6 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
 }) => {
   const activeLoans = loansList.filter((l) => l.state === 1);
   const totalLentUsd = activeLoans.reduce((acc, l) => acc + (parseFloat((l.borrowAmount || '0').replace(/,/g, '')) || 0) * 1.08, 0);
-  const totalCollateralUsd = activeLoans.reduce((acc, l) => {
-    const val = parseFloat((l.collateralAmount || '0').replace(/,/g, '')) || 0;
-    return acc + val;
-  }, 0);
-  const overCollateralRatio = totalLentUsd > 0 ? (totalCollateralUsd / totalLentUsd) * 100 : 100.00;
-
-  // Estado de solvencia basado exclusivamente en la colateralización on-chain
-  const ratioNum = parseFloat(porRatio.replace('%', '')) || 0;
-  const isSolvent = ratioNum >= 100.0;
-  const solvencyLabel = isSolvent ? '🟢 100% Solvente (NPV 1:1)' : `🔴 Insuficiente (${porRatio})`;
-  const solvencyColor = isSolvent ? '#4ade80' : '#f43f5e';
-  const solvencyBg = isSolvent ? 'rgba(74, 222, 128, 0.15)' : 'rgba(244, 63, 94, 0.15)';
-
-  // --- CONTABILIDAD EXÓGENA PURA (100% Activos Exógenos On-Chain) ---
-  const totalAssetsNum = parseFloat((porAssets || '0').replace(/,/g, '')) || 0;
-
-  // Ponderaciones exógenas puras que suman 10.000 BPS (100%)
-  const breakdownStables = (totalAssetsNum * 6000) / 10000; // 60.00% USDC
-  const breakdownWbtc = (totalAssetsNum * 2667) / 10000;    // 26.67% WBTC
-  const breakdownWeth = (totalAssetsNum * 1333) / 10000;    // 13.33% WETH
-
-  const exogenousTokens = [
-    { 
-      symbol: 'USDC', 
-      name: '💵 USDC (Bóvedas Morpho Blue + Préstamos P2P)', 
-      val: breakdownStables, 
-      weight: '60.00%', 
-      testId: 'por-row-usdc-val', 
-      weightId: 'por-row-usdc-weight' 
-    },
-    { 
-      symbol: 'WBTC', 
-      name: '₿ Wrapped Bitcoin (Staking Lombard)', 
-      val: breakdownWbtc, 
-      weight: '26.67%', 
-      testId: 'por-row-wbtc-val', 
-      weightId: 'por-row-wbtc-weight' 
-    }
-  ];
 
   return (
     <div className="treasury-main-container" style={{ maxWidth: '900px', margin: '0 auto' }}>
@@ -160,11 +118,10 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
 
       {/* Sección Admin: Solo 3 Estrategias Exógenas */}
       {isAdmin && (() => {
-        const numericAssets = parseFloat(porAssets.replace(/,/g, '')) || 0;
         const p2pAllocationUsd = totalLentUsd;
-        const morphoAllocationUsd = Math.max(0, (numericAssets * 0.60) - p2pAllocationUsd);
-        const btcAllocationUsd = numericAssets * 0.2667;
-        const ethAllocationUsd = numericAssets * 0.1333;
+        const morphoAllocationUsd = Math.max(0, porBreakdown.stables - p2pAllocationUsd);
+        const btcAllocationUsd = porBreakdown.wbtc;
+        const ethAllocationUsd = porBreakdown.weth;
 
         return (
         <div className="admin-strategy-panel" style={{ marginTop: '1.5rem' }}>

@@ -41,7 +41,7 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
 }) => {
   const principalNum = parseFloat(bondPrincipal) || 0;
   const yearsNum = parseInt(bondLockYears) || 1;
-  const baseDiscountBps = Math.min(800 * yearsNum + 200, 4000); // 8% per year + 2% bonus (Max 40%)
+  const baseDiscountBps = Math.min(yearsNum * 500, 2500); // 5% per year (1yr=5%, 3yr=15%, 5yr=25%)
   const discountPct = (baseDiscountBps / 100).toFixed(1);
   const discountedPrice = (principalNum * (1 - baseDiscountBps / 10000)).toFixed(2);
 

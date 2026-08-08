@@ -739,6 +739,7 @@ async function main() {
     CORPORATE_PROFIT_VAULT: corpProfitAddr,
     MORPHO_ADAPTER: morphoAddr,
     PROMO_VAULT: promoAddr,
+    DYNAMIC_YIELD_ORACLE: yieldOracleAddr,
     RESERVE_MANAGER: mgrAddr,
     ORACLE_ROUTER: oracleAddr
   };

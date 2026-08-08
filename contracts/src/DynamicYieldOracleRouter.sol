@@ -265,4 +265,19 @@ contract DynamicYieldOracleRouter is Ownable {
     function getProtocolCount(uint8 assetClass) external view returns (uint256) {
         return protocolOptions[assetClass].length;
     }
+
+    /**
+     * @notice Computes the protocol-wide weighted APY in BPS (e.g. 572 BPS = 5.72%) based on current reserve asset balances
+     */
+    function calculateWeightedYieldBps(uint256 stablesUsd, uint256 wbtcUsd, uint256 wethUsd) external view returns (uint256 weightedApyBps) {
+        (, , uint256 stableApy) = this.getBestYieldVault(0);
+        (, , uint256 ethApy) = this.getBestYieldVault(1);
+        (, , uint256 btcApy) = this.getBestYieldVault(2);
+
+        uint256 totalUsd = stablesUsd + wbtcUsd + wethUsd;
+        if (totalUsd == 0) return stableApy;
+
+        uint256 weightedYieldUSD = (stablesUsd * stableApy) + (wbtcUsd * btcApy) + (wethUsd * ethApy);
+        return weightedYieldUSD / totalUsd;
+    }
 }
