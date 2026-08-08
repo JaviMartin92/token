@@ -1,6 +1,6 @@
 # AUDITORÍA DETALLADA DE INTERFAZ DE USUARIO (106 CAMPOS POR PASO)
 
-Generado el: 2026-08-07T17:43:03.019Z
+Generado el: 2026-08-08T11:55:49.827Z
 
 ======================================================================
 📊 INFORME DE ESTADO DE UI - PASO [0]: [PASO 0 (GENESIS BASELINE)]
@@ -101,7 +101,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:43:04 PM] Cambiado rol conectado a Usuario Retail
+- activity-log-container: [1:55:53 PM] Cambiado rol conectado a Usuario Retail
 
 ======================================================================
 ======================================================================
@@ -203,7 +203,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:43:09 PM] ¡10,000 USDC mock recibidos en tu billetera! [7:43:09 PM] Reclamando 10,00...
+- activity-log-container: [1:55:59 PM] ¡10,000 USDC mock recibidos en tu billetera! [1:55:59 PM] Reclamando 10,00...
 
 ======================================================================
 ======================================================================
@@ -211,7 +211,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 100.59%
-- header-nav-value: $1.0050 USDC
+- header-nav-value: $1.0059 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -305,7 +305,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:43:18 PM] Depósito completado. Shares ALPHA acuñadas a valor NAV. [7:43:17 PM] Depos...
+- activity-log-container: [1:56:06 PM] Depósito completado. Shares ALPHA acuñadas a valor NAV. [1:56:06 PM] Depos...
 
 ======================================================================
 ======================================================================
@@ -313,7 +313,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 100.62%
-- header-nav-value: $1.0050 USDC
+- header-nav-value: $1.0062 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -407,7 +407,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:43:27 PM] ¡Stake de 3000 ALPHA realizado con éxito! [7:43:27 PM] Haciendo stake de 3...
+- activity-log-container: [1:56:15 PM] ¡Stake de 3000 ALPHA realizado con éxito! [1:56:15 PM] Haciendo stake de 3...
 
 ======================================================================
 ======================================================================
@@ -415,7 +415,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 100.62%
-- header-nav-value: $1.0050 USDC
+- header-nav-value: $1.0062 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -509,7 +509,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:43:27 PM] ¡Stake de 3000 ALPHA realizado con éxito! [7:43:27 PM] Haciendo stake de 3...
+- activity-log-container: [1:56:15 PM] ¡Stake de 3000 ALPHA realizado con éxito! [1:56:15 PM] Haciendo stake de 3...
 
 ======================================================================
 ======================================================================
@@ -517,7 +517,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 101.39%
-- header-nav-value: $1.0050 USDC
+- header-nav-value: $1.0139 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -611,7 +611,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:43:40 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [7:43:39 PM] Adquiriendo...
+- activity-log-container: [1:56:28 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [1:56:27 PM] Adquiriendo...
 
 ======================================================================
 ======================================================================
@@ -619,7 +619,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 102.26%
-- header-nav-value: $1.0050 USDC
+- header-nav-value: $1.0226 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -713,7 +713,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:43:47 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [7:43:47 PM] Adquiriendo...
+- activity-log-container: [1:56:34 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [1:56:34 PM] Adquiriendo...
 
 ======================================================================
 ======================================================================
@@ -721,7 +721,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 102.26%
-- header-nav-value: $1.0050 USDC
+- header-nav-value: $1.0226 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -815,7 +815,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:43:54 PM] ¡Oferta P2P creada! NFT #1 en escrow. Publicada en el Marketplace. [7:43:5...
+- activity-log-container: [1:56:41 PM] ¡Oferta P2P creada! NFT #1 en escrow. Publicada en el Marketplace. [1:56:4...
 
 ======================================================================
 ======================================================================
@@ -823,7 +823,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 102.26%
-- header-nav-value: $1.0050 USDC
+- header-nav-value: $1.0226 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -917,7 +917,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 - modal-apy-base-apr: 4.921%
 - modal-apy-flywheel-apr: 0.169%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:43:59 PM] ¡Préstamo #1 financiado con éxito! [7:43:59 PM] Financiando préstamo P2P #...
+- activity-log-container: [1:56:44 PM] ¡Préstamo #1 financiado con éxito! [1:56:44 PM] Financiando préstamo P2P #...
 
 ======================================================================
 ======================================================================
@@ -925,7 +925,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 102.26%
-- header-nav-value: $1.0050 USDC
+- header-nav-value: $1.0226 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -1019,7 +1019,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 - modal-apy-base-apr: 4.942%
 - modal-apy-flywheel-apr: 0.249%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:44:08 PM] ¡Préstamo #2 desembolsado por la Tesorería! $300 USDC acreditados en tu bi...
+- activity-log-container: [1:56:52 PM] ¡Préstamo #2 desembolsado por la Tesorería! $300 USDC acreditados en tu bi...
 
 ======================================================================
 ======================================================================
@@ -1027,7 +1027,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 102.27%
-- header-nav-value: $1.0050 USDC
+- header-nav-value: $1.0227 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -1121,7 +1121,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 - modal-apy-base-apr: 4.921%
 - modal-apy-flywheel-apr: 0.169%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:44:16 PM] ¡Préstamo #2 reembolsado totalmente! Principal e intereses acreditados a l...
+- activity-log-container: [1:56:59 PM] ¡Préstamo #2 reembolsado totalmente! Principal e intereses acreditados a l...
 
 ======================================================================
 ======================================================================
@@ -1129,7 +1129,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 102.27%
-- header-nav-value: $1.0050 USDC
+- header-nav-value: $1.0227 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -1223,7 +1223,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:44:23 PM] ¡Préstamo #1 liquidado! NFT transferido al prestamista. [7:44:23 PM] Ejecu...
+- activity-log-container: [1:57:05 PM] ¡Préstamo #1 liquidado! NFT transferido al prestamista. [1:57:05 PM] Ejecu...
 
 ======================================================================
 ======================================================================
@@ -1231,7 +1231,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 101.61%
-- header-nav-value: $1.0050 USDC
+- header-nav-value: $1.0161 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -1325,7 +1325,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:44:28 PM] Ragequit ejecutado en NFT #1. Reembolso recibido. [7:44:27 PM] Ejecutando ...
+- activity-log-container: [1:57:09 PM] Ragequit ejecutado en NFT #1. Reembolso recibido. [1:57:09 PM] Ejecutando ...
 
 ======================================================================
 ======================================================================
@@ -1333,7 +1333,7 @@ Generado el: 2026-08-07T17:43:03.019Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 101.62%
-- header-nav-value: $1.0050 USDC
+- header-nav-value: $1.0162 USDC
 - header-wallet-status: 0x7099...79C8
 - header-role-admin: 👑 Admin / Owner
 - header-role-user: 👤 Usuario
@@ -1427,6 +1427,6 @@ Generado el: 2026-08-07T17:43:03.019Z
 - modal-apy-base-apr: 4.876%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [7:44:37 PM] Rescate completado. USDC transferidos a tu billetera. [7:44:36 PM] Rescata...
+- activity-log-container: [1:57:18 PM] Rescate completado. USDC transferidos a tu billetera. [1:57:18 PM] Rescata...
 
 ======================================================================

@@ -19,6 +19,16 @@ interface ITreasury {
     function getNAV() external view returns (uint256);
 
     /**
+     * @notice Returns the NAV per circulating share in USD with 18 decimal places.
+     */
+    function getNAVPerShare() external view returns (uint256);
+
+    /**
+     * @notice Returns the net circulating shares excluding protocol-owned ALPHA.
+     */
+    function getNetCirculatingShares() external view returns (uint256);
+
+    /**
      * @notice Returns the amount of specific asset held by the Treasury (including yield vaults).
      */
     function getAssetBalance(address asset) external view returns (uint256);

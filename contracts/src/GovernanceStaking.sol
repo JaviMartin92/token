@@ -230,7 +230,15 @@ contract GovernanceStaking is Ownable, ReentrancyGuard {
             } catch {}
         }
         breakdown.totalBurned = burned;
-        breakdown.netCirculatingSupply = totalSupply > burned ? totalSupply - burned : totalSupply;
+        if (treasury != address(0)) {
+            try ITreasury(treasury).getNetCirculatingShares() returns (uint256 netCirc) {
+                breakdown.netCirculatingSupply = netCirc;
+            } catch {
+                breakdown.netCirculatingSupply = totalSupply > burned ? totalSupply - burned : totalSupply;
+            }
+        } else {
+            breakdown.netCirculatingSupply = totalSupply > burned ? totalSupply - burned : totalSupply;
+        }
     }
 
     function getUserStakingInfo(address account) external view returns (uint256 stakedBalance, uint256 claimableYieldUSD) {
