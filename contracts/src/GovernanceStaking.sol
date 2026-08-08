@@ -234,10 +234,10 @@ contract GovernanceStaking is Ownable, ReentrancyGuard {
             try ITreasury(treasury).getNetCirculatingShares() returns (uint256 netCirc) {
                 breakdown.netCirculatingSupply = netCirc;
             } catch {
-                breakdown.netCirculatingSupply = totalSupply > burned ? totalSupply - burned : totalSupply;
+                breakdown.netCirculatingSupply = totalSupply;
             }
         } else {
-            breakdown.netCirculatingSupply = totalSupply > burned ? totalSupply - burned : totalSupply;
+            breakdown.netCirculatingSupply = totalSupply;
         }
     }
 
