@@ -3,6 +3,7 @@ import { useWeb3State } from './hooks/useWeb3State.js';
 import { useTreasuryActions } from './hooks/useTreasuryActions.js';
 import { useVestedVaultActions } from './hooks/useVestedVaultActions.js';
 import { useP2PLendingActions } from './hooks/useP2PLendingActions.js';
+import { CONTRACT_ADDRESSES } from './utils/web3.js';
 import { useStakingActions } from './hooks/useStakingActions.js';
 import { useAdminActions } from './hooks/useAdminActions.js';
 import { useTransactionConfirm } from './hooks/useTransactionConfirm.js';

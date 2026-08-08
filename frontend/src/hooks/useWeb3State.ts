@@ -10,10 +10,7 @@ export function useWeb3State() {
   const USER_KEY = import.meta.env.VITE_USER_KEY;
 
   const [activeKey, setActiveKey] = useState(ADMIN_KEY);
-  console.log("DEBUG: ADMIN_KEY", ADMIN_KEY);
-  console.log("DEBUG: activeKey", activeKey);
   const account = privateKeyToAccount(activeKey as `0x${string}`);
-  console.log("DEBUG: account", account);
 
   const [walletConnected, setWalletConnected] = useState(false);
   const [userAddress, setUserAddress] = useState('');
@@ -308,13 +305,14 @@ export function useWeb3State() {
         }
       } catch (e) {}
 
-      if (userAddress) {
+      const targetAddr = account.address;
+      if (targetAddr) {
         try {
           const usdc = await publicClient.readContract({
             address: CONTRACT_ADDRESSES.USDC,
             abi: ABIS.ERC20,
             functionName: 'balanceOf',
-            args: [userAddress as `0x${string}`]
+            args: [targetAddr as `0x${string}`]
           }) as bigint;
           setUsdcBalance(parseFloat(formatUnits(usdc, 6)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
@@ -325,7 +323,7 @@ export function useWeb3State() {
             address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
             abi: ABIS.ERC20,
             functionName: 'balanceOf',
-            args: [userAddress as `0x${string}`]
+            args: [targetAddr as `0x${string}`]
           }) as bigint;
           setSharesBalance(parseFloat(formatEther(shares)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
         } catch (e) {}
@@ -335,7 +333,7 @@ export function useWeb3State() {
             address: CONTRACT_ADDRESSES.STAKING,
             abi: ABIS.STAKING,
             functionName: 'stakedBalances',
-            args: [userAddress as `0x${string}`]
+            args: [targetAddr as `0x${string}`]
           }) as bigint;
           setStakedBalance(parseFloat(formatEther(staked)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
@@ -343,7 +341,7 @@ export function useWeb3State() {
             address: CONTRACT_ADDRESSES.STAKING,
             abi: ABIS.STAKING,
             functionName: 'earned',
-            args: [userAddress as `0x${string}`]
+            args: [targetAddr as `0x${string}`]
           }) as bigint;
           setClaimableYield(parseFloat(formatUnits(earnedYield, 6)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
         } catch (e) {}
@@ -359,7 +357,7 @@ export function useWeb3State() {
                 args: [BigInt(i)]
               }) as string;
 
-              if (nftOwner.toLowerCase() === userAddress.toLowerCase()) {
+              if (nftOwner.toLowerCase() === targetAddr.toLowerCase()) {
                 const pos = await publicClient.readContract({
                   address: CONTRACT_ADDRESSES.POSITION_NFT,
                   abi: ABIS.POSITION_NFT,
@@ -395,7 +393,7 @@ export function useWeb3State() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 4000);
+    const interval = setInterval(fetchData, 1500);
     return () => clearInterval(interval);
   }, [userAddress, activeKey]);
 

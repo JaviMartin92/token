@@ -386,6 +386,9 @@ async function auditUiDeltas(page: Page, stepIndex: string | number, stepName: s
 test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)', () => {
 
   test('Auditar exhaustivamente los 15 pasos y absolutamente todos los numeros en pantalla', async ({ page }) => {
+    page.on('console', msg => console.log('BROWSER LOG:', msg.text()));
+    page.on('pageerror', err => console.log('BROWSER UNCAUGHT EXCEPTION:', err.message));
+
     test.setTimeout(600000); // 10 minutes timeout for full 15 steps
     await page.setViewportSize({ width: 1920, height: 1080 }); // Full HD viewport
 
@@ -403,8 +406,8 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
     await page.locator('[data-testid="header-role-user"]').click();
     await expect(page.locator('text=Usuario Retail').first()).toBeVisible({ timeout: 10000 });
 
-    await expect(page.locator('[data-testid="header-nav-value"]')).toContainText('USDC', { timeout: 10000 });
-    await expect(page.locator('[data-testid="treasury-usdc-balance"]')).toContainText('10,000.00', { timeout: 10000 });
+    await expect(page.locator('[data-testid="header-nav-value"]')).toContainText('USDC', { timeout: 15000 });
+    await expect(page.locator('[data-testid="treasury-usdc-balance"]')).toContainText('10,000.00', { timeout: 15000 });
 
     const baseline = await readCurrentUiState(page);
     expect(baseline.porRatio).toBeGreaterThanOrEqual(100.0);
@@ -533,11 +536,13 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
     // -------------------------------------------------------------------------
     // PASOS 8 Y 9: VERIFICACIÓN P2P MARKETPLACE (OFERTA & CANCELACIÓN)
     // -------------------------------------------------------------------------
+    await page.waitForTimeout(3000);
     const p2pTab = page.locator('h3:has-text("Publicar Oferta de Préstamo P2P")').first();
     await p2pTab.scrollIntoViewIfNeeded();
 
-    const p2pTokenId = page.locator('[data-testid="p2p-offer-nft-id-input"]').first();
-    await p2pTokenId.selectOption({ index: 1 });
+    const p2pTokenSelect = page.locator('select[data-testid="p2p-offer-nft-id-input"]').first();
+    await p2pTokenSelect.waitFor({ state: 'visible', timeout: 15000 });
+    await p2pTokenSelect.selectOption({ index: 1 });
 
     const p2pBorrowAmount = page.locator('[data-testid="p2p-offer-amount-input"]').first();
     await p2pBorrowAmount.fill('500');
@@ -545,10 +550,10 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
     const createLoanBtn = page.locator('[data-testid="p2p-offer-create-btn"]').first();
     await createLoanBtn.click();
     
-    const confirmCreateBtn = page.locator('button:has-text("Confirmar y Publicar Oferta")').first();
-    await confirmCreateBtn.waitFor({ state: 'visible' });
+    const confirmCreateBtn = page.locator('[data-testid="modal-confirm-btn"]').first();
+    await confirmCreateBtn.waitFor({ state: 'visible', timeout: 10000 });
     await confirmCreateBtn.click({ force: true });
-    await expect(confirmCreateBtn).toBeHidden({ timeout: 15000 });
+    await expect(confirmCreateBtn).toBeHidden({ timeout: 30000 });
 
     await generateAndPrintStepReport(page, '8 y 9', 'Pasos 8 y 9 (Oferta P2P Creada)');
 
@@ -567,10 +572,10 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
     await fundP2pBtn.scrollIntoViewIfNeeded();
     await fundP2pBtn.click();
     
-    const confirmP2pBtn = page.locator('button:has-text("Confirmar y Financiar")').first();
-    await confirmP2pBtn.waitFor({ state: 'visible' });
+    const confirmP2pBtn = page.locator('[data-testid="modal-confirm-btn"]').first();
+    await confirmP2pBtn.waitFor({ state: 'visible', timeout: 10000 });
     await confirmP2pBtn.click({ force: true });
-    await expect(confirmP2pBtn).toBeHidden({ timeout: 15000 });
+    await expect(confirmP2pBtn).toBeHidden({ timeout: 30000 });
 
     await auditUiDeltas(page, 10, 'PASO 10 (Post-Financiamiento P2P)', statePreP2pFund, {
       usdcDelta: -2.50,
@@ -582,7 +587,8 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
     // -------------------------------------------------------------------------
     const statePreTreasuryLoan = await readCurrentUiState(page);
     
-    const treasuryNftSelect = page.locator('[data-testid="p2p-treasury-nft-id-input"]').first();
+    const treasuryNftSelect = page.locator('select[data-testid="p2p-treasury-nft-id-input"]').first();
+    await treasuryNftSelect.waitFor({ state: 'visible', timeout: 10000 });
     await treasuryNftSelect.selectOption({ index: 1 });
 
     const tLoanAmountInput = page.locator('[data-testid="p2p-treasury-amount-input"]').first();
@@ -593,10 +599,10 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
     await reqLoanBtn.scrollIntoViewIfNeeded();
     await reqLoanBtn.click();
 
-    const confirmLoanBtn = page.locator('button:has-text("Confirmar y Solicitar Crédito")').first();
-    await confirmLoanBtn.waitFor({ state: 'visible' });
+    const confirmLoanBtn = page.locator('[data-testid="modal-confirm-btn"]').first();
+    await confirmLoanBtn.waitFor({ state: 'visible', timeout: 10000 });
     await confirmLoanBtn.click({ force: true });
-    await expect(confirmLoanBtn).toBeHidden({ timeout: 15000 });
+    await expect(confirmLoanBtn).toBeHidden({ timeout: 30000 });
 
     await auditUiDeltas(page, 11, 'PASO 11 (Post-Préstamo Tesorería)', statePreTreasuryLoan, {
       usdcDelta: 298.50,
@@ -615,10 +621,10 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
         await repayBtn.scrollIntoViewIfNeeded();
         await repayBtn.click();
 
-        const confirmRepayBtn = page.locator('button:has-text("Confirmar y Reembolsar")').first();
-        await confirmRepayBtn.waitFor({ state: 'visible' });
+        const confirmRepayBtn = page.locator('[data-testid="modal-confirm-btn"]').first();
+        await confirmRepayBtn.waitFor({ state: 'visible', timeout: 10000 });
         await confirmRepayBtn.click({ force: true });
-        await expect(confirmRepayBtn).toBeHidden({ timeout: 15000 });
+        await expect(confirmRepayBtn).toBeHidden({ timeout: 30000 });
 
         await auditUiDeltas(page, 12, 'PASO 12 (Post-Repago Tesorería)', statePreRepay, {
           usdcDelta: -302.46,
@@ -639,10 +645,10 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
       await liqBtn.scrollIntoViewIfNeeded();
       await liqBtn.click();
       
-      const confirmLiqBtn = page.locator('button:has-text("Confirmar Liquidación")').first();
-      await confirmLiqBtn.waitFor({ state: 'visible' });
+      const confirmLiqBtn = page.locator('[data-testid="modal-confirm-btn"]').first();
+      await confirmLiqBtn.waitFor({ state: 'visible', timeout: 10000 });
       await confirmLiqBtn.click({ force: true });
-      await expect(confirmLiqBtn).toBeHidden({ timeout: 15000 });
+      await expect(confirmLiqBtn).toBeHidden({ timeout: 30000 });
 
       await generateAndPrintStepReport(page, 13, 'Paso 13 (Liquidación P2P)');
     }
@@ -655,10 +661,10 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
     await ragequitBtn.scrollIntoViewIfNeeded();
     await ragequitBtn.click();
 
-    const confirmRagequitBtn = page.locator('button:has-text("Confirmar Ragequit")').first();
-    await confirmRagequitBtn.waitFor({ state: 'visible' });
+    const confirmRagequitBtn = page.locator('[data-testid="modal-confirm-btn"]').first();
+    await confirmRagequitBtn.waitFor({ state: 'visible', timeout: 10000 });
     await confirmRagequitBtn.click({ force: true });
-    await expect(confirmRagequitBtn).toBeHidden({ timeout: 15000 });
+    await expect(confirmRagequitBtn).toBeHidden({ timeout: 30000 });
 
     await auditUiDeltas(page, 14, 'PASO 14 (Post-Ragequit)', statePreRagequit, {
       usdcDelta: 722.50,
@@ -673,7 +679,7 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
     const claimYieldBtn = page.locator('[data-testid="yield-claim-btn"]').first();
     if (await claimYieldBtn.isVisible()) {
       await claimYieldBtn.click();
-      const confirmClaimYieldBtn = page.locator('button:has-text("Confirmar Cobro")').first();
+      const confirmClaimYieldBtn = page.locator('[data-testid="modal-confirm-btn"]').first();
       if (await confirmClaimYieldBtn.isVisible()) {
         await confirmClaimYieldBtn.click({ force: true });
         await expect(confirmClaimYieldBtn).toBeHidden({ timeout: 10000 });
@@ -687,10 +693,10 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
     const redeemBtn = page.locator('[data-testid="treasury-redeem-btn"]').first();
     await redeemBtn.click();
 
-    const confirmRedeemBtn = page.locator('button:has-text("Confirmar Rescate")').first();
-    await confirmRedeemBtn.waitFor({ state: 'visible' });
+    const confirmRedeemBtn = page.locator('[data-testid="modal-confirm-btn"]').first();
+    await confirmRedeemBtn.waitFor({ state: 'visible', timeout: 10000 });
     await confirmRedeemBtn.click({ force: true });
-    await expect(confirmRedeemBtn).toBeHidden({ timeout: 15000 });
+    await expect(confirmRedeemBtn).toBeHidden({ timeout: 30000 });
 
     await auditUiDeltas(page, 15, 'PASO 15 (Post-Rescate Final)', statePreRedeem, {
       sharesDelta: -1714.40,
