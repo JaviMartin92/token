@@ -42,6 +42,7 @@ export function useWeb3State() {
   const [navPerShareUSD, setNavPerShareUSD] = useState('$1.0050 USDC');
   const [navPerShareNum, setNavPerShareNum] = useState(1.005025);
 
+  const [liveApyStr, setLiveApyStr] = useState('5.72%');
   const [blockDateStr, setBlockDateStr] = useState('');
   const [snapshotId, setSnapshotId] = useState('');
   const [circuitBreakerFrozen, setCircuitBreakerFrozen] = useState(false);
@@ -71,8 +72,6 @@ export function useWeb3State() {
       } catch (e) {}
 
       let rawBurned = 0n;
-      let rawTotalSupply = 0n;
-      let rawTotalStaked = 0n;
 
       try {
         rawBurned = await publicClient.readContract({
@@ -84,14 +83,6 @@ export function useWeb3State() {
       } catch (e) {
         setTotalBurnedTokens('0.00');
       }
-
-      try {
-        rawTotalSupply = await publicClient.readContract({
-          address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
-          abi: ABIS.ERC20,
-          functionName: 'totalSupply'
-        }) as bigint;
-      } catch (e) {}
 
       try {
         const breakdown = await publicClient.readContract({
@@ -299,6 +290,19 @@ export function useWeb3State() {
           } else {
             setPorBreakdown({ stables: assetsVal * 0.60, wbtc: assetsVal * 0.2667, weth: assetsVal * 0.1333, alphaStaking: 0 });
           }
+
+          if (CONTRACT_ADDRESSES.DYNAMIC_YIELD_ORACLE) {
+            try {
+              const weightedApyBps = await publicClient.readContract({
+                address: CONTRACT_ADDRESSES.DYNAMIC_YIELD_ORACLE,
+                abi: ABIS.DYNAMIC_YIELD_ORACLE,
+                functionName: 'calculateWeightedYieldBps',
+                args: [stablesWei, wbtcWei, wethWei]
+              }) as bigint;
+              const apyPct = (Number(weightedApyBps) / 100).toFixed(2);
+              setLiveApyStr(`${apyPct}%`);
+            } catch (e) {}
+          }
         } catch (e) {
           setPorBreakdown({ stables: assetsVal * 0.60, wbtc: assetsVal * 0.2667, weth: assetsVal * 0.1333, alphaStaking: 0 });
         }
@@ -424,6 +428,7 @@ export function useWeb3State() {
     stakingRatioPct,
     navPerShareUSD,
     navPerShareNum,
+    liveApyStr,
     blockDateStr,
     snapshotId,
     setSnapshotId,
