@@ -5,10 +5,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title TimelockController
- * @notice Delays administrative and governance operations by 48 hours for transparency and user protection.
+ * @notice Delays administrative and governance operations by 72 hours for transparency and user protection.
  */
 contract TimelockController is Ownable {
-    uint256 public constant MIN_DELAY = 2 days;
+    uint256 public constant MIN_DELAY = 1 days;
     uint256 public constant MAX_DELAY = 30 days;
 
     struct Transaction {
@@ -26,10 +26,10 @@ contract TimelockController is Ownable {
     event TransactionExecuted(bytes32 indexed txHash, address indexed target, uint256 value, bytes data);
     event TransactionCancelled(bytes32 indexed txHash);
 
-    constructor(uint256 _delay, address _initialOwner) {
+    constructor(uint256 _delay, address _initialOwner) Ownable() {
         require(_delay >= MIN_DELAY && _delay <= MAX_DELAY, "Timelock: Invalid delay");
         delay = _delay;
-        if (_initialOwner != msg.sender) {
+        if (_initialOwner != msg.sender && _initialOwner != address(0)) {
             transferOwnership(_initialOwner);
         }
     }

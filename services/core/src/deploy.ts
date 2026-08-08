@@ -626,6 +626,36 @@ async function main() {
   await publicClient.waitForTransactionReceipt({ hash: setP2pEngineHash });
   console.log('[+] Linked ProtocolTokenomicsEngine into Treasury, VestedDiscountVault, and P2PLendingMarket.');
 
+  // 19. Deploy TimelockController (72h Delay)
+  const timelockArtifact = loadArtifact('TimelockController', 'TimelockController.sol');
+  const timelockTx = await walletClient.deployContract({
+    abi: timelockArtifact.abi,
+    bytecode: timelockArtifact.bytecode.object,
+    args: [259200n, account.address] // 72 hours delay
+  });
+  const timelockAddr = (await publicClient.waitForTransactionReceipt({ hash: timelockTx })).contractAddress!;
+  console.log(`[+] TimelockController Contract (72h Delay) deployed at: ${timelockAddr}`);
+
+  // 20. Deploy GovernorAlphaCentauri
+  const governorArtifact = loadArtifact('GovernorAlphaCentauri', 'GovernorAlphaCentauri.sol');
+  const governorTx = await walletClient.deployContract({
+    abi: governorArtifact.abi,
+    bytecode: governorArtifact.bytecode.object,
+    args: [stakingAddr, timelockAddr, vaultAddr, corpOpExAddr, corpProfitAddr, treasuryAddr, account.address]
+  });
+  const governorAddr = (await publicClient.waitForTransactionReceipt({ hash: governorTx })).contractAddress!;
+  console.log(`[+] GovernorAlphaCentauri Contract deployed at: ${governorAddr}`);
+
+  // Wire Timelock ownership to GovernorAlphaCentauri
+  const setTimeOwnerHash = await walletClient.writeContract({
+    address: timelockAddr,
+    abi: timelockArtifact.abi,
+    functionName: 'transferOwnership',
+    args: [governorAddr]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: setTimeOwnerHash });
+  console.log('[+] Zero-Privilege TimelockController ownership transferred to GovernorAlphaCentauri.');
+
   // 12. Pre-fund Admin and User accounts with 10,000 USDC mock
   console.log('[+] Pre-funding Admin and User accounts with 10,000 USDC mock...');
   const userAccountAddr = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8';
@@ -741,7 +771,9 @@ async function main() {
     PROMO_VAULT: promoAddr,
     DYNAMIC_YIELD_ORACLE: yieldOracleAddr,
     RESERVE_MANAGER: mgrAddr,
-    ORACLE_ROUTER: oracleAddr
+    ORACLE_ROUTER: oracleAddr,
+    GOVERNOR: governorAddr,
+    TIMELOCK: timelockAddr
   };
   fs.writeFileSync(jsonPath, JSON.stringify(addressesJson, null, 2), 'utf8');
 
