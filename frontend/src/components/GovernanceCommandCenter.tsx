@@ -31,6 +31,9 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
     reserveBreakdown
   } = web3Data;
 
+  const isProductionChain = web3Data.chainId !== 31337 && web3Data.chainId !== undefined;
+  const currentChainId = web3Data.chainId ?? 31337;
+
   const totalAssetsVal = parseFloat(proofOfReserves?.totalAssetsUSD || '0');
   const totalLiabVal = parseFloat(proofOfReserves?.totalLiabilitiesUSD || '0');
   const solvencyRatio = totalLiabVal > 0 ? ((totalAssetsVal / totalLiabVal) * 100).toFixed(2) : '100.00';
@@ -99,10 +102,11 @@ Descripción: "${description}"
                 Auditoría Exhaustiva en Tiempo Real, Control de Parámetros On-Chain y Gestor Promocional Empresarial
               </p>
             </div>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '8px 16px', borderRadius: '12px', textAlign: 'right' }}>
+            <div style={{ fontSize: '0.75rem', color: '#a5b4fc', fontWeight: 700 }}>EVM CHAIN DETECTADO</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#818cf8' }}>Chain ID: {currentChainId}</div>
           </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '12px' }}>
           <div style={{ background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)', padding: '8px 16px', borderRadius: '12px', textAlign: 'right' }}>
             <div style={{ fontSize: '0.75rem', color: '#86efac', fontWeight: 700 }}>RATIO SOLVENCIA PoR</div>
             <div data-testid="admin-por-solvency-ratio" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#4ade80' }}>{solvencyRatio}%</div>
@@ -110,6 +114,8 @@ Descripción: "${description}"
           <div style={{ background: 'rgba(168, 85, 247, 0.15)', border: '1px solid rgba(168, 85, 247, 0.3)', padding: '8px 16px', borderRadius: '12px', textAlign: 'right' }}>
             <div style={{ fontSize: '0.75rem', color: '#d8b4fe', fontWeight: 700 }}>NAV / TOKEN ALPHA</div>
             <div data-testid="admin-nav-per-share" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#c084fc' }}>${navValueNum.toFixed(4)}</div>
+          </div>
+        </div>
           </div>
         </div>
       </div>
@@ -221,9 +227,9 @@ Descripción: "${description}"
         <div>
           <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', color: '#cbd5e1' }}>⚙️ Configuración Global de Parámetros y Comisiones</h3>
           
-          {web3Data.chainId !== 31337 && (
+          {isProductionChain && (
             <div style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)', padding: '12px 16px', borderRadius: '12px', marginBottom: '20px', fontSize: '0.82rem', color: '#c084fc' }}>
-              🏛️ <strong>Pure DeFi Governance Active (Mainnet Live)</strong>: Ajusta los parámetros en las casillas inferiores y pulsa <strong>"Proponer Votación DAO (72h)"</strong> para firmar y enviar la propuesta on-chain a <code>GovernorAlphaCentauri.sol</code>.
+              🏛️ <strong>Pure DeFi Governance Active (Mainnet Live - Chain ID {currentChainId})</strong>: Ajusta los parámetros en las casillas inferiores y pulsa <strong>"Proponer Votación DAO (72h)"</strong> para firmar y enviar la propuesta on-chain a <code>GovernorAlphaCentauri.sol</code>.
             </div>
           )}
 
@@ -240,7 +246,7 @@ Descripción: "${description}"
                 />
                 <button
                   onClick={async () => {
-                    if (web3Data.chainId !== 31337) {
+                    if (isProductionChain) {
                       const bps = BigInt(Math.round(parseFloat(depositFeeInput || '0') * 100));
                       const calldata = encodeFunctionData({
                         abi: [{ name: 'setDepositFee', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'feeBps', type: 'uint256' }], outputs: [] }] as const,
@@ -249,12 +255,12 @@ Descripción: "${description}"
                       });
                       await submitGovernanceProposal(CONTRACT_ADDRESSES.TREASURY, calldata, `Ajustar Comisión de Depósito Tesorería a ${depositFeeInput}% (${bps} Bps)`);
                     } else {
-                      alert(`🧪 [Sandbox] Comisión de depósito simulada a ${depositFeeInput}%`);
+                      alert(`🧪 [Sandbox - Chain 31337] Comisión de depósito simulada a ${depositFeeInput}%`);
                     }
                   }}
-                  style={{ background: web3Data.chainId === 31337 ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}
+                  style={{ background: isProductionChain ? 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)' : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}
                 >
-                  {web3Data.chainId === 31337 ? '🧪 Guardar' : '🏛️ Proponer Votación DAO (72h)'}
+                  {isProductionChain ? '🏛️ Proponer Votación DAO (72h)' : '🧪 Guardar (Sandbox)'}
                 </button>
               </div>
               <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', display: 'block' }}>Actual: 0.50% (50 Bps)</span>
@@ -272,7 +278,7 @@ Descripción: "${description}"
                 />
                 <button
                   onClick={async () => {
-                    if (web3Data.chainId !== 31337) {
+                    if (isProductionChain) {
                       const bps = BigInt(Math.round(parseFloat(redeemFeeInput || '0') * 100));
                       const calldata = encodeFunctionData({
                         abi: [{ name: 'setRedeemFee', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'feeBps', type: 'uint256' }], outputs: [] }] as const,
@@ -281,12 +287,12 @@ Descripción: "${description}"
                       });
                       await submitGovernanceProposal(CONTRACT_ADDRESSES.TREASURY, calldata, `Ajustar Comisión de Canje Directo / Redeem a ${redeemFeeInput}% (${bps} Bps)`);
                     } else {
-                      alert(`🧪 [Sandbox] Comisión de canje simulada a ${redeemFeeInput}%`);
+                      alert(`🧪 [Sandbox - Chain 31337] Comisión de canje simulada a ${redeemFeeInput}%`);
                     }
                   }}
-                  style={{ background: web3Data.chainId === 31337 ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}
+                  style={{ background: isProductionChain ? 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)' : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}
                 >
-                  {web3Data.chainId === 31337 ? '🧪 Guardar' : '🏛️ Proponer Votación DAO (72h)'}
+                  {isProductionChain ? '🏛️ Proponer Votación DAO (72h)' : '🧪 Guardar (Sandbox)'}
                 </button>
               </div>
               <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', display: 'block' }}>Actual: 1.00% (100 Bps)</span>
@@ -304,7 +310,7 @@ Descripción: "${description}"
                 />
                 <button
                   onClick={async () => {
-                    if (web3Data.chainId !== 31337) {
+                    if (isProductionChain) {
                       const bps = BigInt(Math.round(parseFloat(p2pFeeInput || '0') * 100));
                       const calldata = encodeFunctionData({
                         abi: [{ name: 'setFeeBps', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'feeBps', type: 'uint256' }], outputs: [] }] as const,
@@ -313,12 +319,12 @@ Descripción: "${description}"
                       });
                       await submitGovernanceProposal(CONTRACT_ADDRESSES.P2P_MARKET, calldata, `Ajustar Fee de Originación Préstamos P2P a ${p2pFeeInput}% (${bps} Bps)`);
                     } else {
-                      alert(`🧪 [Sandbox] Fee de originación simulado a ${p2pFeeInput}%`);
+                      alert(`🧪 [Sandbox - Chain 31337] Fee de originación simulado a ${p2pFeeInput}%`);
                     }
                   }}
-                  style={{ background: web3Data.chainId === 31337 ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}
+                  style={{ background: isProductionChain ? 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)' : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}
                 >
-                  {web3Data.chainId === 31337 ? '🧪 Guardar' : '🏛️ Proponer Votación DAO (72h)'}
+                  {isProductionChain ? '🏛️ Proponer Votación DAO (72h)' : '🧪 Guardar (Sandbox)'}
                 </button>
               </div>
               <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', display: 'block' }}>Actual: 0.50% (50 Bps)</span>
@@ -399,7 +405,7 @@ Descripción: "${description}"
             <button
               onClick={async () => {
                 if (!promoName || !promoAmount) return;
-                if (web3Data.chainId !== 31337) {
+                if (isProductionChain) {
                   const amountWei = parseEther(promoAmount);
                   const calldata = encodeFunctionData({
                     abi: [{ name: 'createCampaign', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'name', type: 'string' }, { name: 'rewardAmount', type: 'uint256' }], outputs: [{ name: 'campaignId', type: 'uint256' }] }] as const,
@@ -413,7 +419,7 @@ Descripción: "${description}"
               }}
               disabled={!promoName || !promoAmount}
               style={{
-                background: web3Data.chainId === 31337 ? 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)' : 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)',
+                background: isProductionChain ? 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)' : 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
                 border: 'none',
                 color: '#fff',
                 padding: '12px 24px',
@@ -423,7 +429,7 @@ Descripción: "${description}"
                 width: '100%'
               }}
             >
-              {web3Data.chainId === 31337 ? '🚀 Crear y Activar Campaña Promocional On-Chain' : '🏛️ Proponer Presupuesto Promocional en Governor (72h)'}
+              {isProductionChain ? '🏛️ Proponer Presupuesto Promocional en Governor (72h)' : '🚀 Crear y Activar Campaña Promocional On-Chain'}
             </button>
           </div>
         </div>
@@ -441,7 +447,7 @@ Descripción: "${description}"
               </p>
               <button
                 onClick={async () => {
-                  if (web3Data.chainId !== 31337) {
+                  if (isProductionChain) {
                     const calldata = encodeFunctionData({
                       abi: [{ name: 'resetBreaker', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'asset', type: 'address' }], outputs: [] }] as const,
                       functionName: 'resetBreaker',
@@ -452,16 +458,16 @@ Descripción: "${description}"
                     adminActions.handleResetBreaker();
                   }
                 }}
-                style={{ background: web3Data.chainId === 31337 ? 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)' : 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)', border: 'none', color: '#fff', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', width: '100%' }}
+                style={{ background: isProductionChain ? 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)' : 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)', border: 'none', color: '#fff', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', width: '100%' }}
               >
-                {web3Data.chainId === 31337 ? '🔓 Reiniciar Circuit Breaker (Devnet)' : '🛡️ Proponer Reset Breaker / Security Council Multisig (72h)'}
+                {isProductionChain ? '🛡️ Proponer Reset Breaker / Security Council Multisig (72h)' : '🔓 Reiniciar Circuit Breaker (Devnet)'}
               </button>
             </div>
 
             <div style={{ background: 'rgba(30, 41, 59, 0.6)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
               <h4 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#60a5fa' }}>🔮 Oráculo de Precios Chainlink</h4>
               <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '0 0 16px 0' }}>
-                {web3Data.chainId === 31337 ? 'Actualiza el valor del feed de prueba de USDC en la sandbox para simular fluctuaciones de mercado.' : 'En Mainnet Live, los precios son provistos automáticamente por los agregadores de nodos descentralizados de Chainlink.'}
+                {isProductionChain ? 'En Mainnet Live, los precios son provistos automáticamente por los agregadores de nodos descentralizados de Chainlink.' : 'Actualiza el valor del feed de prueba de USDC en la sandbox para simular fluctuaciones de mercado.'}
               </p>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <input
@@ -472,7 +478,7 @@ Descripción: "${description}"
                 />
                 <button
                   onClick={async () => {
-                    if (web3Data.chainId !== 31337) {
+                    if (isProductionChain) {
                       const calldata = encodeFunctionData({
                         abi: [{ name: 'setPriceFeed', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'asset', type: 'address' }, { name: 'feed', type: 'address' }], outputs: [] }] as const,
                         functionName: 'setPriceFeed',
@@ -483,9 +489,9 @@ Descripción: "${description}"
                       adminActions.handleUpdateOracle();
                     }
                   }}
-                  style={{ background: web3Data.chainId === 31337 ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}
+                  style={{ background: isProductionChain ? 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)' : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}
                 >
-                  {web3Data.chainId === 31337 ? 'Actualizar' : '🏛️ Proponer Feed en Governor (72h)'}
+                  {isProductionChain ? '🏛️ Proponer Feed en Governor (72h)' : 'Actualizar'}
                 </button>
               </div>
             </div>

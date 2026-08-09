@@ -65,10 +65,26 @@ export function useWeb3State() {
       }
     };
     initSnapshot();
+
+    if (typeof window !== 'undefined' && (window as any).ethereum) {
+      const handleChainChanged = (hexChainId: string) => {
+        const parsedId = parseInt(hexChainId, 16);
+        if (!isNaN(parsedId)) setChainId(parsedId);
+      };
+      (window as any).ethereum.on('chainChanged', handleChainChanged);
+      return () => {
+        (window as any).ethereum?.removeListener('chainChanged', handleChainChanged);
+      };
+    }
   }, []);
 
   const fetchData = async () => {
     try {
+      try {
+        const cId = await publicClient.getChainId();
+        setChainId(cId);
+      } catch (e) {}
+
       let currentSec = Math.floor(Date.now() / 1000);
       try {
         const currentBlock = await publicClient.getBlock();
