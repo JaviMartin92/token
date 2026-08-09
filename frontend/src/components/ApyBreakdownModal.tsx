@@ -41,6 +41,7 @@ export function calculateProtocolApyMath(
 
   // 1. Morpho Blue (USDC): 80% of USDC stablecoin reserve deployed to MetaMorpho Vault @ Dynamic On-Chain Oracle APR
   const morphoUSDPool = stablesUSD * 0.80;
+  const liquidBufferUSDPool = stablesUSD * 0.20;
   const morphoUSDYield = morphoUSDPool * assetRates.stablesApyPct;
 
   // 2. Lombard LBTC (WBTC): 100% of WBTC reserve @ Dynamic On-Chain Oracle APR
@@ -53,6 +54,8 @@ export function calculateProtocolApyMath(
   const realTimeBaseApyPct = numericAssetsUSD > 0 ? (totalAnnualYieldUSD / numericAssetsUSD) * 100 : 0;
 
   const wStablesPct = numericAssetsUSD > 0 ? (stablesUSD / numericAssetsUSD) * 100 : 0;
+  const wMorphoPct = numericAssetsUSD > 0 ? (morphoUSDPool / numericAssetsUSD) * 100 : 0;
+  const wLiquidBufferPct = numericAssetsUSD > 0 ? (liquidBufferUSDPool / numericAssetsUSD) * 100 : 0;
   const wBtcPct = numericAssetsUSD > 0 ? (wbtcUSD / numericAssetsUSD) * 100 : 0;
   const wEthPct = numericAssetsUSD > 0 ? (wethUSD / numericAssetsUSD) * 100 : 0;
   const wLoanPct = numericAssetsUSD > 0 ? (loanPoolUSD / numericAssetsUSD) * 100 : 0;
@@ -60,7 +63,7 @@ export function calculateProtocolApyMath(
   const actualBondFeesUSD = grossCashflowUsd * 0.015;
   const actualP2pFeesUSD = realActiveLoansUSD * 0.005;
   const actualInterestSpreadUSD = activeLoanInterestUSD * 0.10;
-  const totalFlywheelFeesUSD = claimableYieldUsd > 0 ? claimableYieldUsd : (actualBondFeesUSD + actualP2pFeesUSD + actualInterestSpreadUSD);
+  const totalFlywheelFeesUSD = actualBondFeesUSD + actualP2pFeesUSD + actualInterestSpreadUSD;
 
   const flywheelApyPct = numericStakedAlpha > 0 
     ? (totalFlywheelFeesUSD / numericStakedAlpha) * 100 
@@ -72,6 +75,8 @@ export function calculateProtocolApyMath(
     numericAssetsUSD,
     numericStakedAlpha,
     stablesUSD,
+    morphoUSDPool,
+    liquidBufferUSDPool,
     wbtcUSD,
     wethUSD,
     loanPoolUSD,
@@ -86,6 +91,8 @@ export function calculateProtocolApyMath(
     totalAnnualYieldUSD,
     realTimeBaseApyPct,
     wStablesPct,
+    wMorphoPct,
+    wLiquidBufferPct,
     wBtcPct,
     wEthPct,
     wLoanPct,
@@ -116,6 +123,8 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
     numericAssetsUSD,
     numericStakedAlpha,
     stablesUSD,
+    morphoUSDPool,
+    liquidBufferUSDPool,
     wbtcUSD,
     wethUSD,
     loanPoolUSD,
@@ -130,6 +139,8 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
     totalAnnualYieldUSD,
     realTimeBaseApyPct,
     wStablesPct,
+    wMorphoPct,
+    wLiquidBufferPct,
     wBtcPct,
     wEthPct,
     wLoanPct,
@@ -255,16 +266,32 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
             {/* Morpho */}
             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#e2e8f0' }}>🏦 Morpho Blue MetaMorpho Vault (USDC)</div>
+                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#e2e8f0' }}>🏦 Morpho Blue MetaMorpho Vault (80% USDC Invertido)</div>
                 <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.1rem' }}>
-                  Ubicación: <strong>${stablesUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> ({wStablesPct.toFixed(1)}% de Reservas) • Rendimiento Variable
+                  Ubicación: <strong>${morphoUSDPool.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> ({wMorphoPct.toFixed(1)}% de Reservas) • Tasa Vault On-Chain: <strong>{(assetRates.stablesApyPct * 100).toFixed(2)}% APY</strong>
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontWeight: 700, color: '#34d399', fontSize: '0.95rem' }}>
                   +${morphoUSDYield.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD / año
                 </div>
-                <div style={{ fontSize: '0.7rem', color: '#6ee7b7' }}>+{( (morphoUSDYield / (numericAssetsUSD || 1)) * 100 ).toFixed(3)}% APR</div>
+                <div style={{ fontSize: '0.7rem', color: '#6ee7b7' }}>+{( (morphoUSDYield / (numericAssetsUSD || 1)) * 100 ).toFixed(3)}% APR al Total</div>
+              </div>
+            </div>
+
+            {/* Búfer Líquido de Tesorería */}
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#e2e8f0' }}>💧 Búfer Líquido de Tesorería (20% USDC Libre)</div>
+                <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.1rem' }}>
+                  Ubicación: <strong>${liquidBufferUSDPool.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> ({wLiquidBufferPct.toFixed(1)}% de Reservas) • Liquidez Inmediata para Rescates
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontWeight: 700, color: '#64748b', fontSize: '0.95rem' }}>
+                  +$0.00 USD / año
+                </div>
+                <div style={{ fontSize: '0.7rem', color: '#64748b' }}>0.000% APR</div>
               </div>
             </div>
 
