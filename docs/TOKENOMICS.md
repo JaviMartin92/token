@@ -46,9 +46,9 @@ Toda comisión generada por cualquier operativa de la plataforma (depósitos, re
 
 La Tesorería de `TreasuryManager.sol` mantiene una cartera de reservas exclusivamente exógena con las siguientes ponderaciones objetivo (*Target Asset Allocation*):
 
-* **60.00%: USDC / Stablecoins:** Sub-Reserva orientada a rendimiento y liquidez: Bóvedas Morpho Blue (Rendimiento Real APY) + Búfer Líquido de Tesorería para originación de Préstamos P2P sobrecolateralizados.
-* **26.67%: Wrapped Bitcoin (WBTC):** Staking Lombard (LBTC) / Suministro Morpho valorado on-chain vía Oráculos Chainlink BTC/USD (`OracleHub.sol`).
-* **13.33%: Wrapped Ethereum (WETH):** Liquid Staking Lido (stETH) / Colateral Morpho valorado on-chain vía Oráculos Chainlink ETH/USD (`OracleHub.sol`).
+* **60.00%: USDC / Stablecoins:** Sub-Reserva orientada a rendimiento y liquidez: **90.0% colocado en Bóvedas MetaMorpho de Morpho Blue (6.45% APY)** + **10.0% Búfer Líquido de Tesorería** retenido en `AlphaVault.sol` para rescates inmediatos e inyecciones a la Línea de Crédito P2P.
+* **26.67%: Wrapped Bitcoin (WBTC):** Staking Lombard (LBTC) / Suministro Morpho (3.80% APY) valorado on-chain vía Oráculos Chainlink BTC/USD (`OracleHub.sol`).
+* **13.33%: Wrapped Ethereum (WETH):** Liquid Staking Lido (wstETH) (4.20% APY) / Colateral Morpho valorado on-chain vía Oráculos Chainlink ETH/USD (`OracleHub.sol`).
 
 *Nota de Arquitectura y Saneamiento Contable:* Los tokens ALPHA stapeados en Gobernanza forman parte de la sub-reserva interna retenida respaldada 1:1 por USDC y nunca se contabilizan dentro de la tabla de activos exógenos para evitar doble contabilización patrimonial.
 
@@ -138,8 +138,8 @@ Los bonos con descuento se mintean como NFTs de Posición (`VaultPositionNFT.sol
 
 * **LTV Máximo:** 70.00% para Position NFTs (ERC-721), 50.00% para token ALPHA líquido (valorado dinámicamente vía `getNAVPerShare()`).
 * **Liquidadibilidad Min Health Factor:** 115.00% (`minHealthFactorBps = 11500`).
-* **Línea Directa de Tesorería:** Origen de fondos desde el Búfer Líquido de Tesorería.
-* **Custodia en Escrow:** NFTs de posición retenidos en el mercado P2P como garantía hasta el pago total del principal + intereses.
+* **Línea Directa de Tesorería (20.0% Máx. Cap):** Origen de fondos desde la línea de crédito autorizada del 20.0% de las Reservas Exógenas. El capital no solicitado permanece colocado en Morpho Blue al 6.45% APY hasta su desembolso.
+* **Custodia en Escrow:** NFTs de posición retenidos en el mercado P2P como garantía hasta el pago total del principal + intereses (8.00% APR Tasa Variable Real + 10.0% Spread de Margen).
 
 ---
 

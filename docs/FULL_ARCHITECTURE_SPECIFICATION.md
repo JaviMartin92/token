@@ -266,9 +266,13 @@ El protocolo está compuesto por 25 smart contracts fuertemente desacoplados med
 
 #### 17. [`P2PLendingMarket.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/P2PLendingMarket.sol)
 - **Propósito**: Mercado monetario P2P donde los bonos NFT sirven como garantía para solicitar préstamos en USDC (Máximo 70% LTV, umbral de liquidación al 115% Health Factor).
+- **Línea Directa de Tesorería**: Permite la originación de créditos colateralizados financiados directamente por la Tesorería hasta un **límite máximo del 20.0% de las Reservas Exógenas Totales** (`maxCreditLineUSD = TotalAssetsUSD * 0.20`). El capital no prestado permanece colocado en el Vault de Morpho Blue al 6.45% APY produciendo rendimientos pasivos hasta que sea solicitado por prestatarios.
 
 #### 18. [`MorphoYieldVaultAdapter.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/adapters/MorphoYieldVaultAdapter.sol)
-- **Propósito**: Adaptador que gestiona la colocación del 80% de la tesorería en vaults de rendimiento institucional MetaMorpho.
+- **Propósito**: Adaptador que gestiona la colocación del **90.0% de la tesorería en USDC** en vaults de rendimiento institucional MetaMorpho de Morpho Blue (generando un rendimiento real pasivo del 6.45% APY), reteniendo el **10.0% restante en `AlphaVault.sol`** como Búfer Líquido de Tesorería para garantizar rescates e inyecciones atómicas sin fricción.
+
+#### 19. [`MockSwapRouter.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/MockSwapRouter.sol)
+- **Propósito**: Router de pruebas de Uniswap V3 que implementa la interfaz `ISwapRouter.exactInputSingle` para entornos devnet/sandbox local (Anvil). Ejecuta swaps de colateral en tiempo real extrayendo USDC de `AlphaVault` y entregando WBTC y WETH a precios reales de mercado ($60,000 USD / $3,000 USD). En entornos de producción (Mainnet/L2), el selector dinámico de `deploy.ts` conmuta automáticamente a la dirección oficial del SwapRouter de Uniswap V3 / 1inch V5.
 
 ---
 
