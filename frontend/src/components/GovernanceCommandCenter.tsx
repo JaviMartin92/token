@@ -181,6 +181,13 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
       {activeSubTab === 'parameters' && (
         <div>
           <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', color: '#cbd5e1' }}>⚙️ Configuración Global de Parámetros y Comisiones</h3>
+          
+          {web3Data.chainId !== 31337 && (
+            <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '12px 16px', borderRadius: '12px', marginBottom: '20px', fontSize: '0.82rem', color: '#f87171' }}>
+              🛑 <strong>Pure DeFi Enforcement (Mainnet Live)</strong>: Las comisiones globales están protegidas on-chain. Toda modificación requiere la aprobación de una propuesta en <code>GovernorAlphaCentauri.sol</code> con un retraso obligatorio de 72 horas en <code>TimelockController.sol</code>.
+            </div>
+          )}
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
             <div style={{ background: 'rgba(30, 41, 59, 0.6)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
               <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>COMISIÓN DE DEPÓSITO TESORERÍA (%)</label>
@@ -190,14 +197,15 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                   step="0.1"
                   value={depositFeeInput}
                   onChange={(e) => setDepositFeeInput(e.target.value)}
-                  disabled={!isAdmin}
+                  disabled={web3Data.chainId !== 31337 && !isAdmin}
                   style={{ flex: 1, background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '10px 14px' }}
                 />
                 <button
-                  disabled={!isAdmin}
-                  style={{ background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: isAdmin ? 'pointer' : 'not-allowed' }}
+                  disabled={web3Data.chainId !== 31337}
+                  onClick={() => alert(`🧪 [Sandbox] Comisión de depósito simulada a ${depositFeeInput}%`)}
+                  style={{ background: web3Data.chainId === 31337 ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'rgba(100,116,139,0.3)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: web3Data.chainId === 31337 ? 'pointer' : 'not-allowed', fontSize: '0.8rem' }}
                 >
-                  Guardar
+                  {web3Data.chainId === 31337 ? '🧪 Guardar' : '🏛️ Votación DAO (72h)'}
                 </button>
               </div>
               <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', display: 'block' }}>Actual: 0.50% (50 Bps)</span>
@@ -211,14 +219,15 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                   step="0.1"
                   value={redeemFeeInput}
                   onChange={(e) => setRedeemFeeInput(e.target.value)}
-                  disabled={!isAdmin}
+                  disabled={web3Data.chainId !== 31337 && !isAdmin}
                   style={{ flex: 1, background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '10px 14px' }}
                 />
                 <button
-                  disabled={!isAdmin}
-                  style={{ background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: isAdmin ? 'pointer' : 'not-allowed' }}
+                  disabled={web3Data.chainId !== 31337}
+                  onClick={() => alert(`🧪 [Sandbox] Comisión de canje simulada a ${redeemFeeInput}%`)}
+                  style={{ background: web3Data.chainId === 31337 ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'rgba(100,116,139,0.3)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: web3Data.chainId === 31337 ? 'pointer' : 'not-allowed', fontSize: '0.8rem' }}
                 >
-                  Guardar
+                  {web3Data.chainId === 31337 ? '🧪 Guardar' : '🏛️ Votación DAO (72h)'}
                 </button>
               </div>
               <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', display: 'block' }}>Actual: 1.00% (100 Bps)</span>
@@ -232,14 +241,15 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                   step="0.1"
                   value={p2pFeeInput}
                   onChange={(e) => setP2pFeeInput(e.target.value)}
-                  disabled={!isAdmin}
+                  disabled={web3Data.chainId !== 31337 && !isAdmin}
                   style={{ flex: 1, background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '10px 14px' }}
                 />
                 <button
-                  disabled={!isAdmin}
-                  style={{ background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: isAdmin ? 'pointer' : 'not-allowed' }}
+                  disabled={web3Data.chainId !== 31337}
+                  onClick={() => alert(`🧪 [Sandbox] Fee de originación simulado a ${p2pFeeInput}%`)}
+                  style={{ background: web3Data.chainId === 31337 ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'rgba(100,116,139,0.3)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: web3Data.chainId === 31337 ? 'pointer' : 'not-allowed', fontSize: '0.8rem' }}
                 >
-                  Guardar
+                  {web3Data.chainId === 31337 ? '🧪 Guardar' : '🏛️ Votación DAO (72h)'}
                 </button>
               </div>
               <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', display: 'block' }}>Actual: 0.50% (50 Bps)</span>
