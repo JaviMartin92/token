@@ -22,6 +22,7 @@ contract ProtocolAddressProvider is AccessControl {
     bytes32 public constant ID_VESTED_VAULT = keccak256("VESTED_VAULT");
     bytes32 public constant ID_PROTOCOL_OPEX_VAULT = keccak256("PROTOCOL_OPEX_VAULT");
     bytes32 public constant ID_COMMUNITY_YIELD_VAULT = keccak256("COMMUNITY_YIELD_VAULT");
+    bytes32 public constant ID_MORPHO_ADAPTER = keccak256("MORPHO_ADAPTER");
 
     mapping(bytes32 => address) private _addresses;
 
@@ -62,4 +63,5 @@ contract ProtocolAddressProvider is AccessControl {
     function getRealYieldRouter() external view returns (address) { return getAddress(ID_REAL_YIELD_ROUTER); }
     function getP2PMarket() external view returns (address) { return getAddress(ID_P2P_MARKET); }
     function getVestedVault() external view returns (address) { return getAddress(ID_VESTED_VAULT); }
+    function getMorphoAdapter() external view returns (address) { return getAddress(ID_MORPHO_ADAPTER); }
 }

@@ -10,9 +10,16 @@ import "./AlphaVault.sol";
 import "./AlphaToken.sol";
 import "./OracleHub.sol";
 import "./interfaces/IYieldStrategy.sol";
+import "./interfaces/ICircuitBreaker.sol";
+import "./interfaces/IRealYieldRouter.sol";
+import "./interfaces/ISwapRouter.sol";
 
 interface IGovernanceStakingOpEx {
     function stake(uint256 amount) external;
+}
+
+interface IMorphoYieldVaultAdapter {
+    function withdrawLiquidity(uint256 amount) external returns (uint256);
 }
 
 // --- Interfaces ---
@@ -23,10 +30,6 @@ interface IProtocolTokenomicsEngine {
     function calculateProofOfReserves(uint256 totalAssetsUSD18, uint256 totalLiabilitiesUSD18) external view returns (uint256 collateralRatioBps, bool isSolvent);
 }
 
-interface ICircuitBreaker {
-    function isFrozen(address asset) external view returns (bool);
-}
-
 interface IGovernanceStaking {
     function totalStaked() external view returns (uint256);
     function stakedBalances(address account) external view returns (uint256);
@@ -35,30 +38,12 @@ interface IGovernanceStaking {
     function communityYieldVault() external view returns (address);
 }
 
-interface IRealYieldRouter {
-    function routeUniversalFee(address feeToken) external;
-}
-
 interface IP2PLendingMarket {
     function treasuryLoansReceivableUSD() external view returns (uint256);
 }
 
 interface IVestedDiscountVault {
     function totalPresentLiability() external view returns (uint256);
-}
-
-interface ISwapRouter {
-    struct ExactInputSingleParams {
-        address tokenIn;
-        address tokenOut;
-        uint24 fee;
-        address recipient;
-        uint256 deadline;
-        uint256 amountIn;
-        uint256 amountOutMinimum;
-        uint160 sqrtPriceLimitX96;
-    }
-    function exactInputSingle(ExactInputSingleParams calldata params) external payable returns (uint256 amountOut);
 }
 
 interface IMockERC20 {
@@ -85,6 +70,8 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
     uint8 public redemptionTokenDecimals;
     uint256 public tvlCap;
     uint256 public totalBurnedTokens;
+
+    mapping(address => uint256) public lastDepositBlock;
 
     // Direct tracked assets for routing
     address public wbtcToken;
@@ -352,6 +339,7 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
     // --- Core Operations ---
     function deposit(uint256 stableAmount) external nonReentrant returns (uint256 sharesMinted) {
         require(stableAmount > 0, "TreasuryManager: Deposit amount must be > 0");
+        lastDepositBlock[msg.sender] = block.number;
 
         (, uint256 totalLiabilitiesUSD, uint256 preRatioBps) = getProofOfReserves();
         uint256 preNavUSD = getNAVPerShare();
@@ -506,8 +494,23 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
         }
     }
 
+    /**
+     * @notice Ensures liquid USDC buffer in AlphaVault by auto-withdrawing from Morpho Adapter if needed.
+     */
+    function _ensureLiquidBuffer(AlphaVault vault, uint256 requiredUsdc) internal {
+        uint256 vaultBal = vault.getBalance(redemptionToken);
+        if (vaultBal < requiredUsdc) {
+            uint256 deficit = requiredUsdc - vaultBal;
+            address morphoAdapterAddr = addressProvider.getAddress(addressProvider.ID_MORPHO_ADAPTER());
+            if (morphoAdapterAddr != address(0)) {
+                try IMorphoYieldVaultAdapter(morphoAdapterAddr).withdrawLiquidity(deficit) {} catch {}
+            }
+        }
+    }
+
     function redeem(uint256 sharesAmount) external nonReentrant returns (uint256 assetsReceived) {
         require(sharesAmount > 0, "TreasuryManager: Redeeming 0 shares");
+        require(lastDepositBlock[msg.sender] < block.number, "TreasuryManager: Same-block deposit/redeem cooldown");
         AlphaToken token = AlphaToken(addressProvider.getAddress(addressProvider.ID_ALPHA_TOKEN()));
         uint256 totalShares = getNetCirculatingShares();
         
@@ -523,6 +526,7 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
         require(assetsReceived > 0, "TreasuryManager: Net redeemed asset amount is 0");
 
         AlphaVault vault = AlphaVault(addressProvider.getAddress(addressProvider.ID_ALPHA_VAULT()));
+        _ensureLiquidBuffer(vault, assetsReceived);
         
         token.burnFrom(msg.sender, sharesAmount);
         totalBurnedTokens += sharesAmount;

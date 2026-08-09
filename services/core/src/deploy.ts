@@ -391,7 +391,7 @@ async function main() {
     address: oracleAddr,
     abi: OracleHub.abi,
     functionName: 'setTrackedAsset',
-    args: [usdcAddr, feedAddr, 6]  // USDC = 6 decimals
+    args: [usdcAddr, feedAddr, '0x0000000000000000000000000000000000000000', 6]  // USDC = 6 decimals
   });
   await publicClient.waitForTransactionReceipt({ hash: setTrackedUsdcHash });
 
@@ -399,7 +399,7 @@ async function main() {
     address: oracleAddr,
     abi: OracleHub.abi,
     functionName: 'setTrackedAsset',
-    args: [wbtcAddr, wbtcFeedAddr, 8]  // WBTC = 8 decimals
+    args: [wbtcAddr, wbtcFeedAddr, '0x0000000000000000000000000000000000000000', 8]  // WBTC = 8 decimals
   });
   await publicClient.waitForTransactionReceipt({ hash: setTrackedWbtcHash });
 
@@ -407,7 +407,7 @@ async function main() {
     address: oracleAddr,
     abi: OracleHub.abi,
     functionName: 'setTrackedAsset',
-    args: [wethAddr, wethFeedAddr, 18]  // WETH = 18 decimals
+    args: [wethAddr, wethFeedAddr, '0x0000000000000000000000000000000000000000', 18]  // WETH = 18 decimals
   });
   await publicClient.waitForTransactionReceipt({ hash: setTrackedWethHash });
   // Set oracle staleness limit to 100 years for sandbox time-travel testing
@@ -503,18 +503,15 @@ async function main() {
   const morphoAddr = (await publicClient.waitForTransactionReceipt({ hash: morphoTx })).contractAddress!;
   console.log(`[+] MorphoYieldVaultAdapter Contract deployed at: ${morphoAddr}`);
 
-  // Link MorphoYieldVaultAdapter into Treasury for 80/20 USDC sub-reserve routing
-  // Handled dynamically via AddressProvider now.
-  /*
-  const setMorphoHash = await walletClient.writeContract({
-    address: treasuryAddr,
-    abi: Treasury.abi,
-    functionName: 'setMorphoAdapter',
-    args: [morphoAddr]
+  const idMorpho = keccak256(toHex('MORPHO_ADAPTER'));
+  const setMorphoAddrHash = await walletClient.writeContract({
+    address: apAddr,
+    abi: ProtocolAddressProvider.abi,
+    functionName: 'setAddress',
+    args: [idMorpho, morphoAddr]
   });
-  await publicClient.waitForTransactionReceipt({ hash: setMorphoHash });
-  console.log('[+] Linked MorphoYieldVaultAdapter into Treasury for 80/20 USDC sub-reserve auto-routing.');
-  */
+  await publicClient.waitForTransactionReceipt({ hash: setMorphoAddrHash });
+  console.log('[+] Registered MORPHO_ADAPTER in ProtocolAddressProvider.');
 
   // 15. Deploy PromotionalIncentiveVault (10% ALPHA Pool)
   const promoArtifact = loadArtifact('PromotionalIncentiveVault', 'PromotionalIncentiveVault.sol');

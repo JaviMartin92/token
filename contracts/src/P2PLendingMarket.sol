@@ -8,9 +8,7 @@ import "./VaultPositionNFT.sol";
 import "./interfaces/IAggregatorV3.sol";
 import "./interfaces/ITreasury.sol";
 
-interface IRealYieldRouter {
-    function routeUniversalFee(address token) external;
-}
+import "./interfaces/IRealYieldRouter.sol";
 
 /**
  * @title P2PLendingMarket

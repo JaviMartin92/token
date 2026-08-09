@@ -74,18 +74,22 @@ contract MorphoYieldVaultAdapter is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Harvests accumulated yield from Morpho Blue vaults and sends it to the Treasury
+     * @notice Withdraws liquidity back to the Treasury to cover redemptions
      */
-    function harvestYield() external nonReentrant returns (uint256 yieldHarvested) {
-        yieldHarvested = getPendingYield();
-        lastHarvestTimestamp = block.timestamp;
+    function withdrawLiquidity(uint256 amount) external nonReentrant returns (uint256 withdrawn) {
+        require(msg.sender == treasury || msg.sender == owner(), "MorphoAdapter: Unauthorized caller");
+        require(amount > 0, "MorphoAdapter: Amount must be > 0");
 
-        if (yieldHarvested > 0 && treasury != address(0)) {
-            totalYieldHarvested += yieldHarvested;
-            if (IERC20(stablecoin).balanceOf(address(this)) >= yieldHarvested) {
-                IERC20(stablecoin).transfer(treasury, yieldHarvested);
+        uint256 bal = IERC20(stablecoin).balanceOf(address(this));
+        withdrawn = amount > bal ? bal : amount;
+
+        if (withdrawn > 0) {
+            if (withdrawn <= totalStablecoinInvested) {
+                totalStablecoinInvested -= withdrawn;
+            } else {
+                totalStablecoinInvested = 0;
             }
-            emit YieldHarvested(yieldHarvested, block.timestamp);
+            require(IERC20(stablecoin).transfer(treasury, withdrawn), "MorphoAdapter: Transfer failed");
         }
     }
 }

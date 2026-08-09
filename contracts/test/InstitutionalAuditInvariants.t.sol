@@ -77,9 +77,9 @@ contract InstitutionalAuditInvariantsTest is Test {
         oracleHub = new OracleHub(provider, admin);
         provider.setAddress(keccak256("ORACLE_HUB"), address(oracleHub));
         oracleHub.grantRole(ProtocolRoles.ORACLE_MANAGER_ROLE, admin);
-        oracleHub.setTrackedAsset(address(usdc), address(usdcFeed), 6);
-        oracleHub.setTrackedAsset(address(wbtc), address(wbtcFeed), 8);
-        oracleHub.setTrackedAsset(address(weth), address(wethFeed), 18);
+        oracleHub.setTrackedAsset(address(usdc), address(usdcFeed), address(0), 6);
+        oracleHub.setTrackedAsset(address(wbtc), address(wbtcFeed), address(0), 8);
+        oracleHub.setTrackedAsset(address(weth), address(wethFeed), address(0), 18);
 
         // 5. TreasuryManager
         manager = new TreasuryManager(provider, admin, address(usdc), 6);
@@ -198,7 +198,8 @@ contract InstitutionalAuditInvariantsTest is Test {
         uint256 sharesMinted = manager.deposit(flashLoanAmount);
         assertEq(sharesMinted, 95_000 * 10**18);
 
-        // 2. Intento de rescate total inmediato -> REVERTIDO por protección de colateralización
+        // 2. Intento de rescate total en el bloque posterior -> REVERTIDO por protección de colateralización
+        vm.roll(block.number + 1);
         alphaToken.approve(address(manager), sharesMinted);
         vm.expectRevert("TreasuryManager: Security Violation - Transaction reduced collateralization ratio");
         manager.redeem(sharesMinted);
@@ -228,7 +229,10 @@ contract InstitutionalAuditInvariantsTest is Test {
         usdc.approve(address(manager), flashLoanAmount);
         uint256 sharesMinted = manager.deposit(flashLoanAmount);
 
-        // 3. Atacante intenta rescatar inmediatamente sus shares
+        // Advance block height to pass Same-Block Deposit/Redeem Cooldown
+        vm.roll(block.number + 1);
+
+        // 3. Atacante intenta rescatar sus shares en el siguiente bloque
         alphaToken.approve(address(manager), sharesMinted);
         uint256 usdcReturned = manager.redeem(sharesMinted);
         vm.stopPrank();
@@ -247,5 +251,22 @@ contract InstitutionalAuditInvariantsTest is Test {
         console.log("--------------------------------------------------");
 
         assertGe(netLoss, 1000 * 10**6, "MEV Impact curve did not inflict expected capital loss");
+    }
+
+    /**
+     * @notice Hardening Test: Same-Block Deposit and Redeem Guard
+     */
+    function test_RevertIf_SameBlockDepositAndRedeem() public {
+        uint256 depositAmt = 10_000 * 10**6;
+        usdc.mint(attacker, depositAmt);
+
+        vm.startPrank(attacker);
+        usdc.approve(address(manager), depositAmt);
+        uint256 shares = manager.deposit(depositAmt);
+
+        alphaToken.approve(address(manager), shares);
+        vm.expectRevert("TreasuryManager: Same-block deposit/redeem cooldown");
+        manager.redeem(shares);
+        vm.stopPrank();
     }
 }

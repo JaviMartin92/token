@@ -71,8 +71,8 @@ contract ModularProtocolTest is Test {
         oracleHub = new OracleHub(provider, admin);
         provider.setAddress(keccak256("ORACLE_HUB"), address(oracleHub));
         oracleHub.grantRole(ProtocolRoles.ORACLE_MANAGER_ROLE, admin);
-        oracleHub.setTrackedAsset(address(usdc), address(usdcFeed), 6);
-        oracleHub.setTrackedAsset(address(wbtc), address(wbtcFeed), 8);
+        oracleHub.setTrackedAsset(address(usdc), address(usdcFeed), address(0), 6);
+        oracleHub.setTrackedAsset(address(wbtc), address(wbtcFeed), address(0), 8);
 
         // 5. Treasury Manager
         manager = new TreasuryManager(provider, admin, address(usdc), 6);
@@ -107,6 +107,9 @@ contract ModularProtocolTest is Test {
         vm.startPrank(user);
         usdc.approve(address(manager), 1000 * 10**6);
         uint256 minted = manager.deposit(1000 * 10**6); // 995 ALPHA
+
+        // Advance block height to pass Same-Block Deposit/Redeem Cooldown
+        vm.roll(block.number + 1);
 
         // Now Redeem half (497.5 ALPHA)
         uint256 redeemAmount = 4975 * 10**17;
