@@ -21,7 +21,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   navValue,
   porRatio,
-  alphaApy = '11.25%',
+  alphaApy = '0.00%',
   blockDateStr,
   activeTab,
   setActiveTab,

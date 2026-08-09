@@ -125,7 +125,7 @@ export default function App() {
     return acc + (!pos.isRagequitted ? parseFloat(pos.principal || '0') || 0 : 0);
   }, 0);
 
-  const liveApyStr = web3.liveApyStr || '5.72%';
+  const liveApyStr = web3.liveApyStr || '0.00%';
 
   return (
     <div style={{ minHeight: '100vh', padding: '1.5rem', background: 'radial-gradient(ellipse at top, #1e1b4b 0%, #0f172a 100%)', color: '#fff' }}>

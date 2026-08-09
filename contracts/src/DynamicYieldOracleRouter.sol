@@ -266,7 +266,7 @@ contract DynamicYieldOracleRouter is Ownable {
     }
 
     /**
-     * @notice Computes the protocol-wide weighted APY in BPS (e.g. 572 BPS = 5.72%) based on current reserve asset balances
+     * @notice Computes the protocol-wide weighted APY in BPS (e.g. 516 BPS = 5.16%) based on current reserve asset balances and 80% Morpho deployment ratio
      */
     function calculateWeightedYieldBps(uint256 stablesUsd, uint256 wbtcUsd, uint256 wethUsd) external view returns (uint256 weightedApyBps) {
         (, , uint256 stableApy) = this.getBestYieldVault(0);
@@ -274,9 +274,11 @@ contract DynamicYieldOracleRouter is Ownable {
         (, , uint256 btcApy) = this.getBestYieldVault(2);
 
         uint256 totalUsd = stablesUsd + wbtcUsd + wethUsd;
-        if (totalUsd == 0) return stableApy;
+        if (totalUsd == 0) return 0;
 
-        uint256 weightedYieldUSD = (stablesUsd * stableApy) + (wbtcUsd * btcApy) + (wethUsd * ethApy);
+        // 80% of stablecoins are deployed to MetaMorpho Vault @ stableApy; 20% in liquid buffer
+        uint256 effectiveStableYield = (stablesUsd * 80 * stableApy) / 100;
+        uint256 weightedYieldUSD = effectiveStableYield + (wbtcUsd * btcApy) + (wethUsd * ethApy);
         return weightedYieldUSD / totalUsd;
     }
 }

@@ -39,8 +39,8 @@ export function useWeb3State() {
   const [navPerShareUSD, setNavPerShareUSD] = useState('$1.0050 USDC');
   const [navPerShareNum, setNavPerShareNum] = useState(1.005025);
 
-  const [liveApyStr, setLiveApyStr] = useState('5.72%');
-  const [assetRates, setAssetRates] = useState({ stablesApyPct: 0.0645, ethApyPct: 0.0420, btcApyPct: 0.0380 });
+  const [liveApyStr, setLiveApyStr] = useState('0.00%');
+  const [assetRates, setAssetRates] = useState({ stablesApyPct: 0, ethApyPct: 0, btcApyPct: 0 });
   const [blockDateStr, setBlockDateStr] = useState('');
   const [snapshotId, setSnapshotId] = useState('');
   const [circuitBreakerFrozen, setCircuitBreakerFrozen] = useState(false);
@@ -300,9 +300,9 @@ export function useWeb3State() {
               const eVault = await publicClient.readContract({ address: CONTRACT_ADDRESSES.DYNAMIC_YIELD_ORACLE, abi: ABIS.DYNAMIC_YIELD_ORACLE, functionName: 'getBestYieldVault', args: [1] }) as any;
               const bVault = await publicClient.readContract({ address: CONTRACT_ADDRESSES.DYNAMIC_YIELD_ORACLE, abi: ABIS.DYNAMIC_YIELD_ORACLE, functionName: 'getBestYieldVault', args: [2] }) as any;
 
-              const sBps = Number(Array.isArray(sVault) ? sVault[2] : (sVault?.highestApyBps || 645));
-              const eBps = Number(Array.isArray(eVault) ? eVault[2] : (eVault?.highestApyBps || 420));
-              const bBps = Number(Array.isArray(bVault) ? bVault[2] : (bVault?.highestApyBps || 380));
+              const sBps = Number(Array.isArray(sVault) ? sVault[2] : (sVault?.highestApyBps ?? 0));
+              const eBps = Number(Array.isArray(eVault) ? eVault[2] : (eVault?.highestApyBps ?? 0));
+              const bBps = Number(Array.isArray(bVault) ? bVault[2] : (bVault?.highestApyBps ?? 0));
 
               setAssetRates({
                 stablesApyPct: sBps / 10000,

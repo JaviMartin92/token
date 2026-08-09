@@ -21,7 +21,7 @@ export function calculateProtocolApyMath(
   activeLoansUsd: number = 0,
   claimableYieldUsd: number = 0,
   activeLoansInterestUsd: number = 0,
-  assetRates = { stablesApyPct: 0.0645, ethApyPct: 0.0420, btcApyPct: 0.0380 }
+  assetRates = { stablesApyPct: 0, ethApyPct: 0, btcApyPct: 0 }
 ) {
   const numericAssetsUSD = parseFloat(porAssets.replace(/,/g, '')) || 0;
   const numericStakedAlpha = parseFloat(stakedBalance.replace(/,/g, '')) || 0;
@@ -108,7 +108,7 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
   activeLoansUsd = 0,
   claimableYieldUsd = 0,
   activeLoansInterestUsd = 0,
-  assetRates = { stablesApyPct: 0.0645, ethApyPct: 0.0420, btcApyPct: 0.0380 }
+  assetRates = { stablesApyPct: 0, ethApyPct: 0, btcApyPct: 0 }
 }) => {
   if (!isOpen) return null;
 
