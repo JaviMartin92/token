@@ -1,6 +1,6 @@
 # AUDITORÍA DETALLADA DE INTERFAZ DE USUARIO (106 CAMPOS POR PASO)
 
-Generado el: 2026-08-09T11:37:42.453Z
+Generado el: 2026-08-09T11:59:34.616Z
 
 ======================================================================
 📊 INFORME DE ESTADO DE UI - PASO [0]: [PASO 0 (GENESIS BASELINE)]
@@ -22,9 +22,9 @@ Generado el: 2026-08-09T11:37:42.453Z
 - por-collateral-ratio: 100.25%
 - por-assets-total: $99,750.00 USD
 - por-liabilities-total: $99,500.00 USD
-- por-row-usdc-val: $99,750.00 USD
-- por-row-wbtc-val: $0.00 USD
-- por-row-weth-val: $0.00 USD
+- por-row-usdc-val: $59,950.00 USD
+- por-row-wbtc-val: $26,536.65 USD
+- por-row-weth-val: $13,263.35 USD
 - por-row-alpha-val: [No visible / N/A]
 - treasury-faucet-btn: 🚰 Faucet 10k USDC
 - treasury-audit-btn: [No visible / N/A]
@@ -96,12 +96,12 @@ Generado el: 2026-08-09T11:37:42.453Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 5.16% APR
-- modal-apy-annual-yield-usd: +$5,147.10 USD / año generados por las Reservas
-- modal-apy-base-apr: 5.160%
+- modal-apy-total-apr: 4.67% APR
+- modal-apy-annual-yield-usd: +$4,658.87 USD / año generados por las Reservas
+- modal-apy-base-apr: 4.671%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:37:46 PM] Cambiado rol conectado a Usuario Retail
+- activity-log-container: [1:59:36 PM] Cambiado rol conectado a Usuario Retail
 
 ======================================================================
 ======================================================================
@@ -124,9 +124,9 @@ Generado el: 2026-08-09T11:37:42.453Z
 - por-collateral-ratio: 100.25%
 - por-assets-total: $99,750.00 USD
 - por-liabilities-total: $99,500.00 USD
-- por-row-usdc-val: $99,750.00 USD
-- por-row-wbtc-val: $0.00 USD
-- por-row-weth-val: $0.00 USD
+- por-row-usdc-val: $59,950.00 USD
+- por-row-wbtc-val: $26,536.65 USD
+- por-row-weth-val: $13,263.35 USD
 - por-row-alpha-val: [No visible / N/A]
 - treasury-faucet-btn: 🚰 Faucet 10k USDC
 - treasury-audit-btn: [No visible / N/A]
@@ -198,12 +198,12 @@ Generado el: 2026-08-09T11:37:42.453Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 5.16% APR
-- modal-apy-annual-yield-usd: +$5,147.10 USD / año generados por las Reservas
-- modal-apy-base-apr: 5.160%
+- modal-apy-total-apr: 4.67% APR
+- modal-apy-annual-yield-usd: +$4,658.87 USD / año generados por las Reservas
+- modal-apy-base-apr: 4.671%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:37:52 PM] ¡10,000 USDC mock recibidos en tu billetera! [1:37:52 PM] Reclamando 10,00...
+- activity-log-container: [1:59:42 PM] ¡10,000 USDC mock recibidos en tu billetera! [1:59:42 PM] Reclamando 10,00...
 
 ======================================================================
 ======================================================================
@@ -226,9 +226,9 @@ Generado el: 2026-08-09T11:37:42.453Z
 - por-collateral-ratio: 100.29%
 - por-assets-total: $109,702.50 USD
 - por-liabilities-total: $109,380.18 USD
-- por-row-usdc-val: $109,702.50 USD
-- por-row-wbtc-val: $0.00 USD
-- por-row-weth-val: $0.00 USD
+- por-row-usdc-val: $65,940.50 USD
+- por-row-wbtc-val: $29,178.31 USD
+- por-row-weth-val: $14,583.69 USD
 - por-row-alpha-val: [No visible / N/A]
 - treasury-faucet-btn: 🚰 Faucet 10k USDC
 - treasury-audit-btn: [No visible / N/A]
@@ -300,12 +300,12 @@ Generado el: 2026-08-09T11:37:42.453Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 5.16% APR
-- modal-apy-annual-yield-usd: +$5,660.65 USD / año generados por las Reservas
-- modal-apy-base-apr: 5.160%
+- modal-apy-total-apr: 4.67% APR
+- modal-apy-annual-yield-usd: +$5,123.82 USD / año generados por las Reservas
+- modal-apy-base-apr: 4.671%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:38:01 PM] Depósito completado. Shares ALPHA acuñadas a valor NAV. [1:38:00 PM] Depos...
+- activity-log-container: [1:59:51 PM] Depósito completado. Shares ALPHA acuñadas a valor NAV. [1:59:50 PM] Depos...
 
 ======================================================================
 ======================================================================
@@ -328,9 +328,9 @@ Generado el: 2026-08-09T11:37:42.453Z
 - por-collateral-ratio: 100.32%
 - por-assets-total: $109,702.50 USD
 - por-liabilities-total: $109,350.18 USD
-- por-row-usdc-val: $109,702.50 USD
-- por-row-wbtc-val: $0.00 USD
-- por-row-weth-val: $0.00 USD
+- por-row-usdc-val: $65,940.50 USD
+- por-row-wbtc-val: $29,178.31 USD
+- por-row-weth-val: $14,583.69 USD
 - por-row-alpha-val: [No visible / N/A]
 - treasury-faucet-btn: 🚰 Faucet 10k USDC
 - treasury-audit-btn: [No visible / N/A]
@@ -402,12 +402,12 @@ Generado el: 2026-08-09T11:37:42.453Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 5.16% APR
-- modal-apy-annual-yield-usd: +$5,660.65 USD / año generados por las Reservas
-- modal-apy-base-apr: 5.160%
+- modal-apy-total-apr: 4.67% APR
+- modal-apy-annual-yield-usd: +$5,123.82 USD / año generados por las Reservas
+- modal-apy-base-apr: 4.671%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:38:11 PM] ¡Stake de 3000 ALPHA realizado con éxito! [1:38:10 PM] Haciendo stake de 3...
+- activity-log-container: [2:00:02 PM] ¡Stake de 3000 ALPHA realizado con éxito! [2:00:01 PM] Haciendo stake de 3...
 
 ======================================================================
 ======================================================================
@@ -430,9 +430,9 @@ Generado el: 2026-08-09T11:37:42.453Z
 - por-collateral-ratio: 100.32%
 - por-assets-total: $109,702.50 USD
 - por-liabilities-total: $109,350.18 USD
-- por-row-usdc-val: $109,702.50 USD
-- por-row-wbtc-val: $0.00 USD
-- por-row-weth-val: $0.00 USD
+- por-row-usdc-val: $65,940.50 USD
+- por-row-wbtc-val: $29,178.31 USD
+- por-row-weth-val: $14,583.69 USD
 - por-row-alpha-val: [No visible / N/A]
 - treasury-faucet-btn: 🚰 Faucet 10k USDC
 - treasury-audit-btn: [No visible / N/A]
@@ -504,12 +504,12 @@ Generado el: 2026-08-09T11:37:42.453Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 5.16% APR
-- modal-apy-annual-yield-usd: +$5,660.65 USD / año generados por las Reservas
-- modal-apy-base-apr: 5.160%
+- modal-apy-total-apr: 4.67% APR
+- modal-apy-annual-yield-usd: +$5,123.82 USD / año generados por las Reservas
+- modal-apy-base-apr: 4.671%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:38:11 PM] ¡Stake de 3000 ALPHA realizado con éxito! [1:38:10 PM] Haciendo stake de 3...
+- activity-log-container: [2:00:02 PM] ¡Stake de 3000 ALPHA realizado con éxito! [2:00:01 PM] Haciendo stake de 3...
 
 ======================================================================
 ======================================================================
@@ -530,11 +530,11 @@ Generado el: 2026-08-09T11:37:42.453Z
 - analytics-gross-cashflow: [No visible / N/A]
 - analytics-apy-weighted: [No visible / N/A]
 - por-collateral-ratio: 101.09%
-- por-assets-total: $110,546.13 USD
+- por-assets-total: $110,546.12 USD
 - por-liabilities-total: $109,350.18 USD
-- por-row-usdc-val: $110,546.13 USD
-- por-row-wbtc-val: $0.00 USD
-- por-row-weth-val: $0.00 USD
+- por-row-usdc-val: $66,784.13 USD
+- por-row-wbtc-val: $29,178.31 USD
+- por-row-weth-val: $14,583.69 USD
 - por-row-alpha-val: [No visible / N/A]
 - treasury-faucet-btn: 🚰 Faucet 10k USDC
 - treasury-audit-btn: [No visible / N/A]
@@ -606,12 +606,12 @@ Generado el: 2026-08-09T11:37:42.453Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 5.16% APR
-- modal-apy-annual-yield-usd: +$5,704.18 USD / año generados por las Reservas
-- modal-apy-base-apr: 5.160%
+- modal-apy-total-apr: 4.67% APR
+- modal-apy-annual-yield-usd: +$5,167.35 USD / año generados por las Reservas
+- modal-apy-base-apr: 4.674%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:38:22 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [1:38:21 PM] Adquiriendo...
+- activity-log-container: [2:00:15 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [2:00:14 PM] Adquiriendo...
 
 ======================================================================
 ======================================================================
@@ -634,9 +634,9 @@ Generado el: 2026-08-09T11:37:42.453Z
 - por-collateral-ratio: 101.95%
 - por-assets-total: $111,489.00 USD
 - por-liabilities-total: $109,350.18 USD
-- por-row-usdc-val: $111,489.00 USD
-- por-row-wbtc-val: $0.00 USD
-- por-row-weth-val: $0.00 USD
+- por-row-usdc-val: $67,727.00 USD
+- por-row-wbtc-val: $29,178.31 USD
+- por-row-weth-val: $14,583.69 USD
 - por-row-alpha-val: [No visible / N/A]
 - treasury-faucet-btn: 🚰 Faucet 10k USDC
 - treasury-audit-btn: [No visible / N/A]
@@ -708,12 +708,12 @@ Generado el: 2026-08-09T11:37:42.453Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 5.16% APR
-- modal-apy-annual-yield-usd: +$5,752.83 USD / año generados por las Reservas
-- modal-apy-base-apr: 5.160%
+- modal-apy-total-apr: 4.68% APR
+- modal-apy-annual-yield-usd: +$5,216.00 USD / año generados por las Reservas
+- modal-apy-base-apr: 4.678%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:38:29 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [1:38:28 PM] Adquiriendo...
+- activity-log-container: [2:00:22 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [2:00:21 PM] Adquiriendo...
 
 ======================================================================
 ======================================================================
@@ -736,9 +736,9 @@ Generado el: 2026-08-09T11:37:42.453Z
 - por-collateral-ratio: 101.95%
 - por-assets-total: $111,489.00 USD
 - por-liabilities-total: $109,350.18 USD
-- por-row-usdc-val: $111,489.00 USD
-- por-row-wbtc-val: $0.00 USD
-- por-row-weth-val: $0.00 USD
+- por-row-usdc-val: $67,727.00 USD
+- por-row-wbtc-val: $29,178.31 USD
+- por-row-weth-val: $14,583.69 USD
 - por-row-alpha-val: [No visible / N/A]
 - treasury-faucet-btn: 🚰 Faucet 10k USDC
 - treasury-audit-btn: [No visible / N/A]
@@ -810,12 +810,12 @@ Generado el: 2026-08-09T11:37:42.453Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 5.16% APR
-- modal-apy-annual-yield-usd: +$5,752.83 USD / año generados por las Reservas
-- modal-apy-base-apr: 5.160%
+- modal-apy-total-apr: 4.68% APR
+- modal-apy-annual-yield-usd: +$5,216.00 USD / año generados por las Reservas
+- modal-apy-base-apr: 4.678%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:38:38 PM] ¡Oferta P2P creada! NFT #1 en escrow. Publicada en el Marketplace. [1:38:3...
+- activity-log-container: [2:00:31 PM] ¡Oferta P2P creada! NFT #1 en escrow. Publicada en el Marketplace. [2:00:3...
 
 ======================================================================
 ======================================================================
@@ -838,9 +838,9 @@ Generado el: 2026-08-09T11:37:42.453Z
 - por-collateral-ratio: 101.95%
 - por-assets-total: $111,489.00 USD
 - por-liabilities-total: $109,350.18 USD
-- por-row-usdc-val: $111,489.00 USD
-- por-row-wbtc-val: $0.00 USD
-- por-row-weth-val: $0.00 USD
+- por-row-usdc-val: $67,727.00 USD
+- por-row-wbtc-val: $29,178.31 USD
+- por-row-weth-val: $14,583.69 USD
 - por-row-alpha-val: [No visible / N/A]
 - treasury-faucet-btn: 🚰 Faucet 10k USDC
 - treasury-audit-btn: [No visible / N/A]
@@ -912,12 +912,12 @@ Generado el: 2026-08-09T11:37:42.453Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 5.29% APR
-- modal-apy-annual-yield-usd: +$5,802.83 USD / año generados por las Reservas
-- modal-apy-base-apr: 5.205%
+- modal-apy-total-apr: 4.81% APR
+- modal-apy-annual-yield-usd: +$5,266.00 USD / año generados por las Reservas
+- modal-apy-base-apr: 4.723%
 - modal-apy-flywheel-apr: 0.084%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:38:44 PM] ¡Préstamo #1 financiado con éxito! [1:38:44 PM] Financiando préstamo P2P #...
+- activity-log-container: [2:00:37 PM] ¡Préstamo #1 financiado con éxito! [2:00:36 PM] Financiando préstamo P2P #...
 
 ======================================================================
 ======================================================================
@@ -940,9 +940,9 @@ Generado el: 2026-08-09T11:37:42.453Z
 - por-collateral-ratio: 101.95%
 - por-assets-total: $111,491.00 USD
 - por-liabilities-total: $109,350.18 USD
-- por-row-usdc-val: $111,191.00 USD
-- por-row-wbtc-val: $0.00 USD
-- por-row-weth-val: $0.00 USD
+- por-row-usdc-val: $67,429.00 USD
+- por-row-wbtc-val: $29,178.31 USD
+- por-row-weth-val: $14,583.69 USD
 - por-row-alpha-val: [No visible / N/A]
 - treasury-faucet-btn: 🚰 Faucet 10k USDC
 - treasury-audit-btn: [No visible / N/A]
@@ -1014,12 +1014,12 @@ Generado el: 2026-08-09T11:37:42.453Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 5.36% APR
-- modal-apy-annual-yield-usd: +$5,811.46 USD / año generados por las Reservas
-- modal-apy-base-apr: 5.212%
+- modal-apy-total-apr: 4.88% APR
+- modal-apy-annual-yield-usd: +$5,274.63 USD / año generados por las Reservas
+- modal-apy-base-apr: 4.731%
 - modal-apy-flywheel-apr: 0.149%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:38:55 PM] ¡Préstamo #2 desembolsado por la Tesorería! $300 USDC acreditados en tu bi...
+- activity-log-container: [2:00:46 PM] ¡Préstamo #2 desembolsado por la Tesorería! $300 USDC acreditados en tu bi...
 
 ======================================================================
 ======================================================================
@@ -1042,9 +1042,9 @@ Generado el: 2026-08-09T11:37:42.453Z
 - por-collateral-ratio: 101.95%
 - por-assets-total: $111,491.03 USD
 - por-liabilities-total: $109,350.18 USD
-- por-row-usdc-val: $111,491.03 USD
-- por-row-wbtc-val: $0.00 USD
-- por-row-weth-val: $0.00 USD
+- por-row-usdc-val: $67,729.03 USD
+- por-row-wbtc-val: $29,178.31 USD
+- por-row-weth-val: $14,583.69 USD
 - por-row-alpha-val: [No visible / N/A]
 - treasury-faucet-btn: 🚰 Faucet 10k USDC
 - treasury-audit-btn: [No visible / N/A]
@@ -1116,12 +1116,12 @@ Generado el: 2026-08-09T11:37:42.453Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 5.29% APR
-- modal-apy-annual-yield-usd: +$5,802.94 USD / año generados por las Reservas
-- modal-apy-base-apr: 5.205%
+- modal-apy-total-apr: 4.81% APR
+- modal-apy-annual-yield-usd: +$5,266.11 USD / año generados por las Reservas
+- modal-apy-base-apr: 4.723%
 - modal-apy-flywheel-apr: 0.084%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:39:04 PM] ¡Préstamo #2 reembolsado totalmente! Principal e intereses acreditados a l...
+- activity-log-container: [2:00:56 PM] ¡Préstamo #2 reembolsado totalmente! Principal e intereses acreditados a l...
 
 ======================================================================
 ======================================================================
@@ -1144,9 +1144,9 @@ Generado el: 2026-08-09T11:37:42.453Z
 - por-collateral-ratio: 101.95%
 - por-assets-total: $111,491.03 USD
 - por-liabilities-total: $109,350.18 USD
-- por-row-usdc-val: $111,491.03 USD
-- por-row-wbtc-val: $0.00 USD
-- por-row-weth-val: $0.00 USD
+- por-row-usdc-val: $67,729.03 USD
+- por-row-wbtc-val: $29,178.31 USD
+- por-row-weth-val: $14,583.69 USD
 - por-row-alpha-val: [No visible / N/A]
 - treasury-faucet-btn: 🚰 Faucet 10k USDC
 - treasury-audit-btn: [No visible / N/A]
@@ -1218,12 +1218,12 @@ Generado el: 2026-08-09T11:37:42.453Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 5.16% APR
-- modal-apy-annual-yield-usd: +$5,752.94 USD / año generados por las Reservas
-- modal-apy-base-apr: 5.160%
+- modal-apy-total-apr: 4.68% APR
+- modal-apy-annual-yield-usd: +$5,216.11 USD / año generados por las Reservas
+- modal-apy-base-apr: 4.679%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:39:13 PM] ¡Préstamo #1 liquidado! NFT transferido al prestamista. [1:39:13 PM] Ejecu...
+- activity-log-container: [2:01:04 PM] ¡Préstamo #1 liquidado! NFT transferido al prestamista. [2:01:04 PM] Ejecu...
 
 ======================================================================
 ======================================================================
@@ -1246,9 +1246,9 @@ Generado el: 2026-08-09T11:37:42.453Z
 - por-collateral-ratio: 101.23%
 - por-assets-total: $110,704.78 USD
 - por-liabilities-total: $109,350.18 USD
-- por-row-usdc-val: $110,704.78 USD
-- por-row-wbtc-val: $0.00 USD
-- por-row-weth-val: $0.00 USD
+- por-row-usdc-val: $66,942.78 USD
+- por-row-wbtc-val: $29,178.31 USD
+- por-row-weth-val: $14,583.69 USD
 - por-row-alpha-val: [No visible / N/A]
 - treasury-faucet-btn: 🚰 Faucet 10k USDC
 - treasury-audit-btn: [No visible / N/A]
@@ -1320,12 +1320,12 @@ Generado el: 2026-08-09T11:37:42.453Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 5.16% APR
-- modal-apy-annual-yield-usd: +$5,712.37 USD / año generados por las Reservas
-- modal-apy-base-apr: 5.160%
+- modal-apy-total-apr: 4.68% APR
+- modal-apy-annual-yield-usd: +$5,175.54 USD / año generados por las Reservas
+- modal-apy-base-apr: 4.675%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:39:19 PM] Ragequit ejecutado en NFT #1. Reembolso recibido. [1:39:18 PM] Ejecutando ...
+- activity-log-container: [2:01:09 PM] Ragequit ejecutado en NFT #1. Reembolso recibido. [2:01:09 PM] Ejecutando ...
 
 ======================================================================
 ======================================================================
@@ -1348,9 +1348,9 @@ Generado el: 2026-08-09T11:37:42.453Z
 - por-collateral-ratio: 101.24%
 - por-assets-total: $108,977.82 USD
 - por-liabilities-total: $107,635.78 USD
-- por-row-usdc-val: $108,977.82 USD
-- por-row-wbtc-val: $0.00 USD
-- por-row-weth-val: $0.00 USD
+- por-row-usdc-val: $65,215.82 USD
+- por-row-wbtc-val: $29,178.31 USD
+- por-row-weth-val: $14,583.69 USD
 - por-row-alpha-val: [No visible / N/A]
 - treasury-faucet-btn: 🚰 Faucet 10k USDC
 - treasury-audit-btn: [No visible / N/A]
@@ -1422,11 +1422,11 @@ Generado el: 2026-08-09T11:37:42.453Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 5.16% APR
-- modal-apy-annual-yield-usd: +$5,623.26 USD / año generados por las Reservas
-- modal-apy-base-apr: 5.160%
+- modal-apy-total-apr: 4.67% APR
+- modal-apy-annual-yield-usd: +$5,086.43 USD / año generados por las Reservas
+- modal-apy-base-apr: 4.667%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:39:29 PM] Rescate completado. USDC transferidos a tu billetera. [1:39:28 PM] Rescata...
+- activity-log-container: [2:01:17 PM] Rescate completado. USDC transferidos a tu billetera. [2:01:17 PM] Rescata...
 
 ======================================================================

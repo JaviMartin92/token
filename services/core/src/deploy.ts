@@ -420,6 +420,42 @@ async function main() {
   await publicClient.waitForTransactionReceipt({ hash: setStalenessHash });
   console.log('[+] Configured USDC, WBTC, and WETH as tracked reserve assets in OracleHub.');
 
+  // Deploy MockSwapRouter for local sandbox environment or fallback to Uniswap V3 on Mainnet/L2
+  const chainId = await publicClient.getChainId();
+  let swapRouterAddress: string = process.env.UNISWAP_V3_ROUTER || '0xE592427A0AEce92De3Edee1F18E0157C05861564';
+
+  if (chainId === 31337) {
+    const MockSwapRouterArtifact = loadArtifact('MockSwapRouter', 'MockSwapRouter.sol');
+    const mockSwapTx = await walletClient.deployContract({
+      abi: MockSwapRouterArtifact.abi,
+      bytecode: MockSwapRouterArtifact.bytecode.object,
+      args: [usdcAddr, wbtcAddr, wethAddr, account.address],
+      account
+    });
+    swapRouterAddress = (await publicClient.waitForTransactionReceipt({ hash: mockSwapTx })).contractAddress!;
+    console.log(`[+] MockSwapRouter deployed at: ${swapRouterAddress}`);
+
+    // Pre-fund MockSwapRouter with WBTC and WETH liquidity to satisfy auto-swaps
+    const mintWbtcHash = await walletClient.writeContract({
+      address: wbtcAddr,
+      abi: MockERC20.abi,
+      functionName: 'mint',
+      args: [swapRouterAddress as `0x${string}`, 100n * 10n**8n],
+      account
+    });
+    await publicClient.waitForTransactionReceipt({ hash: mintWbtcHash });
+
+    const mintWethHash = await walletClient.writeContract({
+      address: wethAddr,
+      abi: MockERC20.abi,
+      functionName: 'mint',
+      args: [swapRouterAddress as `0x${string}`, 1000n * 10n**18n],
+      account
+    });
+    await publicClient.waitForTransactionReceipt({ hash: mintWethHash });
+    console.log('[+] Pre-funded MockSwapRouter with 100 WBTC and 1,000 WETH liquidity.');
+  }
+
   const tmConfigAbi = [
     { name: 'setConfig', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: '_wbtc', type: 'address' }, { name: '_weth', type: 'address' }, { name: '_swapRouter', type: 'address' }, { name: '_opsWallet', type: 'address' }, { name: '_corpWallet', type: 'address' }], outputs: [] }
   ] as const;
@@ -428,7 +464,7 @@ async function main() {
     address: treasuryAddr,
     abi: tmConfigAbi,
     functionName: 'setConfig',
-    args: [wbtcAddr, wethAddr, routerAddr, account.address, account.address]
+    args: [wbtcAddr, wethAddr, swapRouterAddress, account.address, account.address]
   });
   await publicClient.waitForTransactionReceipt({ hash: setTmConfigHash });
   console.log('[+] Configured setConfig on TreasuryManager with SwapRouter, WBTC, WETH, and Corporate Wallets.');
