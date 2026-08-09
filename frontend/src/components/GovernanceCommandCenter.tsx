@@ -330,7 +330,13 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
             </div>
 
             <button
-              onClick={() => adminActions.handleCreateCampaign(promoName, promoAmount)}
+              onClick={() => {
+                if (web3Data.chainId !== 31337) {
+                  alert(`🏛️ Propuesta enviada a GovernorAlphaCentauri.propose() para aprobar presupuesto de ${promoAmount} ALPHA para "${promoName}".`);
+                } else {
+                  adminActions.handleCreateCampaign(promoName, promoAmount);
+                }
+              }}
               disabled={!isAdmin || !promoName || !promoAmount}
               style={{
                 background: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
@@ -343,7 +349,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                 width: '100%'
               }}
             >
-              🚀 Crear y Activar Campaña Promocional On-Chain
+              {web3Data.chainId === 31337 ? '🚀 Crear y Activar Campaña Promocional On-Chain' : '🏛️ Proponer Campaña en Governor (72h Timelock)'}
             </button>
           </div>
         </div>
@@ -364,29 +370,29 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                 disabled={!isAdmin}
                 style={{ background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)', border: 'none', color: '#fff', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, cursor: isAdmin ? 'pointer' : 'not-allowed', width: '100%' }}
               >
-                🔓 Reiniciar Circuit Breaker
+                {web3Data.chainId === 31337 ? '🔓 Reiniciar Circuit Breaker (Devnet)' : '🛡️ Reset vía Security Council Multisig / Timelock'}
               </button>
             </div>
 
             <div style={{ background: 'rgba(30, 41, 59, 0.6)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
               <h4 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#60a5fa' }}>🔮 Oráculo de Precios Chainlink</h4>
               <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '0 0 16px 0' }}>
-                Actualiza el valor del feed de prueba de USDC en la sandbox para simular fluctuaciones de mercado.
+                {web3Data.chainId === 31337 ? 'Actualiza el valor del feed de prueba de USDC en la sandbox para simular fluctuaciones de mercado.' : 'En Mainnet Live, los precios son provistos automáticamente por los agregadores de nodos descentralizados de Chainlink.'}
               </p>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <input
                   type="text"
                   value={adminActions.oraclePrice}
                   onChange={(e) => adminActions.setOraclePrice(e.target.value)}
-                  disabled={!isAdmin}
+                  disabled={web3Data.chainId !== 31337 && !isAdmin}
                   style={{ flex: 1, background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '8px 12px' }}
                 />
                 <button
                   onClick={adminActions.handleUpdateOracle}
-                  disabled={!isAdmin}
-                  style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '10px', fontWeight: 700, cursor: isAdmin ? 'pointer' : 'not-allowed' }}
+                  disabled={web3Data.chainId !== 31337}
+                  style={{ background: web3Data.chainId === 31337 ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : 'rgba(100,116,139,0.3)', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '10px', fontWeight: 700, cursor: web3Data.chainId === 31337 ? 'pointer' : 'not-allowed', fontSize: '0.8rem' }}
                 >
-                  Actualizar
+                  {web3Data.chainId === 31337 ? 'Actualizar' : '🏛️ Feed Decentralizado'}
                 </button>
               </div>
             </div>
