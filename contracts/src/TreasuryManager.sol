@@ -142,7 +142,7 @@ contract TreasuryManager is AccessControl, ReentrancyGuard {
             uint256 bal = IERC20(redemptionToken).balanceOf(address(this));
             uint256 toTransfer = usdcFeeAmount > bal ? bal : usdcFeeAmount;
             if (toTransfer > 0) {
-                IERC20(redemptionToken).transfer(vault, toTransfer);
+                require(IERC20(redemptionToken).transfer(vault, toTransfer), "TreasuryManager: Fee transfer failed");
             }
         }
     }

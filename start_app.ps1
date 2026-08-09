@@ -25,7 +25,7 @@ Start-Sleep -Seconds 2
 
 # 2. Compilar y Desplegar Smart Contracts y Pre-fondear Billeteras
 Write-Host "[2/3] Compilando y Desplegando Smart Contracts y Pre-fondeando 10,000 USDC..." -ForegroundColor Yellow
-docker run --rm --entrypoint forge -v "${ROOT_DIR}\contracts:/app" -w /app ghcr.io/foundry-rs/foundry:latest build --extra-output-files abi | Out-Null
+docker run --rm --entrypoint forge -v "${ROOT_DIR}\contracts:/app" -w /app ghcr.io/foundry-rs/foundry:latest build --quiet --extra-output-files abi | Out-Null
 $env:BACKEND_OPERATOR_PRIVATE_KEY="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 $env:ANVIL_URL="http://127.0.0.1:8545"
 
