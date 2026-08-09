@@ -57,16 +57,27 @@ const server = http.createServer((req, res) => {
         // Ignore JSON parse error here; let the upstream RPC node handle invalid payloads
       }
 
-      const hostsToTry = [ANVIL_HOST, 'alpha-anvil', '127.0.0.1', 'localhost'];
+      const hostsToTry = Array.from(new Set([ANVIL_HOST, 'host.docker.internal', '127.0.0.1', 'localhost']));
 
       function tryProxy(hostIndex) {
         if (hostIndex >= hostsToTry.length) {
-          res.writeHead(502, { 'content-type': 'application/json', 'access-control-allow-origin': '*' });
-          res.end(JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32603, message: 'RPC proxy unavailable across all hosts' } }));
+          if (!res.headersSent) {
+            res.writeHead(502, { 'content-type': 'application/json', 'access-control-allow-origin': '*' });
+            res.end(JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32603, message: 'RPC proxy unavailable across all hosts' } }));
+          }
           return;
         }
 
         const targetHost = hostsToTry[hostIndex];
+        let attemptedNext = false;
+
+        const nextHost = () => {
+          if (!attemptedNext && !res.headersSent) {
+            attemptedNext = true;
+            tryProxy(hostIndex + 1);
+          }
+        };
+
         const proxyReq = http.request(
           {
             host: targetHost,
@@ -78,23 +89,26 @@ const server = http.createServer((req, res) => {
               'content-length': bodyBuffer.length,
               'host': `${targetHost}:${ANVIL_PORT}`
             },
-            timeout: 3000
+            timeout: 1500
           },
           (proxyRes) => {
-            res.writeHead(proxyRes.statusCode, {
-              'content-type': 'application/json',
-              'access-control-allow-origin': '*'
-            });
-            proxyRes.pipe(res);
+            if (!res.headersSent) {
+              res.writeHead(proxyRes.statusCode, {
+                'content-type': 'application/json',
+                'access-control-allow-origin': '*'
+              });
+              proxyRes.pipe(res);
+            }
           }
         );
 
-        proxyReq.on('error', (err) => {
-          tryProxy(hostIndex + 1);
+        proxyReq.on('error', () => {
+          nextHost();
         });
 
         proxyReq.on('timeout', () => {
           proxyReq.destroy();
+          nextHost();
         });
 
         proxyReq.write(bodyBuffer);

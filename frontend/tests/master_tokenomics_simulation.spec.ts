@@ -185,7 +185,7 @@ async function generateAndPrintStepReport(page: Page, stepIndex: string | number
       try {
         const closeBtn = page.locator('[data-testid="modal-apy-close-btn"]');
         if (await closeBtn.isVisible()) {
-          await closeBtn.click();
+          await closeBtn.click({ force: true });
         }
       } catch (e) {}
     }

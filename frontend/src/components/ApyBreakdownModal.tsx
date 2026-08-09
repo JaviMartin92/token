@@ -174,7 +174,7 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="glass-panel modal-container"
+        className="glass-panel modal-container modal-container-wide"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

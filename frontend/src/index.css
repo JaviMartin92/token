@@ -705,6 +705,12 @@ h1, h2, h3, h4 {
   max-width: 520px;
   width: 100%;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-container-wide {
+  max-width: 680px;
 }
 
 .modal-header-title {
