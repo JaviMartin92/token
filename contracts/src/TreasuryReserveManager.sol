@@ -84,24 +84,24 @@ contract TreasuryReserveManager is Ownable, ReentrancyGuard {
         require(usdcAmount > 0, "ReserveManager: Amount must be > 0");
         require(IERC20(usdcToken).transferFrom(msg.sender, address(this), usdcAmount), "ReserveManager: Transfer failed");
 
-        uint256 liquidReserve20 = (usdcAmount * 2000) / 10000; // 20%
-        uint256 morphoVault80  = usdcAmount - liquidReserve20; // 80%
+        uint256 liquidReserve10 = (usdcAmount * 1000) / 10000; // 10%
+        uint256 morphoVault90  = usdcAmount - liquidReserve10; // 90%
 
-        // Send 20% to Treasury for P2P/Direct Loan reserves
-        require(IERC20(usdcToken).transfer(treasury, liquidReserve20), "ReserveManager: Liquid transfer failed");
+        // Send 10% to Treasury for liquid buffer / P2P reserve line
+        require(IERC20(usdcToken).transfer(treasury, liquidReserve10), "ReserveManager: Liquid transfer failed");
 
-        // Deposit 80% to Morpho Blue Vault if configured
+        // Deposit 90% to Morpho Blue Vault if configured
         if (morphoUsdcVault.code.length > 0) {
-            IERC20(usdcToken).approve(morphoUsdcVault, morphoVault80);
-            try IMorphoVault(morphoUsdcVault).deposit(morphoVault80, treasury) {} catch {}
+            IERC20(usdcToken).approve(morphoUsdcVault, morphoVault90);
+            try IMorphoVault(morphoUsdcVault).deposit(morphoVault90, treasury) {} catch {}
         } else {
-            require(IERC20(usdcToken).transfer(treasury, morphoVault80), "ReserveManager: Morpho transfer fallback failed");
+            require(IERC20(usdcToken).transfer(treasury, morphoVault90), "ReserveManager: Morpho transfer fallback failed");
         }
 
         totalRebalancedVolume += usdcAmount;
         lastProductionRebalanceTimestamp = block.timestamp;
 
-        emit ProductionRebalanceExecuted(usdcAmount, liquidReserve20, morphoVault80, block.timestamp);
+        emit ProductionRebalanceExecuted(usdcAmount, liquidReserve10, morphoVault90, block.timestamp);
         return true;
     }
 }

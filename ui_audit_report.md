@@ -1,6 +1,6 @@
 # AUDITORÍA DETALLADA DE INTERFAZ DE USUARIO (106 CAMPOS POR PASO)
 
-Generado el: 2026-08-09T11:59:34.616Z
+Generado el: 2026-08-09T12:25:16.855Z
 
 ======================================================================
 📊 INFORME DE ESTADO DE UI - PASO [0]: [PASO 0 (GENESIS BASELINE)]
@@ -96,12 +96,12 @@ Generado el: 2026-08-09T11:59:34.616Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 4.67% APR
-- modal-apy-annual-yield-usd: +$4,658.87 USD / año generados por las Reservas
-- modal-apy-base-apr: 4.671%
+- modal-apy-total-apr: 5.06% APR
+- modal-apy-annual-yield-usd: +$5,045.55 USD / año generados por las Reservas
+- modal-apy-base-apr: 5.058%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:59:36 PM] Cambiado rol conectado a Usuario Retail
+- activity-log-container: [2:25:18 PM] Cambiado rol conectado a Usuario Retail
 
 ======================================================================
 ======================================================================
@@ -198,12 +198,12 @@ Generado el: 2026-08-09T11:59:34.616Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 4.67% APR
-- modal-apy-annual-yield-usd: +$4,658.87 USD / año generados por las Reservas
-- modal-apy-base-apr: 4.671%
+- modal-apy-total-apr: 5.06% APR
+- modal-apy-annual-yield-usd: +$5,045.55 USD / año generados por las Reservas
+- modal-apy-base-apr: 5.058%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:59:42 PM] ¡10,000 USDC mock recibidos en tu billetera! [1:59:42 PM] Reclamando 10,00...
+- activity-log-container: [2:25:25 PM] ¡10,000 USDC mock recibidos en tu billetera! [2:25:24 PM] Reclamando 10,00...
 
 ======================================================================
 ======================================================================
@@ -300,12 +300,12 @@ Generado el: 2026-08-09T11:59:34.616Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 4.67% APR
-- modal-apy-annual-yield-usd: +$5,123.82 USD / año generados por las Reservas
-- modal-apy-base-apr: 4.671%
+- modal-apy-total-apr: 5.06% APR
+- modal-apy-annual-yield-usd: +$5,549.14 USD / año generados por las Reservas
+- modal-apy-base-apr: 5.058%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [1:59:51 PM] Depósito completado. Shares ALPHA acuñadas a valor NAV. [1:59:50 PM] Depos...
+- activity-log-container: [2:25:34 PM] Depósito completado. Shares ALPHA acuñadas a valor NAV. [2:25:33 PM] Depos...
 
 ======================================================================
 ======================================================================
@@ -402,12 +402,12 @@ Generado el: 2026-08-09T11:59:34.616Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 4.67% APR
-- modal-apy-annual-yield-usd: +$5,123.82 USD / año generados por las Reservas
-- modal-apy-base-apr: 4.671%
+- modal-apy-total-apr: 5.06% APR
+- modal-apy-annual-yield-usd: +$5,549.14 USD / año generados por las Reservas
+- modal-apy-base-apr: 5.058%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:00:02 PM] ¡Stake de 3000 ALPHA realizado con éxito! [2:00:01 PM] Haciendo stake de 3...
+- activity-log-container: [2:25:45 PM] ¡Stake de 3000 ALPHA realizado con éxito! [2:25:44 PM] Haciendo stake de 3...
 
 ======================================================================
 ======================================================================
@@ -504,12 +504,12 @@ Generado el: 2026-08-09T11:59:34.616Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 4.67% APR
-- modal-apy-annual-yield-usd: +$5,123.82 USD / año generados por las Reservas
-- modal-apy-base-apr: 4.671%
+- modal-apy-total-apr: 5.06% APR
+- modal-apy-annual-yield-usd: +$5,549.14 USD / año generados por las Reservas
+- modal-apy-base-apr: 5.058%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:00:02 PM] ¡Stake de 3000 ALPHA realizado con éxito! [2:00:01 PM] Haciendo stake de 3...
+- activity-log-container: [2:25:45 PM] ¡Stake de 3000 ALPHA realizado con éxito! [2:25:44 PM] Haciendo stake de 3...
 
 ======================================================================
 ======================================================================
@@ -606,12 +606,12 @@ Generado el: 2026-08-09T11:59:34.616Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 4.67% APR
-- modal-apy-annual-yield-usd: +$5,167.35 USD / año generados por las Reservas
-- modal-apy-base-apr: 4.674%
+- modal-apy-total-apr: 5.06% APR
+- modal-apy-annual-yield-usd: +$5,598.11 USD / año generados por las Reservas
+- modal-apy-base-apr: 5.064%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:00:15 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [2:00:14 PM] Adquiriendo...
+- activity-log-container: [2:25:57 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [2:25:56 PM] Adquiriendo...
 
 ======================================================================
 ======================================================================
@@ -708,12 +708,12 @@ Generado el: 2026-08-09T11:59:34.616Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 4.68% APR
-- modal-apy-annual-yield-usd: +$5,216.00 USD / año generados por las Reservas
-- modal-apy-base-apr: 4.678%
+- modal-apy-total-apr: 5.07% APR
+- modal-apy-annual-yield-usd: +$5,652.84 USD / año generados por las Reservas
+- modal-apy-base-apr: 5.070%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:00:22 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [2:00:21 PM] Adquiriendo...
+- activity-log-container: [2:26:04 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [2:26:03 PM] Adquiriendo...
 
 ======================================================================
 ======================================================================
@@ -810,12 +810,12 @@ Generado el: 2026-08-09T11:59:34.616Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 4.68% APR
-- modal-apy-annual-yield-usd: +$5,216.00 USD / año generados por las Reservas
-- modal-apy-base-apr: 4.678%
+- modal-apy-total-apr: 5.07% APR
+- modal-apy-annual-yield-usd: +$5,652.84 USD / año generados por las Reservas
+- modal-apy-base-apr: 5.070%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:00:31 PM] ¡Oferta P2P creada! NFT #1 en escrow. Publicada en el Marketplace. [2:00:3...
+- activity-log-container: [2:26:13 PM] ¡Oferta P2P creada! NFT #1 en escrow. Publicada en el Marketplace. [2:26:1...
 
 ======================================================================
 ======================================================================
@@ -912,12 +912,12 @@ Generado el: 2026-08-09T11:59:34.616Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 4.81% APR
-- modal-apy-annual-yield-usd: +$5,266.00 USD / año generados por las Reservas
-- modal-apy-base-apr: 4.723%
-- modal-apy-flywheel-apr: 0.084%
+- modal-apy-total-apr: 5.24% APR
+- modal-apy-annual-yield-usd: +$5,702.84 USD / año generados por las Reservas
+- modal-apy-base-apr: 5.115%
+- modal-apy-flywheel-apr: 0.126%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:00:37 PM] ¡Préstamo #1 financiado con éxito! [2:00:36 PM] Financiando préstamo P2P #...
+- activity-log-container: [2:26:19 PM] ¡Préstamo #1 financiado con éxito! [2:26:19 PM] Financiando préstamo P2P #...
 
 ======================================================================
 ======================================================================
@@ -1014,12 +1014,12 @@ Generado el: 2026-08-09T11:59:34.616Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 4.88% APR
-- modal-apy-annual-yield-usd: +$5,274.63 USD / año generados por las Reservas
-- modal-apy-base-apr: 4.731%
-- modal-apy-flywheel-apr: 0.149%
+- modal-apy-total-apr: 5.31% APR
+- modal-apy-annual-yield-usd: +$5,709.54 USD / año generados por las Reservas
+- modal-apy-base-apr: 5.121%
+- modal-apy-flywheel-apr: 0.191%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:00:46 PM] ¡Préstamo #2 desembolsado por la Tesorería! $300 USDC acreditados en tu bi...
+- activity-log-container: [2:26:32 PM] ¡Préstamo #2 desembolsado por la Tesorería! $300 USDC acreditados en tu bi...
 
 ======================================================================
 ======================================================================
@@ -1116,12 +1116,12 @@ Generado el: 2026-08-09T11:59:34.616Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 4.81% APR
-- modal-apy-annual-yield-usd: +$5,266.11 USD / año generados por las Reservas
-- modal-apy-base-apr: 4.723%
-- modal-apy-flywheel-apr: 0.084%
+- modal-apy-total-apr: 5.24% APR
+- modal-apy-annual-yield-usd: +$5,702.96 USD / año generados por las Reservas
+- modal-apy-base-apr: 5.115%
+- modal-apy-flywheel-apr: 0.126%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:00:56 PM] ¡Préstamo #2 reembolsado totalmente! Principal e intereses acreditados a l...
+- activity-log-container: [2:26:40 PM] ¡Préstamo #2 reembolsado totalmente! Principal e intereses acreditados a l...
 
 ======================================================================
 ======================================================================
@@ -1218,12 +1218,12 @@ Generado el: 2026-08-09T11:59:34.616Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 4.68% APR
-- modal-apy-annual-yield-usd: +$5,216.11 USD / año generados por las Reservas
-- modal-apy-base-apr: 4.679%
+- modal-apy-total-apr: 5.07% APR
+- modal-apy-annual-yield-usd: +$5,652.96 USD / año generados por las Reservas
+- modal-apy-base-apr: 5.070%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:01:04 PM] ¡Préstamo #1 liquidado! NFT transferido al prestamista. [2:01:04 PM] Ejecu...
+- activity-log-container: [2:26:50 PM] ¡Préstamo #1 liquidado! NFT transferido al prestamista. [2:26:50 PM] Ejecu...
 
 ======================================================================
 ======================================================================
@@ -1320,12 +1320,12 @@ Generado el: 2026-08-09T11:59:34.616Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 4.68% APR
-- modal-apy-annual-yield-usd: +$5,175.54 USD / año generados por las Reservas
-- modal-apy-base-apr: 4.675%
+- modal-apy-total-apr: 5.07% APR
+- modal-apy-annual-yield-usd: +$5,607.32 USD / año generados por las Reservas
+- modal-apy-base-apr: 5.065%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:01:09 PM] Ragequit ejecutado en NFT #1. Reembolso recibido. [2:01:09 PM] Ejecutando ...
+- activity-log-container: [2:26:56 PM] Ragequit ejecutado en NFT #1. Reembolso recibido. [2:26:56 PM] Ejecutando ...
 
 ======================================================================
 ======================================================================
@@ -1422,11 +1422,11 @@ Generado el: 2026-08-09T11:59:34.616Z
 
 [MODALES & ACTIVIDAD]
 - modal-expected-output: [No visible / N/A]
-- modal-apy-total-apr: 4.67% APR
-- modal-apy-annual-yield-usd: +$5,086.43 USD / año generados por las Reservas
-- modal-apy-base-apr: 4.667%
+- modal-apy-total-apr: 5.05% APR
+- modal-apy-annual-yield-usd: +$5,507.07 USD / año generados por las Reservas
+- modal-apy-base-apr: 5.053%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:01:17 PM] Rescate completado. USDC transferidos a tu billetera. [2:01:17 PM] Rescata...
+- activity-log-container: [2:27:04 PM] Rescate completado. USDC transferidos a tu billetera. [2:27:04 PM] Rescata...
 
 ======================================================================

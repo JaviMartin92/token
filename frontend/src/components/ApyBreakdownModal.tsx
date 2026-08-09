@@ -31,17 +31,10 @@ export function calculateProtocolApyMath(
   let wethUSD = porBreakdown.weth;
   let loanPoolUSD = porBreakdown.alphaStaking;
 
-  const realActiveLoansUSD = Math.min(activeLoansUsd, loanPoolUSD);
-  const unlentLoanPoolUSD = Math.max(loanPoolUSD - realActiveLoansUSD, 0);
-  const loanUtilizationPct = loanPoolUSD > 0 ? (realActiveLoansUSD / loanPoolUSD) * 100 : 0;
 
-  const activeLoanInterestUSD = activeLoansInterestUsd;
-
-  const treasuryLoanUSDYield = activeLoanInterestUSD;
-
-  // 1. Morpho Blue (USDC): 80% of USDC stablecoin reserve deployed to MetaMorpho Vault @ Dynamic On-Chain Oracle APR
-  const morphoUSDPool = stablesUSD * 0.80;
-  const liquidBufferUSDPool = stablesUSD * 0.20;
+  // 1. Morpho Blue (USDC): 90% of USDC stablecoin reserve deployed to MetaMorpho Vault @ Dynamic On-Chain Oracle APR
+  const morphoUSDPool = stablesUSD * 0.90;
+  const liquidBufferUSDPool = stablesUSD * 0.10;
   const morphoUSDYield = morphoUSDPool * assetRates.stablesApyPct;
 
   // 2. Lombard LBTC (WBTC): 100% of WBTC reserve @ Dynamic On-Chain Oracle APR
@@ -49,6 +42,15 @@ export function calculateProtocolApyMath(
 
   // 3. Lido wstETH (WETH): 100% of WETH reserve @ Dynamic On-Chain Oracle APR
   const wstEthUSDYield = wethUSD * assetRates.ethApyPct;
+
+  // 4. P2P Direct Treasury Loans: Up to 20% Max Credit Line from Exogenous Reserves
+  const maxCreditLineUSD = numericAssetsUSD * 0.20;
+  const realActiveLoansUSD = Math.min(activeLoansUsd, maxCreditLineUSD);
+  const unlentAvailableUSD = Math.max(maxCreditLineUSD - realActiveLoansUSD, 0);
+  const unlentLoanPoolUSDYield = (unlentAvailableUSD * 0.90) * assetRates.stablesApyPct;
+  const loanUtilizationPct = maxCreditLineUSD > 0 ? (realActiveLoansUSD / maxCreditLineUSD) * 100 : 0;
+  const activeLoanInterestUSD = activeLoansInterestUsd;
+  const treasuryLoanUSDYield = activeLoanInterestUSD;
 
   const totalAnnualYieldUSD = morphoUSDYield + lbtcUSDYield + wstEthUSDYield + treasuryLoanUSDYield;
   const realTimeBaseApyPct = numericAssetsUSD > 0 ? (totalAnnualYieldUSD / numericAssetsUSD) * 100 : 0;
@@ -58,7 +60,7 @@ export function calculateProtocolApyMath(
   const wLiquidBufferPct = numericAssetsUSD > 0 ? (liquidBufferUSDPool / numericAssetsUSD) * 100 : 0;
   const wBtcPct = numericAssetsUSD > 0 ? (wbtcUSD / numericAssetsUSD) * 100 : 0;
   const wEthPct = numericAssetsUSD > 0 ? (wethUSD / numericAssetsUSD) * 100 : 0;
-  const wLoanPct = numericAssetsUSD > 0 ? (loanPoolUSD / numericAssetsUSD) * 100 : 0;
+  const wLoanPct = numericAssetsUSD > 0 ? (maxCreditLineUSD / numericAssetsUSD) * 100 : 0;
 
   const actualBondFeesUSD = grossCashflowUsd * 0.015;
   const actualP2pFeesUSD = realActiveLoansUSD * 0.005;
@@ -69,6 +71,7 @@ export function calculateProtocolApyMath(
     ? (totalFlywheelFeesUSD / numericStakedAlpha) * 100 
     : 0.00;
 
+  const stakingTotalApyPct = realTimeBaseApyPct + flywheelApyPct;
   const totalApyPct = (realTimeBaseApyPct + flywheelApyPct).toFixed(2);
 
   return {
@@ -79,9 +82,11 @@ export function calculateProtocolApyMath(
     liquidBufferUSDPool,
     wbtcUSD,
     wethUSD,
-    loanPoolUSD,
+    loanPoolUSD: maxCreditLineUSD,
+    maxCreditLineUSD,
     realActiveLoansUSD,
-    unlentLoanPoolUSD,
+    unlentAvailableUSD,
+    unlentLoanPoolUSDYield,
     loanUtilizationPct,
     activeLoanInterestUSD,
     treasuryLoanUSDYield,
@@ -101,6 +106,7 @@ export function calculateProtocolApyMath(
     actualInterestSpreadUSD,
     totalFlywheelFeesUSD,
     flywheelApyPct,
+    stakingTotalApyPct,
     totalApyPct
   };
 }
@@ -128,8 +134,10 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
     wbtcUSD,
     wethUSD,
     loanPoolUSD,
+    maxCreditLineUSD,
     realActiveLoansUSD,
-    unlentLoanPoolUSD,
+    unlentAvailableUSD,
+    unlentLoanPoolUSDYield,
     loanUtilizationPct,
     activeLoanInterestUSD,
     treasuryLoanUSDYield,
@@ -149,6 +157,7 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
     actualInterestSpreadUSD,
     totalFlywheelFeesUSD,
     flywheelApyPct,
+    stakingTotalApyPct,
     totalApyPct
   } = calculateProtocolApyMath(
     porAssets,
@@ -266,7 +275,7 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
             {/* Morpho */}
             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#e2e8f0' }}>🏦 Morpho Blue MetaMorpho Vault (80% USDC Invertido)</div>
+                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#e2e8f0' }}>🏦 Morpho Blue MetaMorpho Vault (90% USDC Invertido)</div>
                 <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.1rem' }}>
                   Ubicación: <strong>${morphoUSDPool.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> ({wMorphoPct.toFixed(1)}% de Reservas) • Tasa Vault On-Chain: <strong>{(assetRates.stablesApyPct * 100).toFixed(2)}% APY</strong>
                 </div>
@@ -282,7 +291,7 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
             {/* Búfer Líquido de Tesorería */}
             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#e2e8f0' }}>💧 Búfer Líquido de Tesorería (20% USDC Libre)</div>
+                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#e2e8f0' }}>💧 Búfer Líquido de Tesorería (10% USDC Libre)</div>
                 <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.1rem' }}>
                   Ubicación: <strong>${liquidBufferUSDPool.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> ({wLiquidBufferPct.toFixed(1)}% de Reservas) • Liquidez Inmediata para Rescates
                 </div>
@@ -330,12 +339,12 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
             {/* Treasury Loans Utilization Breakdown */}
             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#e2e8f0' }}>🏛️ Fondo de Préstamos Directos Tesorería ({wLoanPct.toFixed(1)}% Pool)</div>
+                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#e2e8f0' }}>🏛️ Fondo de Préstamos Directos Tesorería (Línea de Crédito 20.0% Máx. de Reservas)</div>
                 <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.1rem' }}>
-                  Fondo Total: <strong>${loanPoolUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> • Prestado: <strong>${realActiveLoansUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD ({loanUtilizationPct.toFixed(1)}% util.)</strong> (Tasa Variable Real) (+${activeLoanInterestUSD.toFixed(2)}/año)
+                  Fondo Total Máximo: <strong>${maxCreditLineUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> • Prestado: <strong>${realActiveLoansUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD ({loanUtilizationPct.toFixed(1)}% util.)</strong> (8.00% APR) (+${activeLoanInterestUSD.toFixed(2)}/año)
                 </div>
                 <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.1rem' }}>
-                  No Prestado (en Bóveda Morpho): <strong>${unlentLoanPoolUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> (Tasa 0% inactiva) 
+                  Disponible para Solicitar (en Vault Morpho @ 6.45% APY): <strong>${unlentAvailableUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong>
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
@@ -354,14 +363,14 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
                   Posición Activa: <strong>{numericStakedAlpha.toLocaleString()} ALPHA</strong> • Respaldo Directo NAV: <strong>${(numericStakedAlpha * 1.0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong>
                 </div>
                 <div style={{ fontSize: '0.7rem', color: '#c084fc', marginTop: '0.1rem' }}>
-                  Recibe el 100% del Flywheel Revenue del Protocolo (+${totalFlywheelFeesUSD.toFixed(2)} USDC/año repartidos a Stakers)
+                  Base NAV Reservas: +{realTimeBaseApyPct.toFixed(3)}% APY • Flywheel Recompensas: +{flywheelApyPct.toFixed(3)}% APR (+${totalFlywheelFeesUSD.toFixed(2)} USDC/año)
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontWeight: 700, color: '#f0abfc', fontSize: '0.95rem' }}>
-                  +{flywheelApyPct.toFixed(3)}% APR Boost
+                  +{stakingTotalApyPct.toFixed(3)}% APY Total
                 </div>
-                <div style={{ fontSize: '0.7rem', color: '#e9d5ff' }}>+${totalFlywheelFeesUSD.toFixed(2)} USDC / año</div>
+                <div style={{ fontSize: '0.7rem', color: '#e9d5ff' }}>+${( (numericStakedAlpha * stakingTotalApyPct) / 100 ).toFixed(2)} USD / año</div>
               </div>
             </div>
           </div>
