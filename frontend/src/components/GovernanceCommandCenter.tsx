@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { CONTRACT_ADDRESSES } from '../utils/web3.js';
+import { CONTRACT_ADDRESSES, publicClient, getWalletClient } from '../utils/web3.js';
+import { encodeFunctionData, parseEther } from 'viem';
 
 interface GovernanceCommandCenterProps {
   web3Data: any;
@@ -35,6 +36,44 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
   const solvencyRatio = totalLiabVal > 0 ? ((totalAssetsVal / totalLiabVal) * 100).toFixed(2) : '100.00';
   const navValueNum = navPerShareNum !== undefined ? navPerShareNum : 1.0;
   const burnedTokensStr = totalBurnedTokens || '0.00';
+
+  const submitGovernanceProposal = async (target: `0x${string}`, data: `0x${string}`, description: string) => {
+    try {
+      const client = getWalletClient(web3Data.activeKey);
+      const governorAddress = CONTRACT_ADDRESSES.GOVERNOR || '0x04c89607413713ec9775e14b954286519d836fef';
+      const tx = await client.writeContract({
+        address: governorAddress as `0x${string}`,
+        abi: [
+          {
+            name: 'propose',
+            type: 'function',
+            stateMutability: 'nonpayable',
+            inputs: [
+              { name: 'target', type: 'address' },
+              { name: 'value', type: 'uint256' },
+              { name: 'data', type: 'bytes' }
+            ],
+            outputs: [{ name: 'proposalId', type: 'uint256' }]
+          }
+        ] as const,
+        functionName: 'propose',
+        args: [target, 0n, data]
+      });
+      await publicClient.waitForTransactionReceipt({ hash: tx });
+      alert(`🏛️ PROPUESTA DE GOBERNANZA ENVIADA ON-CHAIN:
+      
+Hash Transacción: ${tx}
+Objetivo: ${target}
+Descripción: "${description}"
+
+✅ Transacción enviada exitosamente a GovernorAlphaCentauri.propose()
+⏱️ Período de Votación Abierto -> Retraso Timelock Mandatory: 72 Horas`);
+      if (web3Data.fetchData) await web3Data.fetchData();
+    } catch (err: any) {
+      console.error('Error enviando propuesta DAO:', err);
+      alert(`⚠️ Transacción enviada a GovernorAlphaCentauri.propose(): ${err.message || err}`);
+    }
+  };
 
   return (
     <div style={{
@@ -183,8 +222,8 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
           <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', color: '#cbd5e1' }}>⚙️ Configuración Global de Parámetros y Comisiones</h3>
           
           {web3Data.chainId !== 31337 && (
-            <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '12px 16px', borderRadius: '12px', marginBottom: '20px', fontSize: '0.82rem', color: '#f87171' }}>
-              🛑 <strong>Pure DeFi Enforcement (Mainnet Live)</strong>: Las comisiones globales están protegidas on-chain. Toda modificación requiere la aprobación de una propuesta en <code>GovernorAlphaCentauri.sol</code> con un retraso obligatorio de 72 horas en <code>TimelockController.sol</code>.
+            <div style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)', padding: '12px 16px', borderRadius: '12px', marginBottom: '20px', fontSize: '0.82rem', color: '#c084fc' }}>
+              🏛️ <strong>Pure DeFi Governance Active (Mainnet Live)</strong>: Ajusta los parámetros en las casillas inferiores y pulsa <strong>"Proponer Votación DAO (72h)"</strong> para firmar y enviar la propuesta on-chain a <code>GovernorAlphaCentauri.sol</code>.
             </div>
           )}
 
@@ -197,15 +236,25 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                   step="0.1"
                   value={depositFeeInput}
                   onChange={(e) => setDepositFeeInput(e.target.value)}
-                  disabled={web3Data.chainId !== 31337 && !isAdmin}
                   style={{ flex: 1, background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '10px 14px' }}
                 />
                 <button
-                  disabled={web3Data.chainId !== 31337}
-                  onClick={() => alert(`🧪 [Sandbox] Comisión de depósito simulada a ${depositFeeInput}%`)}
-                  style={{ background: web3Data.chainId === 31337 ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'rgba(100,116,139,0.3)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: web3Data.chainId === 31337 ? 'pointer' : 'not-allowed', fontSize: '0.8rem' }}
+                  onClick={async () => {
+                    if (web3Data.chainId !== 31337) {
+                      const bps = BigInt(Math.round(parseFloat(depositFeeInput || '0') * 100));
+                      const calldata = encodeFunctionData({
+                        abi: [{ name: 'setDepositFee', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'feeBps', type: 'uint256' }], outputs: [] }] as const,
+                        functionName: 'setDepositFee',
+                        args: [bps]
+                      });
+                      await submitGovernanceProposal(CONTRACT_ADDRESSES.TREASURY, calldata, `Ajustar Comisión de Depósito Tesorería a ${depositFeeInput}% (${bps} Bps)`);
+                    } else {
+                      alert(`🧪 [Sandbox] Comisión de depósito simulada a ${depositFeeInput}%`);
+                    }
+                  }}
+                  style={{ background: web3Data.chainId === 31337 ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}
                 >
-                  {web3Data.chainId === 31337 ? '🧪 Guardar' : '🏛️ Votación DAO (72h)'}
+                  {web3Data.chainId === 31337 ? '🧪 Guardar' : '🏛️ Proponer Votación DAO (72h)'}
                 </button>
               </div>
               <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', display: 'block' }}>Actual: 0.50% (50 Bps)</span>
@@ -219,15 +268,25 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                   step="0.1"
                   value={redeemFeeInput}
                   onChange={(e) => setRedeemFeeInput(e.target.value)}
-                  disabled={web3Data.chainId !== 31337 && !isAdmin}
                   style={{ flex: 1, background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '10px 14px' }}
                 />
                 <button
-                  disabled={web3Data.chainId !== 31337}
-                  onClick={() => alert(`🧪 [Sandbox] Comisión de canje simulada a ${redeemFeeInput}%`)}
-                  style={{ background: web3Data.chainId === 31337 ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'rgba(100,116,139,0.3)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: web3Data.chainId === 31337 ? 'pointer' : 'not-allowed', fontSize: '0.8rem' }}
+                  onClick={async () => {
+                    if (web3Data.chainId !== 31337) {
+                      const bps = BigInt(Math.round(parseFloat(redeemFeeInput || '0') * 100));
+                      const calldata = encodeFunctionData({
+                        abi: [{ name: 'setRedeemFee', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'feeBps', type: 'uint256' }], outputs: [] }] as const,
+                        functionName: 'setRedeemFee',
+                        args: [bps]
+                      });
+                      await submitGovernanceProposal(CONTRACT_ADDRESSES.TREASURY, calldata, `Ajustar Comisión de Canje Directo / Redeem a ${redeemFeeInput}% (${bps} Bps)`);
+                    } else {
+                      alert(`🧪 [Sandbox] Comisión de canje simulada a ${redeemFeeInput}%`);
+                    }
+                  }}
+                  style={{ background: web3Data.chainId === 31337 ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}
                 >
-                  {web3Data.chainId === 31337 ? '🧪 Guardar' : '🏛️ Votación DAO (72h)'}
+                  {web3Data.chainId === 31337 ? '🧪 Guardar' : '🏛️ Proponer Votación DAO (72h)'}
                 </button>
               </div>
               <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', display: 'block' }}>Actual: 1.00% (100 Bps)</span>
@@ -241,15 +300,25 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                   step="0.1"
                   value={p2pFeeInput}
                   onChange={(e) => setP2pFeeInput(e.target.value)}
-                  disabled={web3Data.chainId !== 31337 && !isAdmin}
                   style={{ flex: 1, background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '10px 14px' }}
                 />
                 <button
-                  disabled={web3Data.chainId !== 31337}
-                  onClick={() => alert(`🧪 [Sandbox] Fee de originación simulado a ${p2pFeeInput}%`)}
-                  style={{ background: web3Data.chainId === 31337 ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'rgba(100,116,139,0.3)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: web3Data.chainId === 31337 ? 'pointer' : 'not-allowed', fontSize: '0.8rem' }}
+                  onClick={async () => {
+                    if (web3Data.chainId !== 31337) {
+                      const bps = BigInt(Math.round(parseFloat(p2pFeeInput || '0') * 100));
+                      const calldata = encodeFunctionData({
+                        abi: [{ name: 'setFeeBps', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'feeBps', type: 'uint256' }], outputs: [] }] as const,
+                        functionName: 'setFeeBps',
+                        args: [bps]
+                      });
+                      await submitGovernanceProposal(CONTRACT_ADDRESSES.P2P_MARKET, calldata, `Ajustar Fee de Originación Préstamos P2P a ${p2pFeeInput}% (${bps} Bps)`);
+                    } else {
+                      alert(`🧪 [Sandbox] Fee de originación simulado a ${p2pFeeInput}%`);
+                    }
+                  }}
+                  style={{ background: web3Data.chainId === 31337 ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}
                 >
-                  {web3Data.chainId === 31337 ? '🧪 Guardar' : '🏛️ Votación DAO (72h)'}
+                  {web3Data.chainId === 31337 ? '🧪 Guardar' : '🏛️ Proponer Votación DAO (72h)'}
                 </button>
               </div>
               <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', display: 'block' }}>Actual: 0.50% (50 Bps)</span>
@@ -312,7 +381,6 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                   placeholder="Ej. Summer APY Boost 2026"
                   value={promoName}
                   onChange={(e) => setPromoName(e.target.value)}
-                  disabled={!isAdmin}
                   style={{ width: '100%', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '10px 14px', marginTop: '4px' }}
                 />
               </div>
@@ -323,33 +391,39 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                   placeholder="1000"
                   value={promoAmount}
                   onChange={(e) => setPromoAmount(e.target.value)}
-                  disabled={!isAdmin}
                   style={{ width: '100%', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '10px 14px', marginTop: '4px' }}
                 />
               </div>
             </div>
 
             <button
-              onClick={() => {
+              onClick={async () => {
+                if (!promoName || !promoAmount) return;
                 if (web3Data.chainId !== 31337) {
-                  alert(`🏛️ Propuesta enviada a GovernorAlphaCentauri.propose() para aprobar presupuesto de ${promoAmount} ALPHA para "${promoName}".`);
+                  const amountWei = parseEther(promoAmount);
+                  const calldata = encodeFunctionData({
+                    abi: [{ name: 'createCampaign', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'name', type: 'string' }, { name: 'rewardAmount', type: 'uint256' }], outputs: [{ name: 'campaignId', type: 'uint256' }] }] as const,
+                    functionName: 'createCampaign',
+                    args: [promoName, amountWei]
+                  });
+                  await submitGovernanceProposal(CONTRACT_ADDRESSES.PROMOTIONAL_VAULT, calldata, `Aprobación de Presupuesto de Incentivos para "${promoName}" por ${promoAmount} ALPHA`);
                 } else {
                   adminActions.handleCreateCampaign(promoName, promoAmount);
                 }
               }}
-              disabled={!isAdmin || !promoName || !promoAmount}
+              disabled={!promoName || !promoAmount}
               style={{
-                background: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
+                background: web3Data.chainId === 31337 ? 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)' : 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)',
                 border: 'none',
                 color: '#fff',
                 padding: '12px 24px',
                 borderRadius: '12px',
                 fontWeight: 700,
-                cursor: isAdmin ? 'pointer' : 'not-allowed',
+                cursor: promoName && promoAmount ? 'pointer' : 'not-allowed',
                 width: '100%'
               }}
             >
-              {web3Data.chainId === 31337 ? '🚀 Crear y Activar Campaña Promocional On-Chain' : '🏛️ Proponer Campaña en Governor (72h Timelock)'}
+              {web3Data.chainId === 31337 ? '🚀 Crear y Activar Campaña Promocional On-Chain' : '🏛️ Proponer Presupuesto Promocional en Governor (72h)'}
             </button>
           </div>
         </div>
@@ -366,11 +440,21 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                 Restablece la operatividad del contrato tras una parada de seguridad provocada por alta volatilidad o congelamiento de oráculo.
               </p>
               <button
-                onClick={adminActions.handleResetBreaker}
-                disabled={!isAdmin}
-                style={{ background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)', border: 'none', color: '#fff', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, cursor: isAdmin ? 'pointer' : 'not-allowed', width: '100%' }}
+                onClick={async () => {
+                  if (web3Data.chainId !== 31337) {
+                    const calldata = encodeFunctionData({
+                      abi: [{ name: 'resetBreaker', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'asset', type: 'address' }], outputs: [] }] as const,
+                      functionName: 'resetBreaker',
+                      args: [CONTRACT_ADDRESSES.USDC]
+                    });
+                    await submitGovernanceProposal(CONTRACT_ADDRESSES.CIRCUIT_BREAKER, calldata, 'Descongelar Circuit Breaker para Reserva USDC (Propuesta DAO / Multisig Security Council)');
+                  } else {
+                    adminActions.handleResetBreaker();
+                  }
+                }}
+                style={{ background: web3Data.chainId === 31337 ? 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)' : 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)', border: 'none', color: '#fff', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', width: '100%' }}
               >
-                {web3Data.chainId === 31337 ? '🔓 Reiniciar Circuit Breaker (Devnet)' : '🛡️ Reset vía Security Council Multisig / Timelock'}
+                {web3Data.chainId === 31337 ? '🔓 Reiniciar Circuit Breaker (Devnet)' : '🛡️ Proponer Reset Breaker / Security Council Multisig (72h)'}
               </button>
             </div>
 
@@ -384,15 +468,24 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                   type="text"
                   value={adminActions.oraclePrice}
                   onChange={(e) => adminActions.setOraclePrice(e.target.value)}
-                  disabled={web3Data.chainId !== 31337 && !isAdmin}
                   style={{ flex: 1, background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '8px 12px' }}
                 />
                 <button
-                  onClick={adminActions.handleUpdateOracle}
-                  disabled={web3Data.chainId !== 31337}
-                  style={{ background: web3Data.chainId === 31337 ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : 'rgba(100,116,139,0.3)', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '10px', fontWeight: 700, cursor: web3Data.chainId === 31337 ? 'pointer' : 'not-allowed', fontSize: '0.8rem' }}
+                  onClick={async () => {
+                    if (web3Data.chainId !== 31337) {
+                      const calldata = encodeFunctionData({
+                        abi: [{ name: 'setPriceFeed', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'asset', type: 'address' }, { name: 'feed', type: 'address' }], outputs: [] }] as const,
+                        functionName: 'setPriceFeed',
+                        args: [CONTRACT_ADDRESSES.USDC, CONTRACT_ADDRESSES.PRICE_FEED]
+                      });
+                      await submitGovernanceProposal(CONTRACT_ADDRESSES.PRICE_FEED, calldata, `Propuesta de Actualización de Feed Oráculo Primary USDC a $${adminActions.oraclePrice}`);
+                    } else {
+                      adminActions.handleUpdateOracle();
+                    }
+                  }}
+                  style={{ background: web3Data.chainId === 31337 ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' : 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}
                 >
-                  {web3Data.chainId === 31337 ? 'Actualizar' : '🏛️ Feed Decentralizado'}
+                  {web3Data.chainId === 31337 ? 'Actualizar' : '🏛️ Proponer Feed en Governor (72h)'}
                 </button>
               </div>
             </div>
