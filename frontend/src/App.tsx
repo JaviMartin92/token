@@ -378,13 +378,6 @@ export default function App() {
       </div>
 
       <ActivityLog logs={logs} />
-
-      <ReferralModal
-        isOpen={isReferralOpen}
-        onClose={() => setIsReferralOpen(false)}
-        userAddress={web3.userAddress}
-        onCopySuccess={() => addToast('success', '¡Enlace Copiado!', 'Tu enlace de referido ha sido copiado al portapapeles.')}
-      />
     </div>
   );
 }
