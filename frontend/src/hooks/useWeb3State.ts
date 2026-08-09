@@ -44,6 +44,7 @@ export function useWeb3State() {
   const [blockDateStr, setBlockDateStr] = useState('');
   const [snapshotId, setSnapshotId] = useState('');
   const [circuitBreakerFrozen, setCircuitBreakerFrozen] = useState(false);
+  const [chainId, setChainId] = useState<number>(31337);
 
   useEffect(() => {
     setUserAddress(account.address);
@@ -56,6 +57,12 @@ export function useWeb3State() {
         const snap = await (publicClient.request as any)({ method: 'evm_snapshot', params: [] });
         setSnapshotId(snap);
       } catch (e) {}
+      try {
+        const cId = await publicClient.getChainId();
+        setChainId(cId);
+      } catch (e) {
+        setChainId(31337);
+      }
     };
     initSnapshot();
   }, []);
@@ -443,6 +450,7 @@ export function useWeb3State() {
     snapshotId,
     setSnapshotId,
     circuitBreakerFrozen,
+    chainId,
     fetchData
   };
 }

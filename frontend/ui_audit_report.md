@@ -1,6 +1,6 @@
 # AUDITORÍA DETALLADA DE INTERFAZ DE USUARIO (106 CAMPOS POR PASO)
 
-Generado el: 2026-08-09T12:49:47.556Z
+Generado el: 2026-08-09T13:14:35.962Z
 
 ======================================================================
 📊 INFORME DE ESTADO DE UI - PASO [0]: [PASO 0 (GENESIS BASELINE)]
@@ -101,7 +101,7 @@ Generado el: 2026-08-09T12:49:47.556Z
 - modal-apy-base-apr: 5.058%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:49:52 PM] Cambiado rol conectado a Usuario Retail / Staker
+- activity-log-container: [3:14:39 PM] Cambiado rol conectado a Usuario Retail / Staker
 
 ======================================================================
 ======================================================================
@@ -203,7 +203,7 @@ Generado el: 2026-08-09T12:49:47.556Z
 - modal-apy-base-apr: 5.058%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:49:59 PM] ¡10,000 USDC mock recibidos en tu billetera! [2:49:58 PM] Reclamando 10,00...
+- activity-log-container: [3:14:44 PM] ¡10,000 USDC mock recibidos en tu billetera! [3:14:44 PM] Reclamando 10,00...
 
 ======================================================================
 ======================================================================
@@ -305,7 +305,7 @@ Generado el: 2026-08-09T12:49:47.556Z
 - modal-apy-base-apr: 5.058%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:50:08 PM] Depósito completado. Shares ALPHA acuñadas a valor NAV. [2:50:07 PM] Depos...
+- activity-log-container: [3:14:52 PM] Depósito completado. Shares ALPHA acuñadas a valor NAV. [3:14:52 PM] Depos...
 
 ======================================================================
 ======================================================================
@@ -407,7 +407,7 @@ Generado el: 2026-08-09T12:49:47.556Z
 - modal-apy-base-apr: 5.058%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:50:19 PM] ¡Stake de 3000 ALPHA realizado con éxito! [2:50:19 PM] Haciendo stake de 3...
+- activity-log-container: [3:15:03 PM] ¡Stake de 3000 ALPHA realizado con éxito! [3:15:02 PM] Haciendo stake de 3...
 
 ======================================================================
 ======================================================================
@@ -509,7 +509,7 @@ Generado el: 2026-08-09T12:49:47.556Z
 - modal-apy-base-apr: 5.058%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:50:19 PM] ¡Stake de 3000 ALPHA realizado con éxito! [2:50:19 PM] Haciendo stake de 3...
+- activity-log-container: [3:15:03 PM] ¡Stake de 3000 ALPHA realizado con éxito! [3:15:02 PM] Haciendo stake de 3...
 
 ======================================================================
 ======================================================================
@@ -611,7 +611,7 @@ Generado el: 2026-08-09T12:49:47.556Z
 - modal-apy-base-apr: 5.064%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:50:31 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [2:50:30 PM] Adquiriendo...
+- activity-log-container: [3:15:15 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [3:15:14 PM] Adquiriendo...
 
 ======================================================================
 ======================================================================
@@ -713,7 +713,7 @@ Generado el: 2026-08-09T12:49:47.556Z
 - modal-apy-base-apr: 5.070%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:50:39 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [2:50:38 PM] Adquiriendo...
+- activity-log-container: [3:15:21 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [3:15:21 PM] Adquiriendo...
 
 ======================================================================
 ======================================================================
@@ -815,7 +815,7 @@ Generado el: 2026-08-09T12:49:47.556Z
 - modal-apy-base-apr: 5.070%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:50:48 PM] ¡Oferta P2P creada! NFT #1 en escrow. Publicada en el Marketplace. [2:50:4...
+- activity-log-container: [3:15:31 PM] ¡Oferta P2P creada! NFT #1 en escrow. Publicada en el Marketplace. [3:15:3...
 
 ======================================================================
 ======================================================================
@@ -917,7 +917,7 @@ Generado el: 2026-08-09T12:49:47.556Z
 - modal-apy-base-apr: 5.115%
 - modal-apy-flywheel-apr: 0.126%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:50:53 PM] ¡Préstamo #1 financiado con éxito! [2:50:53 PM] Financiando préstamo P2P #...
+- activity-log-container: [3:15:36 PM] ¡Préstamo #1 financiado con éxito! [3:15:36 PM] Financiando préstamo P2P #...
 
 ======================================================================
 ======================================================================
@@ -1019,7 +1019,7 @@ Generado el: 2026-08-09T12:49:47.556Z
 - modal-apy-base-apr: 5.121%
 - modal-apy-flywheel-apr: 0.191%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:51:04 PM] ¡Préstamo #2 desembolsado por la Tesorería! $300 USDC acreditados en tu bi...
+- activity-log-container: [3:15:46 PM] ¡Préstamo #2 desembolsado por la Tesorería! $300 USDC acreditados en tu bi...
 
 ======================================================================
 ======================================================================
@@ -1121,7 +1121,7 @@ Generado el: 2026-08-09T12:49:47.556Z
 - modal-apy-base-apr: 5.115%
 - modal-apy-flywheel-apr: 0.126%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:51:14 PM] ¡Préstamo #2 reembolsado totalmente! Principal e intereses acreditados a l...
+- activity-log-container: [3:15:57 PM] ¡Préstamo #2 reembolsado totalmente! Principal e intereses acreditados a l...
 
 ======================================================================
 ======================================================================
@@ -1223,7 +1223,7 @@ Generado el: 2026-08-09T12:49:47.556Z
 - modal-apy-base-apr: 5.070%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:51:22 PM] ¡Préstamo #1 liquidado! NFT transferido al prestamista. [2:51:21 PM] Ejecu...
+- activity-log-container: [3:16:05 PM] ¡Préstamo #1 liquidado! NFT transferido al prestamista. [3:16:05 PM] Ejecu...
 
 ======================================================================
 ======================================================================
@@ -1325,7 +1325,7 @@ Generado el: 2026-08-09T12:49:47.556Z
 - modal-apy-base-apr: 5.065%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:51:27 PM] Ragequit ejecutado en NFT #1. Reembolso recibido. [2:51:27 PM] Ejecutando ...
+- activity-log-container: [3:16:10 PM] Ragequit ejecutado en NFT #1. Reembolso recibido. [3:16:10 PM] Ejecutando ...
 
 ======================================================================
 ======================================================================
@@ -1427,6 +1427,6 @@ Generado el: 2026-08-09T12:49:47.556Z
 - modal-apy-base-apr: 5.053%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:51:38 PM] Rescate completado. USDC transferidos a tu billetera. [2:51:37 PM] Rescata...
+- activity-log-container: [3:16:21 PM] Rescate completado. USDC transferidos a tu billetera. [3:16:20 PM] Rescata...
 
 ======================================================================

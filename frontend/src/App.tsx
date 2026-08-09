@@ -333,6 +333,7 @@ export default function App() {
           />
 
           <AdminControlPanel
+            chainId={web3.chainId}
             oraclePrice={admin.oraclePrice}
             setOraclePrice={admin.setOraclePrice}
             onUpdateOracle={admin.handleUpdateOracle}
