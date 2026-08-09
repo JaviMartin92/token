@@ -44,10 +44,25 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
   onResetBlockchain
 }) => {
   return (
-    <div className="admin-grid">
-      {/* Oracle & Weights Card */}
-      <div className="glass-panel admin-card">
-        <h3 className="admin-title-oracle">⚙️ Oráculo & Rebalanceo de Cartera</h3>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      {/* Pure DeFi Governance & Pure Protocol Ops Banner */}
+      <div className="glass-panel" style={{ padding: '1rem 1.25rem', borderRadius: '14px', background: 'rgba(99, 102, 241, 0.08)', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyBetween: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <div style={{ fontWeight: 800, color: '#818cf8', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              🛡️ CONSOLA DE OPERACIONES DE GOBERNANZA DAO & SIMULACIÓN SANDBOX
+            </div>
+            <div style={{ fontSize: '0.82rem', opacity: 0.85, marginTop: '0.25rem', maxWidth: '900px' }}>
+              <strong>Pure DeFi MiCA Compliance (Recital 22)</strong>: 0 claves privadas de administración en producción. El control contractual reside al 100% en <code style={{ color: '#a855f7' }}>TimelockController.sol</code> (72h) y <code style={{ color: '#38bdf8' }}>GovernorAlphaCentauri.sol</code>. En devnet/Anvil sandbox, este panel permite simular actualizaciones de oráculo y pruebas de estrés; en Mainnet, actúa como generador de propuestas de gobernanza on-chain.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="admin-grid">
+        {/* Oracle & Weights Card */}
+        <div className="glass-panel admin-card">
+          <h3 className="admin-title-oracle">⚙️ Simulación de Oráculo & Rebalanceo de Cartera</h3>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
           <div>
@@ -234,6 +249,7 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
               <option value="solv">⚙️ Manual: Solv Protocol BTC (2.95% APY)</option>
             </select>
           </div>
+        </div>
         </div>
       </div>
     </div>

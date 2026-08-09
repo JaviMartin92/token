@@ -1,6 +1,6 @@
 # AUDITORÍA DETALLADA DE INTERFAZ DE USUARIO (106 CAMPOS POR PASO)
 
-Generado el: 2026-08-09T12:25:16.855Z
+Generado el: 2026-08-09T12:49:47.555Z
 
 ======================================================================
 📊 INFORME DE ESTADO DE UI - PASO [0]: [PASO 0 (GENESIS BASELINE)]
@@ -9,10 +9,10 @@ Generado el: 2026-08-09T12:25:16.855Z
 - header-por-ratio: 100.25%
 - header-nav-value: $1.0025 USDC
 - header-wallet-status: 0x7099...79C8
-- header-role-admin: 👑 Admin / Owner
-- header-role-user: 👤 Usuario
+- header-role-admin: 🧪 Devnet / Ops Sandbox
+- header-role-user: 👤 Usuario Retail
 - header-tab-portal: 💎 Portal Cliente & Bonos
-- header-tab-governance: 🔒 Gobernanza & Admin (Solo Admin)
+- header-tab-governance: 🏛️ Operaciones Protocolo & Gobernanza DAO
 
 [ANALÍTICAS & RESERVAS]
 - analytics-reserves-usd: [No visible / N/A]
@@ -101,7 +101,7 @@ Generado el: 2026-08-09T12:25:16.855Z
 - modal-apy-base-apr: 5.058%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:25:18 PM] Cambiado rol conectado a Usuario Retail
+- activity-log-container: [2:49:52 PM] Cambiado rol conectado a Usuario Retail / Staker
 
 ======================================================================
 ======================================================================
@@ -111,10 +111,10 @@ Generado el: 2026-08-09T12:25:16.855Z
 - header-por-ratio: 100.25%
 - header-nav-value: $1.0025 USDC
 - header-wallet-status: 0x7099...79C8
-- header-role-admin: 👑 Admin / Owner
-- header-role-user: 👤 Usuario
+- header-role-admin: 🧪 Devnet / Ops Sandbox
+- header-role-user: 👤 Usuario Retail
 - header-tab-portal: 💎 Portal Cliente & Bonos
-- header-tab-governance: 🔒 Gobernanza & Admin (Solo Admin)
+- header-tab-governance: 🏛️ Operaciones Protocolo & Gobernanza DAO
 
 [ANALÍTICAS & RESERVAS]
 - analytics-reserves-usd: [No visible / N/A]
@@ -203,7 +203,7 @@ Generado el: 2026-08-09T12:25:16.855Z
 - modal-apy-base-apr: 5.058%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:25:25 PM] ¡10,000 USDC mock recibidos en tu billetera! [2:25:24 PM] Reclamando 10,00...
+- activity-log-container: [2:49:59 PM] ¡10,000 USDC mock recibidos en tu billetera! [2:49:58 PM] Reclamando 10,00...
 
 ======================================================================
 ======================================================================
@@ -213,10 +213,10 @@ Generado el: 2026-08-09T12:25:16.855Z
 - header-por-ratio: 100.29%
 - header-nav-value: $1.0029 USDC
 - header-wallet-status: 0x7099...79C8
-- header-role-admin: 👑 Admin / Owner
-- header-role-user: 👤 Usuario
+- header-role-admin: 🧪 Devnet / Ops Sandbox
+- header-role-user: 👤 Usuario Retail
 - header-tab-portal: 💎 Portal Cliente & Bonos
-- header-tab-governance: 🔒 Gobernanza & Admin (Solo Admin)
+- header-tab-governance: 🏛️ Operaciones Protocolo & Gobernanza DAO
 
 [ANALÍTICAS & RESERVAS]
 - analytics-reserves-usd: [No visible / N/A]
@@ -305,7 +305,7 @@ Generado el: 2026-08-09T12:25:16.855Z
 - modal-apy-base-apr: 5.058%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:25:34 PM] Depósito completado. Shares ALPHA acuñadas a valor NAV. [2:25:33 PM] Depos...
+- activity-log-container: [2:50:08 PM] Depósito completado. Shares ALPHA acuñadas a valor NAV. [2:50:07 PM] Depos...
 
 ======================================================================
 ======================================================================
@@ -315,10 +315,10 @@ Generado el: 2026-08-09T12:25:16.855Z
 - header-por-ratio: 100.32%
 - header-nav-value: $1.0032 USDC
 - header-wallet-status: 0x7099...79C8
-- header-role-admin: 👑 Admin / Owner
-- header-role-user: 👤 Usuario
+- header-role-admin: 🧪 Devnet / Ops Sandbox
+- header-role-user: 👤 Usuario Retail
 - header-tab-portal: 💎 Portal Cliente & Bonos
-- header-tab-governance: 🔒 Gobernanza & Admin (Solo Admin)
+- header-tab-governance: 🏛️ Operaciones Protocolo & Gobernanza DAO
 
 [ANALÍTICAS & RESERVAS]
 - analytics-reserves-usd: [No visible / N/A]
@@ -407,7 +407,7 @@ Generado el: 2026-08-09T12:25:16.855Z
 - modal-apy-base-apr: 5.058%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:25:45 PM] ¡Stake de 3000 ALPHA realizado con éxito! [2:25:44 PM] Haciendo stake de 3...
+- activity-log-container: [2:50:19 PM] ¡Stake de 3000 ALPHA realizado con éxito! [2:50:19 PM] Haciendo stake de 3...
 
 ======================================================================
 ======================================================================
@@ -417,10 +417,10 @@ Generado el: 2026-08-09T12:25:16.855Z
 - header-por-ratio: 100.32%
 - header-nav-value: $1.0032 USDC
 - header-wallet-status: 0x7099...79C8
-- header-role-admin: 👑 Admin / Owner
-- header-role-user: 👤 Usuario
+- header-role-admin: 🧪 Devnet / Ops Sandbox
+- header-role-user: 👤 Usuario Retail
 - header-tab-portal: 💎 Portal Cliente & Bonos
-- header-tab-governance: 🔒 Gobernanza & Admin (Solo Admin)
+- header-tab-governance: 🏛️ Operaciones Protocolo & Gobernanza DAO
 
 [ANALÍTICAS & RESERVAS]
 - analytics-reserves-usd: [No visible / N/A]
@@ -509,7 +509,7 @@ Generado el: 2026-08-09T12:25:16.855Z
 - modal-apy-base-apr: 5.058%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:25:45 PM] ¡Stake de 3000 ALPHA realizado con éxito! [2:25:44 PM] Haciendo stake de 3...
+- activity-log-container: [2:50:19 PM] ¡Stake de 3000 ALPHA realizado con éxito! [2:50:19 PM] Haciendo stake de 3...
 
 ======================================================================
 ======================================================================
@@ -519,10 +519,10 @@ Generado el: 2026-08-09T12:25:16.855Z
 - header-por-ratio: 101.09%
 - header-nav-value: $1.0109 USDC
 - header-wallet-status: 0x7099...79C8
-- header-role-admin: 👑 Admin / Owner
-- header-role-user: 👤 Usuario
+- header-role-admin: 🧪 Devnet / Ops Sandbox
+- header-role-user: 👤 Usuario Retail
 - header-tab-portal: 💎 Portal Cliente & Bonos
-- header-tab-governance: 🔒 Gobernanza & Admin (Solo Admin)
+- header-tab-governance: 🏛️ Operaciones Protocolo & Gobernanza DAO
 
 [ANALÍTICAS & RESERVAS]
 - analytics-reserves-usd: [No visible / N/A]
@@ -611,7 +611,7 @@ Generado el: 2026-08-09T12:25:16.855Z
 - modal-apy-base-apr: 5.064%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:25:57 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [2:25:56 PM] Adquiriendo...
+- activity-log-container: [2:50:31 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [2:50:30 PM] Adquiriendo...
 
 ======================================================================
 ======================================================================
@@ -621,10 +621,10 @@ Generado el: 2026-08-09T12:25:16.855Z
 - header-por-ratio: 101.95%
 - header-nav-value: $1.0196 USDC
 - header-wallet-status: 0x7099...79C8
-- header-role-admin: 👑 Admin / Owner
-- header-role-user: 👤 Usuario
+- header-role-admin: 🧪 Devnet / Ops Sandbox
+- header-role-user: 👤 Usuario Retail
 - header-tab-portal: 💎 Portal Cliente & Bonos
-- header-tab-governance: 🔒 Gobernanza & Admin (Solo Admin)
+- header-tab-governance: 🏛️ Operaciones Protocolo & Gobernanza DAO
 
 [ANALÍTICAS & RESERVAS]
 - analytics-reserves-usd: [No visible / N/A]
@@ -713,7 +713,7 @@ Generado el: 2026-08-09T12:25:16.855Z
 - modal-apy-base-apr: 5.070%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:26:04 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [2:26:03 PM] Adquiriendo...
+- activity-log-container: [2:50:39 PM] ¡Bono Vestado adquirido! NFT de Posición acuñado. [2:50:38 PM] Adquiriendo...
 
 ======================================================================
 ======================================================================
@@ -723,10 +723,10 @@ Generado el: 2026-08-09T12:25:16.855Z
 - header-por-ratio: 101.95%
 - header-nav-value: $1.0196 USDC
 - header-wallet-status: 0x7099...79C8
-- header-role-admin: 👑 Admin / Owner
-- header-role-user: 👤 Usuario
+- header-role-admin: 🧪 Devnet / Ops Sandbox
+- header-role-user: 👤 Usuario Retail
 - header-tab-portal: 💎 Portal Cliente & Bonos
-- header-tab-governance: 🔒 Gobernanza & Admin (Solo Admin)
+- header-tab-governance: 🏛️ Operaciones Protocolo & Gobernanza DAO
 
 [ANALÍTICAS & RESERVAS]
 - analytics-reserves-usd: [No visible / N/A]
@@ -815,7 +815,7 @@ Generado el: 2026-08-09T12:25:16.855Z
 - modal-apy-base-apr: 5.070%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:26:13 PM] ¡Oferta P2P creada! NFT #1 en escrow. Publicada en el Marketplace. [2:26:1...
+- activity-log-container: [2:50:48 PM] ¡Oferta P2P creada! NFT #1 en escrow. Publicada en el Marketplace. [2:50:4...
 
 ======================================================================
 ======================================================================
@@ -825,10 +825,10 @@ Generado el: 2026-08-09T12:25:16.855Z
 - header-por-ratio: 101.95%
 - header-nav-value: $1.0196 USDC
 - header-wallet-status: 0x7099...79C8
-- header-role-admin: 👑 Admin / Owner
-- header-role-user: 👤 Usuario
+- header-role-admin: 🧪 Devnet / Ops Sandbox
+- header-role-user: 👤 Usuario Retail
 - header-tab-portal: 💎 Portal Cliente & Bonos
-- header-tab-governance: 🔒 Gobernanza & Admin (Solo Admin)
+- header-tab-governance: 🏛️ Operaciones Protocolo & Gobernanza DAO
 
 [ANALÍTICAS & RESERVAS]
 - analytics-reserves-usd: [No visible / N/A]
@@ -917,7 +917,7 @@ Generado el: 2026-08-09T12:25:16.855Z
 - modal-apy-base-apr: 5.115%
 - modal-apy-flywheel-apr: 0.126%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:26:19 PM] ¡Préstamo #1 financiado con éxito! [2:26:19 PM] Financiando préstamo P2P #...
+- activity-log-container: [2:50:53 PM] ¡Préstamo #1 financiado con éxito! [2:50:53 PM] Financiando préstamo P2P #...
 
 ======================================================================
 ======================================================================
@@ -927,10 +927,10 @@ Generado el: 2026-08-09T12:25:16.855Z
 - header-por-ratio: 101.95%
 - header-nav-value: $1.0196 USDC
 - header-wallet-status: 0x7099...79C8
-- header-role-admin: 👑 Admin / Owner
-- header-role-user: 👤 Usuario
+- header-role-admin: 🧪 Devnet / Ops Sandbox
+- header-role-user: 👤 Usuario Retail
 - header-tab-portal: 💎 Portal Cliente & Bonos
-- header-tab-governance: 🔒 Gobernanza & Admin (Solo Admin)
+- header-tab-governance: 🏛️ Operaciones Protocolo & Gobernanza DAO
 
 [ANALÍTICAS & RESERVAS]
 - analytics-reserves-usd: [No visible / N/A]
@@ -1019,7 +1019,7 @@ Generado el: 2026-08-09T12:25:16.855Z
 - modal-apy-base-apr: 5.121%
 - modal-apy-flywheel-apr: 0.191%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:26:32 PM] ¡Préstamo #2 desembolsado por la Tesorería! $300 USDC acreditados en tu bi...
+- activity-log-container: [2:51:04 PM] ¡Préstamo #2 desembolsado por la Tesorería! $300 USDC acreditados en tu bi...
 
 ======================================================================
 ======================================================================
@@ -1029,10 +1029,10 @@ Generado el: 2026-08-09T12:25:16.855Z
 - header-por-ratio: 101.95%
 - header-nav-value: $1.0196 USDC
 - header-wallet-status: 0x7099...79C8
-- header-role-admin: 👑 Admin / Owner
-- header-role-user: 👤 Usuario
+- header-role-admin: 🧪 Devnet / Ops Sandbox
+- header-role-user: 👤 Usuario Retail
 - header-tab-portal: 💎 Portal Cliente & Bonos
-- header-tab-governance: 🔒 Gobernanza & Admin (Solo Admin)
+- header-tab-governance: 🏛️ Operaciones Protocolo & Gobernanza DAO
 
 [ANALÍTICAS & RESERVAS]
 - analytics-reserves-usd: [No visible / N/A]
@@ -1121,7 +1121,7 @@ Generado el: 2026-08-09T12:25:16.855Z
 - modal-apy-base-apr: 5.115%
 - modal-apy-flywheel-apr: 0.126%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:26:40 PM] ¡Préstamo #2 reembolsado totalmente! Principal e intereses acreditados a l...
+- activity-log-container: [2:51:14 PM] ¡Préstamo #2 reembolsado totalmente! Principal e intereses acreditados a l...
 
 ======================================================================
 ======================================================================
@@ -1131,10 +1131,10 @@ Generado el: 2026-08-09T12:25:16.855Z
 - header-por-ratio: 101.95%
 - header-nav-value: $1.0196 USDC
 - header-wallet-status: 0x7099...79C8
-- header-role-admin: 👑 Admin / Owner
-- header-role-user: 👤 Usuario
+- header-role-admin: 🧪 Devnet / Ops Sandbox
+- header-role-user: 👤 Usuario Retail
 - header-tab-portal: 💎 Portal Cliente & Bonos
-- header-tab-governance: 🔒 Gobernanza & Admin (Solo Admin)
+- header-tab-governance: 🏛️ Operaciones Protocolo & Gobernanza DAO
 
 [ANALÍTICAS & RESERVAS]
 - analytics-reserves-usd: [No visible / N/A]
@@ -1223,7 +1223,7 @@ Generado el: 2026-08-09T12:25:16.855Z
 - modal-apy-base-apr: 5.070%
 - modal-apy-flywheel-apr: 0.001%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:26:50 PM] ¡Préstamo #1 liquidado! NFT transferido al prestamista. [2:26:50 PM] Ejecu...
+- activity-log-container: [2:51:22 PM] ¡Préstamo #1 liquidado! NFT transferido al prestamista. [2:51:21 PM] Ejecu...
 
 ======================================================================
 ======================================================================
@@ -1233,10 +1233,10 @@ Generado el: 2026-08-09T12:25:16.855Z
 - header-por-ratio: 101.23%
 - header-nav-value: $1.0124 USDC
 - header-wallet-status: 0x7099...79C8
-- header-role-admin: 👑 Admin / Owner
-- header-role-user: 👤 Usuario
+- header-role-admin: 🧪 Devnet / Ops Sandbox
+- header-role-user: 👤 Usuario Retail
 - header-tab-portal: 💎 Portal Cliente & Bonos
-- header-tab-governance: 🔒 Gobernanza & Admin (Solo Admin)
+- header-tab-governance: 🏛️ Operaciones Protocolo & Gobernanza DAO
 
 [ANALÍTICAS & RESERVAS]
 - analytics-reserves-usd: [No visible / N/A]
@@ -1325,7 +1325,7 @@ Generado el: 2026-08-09T12:25:16.855Z
 - modal-apy-base-apr: 5.065%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:26:56 PM] Ragequit ejecutado en NFT #1. Reembolso recibido. [2:26:56 PM] Ejecutando ...
+- activity-log-container: [2:51:27 PM] Ragequit ejecutado en NFT #1. Reembolso recibido. [2:51:27 PM] Ejecutando ...
 
 ======================================================================
 ======================================================================
@@ -1335,10 +1335,10 @@ Generado el: 2026-08-09T12:25:16.855Z
 - header-por-ratio: 101.24%
 - header-nav-value: $1.0125 USDC
 - header-wallet-status: 0x7099...79C8
-- header-role-admin: 👑 Admin / Owner
-- header-role-user: 👤 Usuario
+- header-role-admin: 🧪 Devnet / Ops Sandbox
+- header-role-user: 👤 Usuario Retail
 - header-tab-portal: 💎 Portal Cliente & Bonos
-- header-tab-governance: 🔒 Gobernanza & Admin (Solo Admin)
+- header-tab-governance: 🏛️ Operaciones Protocolo & Gobernanza DAO
 
 [ANALÍTICAS & RESERVAS]
 - analytics-reserves-usd: [No visible / N/A]
@@ -1427,6 +1427,6 @@ Generado el: 2026-08-09T12:25:16.855Z
 - modal-apy-base-apr: 5.053%
 - modal-apy-flywheel-apr: 0.000%
 - modal-apy-close-btn: ✕
-- activity-log-container: [2:27:04 PM] Rescate completado. USDC transferidos a tu billetera. [2:27:04 PM] Rescata...
+- activity-log-container: [2:51:38 PM] Rescate completado. USDC transferidos a tu billetera. [2:51:37 PM] Rescata...
 
 ======================================================================

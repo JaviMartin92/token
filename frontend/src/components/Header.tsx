@@ -94,7 +94,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Role Switcher */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.3rem' }}>
-            <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>ROL CONECTADO:</div>
+            <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>ENTORNO / ROL WALLET:</div>
             <div style={{ display: 'flex', gap: '0.4rem', background: 'rgba(0,0,0,0.3)', padding: '0.25rem', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
               <button
                 data-testid="header-role-admin"
@@ -109,9 +109,9 @@ export const Header: React.FC<HeaderProps> = ({
                   fontWeight: activeKey === ADMIN_KEY ? 700 : 400,
                   boxShadow: activeKey === ADMIN_KEY ? '0 2px 8px rgba(99, 102, 241, 0.4)' : 'none'
                 }}
-                onClick={() => onSwitchRole(ADMIN_KEY as `0x${string}`, 'Owner/Admin')}
+                onClick={() => onSwitchRole(ADMIN_KEY as `0x${string}`, 'Sandbox Tester / Operador Devnet')}
               >
-                👑 Admin / Owner
+                🧪 Devnet / Ops Sandbox
               </button>
               <button
                 data-testid="header-role-user"
@@ -126,9 +126,9 @@ export const Header: React.FC<HeaderProps> = ({
                   fontWeight: activeKey === USER_KEY ? 700 : 400,
                   boxShadow: activeKey === USER_KEY ? '0 2px 8px rgba(168, 85, 247, 0.4)' : 'none'
                 }}
-                onClick={() => onSwitchRole(USER_KEY as `0x${string}`, 'Usuario Retail')}
+                onClick={() => onSwitchRole(USER_KEY as `0x${string}`, 'Usuario Retail / Staker')}
               >
-                👤 Usuario
+                👤 Usuario Retail
               </button>
             </div>
           </div>
@@ -155,9 +155,8 @@ export const Header: React.FC<HeaderProps> = ({
           data-testid="header-tab-governance"
           onClick={() => setActiveTab('governance')}
           className={`header-nav-btn ${activeTab === 'governance' ? 'header-nav-btn-active' : 'header-nav-btn-inactive'}`}
-          style={{ opacity: activeKey !== ADMIN_KEY ? 0.7 : 1 }}
         >
-          {activeKey === ADMIN_KEY ? '⚙️ Gobernanza & Tesorería (Admin)' : '🔒 Gobernanza & Admin (Solo Admin)'}
+          🏛️ Operaciones Protocolo & Gobernanza DAO
         </button>
 
         <button
