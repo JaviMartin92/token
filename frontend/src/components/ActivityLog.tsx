@@ -20,10 +20,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ logs }) => {
             return (
               <div
                 key={idx}
-                style={{
-                  color: isError ? '#f87171' : isReset ? '#facc15' : '#818cf8',
-                  wordBreak: 'break-word'
-                }}
+                className={isError ? 'activity-log-item-error' : isReset ? 'activity-log-item-reset' : 'activity-log-item-normal'}
               >
                 {log}
               </div>

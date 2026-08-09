@@ -203,13 +203,13 @@ export function useAdminActions({ activeKey, snapshotId, setSnapshotId, addLog, 
         address: CONTRACT_ADDRESSES.USDC,
         abi: ABIS.ERC20,
         functionName: 'approve',
-        args: [CONTRACT_ADDRESSES.PROTOCOL_CONTRIBUTION || CONTRACT_ADDRESSES.CORPORATE_CONTRIBUTION, amountWei]
+        args: [CONTRACT_ADDRESSES.CORPORATE_CONTRIBUTION, amountWei]
       });
       await publicClient.waitForTransactionReceipt({ hash: appHash });
 
       const tx = await client.writeContract({
-        address: CONTRACT_ADDRESSES.PROTOCOL_CONTRIBUTION || CONTRACT_ADDRESSES.CORPORATE_CONTRIBUTION,
-        abi: ABIS.PROTOCOL_CONTRIBUTION || ABIS.CORPORATE_CONTRIBUTION,
+        address: CONTRACT_ADDRESSES.CORPORATE_CONTRIBUTION,
+        abi: ABIS.CORPORATE_CONTRIBUTION,
         functionName: 'createTWAPOrder',
         args: [amountWei, BigInt(5), BigInt(300)]
       });
@@ -234,7 +234,7 @@ export function useAdminActions({ activeKey, snapshotId, setSnapshotId, addLog, 
         actionIcon: '📈',
         typeBadge: 'Inyección Algorítmica TWAP',
         targetContractName: 'ProtocolContribution.sol',
-        targetContractAddress: CONTRACT_ADDRESSES.PROTOCOL_CONTRIBUTION || CONTRACT_ADDRESSES.CORPORATE_CONTRIBUTION,
+        targetContractAddress: CONTRACT_ADDRESSES.CORPORATE_CONTRIBUTION,
         inputAmount: `$${num.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
         inputSymbol: 'USDC Recompra',
         expectedOutput: '5 Intervalos',

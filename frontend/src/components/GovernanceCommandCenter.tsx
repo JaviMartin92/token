@@ -11,7 +11,7 @@ interface GovernanceCommandCenterProps {
 export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = ({
   web3Data,
   adminActions,
-  isAdmin
+  isAdmin: _isAdmin
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'metrics' | 'parameters' | 'wallets' | 'promotions' | 'security'>('metrics');
 
@@ -79,49 +79,41 @@ Descripción: "${description}"
   };
 
   return (
-    <div style={{
-      background: 'rgba(15, 23, 42, 0.75)',
-      backdropFilter: 'blur(16px)',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
-      borderRadius: '24px',
-      padding: '28px',
-      color: '#f8fafc',
-      marginTop: '24px',
-      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.35)'
-    }}>
+    <div className="gcc-container">
       {/* Header Banner */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+      <div className="gcc-header">
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span style={{ fontSize: '2rem' }}>🏛️</span>
             <div>
-              <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              <h2 className="gcc-header-title">
                 Centro de Comando de Gobernanza & DAO
               </h2>
-              <p style={{ margin: '4px 0 0 0', color: '#94a3b8', fontSize: '0.9rem' }}>
+              <p className="gcc-header-subtitle">
                 Auditoría Exhaustiva en Tiempo Real, Control de Parámetros On-Chain y Gestor Promocional Empresarial
               </p>
             </div>
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          <div style={{ background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '8px 16px', borderRadius: '12px', textAlign: 'right' }}>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <div className="gcc-badge-indigo">
             <div style={{ fontSize: '0.75rem', color: '#a5b4fc', fontWeight: 700 }}>EVM CHAIN DETECTADO</div>
             <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#818cf8' }}>Chain ID: {currentChainId}</div>
           </div>
-          <div style={{ background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)', padding: '8px 16px', borderRadius: '12px', textAlign: 'right' }}>
+          <div className="gcc-badge-green">
             <div style={{ fontSize: '0.75rem', color: '#86efac', fontWeight: 700 }}>RATIO SOLVENCIA PoR</div>
             <div data-testid="admin-por-solvency-ratio" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#4ade80' }}>{solvencyRatio}%</div>
           </div>
-          <div style={{ background: 'rgba(168, 85, 247, 0.15)', border: '1px solid rgba(168, 85, 247, 0.3)', padding: '8px 16px', borderRadius: '12px', textAlign: 'right' }}>
+          <div className="gcc-badge-purple">
             <div style={{ fontSize: '0.75rem', color: '#d8b4fe', fontWeight: 700 }}>NAV / TOKEN ALPHA</div>
             <div data-testid="admin-nav-per-share" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#c084fc' }}>${navValueNum.toFixed(4)}</div>
-          </div>
-        </div>
           </div>
         </div>
       </div>
 
       {/* Sub-Tabs Navigation */}
-      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+      <div className="gcc-subtabs-row">
         {[
           { key: 'metrics', label: '📊 Auditoría & Métricas', icon: '📊' },
           { key: 'parameters', label: '⚙️ Control Parámetros', icon: '⚙️' },
@@ -133,18 +125,7 @@ Descripción: "${description}"
             key={tab.key}
             data-testid={`admin-subtab-${tab.key}`}
             onClick={() => setActiveSubTab(tab.key as any)}
-            style={{
-              background: activeSubTab === tab.key ? 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)' : 'rgba(30, 41, 59, 0.6)',
-              border: activeSubTab === tab.key ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
-              color: '#ffffff',
-              padding: '10px 18px',
-              borderRadius: '12px',
-              fontWeight: 700,
-              fontSize: '0.88rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              boxShadow: activeSubTab === tab.key ? '0 4px 12px rgba(168, 85, 247, 0.4)' : 'none'
-            }}
+            className={activeSubTab === tab.key ? 'gcc-tab-btn-active' : 'gcc-tab-btn-inactive'}
           >
             {tab.label}
           </button>
@@ -354,7 +335,7 @@ Descripción: "${description}"
                 <input
                   type="text"
                   readOnly
-                  value={CONTRACT_ADDRESSES.PROTOCOL_OPEX_VAULT || CONTRACT_ADDRESSES.CORPORATE_OPEX || '0x...'}
+                  value={CONTRACT_ADDRESSES.PROTOCOL_OPEX_VAULT || '0x...'}
                   style={{ width: '100%', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#a855f7', padding: '10px 14px', fontFamily: 'monospace', marginTop: '4px' }}
                 />
               </div>
@@ -364,7 +345,7 @@ Descripción: "${description}"
                 <input
                   type="text"
                   readOnly
-                  value={CONTRACT_ADDRESSES.COMMUNITY_YIELD_VAULT || CONTRACT_ADDRESSES.CORPORATE_PROFIT || '0x...'}
+                  value={CONTRACT_ADDRESSES.COMMUNITY_YIELD_VAULT || '0x...'}
                   style={{ width: '100%', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#4ade80', padding: '10px 14px', fontFamily: 'monospace', marginTop: '4px' }}
                 />
               </div>

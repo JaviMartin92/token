@@ -73,7 +73,7 @@ Descripción: "${proposalDescription}"
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Environment Mode Switcher Banner */}
-      <div className="glass-panel" style={{ padding: '1.25rem', borderRadius: '16px', background: isSandbox ? 'rgba(99, 102, 241, 0.08)' : 'rgba(168, 85, 247, 0.08)', border: `1px solid ${isSandbox ? 'rgba(99, 102, 241, 0.3)' : 'rgba(168, 85, 247, 0.3)'}` }}>
+      <div className={`glass-panel ${isSandbox ? 'acp-banner-devnet' : 'acp-banner-prod'}`}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <div style={{ fontWeight: 800, color: isSandbox ? '#818cf8' : '#c084fc', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

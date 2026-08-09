@@ -19,7 +19,7 @@ export function calculateProtocolApyMath(
   stakedBalance: string = '0',
   grossCashflowUsd: number = 0,
   activeLoansUsd: number = 0,
-  claimableYieldUsd: number = 0,
+  _claimableYieldUsd: number = 0,
   activeLoansInterestUsd: number = 0,
   assetRates = { stablesApyPct: 0, ethApyPct: 0, btcApyPct: 0 }
 ) {
@@ -29,8 +29,6 @@ export function calculateProtocolApyMath(
   let stablesUSD = porBreakdown.stables;
   let wbtcUSD = porBreakdown.wbtc;
   let wethUSD = porBreakdown.weth;
-  let loanPoolUSD = porBreakdown.alphaStaking;
-
 
   // 1. Morpho Blue (USDC): 90% of USDC stablecoin reserve deployed to MetaMorpho Vault @ Dynamic On-Chain Oracle APR
   const morphoUSDPool = stablesUSD * 0.90;
@@ -128,16 +126,16 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
   const {
     numericAssetsUSD,
     numericStakedAlpha,
-    stablesUSD,
+    stablesUSD: _stablesUSD,
     morphoUSDPool,
     liquidBufferUSDPool,
     wbtcUSD,
     wethUSD,
-    loanPoolUSD,
+    loanPoolUSD: _loanPoolUSD,
     maxCreditLineUSD,
     realActiveLoansUSD,
     unlentAvailableUSD,
-    unlentLoanPoolUSDYield,
+    unlentLoanPoolUSDYield: _unlentLoanPoolUSDYield,
     loanUtilizationPct,
     activeLoanInterestUSD,
     treasuryLoanUSDYield,
@@ -146,12 +144,12 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
     wstEthUSDYield,
     totalAnnualYieldUSD,
     realTimeBaseApyPct,
-    wStablesPct,
+    wStablesPct: _wStablesPct,
     wMorphoPct,
     wLiquidBufferPct,
     wBtcPct,
     wEthPct,
-    wLoanPct,
+    wLoanPct: _wLoanPct,
     actualBondFeesUSD,
     actualP2pFeesUSD,
     actualInterestSpreadUSD,
@@ -172,36 +170,11 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(15, 23, 42, 0.85)',
-        backdropFilter: 'blur(10px)',
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1rem',
-        animation: 'fadeIn 0.2s ease-out'
-      }}
+      className="modal-overlay"
       onClick={onClose}
     >
       <div
-        className="glass-panel"
-        style={{
-          width: '100%',
-          maxWidth: '680px',
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          borderRadius: '20px',
-          border: '1px solid rgba(168, 85, 247, 0.5)',
-          background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 27, 75, 0.95) 100%)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(168, 85, 247, 0.25)',
-          padding: '1.75rem'
-        }}
+        className="glass-panel modal-container"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

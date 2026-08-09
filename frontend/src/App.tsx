@@ -128,7 +128,7 @@ export default function App() {
   const liveApyStr = web3.liveApyStr || '0.00%';
 
   return (
-    <div style={{ minHeight: '100vh', padding: '1.5rem', background: 'radial-gradient(ellipse at top, #1e1b4b 0%, #0f172a 100%)', color: '#fff' }}>
+    <div className="app-container">
       <NotificationToast toasts={toasts} onDismiss={handleDismissToast} />
 
       <ReferralModal
@@ -358,7 +358,7 @@ export default function App() {
       )}
 
       {/* Hidden Telemetry Container for E2E Auditing */}
-      <div style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', height: 0, overflow: 'hidden' }} aria-hidden="true">
+      <div className="telemetry-hidden-container" aria-hidden="true">
         <span data-testid="por-assets-total">${web3.porAssets} USD</span>
         <span data-testid="por-liabilities-total">${web3.porLiabilities} USD</span>
         <span data-testid="por-collateral-ratio">{web3.porRatio}</span>
