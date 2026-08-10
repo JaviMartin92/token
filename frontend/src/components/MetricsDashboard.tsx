@@ -52,76 +52,66 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   const ethUSD = porBreakdown.weth;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '1.5rem' }}>
+    <div className="acp-container">
       
       {/* 📊 SECCIÓN 1: PANEL SUPERIOR DE KPI METRICS */}
-      <div className="card" style={{ background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.9) 100%)', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '16px', padding: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '1rem' }}>
+      <div className="card met-top-card">
+        <div className="met-header-row">
           <div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, background: 'linear-gradient(135deg, #a855f7 0%, #38bdf8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>
+            <h2 className="met-header-h2">
               📊 Panel Consolidado de Métricas & Contadores On-Chain
             </h2>
-            <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>
+            <p className="met-header-subtitle">
               Monitoreo en tiempo real respaldado 100% por Proof of Reserves (PoR) y oráculos auditados.
             </p>
           </div>
 
           <button
             onClick={onOpenApyModal}
-            style={{
-              background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
-              color: '#fff',
-              border: 'none',
-              padding: '0.6rem 1.2rem',
-              borderRadius: '10px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(168, 85, 247, 0.4)',
-              fontSize: '0.9rem'
-            }}
+            className="met-apy-btn"
           >
             ⚡ Desglose Matemático APY ({liveApyStr})
           </button>
         </div>
 
         {/* KPIs Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-          <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>🛡️ Solvencia Global PoR</div>
-            <div data-testid="por-collateral-ratio" style={{ fontSize: '1.6rem', fontWeight: 800, color: numericRatioPct >= 100 ? '#4ade80' : '#f87171', marginTop: '0.2rem' }}>
+        <div className="met-kpi-grid">
+          <div className="met-kpi-card">
+            <div className="met-kpi-title">🛡️ Solvencia Global PoR</div>
+            <div data-testid="por-collateral-ratio" className={`font-black text-md margin-top-sm ${numericRatioPct >= 100 ? 'text-green-bright' : 'stk-burned-label'}`}>
               {porRatio.includes('%') ? porRatio : `${porRatio}%`}
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
+            <div className="met-kpi-subtext">
               Ratio Solvencia = Total Activos / Pasivos
             </div>
           </div>
 
-          <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>💎 Respaldo (NAV / ALPHA)</div>
-            <div data-testid="header-nav-value" style={{ fontSize: '1.6rem', fontWeight: 800, color: '#38bdf8', marginTop: '0.2rem' }}>
+          <div className="met-kpi-card">
+            <div className="met-kpi-title">💎 Respaldo (NAV / ALPHA)</div>
+            <div data-testid="header-nav-value" className="font-black text-md text-cyan margin-top-sm">
               {navPerShareUSD.startsWith('$') ? navPerShareUSD : `$${navPerShareUSD} USDC`}
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
+            <div className="met-kpi-subtext">
               Valor Patrimonial Neto On-Chain
             </div>
           </div>
 
-          <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>🏦 Activos Exógenos PoR</div>
-            <div data-testid="por-assets-total" style={{ fontSize: '1.6rem', fontWeight: 800, color: '#c084fc', marginTop: '0.2rem' }}>
+          <div className="met-kpi-card">
+            <div className="met-kpi-title">🏦 Activos Exógenos PoR</div>
+            <div data-testid="por-assets-total" className="font-black text-md text-purple-bright margin-top-sm">
               ${porAssets} USD
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
+            <div className="met-kpi-subtext">
               USDC + WBTC + WETH en Reservas
             </div>
           </div>
 
-          <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>📄 Pasivos Totales (Shares)</div>
-            <div data-testid="por-liabilities-total" style={{ fontSize: '1.6rem', fontWeight: 800, color: '#f59e0b', marginTop: '0.2rem' }}>
+          <div className="met-kpi-card">
+            <div className="met-kpi-title">📄 Pasivos Totales (Shares)</div>
+            <div data-testid="por-liabilities-total" className="font-black text-md gcc-td-amber margin-top-sm">
               ${porLiabilities} USD
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
+            <div className="met-kpi-subtext">
               Obligaciones con Tenedores de ALPHA
             </div>
           </div>
@@ -129,96 +119,96 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
       </div>
 
       {/* 🪙 SECCIÓN 2: ESTADO DE TOKENOMICS & STAKING EN PANTALLA */}
-      <div className="card" style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '16px', padding: '1.5rem' }}>
-        <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#f8fafc', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <div className="card met-section-card">
+        <h3 className="met-section-h3">
           <span>🥩</span> Tokenomics & Estado de Oferta Deflacionaria
         </h3>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-          <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>🪙 En Circulación</div>
-            <div data-testid="staking-circulating-supply" style={{ fontSize: '1.3rem', fontWeight: 700, color: '#38bdf8', marginTop: '0.3rem' }}>
+        <div className="met-grid-subtle">
+          <div className="met-box-subtle">
+            <div className="met-box-title">🪙 En Circulación</div>
+            <div data-testid="staking-circulating-supply" className="met-val-lg-cyan">
               {circulatingSupply} ALPHA
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>Suministro Libre Flotante</div>
+            <div className="met-kpi-subtext">Suministro Libre Flotante</div>
           </div>
 
-          <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>👤 Stake Comunidad</div>
-            <div data-testid="staking-community-staked" style={{ fontSize: '1.3rem', fontWeight: 700, color: '#c084fc', marginTop: '0.3rem' }}>
+          <div className="met-box-subtle">
+            <div className="met-box-title">👤 Stake Comunidad</div>
+            <div data-testid="staking-community-staked" className="met-val-lg-purple">
               {communityStakedSupply} stALPHA
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>Bloqueado por Inversores</div>
+            <div className="met-kpi-subtext">Bloqueado por Inversores</div>
           </div>
 
-          <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>🏢 Stake Bóvedas</div>
-            <div data-testid="staking-corporate-staked" style={{ fontSize: '1.3rem', fontWeight: 700, color: '#f472b6', marginTop: '0.3rem' }}>
+          <div className="met-box-subtle">
+            <div className="met-box-title">🏢 Stake Bóvedas</div>
+            <div data-testid="staking-corporate-staked" className="met-val-lg-pink">
               <span data-testid="staking-vaults-staked">{corporateStakedSupply}</span> stALPHA
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>Protocol OpEx & Community Yield</div>
+            <div className="met-kpi-subtext">Protocol OpEx & Community Yield</div>
           </div>
 
-          <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>🏛️ Stake Reservas</div>
-            <div data-testid="staking-reserves-staked" style={{ fontSize: '1.3rem', fontWeight: 700, color: '#4ade80', marginTop: '0.3rem' }}>
+          <div className="met-box-subtle">
+            <div className="met-box-title">🏛️ Stake Reservas</div>
+            <div data-testid="staking-reserves-staked" className="met-val-lg-green">
               {treasuryStakedSupply} stALPHA
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>Sub-Reserva Tesorería</div>
+            <div className="met-kpi-subtext">Sub-Reserva Tesorería</div>
           </div>
 
-          <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>🥩 Total Global Staked</div>
-            <div data-testid="staking-total-staked" style={{ fontSize: '1.3rem', fontWeight: 700, color: '#a855f7', marginTop: '0.3rem' }}>
+          <div className="met-box-subtle">
+            <div className="met-box-title">🥩 Total Global Staked</div>
+            <div data-testid="staking-total-staked" className="met-val-lg-violet">
               <span data-testid="staking-global-staked">{totalStakedSupply}</span> ALPHA ({stakingRatioPct.includes('%') ? stakingRatioPct : `${stakingRatioPct}%`})
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>Total stALPHA en Gobernanza</div>
+            <div className="met-kpi-subtext">Total stALPHA en Gobernanza</div>
           </div>
 
-          <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>🔥 Deflación Acumulada</div>
-            <div data-testid="staking-deflation-burned" style={{ fontSize: '1.3rem', fontWeight: 700, color: '#ef4444', marginTop: '0.3rem' }}>
+          <div className="met-box-subtle">
+            <div className="met-box-title">🔥 Deflación Acumulada</div>
+            <div data-testid="staking-deflation-burned" className="met-val-lg-red">
               <span data-testid="staking-deflation-destroyed">{totalBurnedTokens}</span> ALPHA Destruidos
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>Quema Definitiva Irreversible</div>
+            <div className="met-kpi-subtext">Quema Definitiva Irreversible</div>
           </div>
         </div>
       </div>
 
       {/* 📊 SECCIÓN 3: TABLA DE RESPALDO EXÓGENO DE RESERVAS */}
-      <div className="card" style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '16px', padding: '1.5rem' }}>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#f8fafc', marginBottom: '1rem' }}>
+      <div className="card met-section-card">
+        <h3 className="met-section-h3">
           🛡️ Ponderaciones Exógenas de Reserva Pura (Proof of Reserves)
         </h3>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+        <div className="table-responsive">
+          <table className="gcc-table">
             <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}>
-                <th style={{ padding: '0.75rem' }}>Activo de Reserva</th>
-                <th style={{ padding: '0.75rem' }}>Objetivo Protocolo</th>
-                <th style={{ padding: '0.75rem' }}>Valor USD en Caja</th>
-                <th style={{ padding: '0.75rem' }}>Bóvedas Deployed</th>
+              <tr className="gcc-tr-border text-muted">
+                <th className="met-table-th">Activo de Reserva</th>
+                <th className="met-table-th">Objetivo Protocolo</th>
+                <th className="met-table-th">Valor USD en Caja</th>
+                <th className="met-table-th">Bóvedas Deployed</th>
               </tr>
             </thead>
             <tbody>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <td style={{ padding: '0.75rem', fontWeight: 600, color: '#38bdf8' }}>💵 USDC / Stablecoins</td>
-                <td style={{ padding: '0.75rem' }}>60.00% Target</td>
-                <td data-testid="por-row-usdc-val" style={{ padding: '0.75rem', fontWeight: 700 }}>${stablesUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
-                <td style={{ padding: '0.75rem', color: '#94a3b8' }}>Morpho Blue (80% MetaMorpho Vault @ 6.45% APY)</td>
+              <tr className="gcc-tr-border">
+                <td className="met-table-td-cyan">💵 USDC / Stablecoins</td>
+                <td className="met-table-td">60.00% Target</td>
+                <td data-testid="por-row-usdc-val" className="met-table-td-bold">${stablesUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
+                <td className="met-table-td-muted">Morpho Blue (80% MetaMorpho Vault @ 6.45% APY)</td>
               </tr>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <td style={{ padding: '0.75rem', fontWeight: 600, color: '#f59e0b' }}>🪙 Wrapped Bitcoin (WBTC)</td>
-                <td style={{ padding: '0.75rem' }}>26.67% Target</td>
-                <td data-testid="por-row-wbtc-val" style={{ padding: '0.75rem', fontWeight: 700 }}>${btcUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
-                <td style={{ padding: '0.75rem', color: '#94a3b8' }}>Staking Lombard LBTC / Chainlink Feed</td>
+              <tr className="gcc-tr-border">
+                <td className="met-table-td-amber">🪙 Wrapped Bitcoin (WBTC)</td>
+                <td className="met-table-td">26.67% Target</td>
+                <td data-testid="por-row-wbtc-val" className="met-table-td-bold">${btcUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
+                <td className="met-table-td-muted">Staking Lombard LBTC / Chainlink Feed</td>
               </tr>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <td style={{ padding: '0.75rem', fontWeight: 600, color: '#6366f1' }}>🔷 Wrapped Ethereum (WETH)</td>
-                <td style={{ padding: '0.75rem' }}>13.33% Target</td>
-                <td data-testid="por-row-weth-val" style={{ padding: '0.75rem', fontWeight: 700 }}>${ethUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
-                <td style={{ padding: '0.75rem', color: '#94a3b8' }}>Lido Liquid Staking stETH / Chainlink Feed</td>
+              <tr className="gcc-tr-border">
+                <td className="met-table-td-indigo">🔷 Wrapped Ethereum (WETH)</td>
+                <td className="met-table-td">13.33% Target</td>
+                <td data-testid="por-row-weth-val" className="met-table-td-bold">${ethUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
+                <td className="met-table-td-muted">Lido Liquid Staking stETH / Chainlink Feed</td>
               </tr>
             </tbody>
           </table>

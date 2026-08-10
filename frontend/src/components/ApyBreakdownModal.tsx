@@ -178,12 +178,12 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.85rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <span style={{ fontSize: '1.6rem' }}>⚡</span>
+        <div className="apy-modal-header">
+          <div className="apy-modal-title-box">
+            <span className="apy-modal-title-icon">⚡</span>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#f0abfc', fontWeight: 800 }}>Desglose de Reservas y Rendimiento Anualizado en Tiempo Real</h3>
-              <div style={{ fontSize: '0.75rem', color: '#cbd5e1', opacity: 0.8, marginTop: '0.1rem' }}>
+              <h3 className="apy-modal-title-h3">Desglose de Reservas y Rendimiento Anualizado en Tiempo Real</h3>
+              <div className="apy-modal-subtitle">
                 Reservas Totales: ${numericAssetsUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD • Staking: {numericStakedAlpha.toLocaleString()} ALPHA
               </div>
             </div>
@@ -191,46 +191,24 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
           <button
             data-testid="modal-apy-close-btn"
             onClick={onClose}
-            style={{
-              background: 'rgba(255, 255, 255, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              color: '#94a3b8',
-              fontSize: '1.2rem',
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
+            className="apy-modal-close-round"
           >
             ✕
           </button>
         </div>
 
         {/* Big APY Highlight Banner */}
-        <div
-          style={{
-            background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%)',
-            border: '1px solid rgba(168, 85, 247, 0.4)',
-            borderRadius: '14px',
-            padding: '1.15rem',
-            textAlign: 'center',
-            marginBottom: '1.5rem',
-            boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1)'
-          }}
-        >
-          <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', color: '#c084fc', fontWeight: 700, marginBottom: '0.2rem' }}>
+        <div className="apy-highlight-banner">
+          <div className="apy-highlight-label">
             RENDIMIENTO ANUALIZADO TOTAL EN TIEMPO REAL
           </div>
-          <div data-testid="modal-apy-total-apr" style={{ fontSize: '2.5rem', fontWeight: 900, color: '#f0abfc', textShadow: '0 2px 10px rgba(168,85,247,0.4)' }}>
+          <div data-testid="modal-apy-total-apr" className="apy-highlight-apr">
             {totalApyPct}% APR
           </div>
-          <div data-testid="modal-apy-annual-yield-usd" style={{ fontSize: '0.85rem', color: '#34d399', fontWeight: 700, marginTop: '0.2rem' }}>
+          <div data-testid="modal-apy-annual-yield-usd" className="apy-highlight-usd">
             +${totalAnnualYieldUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD / año generados por las Reservas
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#e2e8f0', opacity: 0.9, marginTop: '0.4rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+          <div className="apy-highlight-footer">
             <span>🏦 Base Reservas: <strong data-testid="modal-apy-base-apr">{realTimeBaseApyPct.toFixed(3)}%</strong> (+${totalAnnualYieldUSD.toFixed(2)} USD/año)</span>
             <span>+</span>
             <span>💸 Flywheel Recompensas: <strong data-testid="modal-apy-flywheel-apr">{flywheelApyPct.toFixed(3)}%</strong> (+${totalFlywheelFeesUSD.toFixed(2)} USDC/año)</span>
@@ -238,160 +216,160 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
         </div>
 
         {/* Section 1: Base Reserve Yield */}
-        <div style={{ marginBottom: '1.25rem' }}>
-          <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.65rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="margin-bottom-lg">
+          <div className="apy-section-header">
             <span>1. DÓNDE ESTÁN LAS RESERVAS & RENDIMIENTO ANUALIZADO (ON-CHAIN)</span>
-            <span style={{ color: '#6ee7b7' }}>Tasa Base: {realTimeBaseApyPct.toFixed(3)}% APR</span>
+            <span className="text-green-light">Tasa Base: {realTimeBaseApyPct.toFixed(3)}% APR</span>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div className="apy-list-stack">
             {/* Morpho */}
-            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="apy-row-card">
               <div>
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#e2e8f0' }}>🏦 Morpho Blue MetaMorpho Vault (90% USDC Invertido)</div>
-                <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.1rem' }}>
+                <div className="font-semibold text-base">🏦 Morpho Blue MetaMorpho Vault (90% USDC Invertido)</div>
+                <div className="text-sm text-muted margin-top-xs">
                   Ubicación: <strong>${morphoUSDPool.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> ({wMorphoPct.toFixed(1)}% de Reservas) • Tasa Vault On-Chain: <strong>{(assetRates.stablesApyPct * 100).toFixed(2)}% APY</strong>
                 </div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontWeight: 700, color: '#34d399', fontSize: '0.95rem' }}>
+              <div className="text-align-right">
+                <div className="font-bold text-green-bright text-md">
                   +${morphoUSDYield.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD / año
                 </div>
-                <div style={{ fontSize: '0.7rem', color: '#6ee7b7' }}>+{( (morphoUSDYield / (numericAssetsUSD || 1)) * 100 ).toFixed(3)}% APR al Total</div>
+                <div className="text-xs text-green-light">+{( (morphoUSDYield / (numericAssetsUSD || 1)) * 100 ).toFixed(3)}% APR al Total</div>
               </div>
             </div>
 
             {/* Búfer Líquido de Tesorería */}
-            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="apy-row-card">
               <div>
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#e2e8f0' }}>💧 Búfer Líquido de Tesorería (10% USDC Libre)</div>
-                <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.1rem' }}>
+                <div className="font-semibold text-base">💧 Búfer Líquido de Tesorería (10% USDC Libre)</div>
+                <div className="text-sm text-muted margin-top-xs">
                   Ubicación: <strong>${liquidBufferUSDPool.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> ({wLiquidBufferPct.toFixed(1)}% de Reservas) • Liquidez Inmediata para Rescates
                 </div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontWeight: 700, color: '#64748b', fontSize: '0.95rem' }}>
+              <div className="text-align-right">
+                <div className="font-bold text-dim text-md">
                   +$0.00 USD / año
                 </div>
-                <div style={{ fontSize: '0.7rem', color: '#64748b' }}>0.000% APR</div>
+                <div className="text-xs text-dim">0.000% APR</div>
               </div>
             </div>
 
             {/* Lombard LBTC */}
-            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="apy-row-card">
               <div>
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#e2e8f0' }}>₿ Lombard LBTC Bitcoin Liquid Staking</div>
-                <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.1rem' }}>
+                <div className="font-semibold text-base">₿ Lombard LBTC Bitcoin Liquid Staking</div>
+                <div className="text-sm text-muted margin-top-xs">
                   Ubicación: <strong>${wbtcUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> ({wBtcPct.toFixed(1)}% de Reservas) • Rendimiento Variable
                 </div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontWeight: 700, color: wbtcUSD > 0 ? '#34d399' : '#64748b', fontSize: '0.95rem' }}>
+              <div className="text-align-right">
+                <div className={`font-bold text-md ${wbtcUSD > 0 ? 'text-green-bright' : 'text-dim'}`}>
                   +${lbtcUSDYield.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD / año
                 </div>
-                <div style={{ fontSize: '0.7rem', color: wbtcUSD > 0 ? '#6ee7b7' : '#64748b' }}>+{( (lbtcUSDYield / (numericAssetsUSD || 1)) * 100 ).toFixed(3)}% APR</div>
+                <div className={`text-xs ${wbtcUSD > 0 ? 'text-green-light' : 'text-dim'}`}>+{( (lbtcUSDYield / (numericAssetsUSD || 1)) * 100 ).toFixed(3)}% APR</div>
               </div>
             </div>
 
             {/* Lido wstETH */}
-            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="apy-row-card">
               <div>
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#e2e8f0' }}>Ξ Lido wstETH Ethereum Liquid Staking</div>
-                <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.1rem' }}>
+                <div className="font-semibold text-base">Ξ Lido wstETH Ethereum Liquid Staking</div>
+                <div className="text-sm text-muted margin-top-xs">
                   Ubicación: <strong>${wethUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> ({wEthPct.toFixed(1)}% de Reservas) • Rendimiento Variable
                 </div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontWeight: 700, color: wethUSD > 0 ? '#34d399' : '#64748b', fontSize: '0.95rem' }}>
+              <div className="text-align-right">
+                <div className={`font-bold text-md ${wethUSD > 0 ? 'text-green-bright' : 'text-dim'}`}>
                   +${wstEthUSDYield.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD / año
                 </div>
-                <div style={{ fontSize: '0.7rem', color: wethUSD > 0 ? '#6ee7b7' : '#64748b' }}>+{( (wstEthUSDYield / (numericAssetsUSD || 1)) * 100 ).toFixed(3)}% APR</div>
+                <div className={`text-xs ${wethUSD > 0 ? 'text-green-light' : 'text-dim'}`}>+{( (wstEthUSDYield / (numericAssetsUSD || 1)) * 100 ).toFixed(3)}% APR</div>
               </div>
             </div>
 
             {/* Treasury Loans Utilization Breakdown */}
-            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="apy-row-card">
               <div>
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#e2e8f0' }}>🏛️ Fondo de Préstamos Directos Tesorería (Línea de Crédito 20.0% Máx. de Reservas)</div>
-                <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.1rem' }}>
+                <div className="font-semibold text-base">🏛️ Fondo de Préstamos Directos Tesorería (Línea de Crédito 20.0% Máx. de Reservas)</div>
+                <div className="text-sm text-muted margin-top-xs">
                   Fondo Total Máximo: <strong>${maxCreditLineUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> • Prestado: <strong>${realActiveLoansUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD ({loanUtilizationPct.toFixed(1)}% util.)</strong> (8.00% APR) (+${activeLoanInterestUSD.toFixed(2)}/año)
                 </div>
-                <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.1rem' }}>
+                <div className="text-xs text-dim margin-top-xs">
                   Disponible para Solicitar (en Vault Morpho @ 6.45% APY): <strong>${unlentAvailableUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong>
                 </div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontWeight: 700, color: '#34d399', fontSize: '0.95rem' }}>
+              <div className="text-align-right">
+                <div className="font-bold text-green-bright text-md">
                   +${treasuryLoanUSDYield.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD / año
                 </div>
-                <div style={{ fontSize: '0.7rem', color: '#6ee7b7' }}>+{( (treasuryLoanUSDYield / (numericAssetsUSD || 1)) * 100 ).toFixed(3)}% APR</div>
+                <div className="text-xs text-green-light">+{( (treasuryLoanUSDYield / (numericAssetsUSD || 1)) * 100 ).toFixed(3)}% APR</div>
               </div>
             </div>
 
             {/* ALPHA Token Staking & Treasury Backing */}
-            <div style={{ background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.25)', borderRadius: '10px', padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="apy-row-card-purple">
               <div>
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#f0abfc' }}>🥩 Staking de Tokens ALPHA & Gobernanza DAO</div>
-                <div style={{ fontSize: '0.72rem', color: '#cbd5e1', marginTop: '0.1rem' }}>
+                <div className="font-semibold text-base text-purple-light">🥩 Staking de Tokens ALPHA & Gobernanza DAO</div>
+                <div className="text-sm margin-top-xs">
                   Posición Activa: <strong>{numericStakedAlpha.toLocaleString()} ALPHA</strong> • Respaldo Directo NAV: <strong>${(numericStakedAlpha * 1.0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong>
                 </div>
-                <div style={{ fontSize: '0.7rem', color: '#c084fc', marginTop: '0.1rem' }}>
+                <div className="text-xs text-purple-bright margin-top-xs">
                   Base NAV Reservas: +{realTimeBaseApyPct.toFixed(3)}% APY • Flywheel Recompensas: +{flywheelApyPct.toFixed(3)}% APR (+${totalFlywheelFeesUSD.toFixed(2)} USDC/año)
                 </div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontWeight: 700, color: '#f0abfc', fontSize: '0.95rem' }}>
+              <div className="text-align-right">
+                <div className="font-bold text-purple-light text-md">
                   +{stakingTotalApyPct.toFixed(3)}% APY Total
                 </div>
-                <div style={{ fontSize: '0.7rem', color: '#e9d5ff' }}>+${( (numericStakedAlpha * stakingTotalApyPct) / 100 ).toFixed(2)} USD / año</div>
+                <div className="text-xs">+${( (numericStakedAlpha * stakingTotalApyPct) / 100 ).toFixed(2)} USD / año</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Section 2: Flywheel Fee Distribution */}
-        <div style={{ marginBottom: '1.25rem' }}>
-          <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.65rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="margin-bottom-lg">
+          <div className="apy-section-header-blue">
             <span>2. COMISIONES DE PROTOCOLO FLUIDAS (FLYWHEEL REAL YIELD)</span>
-            <span style={{ color: '#93c5fd' }}>Boost Staking: +{flywheelApyPct.toFixed(3)}% APR</span>
+            <span className="text-blue-light">Boost Staking: +{flywheelApyPct.toFixed(3)}% APR</span>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div className="apy-list-stack">
             {/* Bond Fees */}
-            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="apy-row-card">
               <div>
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#e2e8f0' }}>🏷️ Comisiones por Emisión de Bonos Vestados (1.5%)</div>
-                <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.1rem' }}>
+                <div className="font-semibold text-base">🏷️ Comisiones por Emisión de Bonos Vestados (1.5%)</div>
+                <div className="text-xs text-muted margin-top-xs">
                   Recaudación Anualizada de Comisiones: +${actualBondFeesUSD.toFixed(2)} USDC/año
                 </div>
               </div>
-              <div style={{ fontWeight: 700, color: '#60a5fa', fontSize: '0.95rem' }}>
+              <div className="font-bold text-blue-bright text-md">
                 +${actualBondFeesUSD.toFixed(2)} USDC / año
               </div>
             </div>
 
             {/* P2P Fees */}
-            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="apy-row-card">
               <div>
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#e2e8f0' }}>🤝 Comisiones de Originación P2P (0.50%)</div>
-                <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.1rem' }}>
+                <div className="font-semibold text-base">🤝 Comisiones de Originación P2P (0.50%)</div>
+                <div className="text-xs text-muted margin-top-xs">
                   Recaudación Anualizada sobre Préstamos: +${actualP2pFeesUSD.toFixed(2)} USDC/año
                 </div>
               </div>
-              <div style={{ fontWeight: 700, color: '#60a5fa', fontSize: '0.95rem' }}>
+              <div className="font-bold text-blue-bright text-md">
                 +${actualP2pFeesUSD.toFixed(2)} USDC / año
               </div>
             </div>
 
             {/* Margin Spread */}
-            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="apy-row-card">
               <div>
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#e2e8f0' }}>💰 Spread de Margen de Interés (10.0%)</div>
-                <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.1rem' }}>
+                <div className="font-semibold text-base">💰 Spread de Margen de Interés (10.0%)</div>
+                <div className="text-xs text-muted margin-top-xs">
                   10% de comisión sobre los intereses generados on-chain
                 </div>
               </div>
-              <div style={{ fontWeight: 700, color: '#60a5fa', fontSize: '0.95rem' }}>
+              <div className="font-bold text-blue-bright text-md">
                 +${actualInterestSpreadUSD.toFixed(2)} USDC / año
               </div>
             </div>
@@ -399,19 +377,18 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
         </div>
 
         {/* Verification Footnote */}
-        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.85rem', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)', fontSize: '0.75rem', color: '#94a3b8', lineHeight: 1.5 }}>
-          <div style={{ fontWeight: 600, color: '#f0abfc', marginBottom: '0.2rem' }}>🔍 Fórmula Matématica Exacta On-Chain:</div>
+        <div className="apy-footnote-card">
+          <div className="font-semibold text-purple-light margin-bottom-sm">🔍 Fórmula Matématica Exacta On-Chain:</div>
           <code>Rendimiento_Anual_USD = Σ (Ubicación_USD_i × Tasa_i) + Comisiones_Protocolo_USDC</code>
-          <div style={{ marginTop: '0.3rem', fontSize: '0.7rem', opacity: 0.8 }}>
+          <div className="margin-top-md text-xs">
             Tasa APY Base = (Total_Generado_USD / Reservas_Totales_USD) = ({totalAnnualYieldUSD.toFixed(2)} / {numericAssetsUSD.toFixed(2)}) = <strong>{realTimeBaseApyPct.toFixed(3)}% APR</strong>
           </div>
         </div>
 
         {/* Close Button */}
-        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+        <div className="margin-top-xl text-center">
           <button
-            className="btn-primary"
-            style={{ width: '100%', background: 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)', padding: '0.75rem', fontWeight: 700, borderRadius: '10px' }}
+            className="btn-primary apy-confirm-btn"
             onClick={onClose}
           >
             ✅ Entendido y Verificado

@@ -46,33 +46,33 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
   const discountedPrice = (principalNum * (1 - baseDiscountBps / 10000)).toFixed(2);
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
+    <div className="met-grid-subtle margin-bottom-xl">
       {/* Buy Bond Card */}
-      <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '16px' }}>
-        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.15rem' }}>📜 Bóveda de Bonos Vestados con Descuento</h3>
-        <p style={{ fontSize: '0.8rem', opacity: 0.7, marginBottom: '1rem' }}>
+      <div className="glass-panel acp-proposal-card">
+        <h3 className="vv-card-h3">📜 Bóveda de Bonos Vestados con Descuento</h3>
+        <p className="vv-card-p">
           Adquiere posición en el protocolo a un precio con descuento locking a 1-5 años. Recibes un NFT ERC-721 como colateral transferible.
         </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+        <div className="acp-control-stack">
           <div>
-            <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Valor Principal del Bono (USD):</label>
+            <label className="vv-label">Valor Principal del Bono (USD):</label>
             <input
               data-testid="bonds-principal-input"
               type="number"
               value={bondPrincipal}
               onChange={(e) => setBondPrincipal(e.target.value)}
-              style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff' }}
+              className="vv-input-dark"
             />
           </div>
 
           <div>
-            <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Años de Bloqueo (1 - 5 años):</label>
+            <label className="vv-label">Años de Bloqueo (1 - 5 años):</label>
             <select
               data-testid="bonds-years-select"
               value={bondLockYears}
               onChange={(e) => setBondLockYears(e.target.value)}
-              style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff' }}
+              className="vv-input-dark"
             >
               <option value="1">1 Año (Descuento ~10%)</option>
               <option value="2">2 Años (Descuento ~18%)</option>
@@ -83,13 +83,13 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
           </div>
 
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-              <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>Dirección Referidor (Opcional - 1.5% Reward USDC):</label>
+            <div className="acp-banner-flex margin-bottom-xs">
+              <label className="vv-label opacity-80">Dirección Referidor (Opcional - 1.5% Reward USDC):</label>
               {onOpenReferral && (
                 <button
                   type="button"
                   onClick={onOpenReferral}
-                  style={{ background: 'none', border: 'none', color: '#38bdf8', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
+                  className="vv-link-btn"
                 >
                   🎁 Mi Enlace de Referido
                 </button>
@@ -101,75 +101,67 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
               placeholder="0x..."
               value={bondReferrer}
               onChange={(e) => setBondReferrer(e.target.value)}
-              style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff' }}
+              className="vv-input-dark"
             />
           </div>
 
           {/* Discount Summary Box */}
-          <div style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.25)', padding: '0.75rem', borderRadius: '10px', fontSize: '0.8rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+          <div className="vv-discount-box">
+            <div className="acp-banner-flex margin-bottom-xs">
               <span>Descuento Calculado:</span>
-              <strong data-testid="bonds-discount-badge" style={{ color: '#c084fc' }}>{discountPct}% OFF</strong>
+              <strong data-testid="bonds-discount-badge" className="stk-val-purple">{discountPct}% OFF</strong>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div className="acp-banner-flex">
               <span>Precio a Pagar Hoy:</span>
-              <strong data-testid="bonds-price-today" style={{ color: '#4ade80' }}>${discountedPrice} USDC</strong>
+              <strong data-testid="bonds-price-today" className="stk-val-green">${discountedPrice} USDC</strong>
             </div>
           </div>
 
-          <button data-testid="bonds-buy-btn" className="btn-primary" style={{ width: '100%', background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)', marginTop: '0.2rem' }} onClick={onBuyBond}>
+          <button data-testid="bonds-buy-btn" className="btn-primary vv-buy-btn" onClick={onBuyBond}>
             💳 Comprar Bono Vestado & Mint NFT
           </button>
         </div>
       </div>
 
       {/* Position NFTs Gallery Card */}
-      <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '16px' }}>
-        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.15rem' }}>🎨 Mis Posiciones ERC-721 ({userPositions.length})</h3>
+      <div className="glass-panel acp-proposal-card">
+        <h3 className="vv-card-h3">🎨 Mis Posiciones ERC-721 ({userPositions.length})</h3>
 
         {userPositions.length === 0 ? (
-          <div style={{ opacity: 0.5, textAlign: 'center', padding: '3rem 1rem', fontSize: '0.85rem' }}>
+          <div className="vv-empty-gallery">
             No posees ninguna posición NFT de bono vestado activa.
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxHeight: '420px', overflowY: 'auto' }}>
+          <div className="vv-gallery-stack">
             {userPositions.map((pos) => (
               <div
                 key={pos.id}
-                style={{
-                  background: pos.isRagequitted || pos.isMaturedClaimed ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.04)',
-                  border: pos.canClaim ? '1px solid rgba(74, 222, 128, 0.5)' : '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '12px',
-                  padding: '0.85rem',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
+                className={`vv-pos-card ${pos.isRagequitted || pos.isMaturedClaimed ? 'vv-pos-card-claimed' : (pos.canClaim ? 'vv-pos-card-canclaim' : 'vv-pos-card-normal')}`}
               >
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#c084fc', marginBottom: '0.2rem' }}>
+                  <div className="vv-pos-title">
                     Bono NFT #{pos.id} • {pos.lockYears} Años
                   </div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                  <div className="vv-pos-sub">
                     Principal: <strong>${pos.principal} USD</strong> | Pagado: ${pos.paid} USD
                   </div>
-                  <div style={{ fontSize: '0.7rem', opacity: 0.5, marginTop: '0.2rem' }}>
+                  <div className="vv-pos-date">
                     Vence: {pos.expDateStr}
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.4rem' }}>
-                  {pos.isRagequitted && <span style={{ fontSize: '0.7rem', color: '#ef4444' }}>Ragequitted</span>}
-                  {pos.isMaturedClaimed && <span style={{ fontSize: '0.7rem', color: '#38bdf8' }}>Reclamado</span>}
+                <div className="acp-flex-row-gap5">
+                  {pos.isRagequitted && <span className="vv-badge-rq">Ragequitted</span>}
+                  {pos.isMaturedClaimed && <span className="vv-badge-cl">Reclamado</span>}
 
                   {pos.canClaim && (
-                    <button className="btn-primary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: '#22c55e' }} onClick={() => onClaimMatured(pos.id)}>
+                    <button className="btn-primary vv-claim-btn" onClick={() => onClaimMatured(pos.id)}>
                       Reclamar
                     </button>
                   )}
 
                   {!pos.isRagequitted && !pos.isMaturedClaimed && (
-                    <button className="btn-secondary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', borderColor: '#ef4444', color: '#ef4444' }} onClick={() => onRagequit(pos.id)}>
+                    <button className="btn-secondary vv-rq-btn" onClick={() => onRagequit(pos.id)}>
                       Ragequit (Penalización 15%)
                     </button>
                   )}

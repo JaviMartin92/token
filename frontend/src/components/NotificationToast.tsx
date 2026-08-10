@@ -37,10 +37,10 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({ toasts, on
             key={toast.id}
             className={`toast-item ${typeClass}`}
           >
-            <span style={{ fontSize: '1.2rem', lineHeight: '1' }}>{icons[toast.type]}</span>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.2rem' }}>{toast.title}</div>
-              <div style={{ fontSize: '0.8rem', opacity: 0.85, wordBreak: 'break-word' }}>{toast.message}</div>
+            <span className="toast-icon">{icons[toast.type]}</span>
+            <div className="toast-content-box">
+              <div className="toast-title-text">{toast.title}</div>
+              <div className="toast-msg-text">{toast.message}</div>
             </div>
             <button
               onClick={() => onDismiss(toast.id)}

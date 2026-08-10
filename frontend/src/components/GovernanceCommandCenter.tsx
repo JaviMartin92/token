@@ -83,8 +83,8 @@ Descripción: "${description}"
       {/* Header Banner */}
       <div className="gcc-header">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '2rem' }}>🏛️</span>
+          <div className="gcc-header-flex">
+            <span className="gcc-header-icon">🏛️</span>
             <div>
               <h2 className="gcc-header-title">
                 Centro de Comando de Gobernanza & DAO
@@ -96,18 +96,18 @@ Descripción: "${description}"
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+        <div className="gcc-header-right">
           <div className="gcc-badge-indigo">
-            <div style={{ fontSize: '0.75rem', color: '#a5b4fc', fontWeight: 700 }}>EVM CHAIN DETECTADO</div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#818cf8' }}>Chain ID: {currentChainId}</div>
+            <div className="gcc-badge-title-indigo">EVM CHAIN DETECTADO</div>
+            <div className="gcc-badge-val-indigo">Chain ID: {currentChainId}</div>
           </div>
           <div className="gcc-badge-green">
-            <div style={{ fontSize: '0.75rem', color: '#86efac', fontWeight: 700 }}>RATIO SOLVENCIA PoR</div>
-            <div data-testid="admin-por-solvency-ratio" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#4ade80' }}>{solvencyRatio}%</div>
+            <div className="gcc-badge-title-green">RATIO SOLVENCIA PoR</div>
+            <div data-testid="admin-por-solvency-ratio" className="gcc-badge-val-green">{solvencyRatio}%</div>
           </div>
           <div className="gcc-badge-purple">
-            <div style={{ fontSize: '0.75rem', color: '#d8b4fe', fontWeight: 700 }}>NAV / TOKEN ALPHA</div>
-            <div data-testid="admin-nav-per-share" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#c084fc' }}>${navValueNum.toFixed(4)}</div>
+            <div className="gcc-badge-title-purple">NAV / TOKEN ALPHA</div>
+            <div data-testid="admin-nav-per-share" className="gcc-badge-val-purple">${navValueNum.toFixed(4)}</div>
           </div>
         </div>
       </div>
@@ -135,67 +135,67 @@ Descripción: "${description}"
       {/* TAB 1: METRICAS EXHAUSTIVAS */}
       {activeSubTab === 'metrics' && (
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-            <div style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '16px' }}>
-              <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>ACTIVOS TOTALES (PoR)</div>
-              <div data-testid="admin-total-assets-por" style={{ fontSize: '1.5rem', fontWeight: 800, color: '#38bdf8', marginTop: '4px' }}>
+          <div className="gcc-metrics-grid">
+            <div className="gcc-metric-card">
+              <div className="gcc-metric-label">ACTIVOS TOTALES (PoR)</div>
+              <div data-testid="admin-total-assets-por" className="gcc-metric-val-cyan">
                 ${totalAssetsVal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>Cobertura On-Chain 100% Verificada</div>
+              <div className="gcc-metric-subtext">Cobertura On-Chain 100% Verificada</div>
             </div>
 
-            <div style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '16px' }}>
-              <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>DEFLACIÓN ACUMULADA</div>
-              <div data-testid="admin-deflation-accumulated" style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ef4444', marginTop: '4px' }}>
+            <div className="gcc-metric-card">
+              <div className="gcc-metric-label">DEFLACIÓN ACUMULADA</div>
+              <div data-testid="admin-deflation-accumulated" className="gcc-metric-val-red">
                 🔥 {burnedTokensStr} ALPHA
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>Tokens Destruidos por Fees Staking</div>
+              <div className="gcc-metric-subtext">Tokens Destruidos por Fees Staking</div>
             </div>
 
-            <div style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '16px' }}>
-              <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>MODELO DE INGRESOS (50/25/25)</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#e2e8f0', marginTop: '6px' }}>
+            <div className="gcc-metric-card">
+              <div className="gcc-metric-label">MODELO DE INGRESOS (50/25/25)</div>
+              <div className="gcc-model-text">
                 🏛️ 50% Res | 💼 25% OpEx | 🏦 25% Prof
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#86efac', marginTop: '4px' }}>Reparto Automático On-Chain</div>
+              <div className="gcc-metric-subtext-green">Reparto Automático On-Chain</div>
             </div>
           </div>
 
-          <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', color: '#cbd5e1' }}>📌 Distribución Target de Activos de Reserva (50/25/12.5/12.5)</h3>
-          <div style={{ background: 'rgba(15, 23, 42, 0.6)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+          <h3 className="gcc-section-title">📌 Distribución Target de Activos de Reserva (50/25/12.5/12.5)</h3>
+          <div className="gcc-table-container">
+            <table className="gcc-table">
               <thead>
-                <tr style={{ background: 'rgba(30, 41, 59, 0.9)', color: '#94a3b8' }}>
-                  <th style={{ padding: '12px 16px' }}>Activo de Reserva</th>
-                  <th style={{ padding: '12px 16px' }}>Valor USD Real</th>
-                  <th style={{ padding: '12px 16px' }}>Ponderación Target</th>
-                  <th style={{ padding: '12px 16px' }}>Función en Tesorería</th>
+                <tr className="gcc-th-row">
+                  <th className="gcc-th-cell">Activo de Reserva</th>
+                  <th className="gcc-th-cell">Valor USD Real</th>
+                  <th className="gcc-th-cell">Ponderación Target</th>
+                  <th className="gcc-th-cell">Función en Tesorería</th>
                 </tr>
               </thead>
               <tbody>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 700, color: '#60a5fa' }}>💵 USDC (Sub-Reserva 80/20)</td>
-                  <td style={{ padding: '12px 16px' }}>${parseFloat(reserveBreakdown?.usdcUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                  <td style={{ padding: '12px 16px', color: '#4ade80', fontWeight: 700 }}>50.00%</td>
-                  <td style={{ padding: '12px 16px', color: '#94a3b8' }}>Morpho Yield (80%) + Líquido (20%)</td>
+                <tr className="gcc-tr-border">
+                  <td className="gcc-td-blue">💵 USDC (Sub-Reserva 80/20)</td>
+                  <td className="gcc-td-cell">${parseFloat(reserveBreakdown?.usdcUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                  <td className="gcc-td-green">50.00%</td>
+                  <td className="gcc-td-muted">Morpho Yield (80%) + Líquido (20%)</td>
                 </tr>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 700, color: '#f59e0b' }}>₿ Wrapped Bitcoin (WBTC)</td>
-                  <td style={{ padding: '12px 16px' }}>${parseFloat(reserveBreakdown?.wbtcUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                  <td style={{ padding: '12px 16px', color: '#4ade80', fontWeight: 700 }}>25.00%</td>
-                  <td style={{ padding: '12px 16px', color: '#94a3b8' }}>Compras DEX en Mercado Secundario</td>
+                <tr className="gcc-tr-border">
+                  <td className="gcc-td-amber">₿ Wrapped Bitcoin (WBTC)</td>
+                  <td className="gcc-td-cell">${parseFloat(reserveBreakdown?.wbtcUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                  <td className="gcc-td-green">25.00%</td>
+                  <td className="gcc-td-muted">Compras DEX en Mercado Secundario</td>
                 </tr>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 700, color: '#a855f7' }}>Ξ Wrapped Ethereum (WETH)</td>
-                  <td style={{ padding: '12px 16px' }}>${parseFloat(reserveBreakdown?.wethUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                  <td style={{ padding: '12px 16px', color: '#4ade80', fontWeight: 700 }}>12.50%</td>
-                  <td style={{ padding: '12px 16px', color: '#94a3b8' }}>Compras DEX en Mercado Secundario</td>
+                <tr className="gcc-tr-border">
+                  <td className="gcc-td-purple">Ξ Wrapped Ethereum (WETH)</td>
+                  <td className="gcc-td-cell">${parseFloat(reserveBreakdown?.wethUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                  <td className="gcc-td-green">12.50%</td>
+                  <td className="gcc-td-muted">Compras DEX en Mercado Secundario</td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '12px 16px', fontWeight: 700, color: '#ec4899' }}>🥩 Native ALPHA Staked</td>
-                  <td style={{ padding: '12px 16px' }}>${parseFloat(reserveBreakdown?.stakedAlphaUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                  <td style={{ padding: '12px 16px', color: '#4ade80', fontWeight: 700 }}>12.50%</td>
-                  <td style={{ padding: '12px 16px', color: '#94a3b8' }}>Auto-stake Institucional Governance</td>
+                  <td className="gcc-td-pink">🥩 Native ALPHA Staked</td>
+                  <td className="gcc-td-cell">${parseFloat(reserveBreakdown?.stakedAlphaUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                  <td className="gcc-td-green">12.50%</td>
+                  <td className="gcc-td-muted">Auto-stake Institucional Governance</td>
                 </tr>
               </tbody>
             </table>
@@ -206,24 +206,24 @@ Descripción: "${description}"
       {/* TAB 2: CONTROL DE PARAMETROS */}
       {activeSubTab === 'parameters' && (
         <div>
-          <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', color: '#cbd5e1' }}>⚙️ Configuración Global de Parámetros y Comisiones</h3>
+          <h3 className="gcc-section-title">⚙️ Configuración Global de Parámetros y Comisiones</h3>
           
           {isProductionChain && (
-            <div style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)', padding: '12px 16px', borderRadius: '12px', marginBottom: '20px', fontSize: '0.82rem', color: '#c084fc' }}>
+            <div className="gcc-pure-banner">
               🏛️ <strong>Pure DeFi Governance Active (Mainnet Live - Chain ID {currentChainId})</strong>: Ajusta los parámetros en las casillas inferiores y pulsa <strong>"Proponer Votación DAO (72h)"</strong> para firmar y enviar la propuesta on-chain a <code>GovernorAlphaCentauri.sol</code>.
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-            <div style={{ background: 'rgba(30, 41, 59, 0.6)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>COMISIÓN DE DEPÓSITO TESORERÍA (%)</label>
-              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+          <div className="gcc-param-grid">
+            <div className="gcc-param-card">
+              <label className="acp-label-sm">COMISIÓN DE DEPÓSITO TESORERÍA (%)</label>
+              <div className="acp-flex-row-gap5">
                 <input
                   type="number"
                   step="0.1"
                   value={depositFeeInput}
                   onChange={(e) => setDepositFeeInput(e.target.value)}
-                  style={{ flex: 1, background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '10px 14px' }}
+                  className="gcc-input-dark"
                 />
                 <button
                   onClick={async () => {
@@ -239,23 +239,23 @@ Descripción: "${description}"
                       alert(`🧪 [Sandbox - Chain 31337] Comisión de depósito simulada a ${depositFeeInput}%`);
                     }
                   }}
-                  style={{ background: isProductionChain ? 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)' : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}
+                  className={isProductionChain ? 'gcc-btn-prod' : 'gcc-btn-sandbox'}
                 >
                   {isProductionChain ? '🏛️ Proponer Votación DAO (72h)' : '🧪 Guardar (Sandbox)'}
                 </button>
               </div>
-              <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', display: 'block' }}>Actual: 0.50% (50 Bps)</span>
+              <span className="gcc-metric-subtext">Actual: 0.50% (50 Bps)</span>
             </div>
 
-            <div style={{ background: 'rgba(30, 41, 59, 0.6)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>COMISIÓN DE CANJE DIRECTO / REDEEM (%)</label>
-              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+            <div className="gcc-param-card">
+              <label className="acp-label-sm">COMISIÓN DE CANJE DIRECTO / REDEEM (%)</label>
+              <div className="acp-flex-row-gap5">
                 <input
                   type="number"
                   step="0.1"
                   value={redeemFeeInput}
                   onChange={(e) => setRedeemFeeInput(e.target.value)}
-                  style={{ flex: 1, background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '10px 14px' }}
+                  className="gcc-input-dark"
                 />
                 <button
                   onClick={async () => {
@@ -271,23 +271,23 @@ Descripción: "${description}"
                       alert(`🧪 [Sandbox - Chain 31337] Comisión de canje simulada a ${redeemFeeInput}%`);
                     }
                   }}
-                  style={{ background: isProductionChain ? 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)' : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}
+                  className={isProductionChain ? 'gcc-btn-prod' : 'gcc-btn-sandbox'}
                 >
                   {isProductionChain ? '🏛️ Proponer Votación DAO (72h)' : '🧪 Guardar (Sandbox)'}
                 </button>
               </div>
-              <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', display: 'block' }}>Actual: 1.00% (100 Bps)</span>
+              <span className="gcc-metric-subtext">Actual: 1.00% (100 Bps)</span>
             </div>
 
-            <div style={{ background: 'rgba(30, 41, 59, 0.6)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>FEE ORIGINACIÓN PRÉSTAMOS P2P (%)</label>
-              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+            <div className="gcc-param-card">
+              <label className="acp-label-sm">FEE ORIGINACIÓN PRÉSTAMOS P2P (%)</label>
+              <div className="acp-flex-row-gap5">
                 <input
                   type="number"
                   step="0.1"
                   value={p2pFeeInput}
                   onChange={(e) => setP2pFeeInput(e.target.value)}
-                  style={{ flex: 1, background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '10px 14px' }}
+                  className="gcc-input-dark"
                 />
                 <button
                   onClick={async () => {
@@ -303,12 +303,12 @@ Descripción: "${description}"
                       alert(`🧪 [Sandbox - Chain 31337] Fee de originación simulado a ${p2pFeeInput}%`);
                     }
                   }}
-                  style={{ background: isProductionChain ? 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)' : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}
+                  className={isProductionChain ? 'gcc-btn-prod' : 'gcc-btn-sandbox'}
                 >
                   {isProductionChain ? '🏛️ Proponer Votación DAO (72h)' : '🧪 Guardar (Sandbox)'}
                 </button>
               </div>
-              <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', display: 'block' }}>Actual: 0.50% (50 Bps)</span>
+              <span className="gcc-metric-subtext">Actual: 0.50% (50 Bps)</span>
             </div>
           </div>
         </div>
@@ -317,36 +317,36 @@ Descripción: "${description}"
       {/* TAB 3: BILLETERAS CORPORATIVAS */}
       {activeSubTab === 'wallets' && (
         <div>
-          <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', color: '#cbd5e1' }}>💼 Control y Direccionamiento de Billeteras Corporativas</h3>
-          <div style={{ background: 'rgba(30, 41, 59, 0.6)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <h3 className="gcc-section-title">💼 Control y Direccionamiento de Billeteras Corporativas</h3>
+          <div className="gcc-promo-card">
+            <div className="acp-control-stack">
               <div>
-                <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>🏛️ BILLETERA BUNKER TESORERÍA (50% RESERVAS)</label>
+                <label className="acp-label-sm">🏛️ BILLETERA BUNKER TESORERÍA (50% RESERVAS)</label>
                 <input
                   type="text"
                   readOnly
                   value={web3Data.contractAddresses?.TREASURY || '0x...'}
-                  style={{ width: '100%', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#38bdf8', padding: '10px 14px', fontFamily: 'monospace', marginTop: '4px' }}
+                  className="gcc-wallet-input-blue"
                 />
               </div>
 
               <div>
-                <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>🛡️ BÓVEDA PROTOCOL OPEX (25% DAO INFRAESTRUCTURA & GRANTS)</label>
+                <label className="acp-label-sm">🛡️ BÓVEDA PROTOCOL OPEX (25% DAO INFRAESTRUCTURA & GRANTS)</label>
                 <input
                   type="text"
                   readOnly
                   value={CONTRACT_ADDRESSES.PROTOCOL_OPEX_VAULT || '0x...'}
-                  style={{ width: '100%', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#a855f7', padding: '10px 14px', fontFamily: 'monospace', marginTop: '4px' }}
+                  className="gcc-wallet-input-purple"
                 />
               </div>
 
               <div>
-                <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>💎 BÓVEDA COMMUNITY REAL YIELD (25% REAL YIELD STAKERS)</label>
+                <label className="acp-label-sm">💎 BÓVEDA COMMUNITY REAL YIELD (25% REAL YIELD STAKERS)</label>
                 <input
                   type="text"
                   readOnly
                   value={CONTRACT_ADDRESSES.COMMUNITY_YIELD_VAULT || '0x...'}
-                  style={{ width: '100%', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#4ade80', padding: '10px 14px', fontFamily: 'monospace', marginTop: '4px' }}
+                  className="gcc-wallet-input-green"
                 />
               </div>
             </div>
@@ -357,28 +357,28 @@ Descripción: "${description}"
       {/* TAB 4: PROMOCIONES Y EVENTOS ESPECIALES */}
       {activeSubTab === 'promotions' && (
         <div>
-          <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', color: '#cbd5e1' }}>🎁 Gestor de Promociones, Incentivos & Eventos Especiales</h3>
-          <div style={{ background: 'rgba(30, 41, 59, 0.6)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', marginBottom: '24px' }}>
-            <h4 style={{ margin: '0 0 16px 0', fontSize: '1rem', color: '#f472b6' }}>✨ Lanzar Nueva Campaña Promocional On-Chain</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+          <h3 className="gcc-section-title">🎁 Gestor de Promociones, Incentivos & Eventos Especiales</h3>
+          <div className="gcc-promo-card">
+            <h4 className="gcc-promo-h4">✨ Lanzar Nueva Campaña Promocional On-Chain</h4>
+            <div className="admin-grid-2col">
               <div>
-                <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>NOMBRE DE LA CAMPAÑA / EVENTO</label>
+                <label className="acp-label-sm">NOMBRE DE LA CAMPAÑA / EVENTO</label>
                 <input
                   type="text"
                   placeholder="Ej. Summer APY Boost 2026"
                   value={promoName}
                   onChange={(e) => setPromoName(e.target.value)}
-                  style={{ width: '100%', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '10px 14px', marginTop: '4px' }}
+                  className="gcc-input-dark"
                 />
               </div>
               <div>
-                <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>PRESUPUESTO DE INCENTIVOS (ALPHA)</label>
+                <label className="acp-label-sm">PRESUPUESTO DE INCENTIVOS (ALPHA)</label>
                 <input
                   type="number"
                   placeholder="1000"
                   value={promoAmount}
                   onChange={(e) => setPromoAmount(e.target.value)}
-                  style={{ width: '100%', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '10px 14px', marginTop: '4px' }}
+                  className="gcc-input-dark"
                 />
               </div>
             </div>
@@ -399,16 +399,7 @@ Descripción: "${description}"
                 }
               }}
               disabled={!promoName || !promoAmount}
-              style={{
-                background: isProductionChain ? 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)' : 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
-                border: 'none',
-                color: '#fff',
-                padding: '12px 24px',
-                borderRadius: '12px',
-                fontWeight: 700,
-                cursor: promoName && promoAmount ? 'pointer' : 'not-allowed',
-                width: '100%'
-              }}
+              className={promoName && promoAmount ? (isProductionChain ? 'gcc-btn-prod' : 'gcc-promo-btn-active') : 'gcc-promo-btn-disabled'}
             >
               {isProductionChain ? '🏛️ Proponer Presupuesto Promocional en Governor (72h)' : '🚀 Crear y Activar Campaña Promocional On-Chain'}
             </button>
@@ -419,11 +410,11 @@ Descripción: "${description}"
       {/* TAB 5: SEGURIDAD & CIRCUIT BREAKER */}
       {activeSubTab === 'security' && (
         <div>
-          <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', color: '#cbd5e1' }}>🛡️ Consola de Seguridad de Emergencia & Circuit Breaker</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-            <div style={{ background: 'rgba(30, 41, 59, 0.6)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <h4 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#f87171' }}>⚡ Descongelar Circuit Breaker</h4>
-              <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '0 0 16px 0' }}>
+          <h3 className="gcc-section-title">🛡️ Consola de Seguridad de Emergencia & Circuit Breaker</h3>
+          <div className="admin-grid-2col">
+            <div className="gcc-sec-card">
+              <h4 className="gcc-sec-breaker-h4">⚡ Descongelar Circuit Breaker</h4>
+              <p className="gcc-metric-subtext">
                 Restablece la operatividad del contrato tras una parada de seguridad provocada por alta volatilidad o congelamiento de oráculo.
               </p>
               <button
@@ -439,23 +430,23 @@ Descripción: "${description}"
                     adminActions.handleResetBreaker();
                   }
                 }}
-                style={{ background: isProductionChain ? 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)' : 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)', border: 'none', color: '#fff', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', width: '100%' }}
+                className={isProductionChain ? 'gcc-btn-prod' : 'gcc-sec-btn-red'}
               >
                 {isProductionChain ? '🛡️ Proponer Reset Breaker / Security Council Multisig (72h)' : '🔓 Reiniciar Circuit Breaker (Devnet)'}
               </button>
             </div>
 
-            <div style={{ background: 'rgba(30, 41, 59, 0.6)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <h4 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#60a5fa' }}>🔮 Oráculo de Precios Chainlink</h4>
-              <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '0 0 16px 0' }}>
+            <div className="gcc-sec-card">
+              <h4 className="gcc-sec-oracle-h4">🔮 Oráculo de Precios Chainlink</h4>
+              <p className="gcc-metric-subtext">
                 {isProductionChain ? 'En Mainnet Live, los precios son provistos automáticamente por los agregadores de nodos descentralizados de Chainlink.' : 'Actualiza el valor del feed de prueba de USDC en la sandbox para simular fluctuaciones de mercado.'}
               </p>
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div className="acp-flex-row-gap5">
                 <input
                   type="text"
                   value={adminActions.oraclePrice}
                   onChange={(e) => adminActions.setOraclePrice(e.target.value)}
-                  style={{ flex: 1, background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '8px 12px' }}
+                  className="gcc-input-dark"
                 />
                 <button
                   onClick={async () => {
@@ -470,7 +461,7 @@ Descripción: "${description}"
                       adminActions.handleUpdateOracle();
                     }
                   }}
-                  style={{ background: isProductionChain ? 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)' : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}
+                  className={isProductionChain ? 'gcc-btn-prod' : 'gcc-sec-btn-blue'}
                 >
                   {isProductionChain ? '🏛️ Proponer Feed en Governor (72h)' : 'Actualizar'}
                 </button>

@@ -55,99 +55,51 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({
         <button
           data-testid="referral-modal-close-btn"
           onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: '1.25rem',
-            right: '1.25rem',
-            background: 'rgba(255,255,255,0.08)',
-            border: 'none',
-            color: '#fff',
-            width: '32px',
-            height: '32px',
-            borderRadius: '50%',
-            cursor: 'pointer',
-            fontSize: '1rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
+          className="ref-modal-close-btn"
         >
           ✕
         </button>
 
         {/* Modal Header */}
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🎁</div>
-          <h2 style={{
-            margin: 0,
-            fontSize: '1.6rem',
-            fontWeight: 800,
-            background: 'linear-gradient(135deg, #a855f7 0%, #38bdf8 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
-          }}>
+        <div className="ref-modal-header">
+          <div className="ref-modal-icon">🎁</div>
+          <h2 className="ref-modal-title">
             Programa de Referidos Autosostenible
           </h2>
-          <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.88rem', opacity: 0.75 }}>
+          <p className="ref-modal-subtitle">
             Invita a tus amigos a Alpha Centauri V6 y gana comisiones automáticas en USDC por cada transacción.
           </p>
         </div>
 
         {/* Benefits Card */}
-        <div style={{
-          background: 'rgba(168, 85, 247, 0.08)',
-          border: '1px solid rgba(168, 85, 247, 0.25)',
-          borderRadius: '14px',
-          padding: '1.2rem',
-          marginBottom: '1.5rem'
-        }}>
-          <h4 style={{ margin: '0 0 0.8rem 0', color: '#c084fc', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div className="ref-benefits-card">
+          <h4 className="ref-benefits-h4">
             <span>💎</span> Beneficios Exclusivos del Programa:
           </h4>
-          <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.85rem', lineHeight: '1.6', opacity: 0.9 }}>
-            <li><strong style={{ color: '#4ade80' }}>1.5% de Comisión Directa en USDC</strong> transferidos a tu wallet por cada amigo que compre un Bono.</li>
-            <li><strong style={{ color: '#38bdf8' }}>Hasta 20% de Descuento</strong> para tus invitados en la compra de sus Bonos Vestados.</li>
-            <li><strong style={{ color: '#f0abfc' }}>Sin Límites de Ingresos</strong>: Gana comisiones recurrentes por cada referido activo.</li>
+          <ul className="ref-benefits-ul">
+            <li><strong className="text-green-bright">1.5% de Comisión Directa en USDC</strong> transferidos a tu wallet por cada amigo que compre un Bono.</li>
+            <li><strong className="text-cyan">Hasta 20% de Descuento</strong> para tus invitados en la compra de sus Bonos Vestados.</li>
+            <li><strong className="text-pink-light">Sin Límites de Ingresos</strong>: Gana comisiones recurrentes por cada referido activo.</li>
           </ul>
         </div>
 
         {/* Link Input Section */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', fontSize: '0.8rem', opacity: 0.7, marginBottom: '0.4rem', fontWeight: 600 }}>
+        <div className="margin-bottom-lg">
+          <label className="acp-label-sm font-semibold margin-bottom-xs">
             TU ENLACE ÚNICO DE REFERIDO:
           </label>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="acp-flex-row-gap5">
             <input
               data-testid="referral-link-input"
               type="text"
               readOnly
               value={referralLink}
-              style={{
-                flex: 1,
-                background: 'rgba(0,0,0,0.4)',
-                border: '1px solid rgba(255,255,255,0.15)',
-                color: '#38bdf8',
-                padding: '0.7rem 0.9rem',
-                borderRadius: '10px',
-                fontSize: '0.82rem',
-                fontFamily: 'monospace'
-              }}
+              className="ref-link-input"
             />
             <button
               data-testid="referral-copy-btn"
               onClick={handleCopy}
-              style={{
-                background: copied ? '#22c55e' : 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
-                color: '#fff',
-                border: 'none',
-                padding: '0.7rem 1.2rem',
-                borderRadius: '10px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontSize: '0.85rem',
-                transition: 'all 0.2s',
-                whiteSpace: 'nowrap'
-              }}
+              className={`ref-copy-btn ${copied ? 'ref-copy-btn-copied' : 'ref-copy-btn-normal'}`}
             >
               {copied ? '✓ ¡Copiado!' : '📋 Copiar'}
             </button>
@@ -156,86 +108,34 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({
 
         {/* Social Share Buttons */}
         <div>
-          <label style={{ display: 'block', fontSize: '0.8rem', opacity: 0.7, marginBottom: '0.6rem', fontWeight: 600, textAlign: 'center' }}>
+          <label className="acp-label-sm font-semibold text-center margin-bottom-sm">
             COMPARTIR DIRECTAMENTE EN REDES SOCIALES:
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.6rem' }}>
+          <div className="ref-social-grid">
             <button
               onClick={shareTwitter}
-              style={{
-                background: 'rgba(29, 161, 242, 0.15)',
-                border: '1px solid rgba(29, 161, 242, 0.4)',
-                color: '#1da1f2',
-                padding: '0.6rem',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '0.8rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.3rem'
-              }}
+              className="ref-social-btn ref-social-twitter"
             >
               🐦 X / Twitter
             </button>
 
             <button
               onClick={shareTelegram}
-              style={{
-                background: 'rgba(0, 136, 204, 0.15)',
-                border: '1px solid rgba(0, 136, 204, 0.4)',
-                color: '#0088cc',
-                padding: '0.6rem',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '0.8rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.3rem'
-              }}
+              className="ref-social-btn ref-social-telegram"
             >
               💬 Telegram
             </button>
 
             <button
               onClick={shareWhatsapp}
-              style={{
-                background: 'rgba(37, 211, 102, 0.15)',
-                border: '1px solid rgba(37, 211, 102, 0.4)',
-                color: '#25d366',
-                padding: '0.6rem',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '0.8rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.3rem'
-              }}
+              className="ref-social-btn ref-social-whatsapp"
             >
               📱 WhatsApp
             </button>
 
             <button
               onClick={shareLinkedin}
-              style={{
-                background: 'rgba(10, 102, 194, 0.15)',
-                border: '1px solid rgba(10, 102, 194, 0.4)',
-                color: '#0a66c2',
-                padding: '0.6rem',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '0.8rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.3rem'
-              }}
+              className="ref-social-btn ref-social-linkedin"
             >
               💼 LinkedIn
             </button>
