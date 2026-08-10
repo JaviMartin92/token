@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import styles from './ReferralModal.module.css';
 
 interface ReferralModalProps {
   isOpen: boolean;
@@ -55,28 +56,28 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({
         <button
           data-testid="referral-modal-close-btn"
           onClick={onClose}
-          className="ref-modal-close-btn"
+          className={styles.closeBtn}
         >
           ✕
         </button>
 
         {/* Modal Header */}
-        <div className="ref-modal-header">
-          <div className="ref-modal-icon">🎁</div>
-          <h2 className="ref-modal-title">
+        <div className={styles.header}>
+          <div className={styles.icon}>🎁</div>
+          <h2 className={styles.title}>
             Programa de Referidos Autosostenible
           </h2>
-          <p className="ref-modal-subtitle">
+          <p className={styles.subtitle}>
             Invita a tus amigos a Alpha Centauri V6 y gana comisiones automáticas en USDC por cada transacción.
           </p>
         </div>
 
         {/* Benefits Card */}
-        <div className="ref-benefits-card">
-          <h4 className="ref-benefits-h4">
+        <div className={styles.benefitsCard}>
+          <h4 className={styles.benefitsH4}>
             <span>💎</span> Beneficios Exclusivos del Programa:
           </h4>
-          <ul className="ref-benefits-ul">
+          <ul className={styles.benefitsUl}>
             <li><strong className="text-green-bright">1.5% de Comisión Directa en USDC</strong> transferidos a tu wallet por cada amigo que compre un Bono.</li>
             <li><strong className="text-cyan">Hasta 20% de Descuento</strong> para tus invitados en la compra de sus Bonos Vestados.</li>
             <li><strong className="text-pink-light">Sin Límites de Ingresos</strong>: Gana comisiones recurrentes por cada referido activo.</li>
@@ -94,12 +95,12 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({
               type="text"
               readOnly
               value={referralLink}
-              className="ref-link-input"
+              className={styles.linkInput}
             />
             <button
               data-testid="referral-copy-btn"
               onClick={handleCopy}
-              className={`ref-copy-btn ${copied ? 'ref-copy-btn-copied' : 'ref-copy-btn-normal'}`}
+              className={`${styles.copyBtn} ${copied ? styles.copyBtnCopied : styles.copyBtnNormal}`}
             >
               {copied ? '✓ ¡Copiado!' : '📋 Copiar'}
             </button>
@@ -111,31 +112,31 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({
           <label className="acp-label-sm font-semibold text-center margin-bottom-sm">
             COMPARTIR DIRECTAMENTE EN REDES SOCIALES:
           </label>
-          <div className="ref-social-grid">
+          <div className={styles.socialGrid}>
             <button
               onClick={shareTwitter}
-              className="ref-social-btn ref-social-twitter"
+              className={`${styles.socialBtn} ${styles.socialTwitter}`}
             >
               🐦 X / Twitter
             </button>
 
             <button
               onClick={shareTelegram}
-              className="ref-social-btn ref-social-telegram"
+              className={`${styles.socialBtn} ${styles.socialTelegram}`}
             >
               💬 Telegram
             </button>
 
             <button
               onClick={shareWhatsapp}
-              className="ref-social-btn ref-social-whatsapp"
+              className={`${styles.socialBtn} ${styles.socialWhatsapp}`}
             >
               📱 WhatsApp
             </button>
 
             <button
               onClick={shareLinkedin}
-              className="ref-social-btn ref-social-linkedin"
+              className={`${styles.socialBtn} ${styles.socialLinkedin}`}
             >
               💼 LinkedIn
             </button>

@@ -1,0 +1,340 @@
+.headerFlex {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headerRight {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.headerIcon {
+  font-size: 2rem;
+}
+
+.modelText {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin-top: 6px;
+}
+
+.badgeTitleIndigo {
+  font-size: 0.75rem;
+  color: #a5b4fc;
+  font-weight: 700;
+}
+
+.badgeValIndigo {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #818cf8;
+}
+
+.badgeTitleGreen {
+  font-size: 0.75rem;
+  color: #86efac;
+  font-weight: 700;
+}
+
+.badgeValGreen {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #4ade80;
+}
+
+.badgeTitlePurple {
+  font-size: 0.75rem;
+  color: #d8b4fe;
+  font-weight: 700;
+}
+
+.badgeValPurple {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #c084fc;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.metricCard {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.metricLabel {
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.metricValCyan {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #38bdf8;
+  margin-top: 4px;
+}
+
+.metricValRed {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ef4444;
+  margin-top: 4px;
+}
+
+.metricSubtext {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.metricSubtextGreen {
+  font-size: 0.75rem;
+  color: #86efac;
+  margin-top: 4px;
+}
+
+.sectionTitle {
+  font-size: 1.1rem;
+  margin-bottom: 16px;
+  color: #cbd5e1;
+}
+
+.tableContainer {
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.thRow {
+  background: rgba(30, 41, 59, 0.9);
+  color: #94a3b8;
+}
+
+.thCell {
+  padding: 12px 16px;
+}
+
+.trBorder {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tdCell {
+  padding: 12px 16px;
+}
+
+.tdBlue {
+  padding: 12px 16px;
+  font-weight: 700;
+  color: #60a5fa;
+}
+
+.tdAmber {
+  padding: 12px 16px;
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+.tdPurple {
+  padding: 12px 16px;
+  font-weight: 700;
+  color: #a855f7;
+}
+
+.tdPink {
+  padding: 12px 16px;
+  font-weight: 700;
+  color: #ec4899;
+}
+
+.tdGreen {
+  padding: 12px 16px;
+  color: #4ade80;
+  font-weight: 700;
+}
+
+.tdMuted {
+  padding: 12px 16px;
+  color: #94a3b8;
+}
+
+.pureBanner {
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  font-size: 0.82rem;
+  color: #c084fc;
+}
+
+.paramGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.paramCard {
+  background: rgba(30, 41, 59, 0.6);
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.inputDark {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #fff;
+  padding: 10px 14px;
+}
+
+.btnProd {
+  background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+  border: none;
+  color: #fff;
+  border-radius: 10px;
+  padding: 0 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.btnSandbox {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  border: none;
+  color: #fff;
+  border-radius: 10px;
+  padding: 0 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.walletInputBlue {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #38bdf8;
+  padding: 10px 14px;
+  font-family: monospace;
+  margin-top: 4px;
+}
+
+.walletInputPurple {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #a855f7;
+  padding: 10px 14px;
+  font-family: monospace;
+  margin-top: 4px;
+}
+
+.walletInputGreen {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #4ade80;
+  padding: 10px 14px;
+  font-family: monospace;
+  margin-top: 4px;
+}
+
+.promoCard {
+  background: rgba(30, 41, 59, 0.6);
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 24px;
+}
+
+.promoH4 {
+  margin: 0 0 16px 0;
+  font-size: 1rem;
+  color: #f472b6;
+}
+
+.promoBtnActive {
+  background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+  border: none;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+}
+
+.promoBtnDisabled {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #888;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: not-allowed;
+  width: 100%;
+}
+
+.secCard {
+  background: rgba(30, 41, 59, 0.6);
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.secBreakerH4 {
+  margin: 0 0 12px 0;
+  font-size: 1rem;
+  color: #f87171;
+}
+
+.secOracleH4 {
+  margin: 0 0 12px 0;
+  font-size: 1rem;
+  color: #60a5fa;
+}
+
+.secBtnRed {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  border: none;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+}
+
+.secBtnBlue {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border: none;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.8rem;
+}

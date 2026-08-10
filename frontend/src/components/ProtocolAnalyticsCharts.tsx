@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import styles from './ProtocolAnalyticsCharts.module.css';
 import type { UserPosition } from './VestedVaults.js';
 import type { MarketplaceLoan } from './P2PMarketplace.js';
 
@@ -245,7 +246,7 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
         <div>
           <div className="analytics-title-group">
             <div className="analytics-icon-badge">
-              <span className="pac-icon">📊</span>
+              <span className={styles.icon}>📊</span>
             </div>
             <div>
               <h3 className="analytics-main-title">
@@ -287,7 +288,7 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
           <div data-testid="analytics-reserves-usd" className="analytics-tab-val-green">
             ${activeHoverData.reservesUsd.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} USD
           </div>
-          <div className="pac-tab-sub pac-tab-sub-green">
+          <div className={`${styles.tabSub} ${styles.tabSubGreen}`}>
             <span data-testid="analytics-liabilities-usd">Pasivo: ${realLiabilitiesUsd.toLocaleString()} USD</span>
             <span data-testid="analytics-reserves-por">PoR: {activeHoverData.porRatioVal}%</span>
           </div>
@@ -302,7 +303,7 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
           <div data-testid="analytics-gross-cashflow" className="analytics-tab-val-blue">
             ${activeHoverData.grossCashflowUsd.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} USDC
           </div>
-          <div className="pac-tab-sub pac-tab-sub-blue">
+          <div className={`${styles.tabSub} ${styles.tabSubBlue}`}>
             <span>Bonos + Préstamos P2P</span>
             <span>Yield: ${activeHoverData.realYieldPayoutUsd.toLocaleString()}</span>
           </div>
@@ -317,7 +318,7 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
           <div data-testid="analytics-apy-weighted" className="analytics-tab-val-purple">
             {activeHoverData.apy}% APR
           </div>
-          <div className="pac-tab-sub pac-tab-sub-purple">
+          <div className={`${styles.tabSub} ${styles.tabSubPurple}`}>
             <span>Rendimiento On-Chain</span>
             <span>+ Flywheel Boost</span>
           </div>
@@ -447,33 +448,33 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
               left: `${Math.min(Math.max(points[hoveredPointIndex].x - 115, 70), svgWidth - 280)}px`
             }}
           >
-            <div className="pac-tooltip-header">
+            <div className={styles.tooltipHeader}>
               <span>📅 {chartData[hoveredPointIndex].date}</span>
-              <span className="pac-tooltip-badge">On-Chain</span>
+              <span className={styles.tooltipBadge}>On-Chain</span>
             </div>
             {activeChart === 'reserves' && (
               <>
-                <div className="pac-tooltip-title">
+                <div className={styles.tooltipTitle}>
                   Total Reservas: ${chartData[hoveredPointIndex].reservesUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
                 </div>
-                <div className="pac-tooltip-stack">
+                <div className={styles.tooltipStack}>
                   <div className="acp-banner-flex">
                     <span className="acp-flex-row-gap5">
-                      <span className="pac-dot-green"></span>
+                      <span className={styles.dotGreen}></span>
                       Stablecoins (USDC):
                     </span>
                     <strong>${chartData[hoveredPointIndex].stablecoinsUsd.toLocaleString()} USD</strong>
                   </div>
                   <div className="acp-banner-flex">
                     <span className="acp-flex-row-gap5">
-                      <span className="pac-dot-amber"></span>
+                      <span className={styles.dotAmber}></span>
                       Bitcoin (WBTC):
                     </span>
                     <strong>${chartData[hoveredPointIndex].btcUsd.toLocaleString()} USD</strong>
                   </div>
                   <div className="acp-banner-flex">
                     <span className="acp-flex-row-gap5">
-                      <span className="pac-dot-blue"></span>
+                      <span className={styles.dotBlue}></span>
                       Ethereum (WETH):
                     </span>
                     <strong>${chartData[hoveredPointIndex].ethUsd.toLocaleString()} USD</strong>
@@ -483,14 +484,14 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
             )}
             {activeChart === 'cashflow' && (
               <>
-                <div className="pac-tooltip-val-blue">
+                <div className={styles.tooltipValBlue}>
                   Flujo de Caja Real: ${chartData[hoveredPointIndex].grossCashflowUsd.toLocaleString()} USDC
                 </div>
               </>
             )}
             {activeChart === 'apy' && (
               <>
-                <div className="pac-tooltip-val-purple">
+                <div className={styles.tooltipValPurple}>
                   APY PONDERADO REAL: {chartData[hoveredPointIndex].apy}% APR
                 </div>
               </>
@@ -504,22 +505,22 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
         {activeChart === 'reserves' ? (
           <>
             <div className="analytics-legend-pill">
-              <span className="pac-dot-lg-green"></span>
+              <span className={styles.dotLgGreen}></span>
               <span className="text-slate-100 font-semibold">🟢 Stablecoins (Morpho + P2P - 60.00%)</span>
             </div>
             <div className="analytics-legend-pill">
-              <span className="pac-dot-lg-amber"></span>
+              <span className={styles.dotLgAmber}></span>
               <span className="text-slate-100 font-semibold">🟠 Bitcoin (Lombard - 26.67%)</span>
             </div>
             <div className="analytics-legend-pill">
-              <span className="pac-dot-lg-blue"></span>
+              <span className={styles.dotLgBlue}></span>
               <span className="text-slate-100 font-semibold">🔵 Ethereum (Lido - 13.33%)</span>
             </div>
           </>
         ) : (
           <>
             <div className="analytics-legend-pill">
-              <span className={activeChart === 'cashflow' ? 'pac-line-blue' : 'pac-line-purple'}></span>
+              <span className={activeChart === 'cashflow' ? styles.lineBlue : styles.linePurple}></span>
               <span className="text-slate-100 font-semibold">{activeChart === 'cashflow' ? 'Flujo de Caja Bruto' : 'APY Ponderado On-Chain'}</span>
             </div>
           </>

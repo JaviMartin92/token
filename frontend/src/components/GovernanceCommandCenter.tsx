@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import styles from './GovernanceCommandCenter.module.css';
 import { CONTRACT_ADDRESSES, publicClient, getWalletClient } from '../utils/web3.js';
 import { encodeFunctionData, parseEther } from 'viem';
 
@@ -83,8 +84,8 @@ Descripción: "${description}"
       {/* Header Banner */}
       <div className="gcc-header">
         <div>
-          <div className="gcc-header-flex">
-            <span className="gcc-header-icon">🏛️</span>
+          <div className={styles.headerFlex}>
+            <span className={styles.headerIcon}>🏛️</span>
             <div>
               <h2 className="gcc-header-title">
                 Centro de Comando de Gobernanza & DAO
@@ -96,18 +97,18 @@ Descripción: "${description}"
           </div>
         </div>
 
-        <div className="gcc-header-right">
+        <div className={styles.headerRight}>
           <div className="gcc-badge-indigo">
-            <div className="gcc-badge-title-indigo">EVM CHAIN DETECTADO</div>
-            <div className="gcc-badge-val-indigo">Chain ID: {currentChainId}</div>
+            <div className={styles.badgeTitleIndigo}>EVM CHAIN DETECTADO</div>
+            <div className={styles.badgeValIndigo}>Chain ID: {currentChainId}</div>
           </div>
           <div className="gcc-badge-green">
-            <div className="gcc-badge-title-green">RATIO SOLVENCIA PoR</div>
-            <div data-testid="admin-por-solvency-ratio" className="gcc-badge-val-green">{solvencyRatio}%</div>
+            <div className={styles.badgeTitleGreen}>RATIO SOLVENCIA PoR</div>
+            <div data-testid="admin-por-solvency-ratio" className={styles.badgeValGreen}>{solvencyRatio}%</div>
           </div>
           <div className="gcc-badge-purple">
-            <div className="gcc-badge-title-purple">NAV / TOKEN ALPHA</div>
-            <div data-testid="admin-nav-per-share" className="gcc-badge-val-purple">${navValueNum.toFixed(4)}</div>
+            <div className={styles.badgeTitlePurple}>NAV / TOKEN ALPHA</div>
+            <div data-testid="admin-nav-per-share" className={styles.badgeValPurple}>${navValueNum.toFixed(4)}</div>
           </div>
         </div>
       </div>
@@ -135,67 +136,67 @@ Descripción: "${description}"
       {/* TAB 1: METRICAS EXHAUSTIVAS */}
       {activeSubTab === 'metrics' && (
         <div>
-          <div className="gcc-metrics-grid">
-            <div className="gcc-metric-card">
-              <div className="gcc-metric-label">ACTIVOS TOTALES (PoR)</div>
-              <div data-testid="admin-total-assets-por" className="gcc-metric-val-cyan">
+          <div className={styles.metricsGrid}>
+            <div className={styles.metricCard}>
+              <div className={styles.metricLabel}>ACTIVOS TOTALES (PoR)</div>
+              <div data-testid="admin-total-assets-por" className={styles.metricValCyan}>
                 ${totalAssetsVal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </div>
-              <div className="gcc-metric-subtext">Cobertura On-Chain 100% Verificada</div>
+              <div className={styles.metricSubtext}>Cobertura On-Chain 100% Verificada</div>
             </div>
 
-            <div className="gcc-metric-card">
-              <div className="gcc-metric-label">DEFLACIÓN ACUMULADA</div>
-              <div data-testid="admin-deflation-accumulated" className="gcc-metric-val-red">
+            <div className={styles.metricCard}>
+              <div className={styles.metricLabel}>DEFLACIÓN ACUMULADA</div>
+              <div data-testid="admin-deflation-accumulated" className={styles.metricValRed}>
                 🔥 {burnedTokensStr} ALPHA
               </div>
-              <div className="gcc-metric-subtext">Tokens Destruidos por Fees Staking</div>
+              <div className={styles.metricSubtext}>Tokens Destruidos por Fees Staking</div>
             </div>
 
-            <div className="gcc-metric-card">
-              <div className="gcc-metric-label">MODELO DE INGRESOS (50/25/25)</div>
-              <div className="gcc-model-text">
+            <div className={styles.metricCard}>
+              <div className={styles.metricLabel}>MODELO DE INGRESOS (50/25/25)</div>
+              <div className={styles.modelText}>
                 🏛️ 50% Res | 💼 25% OpEx | 🏦 25% Prof
               </div>
-              <div className="gcc-metric-subtext-green">Reparto Automático On-Chain</div>
+              <div className={styles.metricSubtextGreen}>Reparto Automático On-Chain</div>
             </div>
           </div>
 
-          <h3 className="gcc-section-title">📌 Distribución Target de Activos de Reserva (50/25/12.5/12.5)</h3>
-          <div className="gcc-table-container">
-            <table className="gcc-table">
+          <h3 className={styles.sectionTitle}>📌 Distribución Target de Activos de Reserva (50/25/12.5/12.5)</h3>
+          <div className={styles.tableContainer}>
+            <table className={styles.table}>
               <thead>
-                <tr className="gcc-th-row">
-                  <th className="gcc-th-cell">Activo de Reserva</th>
-                  <th className="gcc-th-cell">Valor USD Real</th>
-                  <th className="gcc-th-cell">Ponderación Target</th>
-                  <th className="gcc-th-cell">Función en Tesorería</th>
+                <tr className={styles.thRow}>
+                  <th className={styles.thCell}>Activo de Reserva</th>
+                  <th className={styles.thCell}>Valor USD Real</th>
+                  <th className={styles.thCell}>Ponderación Target</th>
+                  <th className={styles.thCell}>Función en Tesorería</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="gcc-tr-border">
-                  <td className="gcc-td-blue">💵 USDC (Sub-Reserva 80/20)</td>
-                  <td className="gcc-td-cell">${parseFloat(reserveBreakdown?.usdcUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                  <td className="gcc-td-green">50.00%</td>
-                  <td className="gcc-td-muted">Morpho Yield (80%) + Líquido (20%)</td>
+                <tr className={styles.trBorder}>
+                  <td className={styles.tdBlue}>💵 USDC (Sub-Reserva 80/20)</td>
+                  <td className={styles.tdCell}>${parseFloat(reserveBreakdown?.usdcUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                  <td className={styles.tdGreen}>50.00%</td>
+                  <td className={styles.tdMuted}>Morpho Yield (80%) + Líquido (20%)</td>
                 </tr>
-                <tr className="gcc-tr-border">
-                  <td className="gcc-td-amber">₿ Wrapped Bitcoin (WBTC)</td>
-                  <td className="gcc-td-cell">${parseFloat(reserveBreakdown?.wbtcUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                  <td className="gcc-td-green">25.00%</td>
-                  <td className="gcc-td-muted">Compras DEX en Mercado Secundario</td>
+                <tr className={styles.trBorder}>
+                  <td className={styles.tdAmber}>₿ Wrapped Bitcoin (WBTC)</td>
+                  <td className={styles.tdCell}>${parseFloat(reserveBreakdown?.wbtcUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                  <td className={styles.tdGreen}>25.00%</td>
+                  <td className={styles.tdMuted}>Compras DEX en Mercado Secundario</td>
                 </tr>
-                <tr className="gcc-tr-border">
-                  <td className="gcc-td-purple">Ξ Wrapped Ethereum (WETH)</td>
-                  <td className="gcc-td-cell">${parseFloat(reserveBreakdown?.wethUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                  <td className="gcc-td-green">12.50%</td>
-                  <td className="gcc-td-muted">Compras DEX en Mercado Secundario</td>
+                <tr className={styles.trBorder}>
+                  <td className={styles.tdPurple}>Ξ Wrapped Ethereum (WETH)</td>
+                  <td className={styles.tdCell}>${parseFloat(reserveBreakdown?.wethUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                  <td className={styles.tdGreen}>12.50%</td>
+                  <td className={styles.tdMuted}>Compras DEX en Mercado Secundario</td>
                 </tr>
                 <tr>
-                  <td className="gcc-td-pink">🥩 Native ALPHA Staked</td>
-                  <td className="gcc-td-cell">${parseFloat(reserveBreakdown?.stakedAlphaUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                  <td className="gcc-td-green">12.50%</td>
-                  <td className="gcc-td-muted">Auto-stake Institucional Governance</td>
+                  <td className={styles.tdPink}>🥩 Native ALPHA Staked</td>
+                  <td className={styles.tdCell}>${parseFloat(reserveBreakdown?.stakedAlphaUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                  <td className={styles.tdGreen}>12.50%</td>
+                  <td className={styles.tdMuted}>Auto-stake Institucional Governance</td>
                 </tr>
               </tbody>
             </table>
@@ -206,16 +207,16 @@ Descripción: "${description}"
       {/* TAB 2: CONTROL DE PARAMETROS */}
       {activeSubTab === 'parameters' && (
         <div>
-          <h3 className="gcc-section-title">⚙️ Configuración Global de Parámetros y Comisiones</h3>
+          <h3 className={styles.sectionTitle}>⚙️ Configuración Global de Parámetros y Comisiones</h3>
           
           {isProductionChain && (
-            <div className="gcc-pure-banner">
+            <div className={styles.pureBanner}>
               🏛️ <strong>Pure DeFi Governance Active (Mainnet Live - Chain ID {currentChainId})</strong>: Ajusta los parámetros en las casillas inferiores y pulsa <strong>"Proponer Votación DAO (72h)"</strong> para firmar y enviar la propuesta on-chain a <code>GovernorAlphaCentauri.sol</code>.
             </div>
           )}
 
-          <div className="gcc-param-grid">
-            <div className="gcc-param-card">
+          <div className={styles.paramGrid}>
+            <div className={styles.paramCard}>
               <label className="acp-label-sm">COMISIÓN DE DEPÓSITO TESORERÍA (%)</label>
               <div className="acp-flex-row-gap5">
                 <input
@@ -223,7 +224,7 @@ Descripción: "${description}"
                   step="0.1"
                   value={depositFeeInput}
                   onChange={(e) => setDepositFeeInput(e.target.value)}
-                  className="gcc-input-dark"
+                  className={styles.inputDark}
                 />
                 <button
                   onClick={async () => {
@@ -239,15 +240,15 @@ Descripción: "${description}"
                       alert(`🧪 [Sandbox - Chain 31337] Comisión de depósito simulada a ${depositFeeInput}%`);
                     }
                   }}
-                  className={isProductionChain ? 'gcc-btn-prod' : 'gcc-btn-sandbox'}
+                  className={isProductionChain ? styles.btnProd : styles.btnSandbox}
                 >
                   {isProductionChain ? '🏛️ Proponer Votación DAO (72h)' : '🧪 Guardar (Sandbox)'}
                 </button>
               </div>
-              <span className="gcc-metric-subtext">Actual: 0.50% (50 Bps)</span>
+              <span className={styles.metricSubtext}>Actual: 0.50% (50 Bps)</span>
             </div>
 
-            <div className="gcc-param-card">
+            <div className={styles.paramCard}>
               <label className="acp-label-sm">COMISIÓN DE CANJE DIRECTO / REDEEM (%)</label>
               <div className="acp-flex-row-gap5">
                 <input
@@ -255,7 +256,7 @@ Descripción: "${description}"
                   step="0.1"
                   value={redeemFeeInput}
                   onChange={(e) => setRedeemFeeInput(e.target.value)}
-                  className="gcc-input-dark"
+                  className={styles.inputDark}
                 />
                 <button
                   onClick={async () => {
@@ -271,15 +272,15 @@ Descripción: "${description}"
                       alert(`🧪 [Sandbox - Chain 31337] Comisión de canje simulada a ${redeemFeeInput}%`);
                     }
                   }}
-                  className={isProductionChain ? 'gcc-btn-prod' : 'gcc-btn-sandbox'}
+                  className={isProductionChain ? styles.btnProd : styles.btnSandbox}
                 >
                   {isProductionChain ? '🏛️ Proponer Votación DAO (72h)' : '🧪 Guardar (Sandbox)'}
                 </button>
               </div>
-              <span className="gcc-metric-subtext">Actual: 1.00% (100 Bps)</span>
+              <span className={styles.metricSubtext}>Actual: 1.00% (100 Bps)</span>
             </div>
 
-            <div className="gcc-param-card">
+            <div className={styles.paramCard}>
               <label className="acp-label-sm">FEE ORIGINACIÓN PRÉSTAMOS P2P (%)</label>
               <div className="acp-flex-row-gap5">
                 <input
@@ -287,7 +288,7 @@ Descripción: "${description}"
                   step="0.1"
                   value={p2pFeeInput}
                   onChange={(e) => setP2pFeeInput(e.target.value)}
-                  className="gcc-input-dark"
+                  className={styles.inputDark}
                 />
                 <button
                   onClick={async () => {
@@ -303,12 +304,12 @@ Descripción: "${description}"
                       alert(`🧪 [Sandbox - Chain 31337] Fee de originación simulado a ${p2pFeeInput}%`);
                     }
                   }}
-                  className={isProductionChain ? 'gcc-btn-prod' : 'gcc-btn-sandbox'}
+                  className={isProductionChain ? styles.btnProd : styles.btnSandbox}
                 >
                   {isProductionChain ? '🏛️ Proponer Votación DAO (72h)' : '🧪 Guardar (Sandbox)'}
                 </button>
               </div>
-              <span className="gcc-metric-subtext">Actual: 0.50% (50 Bps)</span>
+              <span className={styles.metricSubtext}>Actual: 0.50% (50 Bps)</span>
             </div>
           </div>
         </div>
@@ -317,8 +318,8 @@ Descripción: "${description}"
       {/* TAB 3: BILLETERAS CORPORATIVAS */}
       {activeSubTab === 'wallets' && (
         <div>
-          <h3 className="gcc-section-title">💼 Control y Direccionamiento de Billeteras Corporativas</h3>
-          <div className="gcc-promo-card">
+          <h3 className={styles.sectionTitle}>💼 Control y Direccionamiento de Billeteras Corporativas</h3>
+          <div className={styles.promoCard}>
             <div className="acp-control-stack">
               <div>
                 <label className="acp-label-sm">🏛️ BILLETERA BUNKER TESORERÍA (50% RESERVAS)</label>
@@ -326,7 +327,7 @@ Descripción: "${description}"
                   type="text"
                   readOnly
                   value={web3Data.contractAddresses?.TREASURY || '0x...'}
-                  className="gcc-wallet-input-blue"
+                  className={styles.walletInputBlue}
                 />
               </div>
 
@@ -336,7 +337,7 @@ Descripción: "${description}"
                   type="text"
                   readOnly
                   value={CONTRACT_ADDRESSES.PROTOCOL_OPEX_VAULT || '0x...'}
-                  className="gcc-wallet-input-purple"
+                  className={styles.walletInputPurple}
                 />
               </div>
 
@@ -346,7 +347,7 @@ Descripción: "${description}"
                   type="text"
                   readOnly
                   value={CONTRACT_ADDRESSES.COMMUNITY_YIELD_VAULT || '0x...'}
-                  className="gcc-wallet-input-green"
+                  className={styles.walletInputGreen}
                 />
               </div>
             </div>
@@ -357,9 +358,9 @@ Descripción: "${description}"
       {/* TAB 4: PROMOCIONES Y EVENTOS ESPECIALES */}
       {activeSubTab === 'promotions' && (
         <div>
-          <h3 className="gcc-section-title">🎁 Gestor de Promociones, Incentivos & Eventos Especiales</h3>
-          <div className="gcc-promo-card">
-            <h4 className="gcc-promo-h4">✨ Lanzar Nueva Campaña Promocional On-Chain</h4>
+          <h3 className={styles.sectionTitle}>🎁 Gestor de Promociones, Incentivos & Eventos Especiales</h3>
+          <div className={styles.promoCard}>
+            <h4 className={styles.promoH4}>✨ Lanzar Nueva Campaña Promocional On-Chain</h4>
             <div className="admin-grid-2col">
               <div>
                 <label className="acp-label-sm">NOMBRE DE LA CAMPAÑA / EVENTO</label>
@@ -368,7 +369,7 @@ Descripción: "${description}"
                   placeholder="Ej. Summer APY Boost 2026"
                   value={promoName}
                   onChange={(e) => setPromoName(e.target.value)}
-                  className="gcc-input-dark"
+                  className={styles.inputDark}
                 />
               </div>
               <div>
@@ -378,7 +379,7 @@ Descripción: "${description}"
                   placeholder="1000"
                   value={promoAmount}
                   onChange={(e) => setPromoAmount(e.target.value)}
-                  className="gcc-input-dark"
+                  className={styles.inputDark}
                 />
               </div>
             </div>
@@ -399,7 +400,7 @@ Descripción: "${description}"
                 }
               }}
               disabled={!promoName || !promoAmount}
-              className={promoName && promoAmount ? (isProductionChain ? 'gcc-btn-prod' : 'gcc-promo-btn-active') : 'gcc-promo-btn-disabled'}
+              className={promoName && promoAmount ? (isProductionChain ? styles.btnProd : styles.promoBtnActive) : styles.promoBtnDisabled}
             >
               {isProductionChain ? '🏛️ Proponer Presupuesto Promocional en Governor (72h)' : '🚀 Crear y Activar Campaña Promocional On-Chain'}
             </button>
@@ -410,11 +411,11 @@ Descripción: "${description}"
       {/* TAB 5: SEGURIDAD & CIRCUIT BREAKER */}
       {activeSubTab === 'security' && (
         <div>
-          <h3 className="gcc-section-title">🛡️ Consola de Seguridad de Emergencia & Circuit Breaker</h3>
+          <h3 className={styles.sectionTitle}>🛡️ Consola de Seguridad de Emergencia & Circuit Breaker</h3>
           <div className="admin-grid-2col">
-            <div className="gcc-sec-card">
-              <h4 className="gcc-sec-breaker-h4">⚡ Descongelar Circuit Breaker</h4>
-              <p className="gcc-metric-subtext">
+            <div className={styles.secCard}>
+              <h4 className={styles.secBreakerH4}>⚡ Descongelar Circuit Breaker</h4>
+              <p className={styles.metricSubtext}>
                 Restablece la operatividad del contrato tras una parada de seguridad provocada por alta volatilidad o congelamiento de oráculo.
               </p>
               <button
@@ -430,15 +431,15 @@ Descripción: "${description}"
                     adminActions.handleResetBreaker();
                   }
                 }}
-                className={isProductionChain ? 'gcc-btn-prod' : 'gcc-sec-btn-red'}
+                className={isProductionChain ? styles.btnProd : styles.secBtnRed}
               >
                 {isProductionChain ? '🛡️ Proponer Reset Breaker / Security Council Multisig (72h)' : '🔓 Reiniciar Circuit Breaker (Devnet)'}
               </button>
             </div>
 
-            <div className="gcc-sec-card">
-              <h4 className="gcc-sec-oracle-h4">🔮 Oráculo de Precios Chainlink</h4>
-              <p className="gcc-metric-subtext">
+            <div className={styles.secCard}>
+              <h4 className={styles.secOracleH4}>🔮 Oráculo de Precios Chainlink</h4>
+              <p className={styles.metricSubtext}>
                 {isProductionChain ? 'En Mainnet Live, los precios son provistos automáticamente por los agregadores de nodos descentralizados de Chainlink.' : 'Actualiza el valor del feed de prueba de USDC en la sandbox para simular fluctuaciones de mercado.'}
               </p>
               <div className="acp-flex-row-gap5">
@@ -446,7 +447,7 @@ Descripción: "${description}"
                   type="text"
                   value={adminActions.oraclePrice}
                   onChange={(e) => adminActions.setOraclePrice(e.target.value)}
-                  className="gcc-input-dark"
+                  className={styles.inputDark}
                 />
                 <button
                   onClick={async () => {
@@ -461,7 +462,7 @@ Descripción: "${description}"
                       adminActions.handleUpdateOracle();
                     }
                   }}
-                  className={isProductionChain ? 'gcc-btn-prod' : 'gcc-sec-btn-blue'}
+                  className={isProductionChain ? styles.btnProd : styles.secBtnBlue}
                 >
                   {isProductionChain ? '🏛️ Proponer Feed en Governor (72h)' : 'Actualizar'}
                 </button>

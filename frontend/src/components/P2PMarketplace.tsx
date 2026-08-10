@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import styles from './P2PMarketplace.module.css';
 
 import type { UserPosition } from './VestedVaults.js';
 
@@ -110,15 +111,15 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
   const getStatusBadge = (state: number) => {
     switch (state) {
       case 0:
-        return <span className="p2p-badge-available">🟡 Disponible (Oferta)</span>;
+        return <span className={styles.badgeAvailable}>🟡 Disponible (Oferta)</span>;
       case 1:
-        return <span className="p2p-badge-active">🟢 Activo (Financiado)</span>;
+        return <span className={styles.badgeActive}>🟢 Activo (Financiado)</span>;
       case 2:
-        return <span className="p2p-badge-repaid">🔵 Reembolsado</span>;
+        return <span className={styles.badgeRepaid}>🔵 Reembolsado</span>;
       case 3:
-        return <span className="p2p-badge-liquidated">🔴 Liquidado</span>;
+        return <span className={styles.badgeLiquidated}>🔴 Liquidado</span>;
       case 4:
-        return <span className="p2p-badge-cancelled">⚪ Cancelado</span>;
+        return <span className={styles.badgeCancelled}>⚪ Cancelado</span>;
       default:
         return null;
     }
@@ -128,22 +129,22 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
     <div className="acp-container">
       
       {/* Treasury Reserve APY Booster Banner */}
-      <div className="glass-panel p2p-booster-banner">
+      <div className={`glass-panel ${styles.boosterBanner}`}>
         <div className="acp-banner-flex">
           <div>
-            <h4 className="p2p-booster-title">
+            <h4 className={styles.boosterTitle}>
               🏛️ Respaldo Institucional: Préstamos con Reservas de Tesorería (Treasury APY Booster)
             </h4>
-            <p className="p2p-booster-desc">
+            <p className={styles.boosterDesc}>
               Las reservas de la tesorería despliegan hasta un <strong>20% máximo de su pool de stablecoins</strong> en préstamos sobre-colateralizados.
               Puedes solicitar financiación directa a la Tesorería al <strong>8.00% APR fijo</strong>. Los rendimientos generados retornan <strong>100% a la Tesorería</strong> aumentando el NAV del token ALPHA.
             </p>
           </div>
           <div className="acp-flex-row-gap5">
-            <span className="p2p-tag-green">
+            <span className={styles.tagGreen}>
               🛡️ Fondo de Reserva Activo
             </span>
-            <span className="p2p-tag-blue">
+            <span className={styles.tagBlue}>
               ⚡ Tasa Promocional 8.00% APR
             </span>
           </div>
@@ -152,8 +153,8 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
 
       {/* ACTIVE LOANS QUICK REPAYMENT PANEL - show user's created and active loans */}
       {loansList.filter(l => (l.borrower.toLowerCase() === userAddress.toLowerCase() || l.lender.toLowerCase() === userAddress.toLowerCase()) && (l.state === 0 || l.state === 1)).length > 0 && (
-        <div className="glass-panel p2p-active-panel">
-          <h3 className="p2p-active-title">
+        <div className={`glass-panel ${styles.activePanel}`}>
+          <h3 className={styles.activeTitle}>
             💳 Mis Préstamos Solicitados & Activos ({loansList.filter(l => (l.borrower.toLowerCase() === userAddress.toLowerCase() || l.lender.toLowerCase() === userAddress.toLowerCase()) && (l.state === 0 || l.state === 1)).length})
           </h3>
           <p className="acp-label-sm margin-bottom-lg">
@@ -162,7 +163,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
 
           <div className="met-grid-subtle">
             {loansList.filter(l => (l.borrower.toLowerCase() === userAddress.toLowerCase() || l.lender.toLowerCase() === userAddress.toLowerCase()) && (l.state === 0 || l.state === 1)).map((loan) => (
-              <div key={loan.id} className={loan.state === 1 ? 'p2p-active-card-active' : 'p2p-active-card-offer'}>
+              <div key={loan.id} className={loan.state === 1 ? styles.activeCardActive : styles.activeCardOffer}>
                 <div>
                   <div className="acp-banner-flex margin-bottom-xs">
                     <span className="font-bold text-slate-100 text-sm">Préstamo #{loan.id}</span>
@@ -181,7 +182,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
 
                 {loan.state === 1 && loan.borrower.toLowerCase() === userAddress.toLowerCase() && onRepayLoanById ? (
                   <button
-                    className="btn-primary p2p-btn-blue-grad"
+                    className={`btn-primary ${styles.btnBlueGrad}`}
                     onClick={() => onRepayLoanById(loan.id, loan)}
                   >
                     💳 Reembolsar Deuda (+$ Interest)
@@ -204,7 +205,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
       <div className="met-grid-subtle">
         
         {/* Treasury Direct Reserve Loan Card */}
-        <div className="glass-panel p2p-treasury-card">
+        <div className={`glass-panel ${styles.treasuryCard}`}>
           <div className="acp-flex-row-gap5 margin-bottom-sm">
             <span className="text-md">🏛️</span>
             <h3 className="gcc-metric-subtext-green font-bold text-sm margin-none">Pedir Préstamo a la Tesorería</h3>
@@ -219,7 +220,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
               <select
                 value={treasuryColType}
                 onChange={(e) => setTreasuryColType(e.target.value)}
-                className="p2p-select-green"
+                className={styles.selectGreen}
               >
                 <option value="nft">🖼️ NFT de Posición Bonos ERC-721 (70.00% Max LTV)</option>
                 <option value="alpha">🥩 Token ALPHA Staked (50.00% Max LTV)</option>
@@ -252,7 +253,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                   <label className="acp-label-sm">
                     Garantía Requerida en {treasuryColType.toUpperCase()} (Calculada Automáticamente):
                   </label>
-                  <div className="p2p-col-calc-box">
+                  <div className={styles.colCalcBox}>
                     ⚡ {autoCalculatedColAmount} {treasuryColType.toUpperCase()} (${requiredUsdBacking.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD Respaldo @ {(currentLtv * 100).toFixed(0)}% LTV)
                   </div>
                 </div>
@@ -268,7 +269,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                   placeholder="ej. 500"
                   value={p2pBorrowAmount}
                   onChange={(e) => setP2pBorrowAmount(e.target.value)}
-                  className="p2p-input-green"
+                  className={styles.inputGreen}
                 />
               </div>
               <div>
@@ -278,14 +279,14 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                   type="number"
                   value={p2pDays}
                   onChange={(e) => setP2pDays(e.target.value)}
-                  className="p2p-input-green"
+                  className={styles.inputGreen}
                 />
               </div>
             </div>
 
             <button
               data-testid="p2p-treasury-request-btn"
-              className="btn-primary p2p-btn-emerald"
+              className={`btn-primary ${styles.btnEmerald}`}
               onClick={() => onBorrowFromTreasury && onBorrowFromTreasury(
                 treasuryColType,
                 treasuryColType === 'nft'
@@ -363,7 +364,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
               </div>
             </div>
 
-            <button data-testid="p2p-offer-create-btn" className="btn-primary p2p-btn-blue-grad" onClick={onCreateLoanOffer}>
+            <button data-testid="p2p-offer-create-btn" className={`btn-primary ${styles.btnBlueGrad}`} onClick={onCreateLoanOffer}>
               🚀 Crear y Publicar Oferta de Préstamo
             </button>
           </div>
@@ -409,7 +410,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
               </button>
             </div>
 
-            <button data-testid="p2p-autoliquidate-btn" className="btn-primary p2p-btn-danger-grad" onClick={onLiquidateLoan}>
+            <button data-testid="p2p-autoliquidate-btn" className={`btn-primary ${styles.btnDangerGrad}`} onClick={onLiquidateLoan}>
               ⚡ Auto-Liquidar si HF &lt; 115%
             </button>
           </div>
@@ -429,28 +430,28 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
           </div>
 
           {/* Filter Tabs */}
-          <div className="p2p-filter-box">
+          <div className={styles.filterBox}>
             <button
               onClick={() => setFilterTab('all')}
-              className={`p2p-filter-btn ${filterTab === 'all' ? 'p2p-filter-btn-active-all' : ''}`}
+              className={`${styles.filterBtn} ${filterTab === 'all' ? styles.filterBtnActiveAll : ''}`}
             >
               Todos ({loansList.length})
             </button>
             <button
               onClick={() => setFilterTab('created')}
-              className={`p2p-filter-btn ${filterTab === 'created' ? 'p2p-filter-btn-active-created' : ''}`}
+              className={`${styles.filterBtn} ${filterTab === 'created' ? styles.filterBtnActiveCreated : ''}`}
             >
               Disponibles ({loansList.filter((l) => l.state === 0).length})
             </button>
             <button
               onClick={() => setFilterTab('active')}
-              className={`p2p-filter-btn ${filterTab === 'active' ? 'p2p-filter-btn-active-active' : ''}`}
+              className={`${styles.filterBtn} ${filterTab === 'active' ? styles.filterBtnActiveActive : ''}`}
             >
               Financiados ({loansList.filter((l) => l.state === 1).length})
             </button>
             <button
               onClick={() => setFilterTab('my')}
-              className={`p2p-filter-btn ${filterTab === 'my' ? 'p2p-filter-btn-active-my' : ''}`}
+              className={`${styles.filterBtn} ${filterTab === 'my' ? styles.filterBtnActiveMy : ''}`}
             >
               Mis Préstamos
             </button>
@@ -459,7 +460,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
 
         {/* Loan Table */}
         {filteredLoans.length === 0 ? (
-          <div className="p2p-empty-box">
+          <div className={styles.emptyBox}>
             <p className="margin-none text-sm opacity-60">No hay préstamos P2P disponibles en esta categoría.</p>
             <p className="acp-label-sm margin-top-xs opacity-40">¡Crea una nueva oferta utilizando el formulario superior!</p>
           </div>
@@ -522,7 +523,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                         {/* Action Buttons based on Loan State */}
                         {loan.state === 0 && !isBorrower && onAcceptLoanById && (
                           <button
-                            className="btn-primary stk-btn-green-grad p2p-action-btn-sm"
+                            className={`btn-primary stk-btn-green-grad ${styles.actionBtnSm}`}
                             onClick={() => onAcceptLoanById(loan.id, loan.borrowAmount)}
                           >
                             ✅ Financiar Oferta
@@ -531,7 +532,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
 
                         {loan.state === 0 && isBorrower && onCancelLoanOffer && (
                           <button
-                            className="btn-primary acp-pure-warning-card text-red-light border-red-500 p2p-action-btn-sm"
+                            className={`btn-primary acp-pure-warning-card text-red-light border-red-500 ${styles.actionBtnSm}`}
                             onClick={() => onCancelLoanOffer(loan.id)}
                           >
                             ❌ Cancelar Oferta
@@ -540,7 +541,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
 
                         {loan.state === 1 && isBorrower && onRepayLoanById && (
                           <button
-                            className="btn-primary p2p-btn-blue-grad p2p-action-btn-sm"
+                            className={`btn-primary ${styles.btnBlueGrad} ${styles.actionBtnSm}`}
                             onClick={() => onRepayLoanById(loan.id, loan)}
                           >
                             💰 Reembolsar
@@ -549,7 +550,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
 
                         {loan.state === 1 && onLiquidateLoanById && (
                           <button
-                            className="btn-primary acp-pure-warning-card text-red-light border-red-500 p2p-action-btn-sm"
+                            className={`btn-primary acp-pure-warning-card text-red-light border-red-500 ${styles.actionBtnSm}`}
                             onClick={() => onLiquidateLoanById(loan.id)}
                           >
                             ⚡ Auto-Liquidar

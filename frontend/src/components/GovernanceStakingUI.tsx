@@ -1,4 +1,5 @@
 import React from 'react';
+import styles from './GovernanceStakingUI.module.css';
 
 interface GovernanceStakingUIProps {
   stakedBalance: string;
@@ -42,7 +43,7 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
       <div className="glass-panel por-card">
         <h3 className="acp-banner-flex margin-bottom-lg">
           <span>🥩 Staking de Gobernanza (ALPHA)</span>
-          <span className="stk-deflationary-tag">
+          <span className={styles.deflationaryTag}>
             🔥 Deflacionario
           </span>
         </h3>
@@ -50,15 +51,15 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
         <div className="admin-grid-3col margin-bottom-lg">
           <div className="por-metric-box">
             <div className="por-metric-label">TU STAKING (stALPHA)</div>
-            <div data-testid="staking-stalpha-balance" className="stk-val-purple">{stakedBalance} stALPHA</div>
+            <div data-testid="staking-stalpha-balance" className={styles.valPurple}>{stakedBalance} stALPHA</div>
           </div>
           <div className="por-metric-box">
             <div className="por-metric-label">REAL YIELD ACUMULADO</div>
-            <div data-testid="staking-real-yield" className="stk-val-green">${claimableYield} USD</div>
+            <div data-testid="staking-real-yield" className={styles.valGreen}>${claimableYield} USD</div>
           </div>
-          <div className="por-metric-box stk-burned-box">
-            <div className="por-metric-label stk-burned-label">🔥 TOTAL QUEMADOS</div>
-            <div data-testid="staking-total-burned" className="stk-burned-val">{totalBurnedTokens} ALPHA</div>
+          <div className={`por-metric-box ${styles.burnedBox}`}>
+            <div className={`por-metric-label ${styles.burnedLabel}`}>🔥 TOTAL QUEMADOS</div>
+            <div data-testid="staking-total-burned" className={styles.burnedVal}>{totalBurnedTokens} ALPHA</div>
           </div>
         </div>
 
@@ -76,7 +77,7 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
           </div>
 
           <div className="admin-grid-2col">
-            <button data-testid="staking-stake-btn" className="btn-primary stk-btn-purple" onClick={onStake}>
+            <button data-testid="staking-stake-btn" className={`btn-primary ${styles.btnPurple}`} onClick={onStake}>
               🔒 Stake ALPHA
             </button>
             <button data-testid="staking-unstake-btn" className="btn-secondary" onClick={onUnstake}>
@@ -96,7 +97,7 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
 
         <div className="strategy-card margin-bottom-lg">
           <div className="acp-control-stack">
-            <label className="stk-radio-label">
+            <label className={styles.radioLabel}>
               <input
                 type="radio"
                 name="payoutPref"
@@ -105,7 +106,7 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
               />
               <span><strong>Opción A:</strong> Stablecoins Líquidas (USDC directo)</span>
             </label>
-            <label className="stk-radio-label">
+            <label className={styles.radioLabel}>
               <input
                 type="radio"
                 name="payoutPref"
@@ -118,10 +119,10 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
         </div>
 
         <div className="admin-grid-2col">
-          <button data-testid="yield-claim-btn" className="btn-primary stk-btn-green-grad" onClick={onClaimYield}>
+          <button data-testid="yield-claim-btn" className={`btn-primary ${styles.btnGreenGrad}`} onClick={onClaimYield}>
             💸 Reclamar Yield
           </button>
-          <button data-testid="yield-gasless-btn" className="btn-secondary stk-btn-indigo-outline" onClick={onGaslessClaim}>
+          <button data-testid="yield-gasless-btn" className={`btn-secondary ${styles.btnIndigoOutline}`} onClick={onGaslessClaim}>
             ⚡ Reclamo Gasless (EIP-712)
           </button>
         </div>

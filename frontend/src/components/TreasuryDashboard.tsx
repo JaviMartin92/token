@@ -1,4 +1,5 @@
 import React from 'react';
+import styles from './TreasuryDashboard.module.css';
 
 interface TreasuryDashboardProps {
   porAssets?: string;
@@ -39,21 +40,21 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
   const totalLentUsd = activeLoans.reduce((acc, l) => acc + (parseFloat((l.borrowAmount || '0').replace(/,/g, '')) || 0) * 1.08, 0);
 
   return (
-    <div className="treasury-main-container trd-container">
+    <div className={`treasury-main-container ${styles.container}`}>
       <div className="glass-panel treasury-shares-panel acp-flex-1">
         <div>
           <div className="acp-banner-flex margin-bottom-lg gcc-tr-border text-muted">
             <div>
-              <h3 className="trd-header-h3">🏛️ Emisión y Rescate de ALPHA Shares (NAV)</h3>
-              <p className="trd-header-sub">
+              <h3 className={styles.headerH3}>🏛️ Emisión y Rescate de ALPHA Shares (NAV)</h3>
+              <p className={styles.headerSub}>
                 Opera directamente contra las reservas del protocolo a NAV (Net Asset Value).
               </p>
             </div>
             <div className="acp-flex-row-gap5">
-              <button data-testid="por-audit-btn" className="btn-secondary trd-btn-audit" onClick={onAuditPoR}>
+              <button data-testid="por-audit-btn" className={`btn-secondary ${styles.btnAudit}`} onClick={onAuditPoR}>
                 🔄 Auditar PoR
               </button>
-              <button data-testid="treasury-faucet-btn" className="btn-secondary trd-btn-faucet" onClick={onFaucetUSDC}>
+              <button data-testid="treasury-faucet-btn" className={`btn-secondary ${styles.btnFaucet}`} onClick={onFaucetUSDC}>
                 🚰 Faucet 10k USDC
               </button>
             </div>
@@ -61,20 +62,20 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
 
           {/* User Balances */}
           <div className="treasury-shares-grid margin-bottom-lg">
-            <div className="treasury-shares-card-usdc trd-card-usdc">
-              <div className="trd-card-title">SALDO USDC DISPONIBLE</div>
-              <div data-testid="treasury-usdc-balance" className="trd-card-val-green">{usdcBalance} USDC</div>
+            <div className={`treasury-shares-card-usdc ${styles.cardUsdc}`}>
+              <div className={styles.cardTitle}>SALDO USDC DISPONIBLE</div>
+              <div data-testid="treasury-usdc-balance" className={styles.cardValGreen}>{usdcBalance} USDC</div>
             </div>
-            <div className="treasury-shares-card-shares trd-card-shares">
-              <div className="trd-card-title">MIS ALPHA SHARES</div>
-              <div data-testid="treasury-shares-balance" className="trd-card-val-purple">{sharesBalance} ALPHA</div>
+            <div className={`treasury-shares-card-shares ${styles.cardShares}`}>
+              <div className={styles.cardTitle}>MIS ALPHA SHARES</div>
+              <div data-testid="treasury-shares-balance" className={styles.cardValPurple}>{sharesBalance} ALPHA</div>
             </div>
           </div>
 
           {/* Actions Forms */}
           <div className="admin-grid-2col">
-            <div className="trd-action-box">
-              <label className="trd-action-label">
+            <div className={styles.actionBox}>
+              <label className={styles.actionLabel}>
                 💳 Depositar USDC para Acuñar Shares:
               </label>
               <div className="acp-flex-row-gap5">
@@ -84,16 +85,16 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
                   placeholder="Monto USDC (ej. 1000)"
                   value={depositAmount}
                   onChange={(e) => setDepositAmount(e.target.value)}
-                  className="treasury-input-flex trd-action-input"
+                  className={`treasury-input-flex ${styles.actionInput}`}
                 />
-                <button data-testid="treasury-deposit-btn" className="btn-primary trd-deposit-btn" onClick={onDeposit}>
+                <button data-testid="treasury-deposit-btn" className={`btn-primary ${styles.depositBtn}`} onClick={onDeposit}>
                   Depositar
                 </button>
               </div>
             </div>
 
-            <div className="trd-action-box">
-              <label className="trd-action-label">
+            <div className={styles.actionBox}>
+              <label className={styles.actionLabel}>
                 🔥 Rescatar ALPHA Shares a NAV:
               </label>
               <div className="acp-flex-row-gap5">
@@ -103,9 +104,9 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
                   placeholder="Monto ALPHA (ej. 500)"
                   value={redeemAmount}
                   onChange={(e) => setRedeemAmount(e.target.value)}
-                  className="treasury-input-flex trd-action-input"
+                  className={`treasury-input-flex ${styles.actionInput}`}
                 />
-                <button data-testid="treasury-redeem-btn" className="btn-primary trd-redeem-btn" onClick={onRedeem}>
+                <button data-testid="treasury-redeem-btn" className={`btn-primary ${styles.redeemBtn}`} onClick={onRedeem}>
                   Rescatar
                 </button>
               </div>
@@ -125,12 +126,12 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
         <div className="admin-strategy-panel margin-top-xl">
           <div className="acp-banner-flex margin-bottom-lg">
             <div>
-              <h3 className="trd-admin-h3">
+              <h3 className={styles.adminH3}>
                 🏛️ Estrategia e Inversión Institucional de Reservas Exógenas
               </h3>
             </div>
             <button
-              className="btn-primary trd-harvest-btn"
+              className={`btn-primary ${styles.harvestBtn}`}
               onClick={onAuditPoR}
             >
               🌾 Cosechar Rendimiento Diario (Morpho Harvest)
@@ -142,9 +143,9 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
             <div className="strategy-card">
               <div className="acp-banner-flex margin-bottom-sm">
                 <span className="font-bold text-sm text-green-bright">💵 Stablecoins (USDC / USDT)</span>
-                <span className="trd-tag-green">Real Yield Active</span>
+                <span className={styles.tagGreen}>Real Yield Active</span>
               </div>
-              <div className="trd-strat-list">
+              <div className={styles.stratList}>
                 <div className="acp-banner-flex">
                   <span>• Créditos Directos / P2P:</span>
                   <strong>${p2pAllocationUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} @ 8.00% APR</strong>
@@ -160,9 +161,9 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
             <div className="strategy-card">
               <div className="acp-banner-flex margin-bottom-sm">
                 <span className="font-bold text-sm gcc-td-amber">₿ Bitcoin (WBTC / cbBTC)</span>
-                <span className="trd-tag-amber">Babylon & Morpho</span>
+                <span className={styles.tagAmber}>Babylon & Morpho</span>
               </div>
-              <div className="trd-strat-list">
+              <div className={styles.stratList}>
                 <div className="acp-banner-flex">
                   <span>• Staking Lombard (LBTC):</span>
                   <strong>${(btcAllocationUsd * 0.6).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (LBTC)</strong>
@@ -178,9 +179,9 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
             <div className="strategy-card">
               <div className="acp-banner-flex margin-bottom-sm">
                 <span className="font-bold text-sm stk-val-purple">Ξ Ethereum (WETH / stETH)</span>
-                <span className="trd-tag-purple">Staking & Vaults</span>
+                <span className={styles.tagPurple}>Staking & Vaults</span>
               </div>
-              <div className="trd-strat-list">
+              <div className={styles.stratList}>
                 <div className="acp-banner-flex">
                   <span>• Liquid Staking Lido:</span>
                   <strong>${(ethAllocationUsd * 0.6).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (stETH)</strong>

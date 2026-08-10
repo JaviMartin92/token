@@ -1,4 +1,5 @@
 import React from 'react';
+import styles from './NotificationToast.module.css';
 
 export interface ToastMessage {
   id: string;
@@ -12,45 +13,41 @@ interface NotificationToastProps {
   onDismiss: (id: string) => void;
 }
 
-export const NotificationToast: React.FC<NotificationToastProps> = ({ toasts, onDismiss }) => {
-  if (toasts.length === 0) return null;
+export const NotificationToast: React.FC<NotificationToastProps> = ({
+  toasts,
+  onDismiss
+}) => {
+  if (!toasts || toasts.length === 0) return null;
+
+  const getIcon = (type: ToastMessage['type']) => {
+    switch (type) {
+      case 'success': return '✅';
+      case 'warning': return '⚠️';
+      case 'error': return '❌';
+      case 'info': default: return 'ℹ️';
+    }
+  };
 
   return (
-    <div className="toast-fixed-container">
-      {toasts.map((toast) => {
-        const typeClass = {
-          info: 'toast-item-info',
-          success: 'toast-item-success',
-          warning: 'toast-item-warning',
-          error: 'toast-item-error'
-        }[toast.type];
-
-        const icons = {
-          info: 'ℹ️',
-          success: '✅',
-          warning: '⚠️',
-          error: '❌'
-        };
-
-        return (
-          <div
-            key={toast.id}
-            className={`toast-item ${typeClass}`}
-          >
-            <span className="toast-icon">{icons[toast.type]}</span>
-            <div className="toast-content-box">
-              <div className="toast-title-text">{toast.title}</div>
-              <div className="toast-msg-text">{toast.message}</div>
-            </div>
-            <button
-              onClick={() => onDismiss(toast.id)}
-              className="toast-close-btn"
-            >
-              ✖
-            </button>
+    <div className="toast-container">
+      {toasts.map((toast) => (
+        <div
+          key={toast.id}
+          className={`toast-item toast-${toast.type}`}
+        >
+          <span className={styles.toastIcon}>{getIcon(toast.type)}</span>
+          <div className={styles.toastContentBox}>
+            <div className={styles.toastTitleText}>{toast.title}</div>
+            <div className={styles.toastMsgText}>{toast.message}</div>
           </div>
-        );
-      })}
+          <button
+            className="toast-close-btn"
+            onClick={() => onDismiss(toast.id)}
+          >
+            ✕
+          </button>
+        </div>
+      ))}
     </div>
   );
 };

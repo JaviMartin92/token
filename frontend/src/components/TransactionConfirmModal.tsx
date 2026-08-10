@@ -1,4 +1,5 @@
 import React from 'react';
+import styles from './TransactionConfirmModal.module.css';
 
 export interface TxDetailItem {
   label: string;
@@ -44,15 +45,15 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
     <div className="modal-overlay">
       <div className="glass-panel modal-container">
         {/* Header */}
-        <div className="txc-header-row">
+        <div className={styles.headerRow}>
           <div>
-            <div className="txc-header-left">
-              <span className="txc-action-icon">{txDetails.actionIcon}</span>
-              <h3 data-testid="modal-title" className="txc-title-h3">{txDetails.title}</h3>
+            <div className={styles.headerLeft}>
+              <span className={styles.actionIcon}>{txDetails.actionIcon}</span>
+              <h3 data-testid="modal-title" className={styles.titleH3}>{txDetails.title}</h3>
             </div>
             <span
               data-testid="modal-type-badge"
-              className="txc-type-badge"
+              className={styles.typeBadge}
             >
               {txDetails.typeBadge}
             </span>
@@ -61,47 +62,47 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
             data-testid="modal-close-btn"
             onClick={onClose}
             disabled={isSubmitting}
-            className="txc-close-btn"
+            className={styles.closeBtn}
           >
             ✕
           </button>
         </div>
 
         {/* Input vs Output Flow Card */}
-        <div className="txc-flow-card">
+        <div className={styles.flowCard}>
           <div>
-            <div className="txc-flow-label">ENVIAS / ENTRADA</div>
-            <div data-testid="modal-input-amount" className="txc-flow-val-input">
-              {txDetails.inputAmount} <span className="txc-flow-symbol">{txDetails.inputSymbol}</span>
+            <div className={styles.flowLabel}>ENVIAS / ENTRADA</div>
+            <div data-testid="modal-input-amount" className={styles.flowValInput}>
+              {txDetails.inputAmount} <span className={styles.flowSymbol}>{txDetails.inputSymbol}</span>
             </div>
           </div>
 
-          <div className="txc-flow-arrow">➔</div>
+          <div className={styles.flowArrow}>➔</div>
 
           <div className="text-right">
-            <div className="txc-flow-label">RECIBES / ESTIMADO</div>
-            <div data-testid="modal-expected-output" className="txc-flow-val-output">
-              {txDetails.expectedOutput} <span className="txc-flow-symbol">{txDetails.expectedOutputSymbol}</span>
+            <div className={styles.flowLabel}>RECIBES / ESTIMADO</div>
+            <div data-testid="modal-expected-output" className={styles.flowValOutput}>
+              {txDetails.expectedOutput} <span className={styles.flowSymbol}>{txDetails.expectedOutputSymbol}</span>
             </div>
           </div>
         </div>
 
         {/* Detailed Breakdown Table */}
-        <div className="txc-details-stack">
-          <div className="txc-details-title">
+        <div className={styles.detailsStack}>
+          <div className={styles.detailsTitle}>
             Resumen Operativo & Parámetros
           </div>
 
           {txDetails.details.map((item, idx) => (
             <div
               key={idx}
-              className={`txc-item-row ${item.isHighlight ? 'txc-item-highlight' : 'txc-item-normal'}`}
+              className={`${styles.itemRow} ${item.isHighlight ? styles.itemHighlight : styles.itemNormal}`}
             >
               <span className="opacity-70">{item.label}:</span>
               <div className="acp-flex-row-gap5">
-                <span className={item.isHighlight ? 'txc-item-val-highlight' : 'txc-item-val-normal'}>{item.value}</span>
+                <span className={item.isHighlight ? styles.itemValHighlight : styles.itemValNormal}>{item.value}</span>
                 {item.badge && (
-                  <span className="txc-item-badge">
+                  <span className={styles.itemBadge}>
                     {item.badge}
                   </span>
                 )}
@@ -110,9 +111,9 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
           ))}
 
           {/* Contract Target Address */}
-          <div className="txc-target-row">
+          <div className={styles.targetRow}>
             <span className="opacity-60">Contrato Objetivo:</span>
-            <span data-testid="modal-contract-target" className="txc-target-addr">
+            <span data-testid="modal-contract-target" className={styles.targetAddr}>
               {txDetails.targetContractName} ({txDetails.targetContractAddress?.slice(0, 6)}...{txDetails.targetContractAddress?.slice(-4)})
             </span>
           </div>
@@ -120,7 +121,7 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
 
         {/* Warning Note if present */}
         {txDetails.warningNote && (
-          <div className="txc-warning-box">
+          <div className={styles.warningBox}>
             <span>⚠️</span>
             <span>{txDetails.warningNote}</span>
           </div>
@@ -132,7 +133,7 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
             data-testid="modal-cancel-btn"
             onClick={onClose}
             disabled={isSubmitting}
-            className="txc-cancel-btn"
+            className={styles.cancelBtn}
           >
             Cancelar
           </button>
@@ -141,7 +142,7 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
             data-testid="modal-confirm-btn"
             onClick={onConfirm}
             disabled={isSubmitting}
-            className="txc-confirm-btn"
+            className={styles.confirmBtn}
             style={txDetails.confirmButtonColor ? { background: txDetails.confirmButtonColor } : undefined}
           >
             {isSubmitting ? '⏳ Firmando...' : (txDetails.confirmButtonText || '✍️ Confirmar y Firmar')}

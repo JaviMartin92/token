@@ -1,0 +1,24 @@
+.cardH3 { margin: 0 0 1rem 0; font-size: 1.15rem; }
+.cardP { font-size: 0.8rem; opacity: 0.7; margin-bottom: 1rem; }
+.label { font-size: 0.8rem; opacity: 0.8; display: block; margin-bottom: 0.2rem; }
+.inputDark { width: 100%; padding: 0.5rem 0.75rem; border-radius: 8px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); color: #fff; }
+.linkBtn { background: none; border: none; color: #38bdf8; font-size: 0.75rem; cursor: pointer; text-decoration: underline; }
+
+.discountBox { background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.25); padding: 0.75rem; border-radius: 10px; font-size: 0.8rem; }
+.buyBtn { width: 100%; background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%); margin-top: 0.2rem; }
+
+.emptyGallery { opacity: 0.5; text-align: center; padding: 3rem 1rem; font-size: 0.85rem; }
+.galleryStack { display: flex; flex-direction: column; gap: 0.85rem; max-height: 420px; overflow-y: auto; }
+.posCard { border-radius: 12px; padding: 0.85rem; display: flex; justify-content: space-between; align-items: center; }
+.posCardClaimed { background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); }
+.posCardCanclaim { background: rgba(255,255,255,0.04); border: 1px solid rgba(74, 222, 128, 0.5); }
+.posCardNormal { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); }
+
+.posTitle { font-weight: 700; font-size: 0.9rem; color: #c084fc; margin-bottom: 0.2rem; }
+.posSub { font-size: 0.75rem; opacity: 0.8; }
+.posDate { font-size: 0.7rem; opacity: 0.5; margin-top: 0.2rem; }
+
+.badgeRq { font-size: 0.7rem; color: #ef4444; }
+.badgeCl { font-size: 0.7rem; color: #38bdf8; }
+.claimBtn { padding: 0.3rem 0.6rem; font-size: 0.7rem; background: #22c55e; }
+.rqBtn { padding: 0.3rem 0.6rem; font-size: 0.7rem; border-color: #ef4444; color: #ef4444; }

@@ -1,4 +1,5 @@
 import React from 'react';
+import styles from './VestedVaults.module.css';
 
 export interface UserPosition {
   id: number;
@@ -49,30 +50,30 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
     <div className="met-grid-subtle margin-bottom-xl">
       {/* Buy Bond Card */}
       <div className="glass-panel acp-proposal-card">
-        <h3 className="vv-card-h3">📜 Bóveda de Bonos Vestados con Descuento</h3>
-        <p className="vv-card-p">
+        <h3 className={styles.cardH3}>📜 Bóveda de Bonos Vestados con Descuento</h3>
+        <p className={styles.cardP}>
           Adquiere posición en el protocolo a un precio con descuento locking a 1-5 años. Recibes un NFT ERC-721 como colateral transferible.
         </p>
 
         <div className="acp-control-stack">
           <div>
-            <label className="vv-label">Valor Principal del Bono (USD):</label>
+            <label className={styles.label}>Valor Principal del Bono (USD):</label>
             <input
               data-testid="bonds-principal-input"
               type="number"
               value={bondPrincipal}
               onChange={(e) => setBondPrincipal(e.target.value)}
-              className="vv-input-dark"
+              className={styles.inputDark}
             />
           </div>
 
           <div>
-            <label className="vv-label">Años de Bloqueo (1 - 5 años):</label>
+            <label className={styles.label}>Años de Bloqueo (1 - 5 años):</label>
             <select
               data-testid="bonds-years-select"
               value={bondLockYears}
               onChange={(e) => setBondLockYears(e.target.value)}
-              className="vv-input-dark"
+              className={styles.inputDark}
             >
               <option value="1">1 Año (Descuento ~10%)</option>
               <option value="2">2 Años (Descuento ~18%)</option>
@@ -84,12 +85,12 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
 
           <div>
             <div className="acp-banner-flex margin-bottom-xs">
-              <label className="vv-label opacity-80">Dirección Referidor (Opcional - 1.5% Reward USDC):</label>
+              <label className={`${styles.label} opacity-80`}>Dirección Referidor (Opcional - 1.5% Reward USDC):</label>
               {onOpenReferral && (
                 <button
                   type="button"
                   onClick={onOpenReferral}
-                  className="vv-link-btn"
+                  className={styles.linkBtn}
                 >
                   🎁 Mi Enlace de Referido
                 </button>
@@ -101,12 +102,12 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
               placeholder="0x..."
               value={bondReferrer}
               onChange={(e) => setBondReferrer(e.target.value)}
-              className="vv-input-dark"
+              className={styles.inputDark}
             />
           </div>
 
           {/* Discount Summary Box */}
-          <div className="vv-discount-box">
+          <div className={styles.discountBox}>
             <div className="acp-banner-flex margin-bottom-xs">
               <span>Descuento Calculado:</span>
               <strong data-testid="bonds-discount-badge" className="stk-val-purple">{discountPct}% OFF</strong>
@@ -117,7 +118,7 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
             </div>
           </div>
 
-          <button data-testid="bonds-buy-btn" className="btn-primary vv-buy-btn" onClick={onBuyBond}>
+          <button data-testid="bonds-buy-btn" className={`btn-primary ${styles.buyBtn}`} onClick={onBuyBond}>
             💳 Comprar Bono Vestado & Mint NFT
           </button>
         </div>
@@ -125,43 +126,43 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
 
       {/* Position NFTs Gallery Card */}
       <div className="glass-panel acp-proposal-card">
-        <h3 className="vv-card-h3">🎨 Mis Posiciones ERC-721 ({userPositions.length})</h3>
+        <h3 className={styles.cardH3}>🎨 Mis Posiciones ERC-721 ({userPositions.length})</h3>
 
         {userPositions.length === 0 ? (
-          <div className="vv-empty-gallery">
+          <div className={styles.emptyGallery}>
             No posees ninguna posición NFT de bono vestado activa.
           </div>
         ) : (
-          <div className="vv-gallery-stack">
+          <div className={styles.galleryStack}>
             {userPositions.map((pos) => (
               <div
                 key={pos.id}
-                className={`vv-pos-card ${pos.isRagequitted || pos.isMaturedClaimed ? 'vv-pos-card-claimed' : (pos.canClaim ? 'vv-pos-card-canclaim' : 'vv-pos-card-normal')}`}
+                className={`${styles.posCard} ${pos.isRagequitted || pos.isMaturedClaimed ? styles.posCardClaimed : (pos.canClaim ? styles.posCardCanclaim : styles.posCardNormal)}`}
               >
                 <div>
-                  <div className="vv-pos-title">
+                  <div className={styles.posTitle}>
                     Bono NFT #{pos.id} • {pos.lockYears} Años
                   </div>
-                  <div className="vv-pos-sub">
+                  <div className={styles.posSub}>
                     Principal: <strong>${pos.principal} USD</strong> | Pagado: ${pos.paid} USD
                   </div>
-                  <div className="vv-pos-date">
+                  <div className={styles.posDate}>
                     Vence: {pos.expDateStr}
                   </div>
                 </div>
 
                 <div className="acp-flex-row-gap5">
-                  {pos.isRagequitted && <span className="vv-badge-rq">Ragequitted</span>}
-                  {pos.isMaturedClaimed && <span className="vv-badge-cl">Reclamado</span>}
+                  {pos.isRagequitted && <span className={styles.badgeRq}>Ragequitted</span>}
+                  {pos.isMaturedClaimed && <span className={styles.badgeCl}>Reclamado</span>}
 
                   {pos.canClaim && (
-                    <button className="btn-primary vv-claim-btn" onClick={() => onClaimMatured(pos.id)}>
+                    <button className={`btn-primary ${styles.claimBtn}`} onClick={() => onClaimMatured(pos.id)}>
                       Reclamar
                     </button>
                   )}
 
                   {!pos.isRagequitted && !pos.isMaturedClaimed && (
-                    <button className="btn-secondary vv-rq-btn" onClick={() => onRagequit(pos.id)}>
+                    <button className={`btn-secondary ${styles.rqBtn}`} onClick={() => onRagequit(pos.id)}>
                       Ragequit (Penalización 15%)
                     </button>
                   )}
