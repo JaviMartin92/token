@@ -119,3 +119,67 @@
 .tableTdIndigo { padding: 0.75rem; font-weight: 600; color: #6366f1; }
 .tableTdBold { padding: 0.75rem; font-weight: 700; }
 .tableTdMuted { padding: 0.75rem; color: #94a3b8; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .topCard {
+    padding: 1rem;
+  }
+
+  .headerRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .headerH2 {
+    font-size: 1.2rem;
+  }
+
+  .kpiGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .kpiCard {
+    padding: 0.75rem;
+  }
+
+  .gridSubtle {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionCard {
+    padding: 1rem;
+  }
+
+  .sectionH3 {
+    font-size: 1rem;
+  }
+
+  .valLgCyan, .valLgPurple, .valLgPink,
+  .valLgGreen, .valLgViolet, .valLgRed {
+    font-size: 1.05rem;
+  }
+
+  .tableTh, .tableTd, .tableTdCyan,
+  .tableTdAmber, .tableTdIndigo, .tableTdBold, .tableTdMuted {
+    padding: 0.55rem;
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .kpiGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .headerH2 {
+    font-size: 1.05rem;
+  }
+
+  .valLgCyan, .valLgPurple, .valLgPink,
+  .valLgGreen, .valLgViolet, .valLgRed {
+    font-size: 0.95rem;
+  }
+}

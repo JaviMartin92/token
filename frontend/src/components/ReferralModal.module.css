@@ -100,3 +100,38 @@
 .socialTelegram { background: rgba(0, 136, 204, 0.15); border: 1px solid rgba(0, 136, 204, 0.4); color: #0088cc; }
 .socialWhatsapp { background: rgba(37, 211, 102, 0.15); border: 1px solid rgba(37, 211, 102, 0.4); color: #25d366; }
 .socialLinkedin { background: rgba(10, 102, 194, 0.15); border: 1px solid rgba(10, 102, 194, 0.4); color: #0a66c2; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .socialGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .title {
+    font-size: 1.3rem;
+  }
+
+  .benefitsCard {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .socialGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .title {
+    font-size: 1.1rem;
+  }
+
+  .socialBtn {
+    font-size: 0.75rem;
+    padding: 0.5rem;
+  }
+
+  .linkInput {
+    font-size: 0.75rem;
+    padding: 0.55rem 0.7rem;
+  }
+}

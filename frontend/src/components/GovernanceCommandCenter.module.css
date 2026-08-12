@@ -338,3 +338,90 @@
   cursor: pointer;
   font-size: 0.8rem;
 }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .metricsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .paramGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .metricsGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .metricCard {
+    padding: 12px;
+  }
+
+  .metricValCyan,
+  .metricValRed {
+    font-size: 1.2rem;
+  }
+
+  .paramCard {
+    padding: 14px;
+  }
+
+  .tableContainer {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table {
+    min-width: 480px;
+    font-size: 0.8rem;
+  }
+
+  .thCell,
+  .tdCell,
+  .tdBlue,
+  .tdAmber,
+  .tdPurple,
+  .tdPink,
+  .tdGreen,
+  .tdMuted {
+    padding: 10px 12px;
+  }
+
+  .promoCard {
+    padding: 16px;
+  }
+
+  .secCard {
+    padding: 14px;
+  }
+
+  .pureBanner {
+    font-size: 0.78rem;
+    padding: 10px 14px;
+  }
+
+  .headerRight {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .metricValCyan,
+  .metricValRed {
+    font-size: 1rem;
+  }
+
+  .sectionTitle {
+    font-size: 0.95rem;
+  }
+
+  .walletInputBlue,
+  .walletInputPurple,
+  .walletInputGreen {
+    font-size: 0.75rem;
+    padding: 8px 10px;
+  }
+}

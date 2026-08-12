@@ -156,3 +156,47 @@
   font-weight: 700;
   border-radius: 10px;
 }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .highlightApr {
+    font-size: 2rem;
+  }
+
+  .highlightBanner {
+    padding: 0.85rem;
+    border-radius: 12px;
+  }
+
+  .highlightFooter {
+    flex-direction: column;
+    gap: 0.3rem;
+    align-items: center;
+  }
+
+  .rowCard,
+  .rowCardPurple {
+    padding: 0.6rem;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .modalTitleH3 {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .highlightApr {
+    font-size: 1.6rem;
+  }
+
+  .sectionHeader,
+  .sectionHeaderBlue {
+    font-size: 0.78rem;
+  }
+
+  .footnoteCard {
+    font-size: 0.7rem;
+  }
+}

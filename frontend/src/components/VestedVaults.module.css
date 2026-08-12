@@ -22,3 +22,34 @@
 .badgeCl { font-size: 0.7rem; color: #38bdf8; }
 .claimBtn { padding: 0.3rem 0.6rem; font-size: 0.7rem; background: #22c55e; }
 .rqBtn { padding: 0.3rem 0.6rem; font-size: 0.7rem; border-color: #ef4444; color: #ef4444; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .posCard {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  .galleryStack {
+    max-height: 350px;
+  }
+
+  .discountBox {
+    padding: 0.6rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .posTitle {
+    font-size: 0.82rem;
+  }
+
+  .posSub {
+    font-size: 0.7rem;
+  }
+
+  .galleryStack {
+    max-height: 300px;
+  }
+}

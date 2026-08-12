@@ -82,6 +82,38 @@
   gap: 0.5rem;
 }
 
+@media (max-width: 768px) {
+  .grid2col {
+    grid-template-columns: 1fr;
+  }
+
+  .headerBox {
+    padding: 1rem;
+  }
+
+  .toggleBtnGroup {
+    flex-wrap: wrap;
+  }
+
+  .pureWarningCard {
+    padding: 0.85rem 1rem;
+  }
+
+  .proposalCard {
+    padding: 1rem;
+  }
+
+  .calldataCode {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .titleH3 {
+    font-size: 1rem;
+  }
+}
+
 .pureWarningCard {
   padding: 1rem 1.25rem;
   background: rgba(239, 68, 68, 0.1);
