@@ -34,10 +34,20 @@ contract DynamicYieldOracleRouter is AccessControl {
     }
 
     function _initDefaultProtocols() internal {
+        // STABLECOIN
         protocolOptions[uint8(AssetClass.STABLECOIN)].push(ProtocolYieldInfo({
             name: "Morpho Blue MetaMorpho Vault",
             vaultAddress: 0x488102554708C23C0227d8D86f4A2fAffbb27357,
-            apyBps: 645,
+            apyBps: 645, // 6.45% APY
+            isVerifiedSecurity: true,
+            lastUpdatedTimestamp: block.timestamp
+        }));
+
+        // ETHEREUM
+        protocolOptions[uint8(AssetClass.ETHEREUM)].push(ProtocolYieldInfo({
+            name: "Lido Liquid Staking wstETH",
+            vaultAddress: 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0,
+            apyBps: 320, // 3.20% APY
             isVerifiedSecurity: true,
             lastUpdatedTimestamp: block.timestamp
         }));
@@ -233,6 +243,7 @@ contract DynamicYieldOracleRouter is AccessControl {
         bestVaultAddress = list[bestIndex].vaultAddress;
         highestApyBps = list[bestIndex].apyBps;
     }
+
     function getProtocolCount(uint8 assetClass) external view returns (uint256) {
         return protocolOptions[assetClass].length;
     }
