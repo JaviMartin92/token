@@ -268,8 +268,12 @@ El protocolo está compuesto por 25 smart contracts fuertemente desacoplados med
 - **Propósito**: Mercado monetario P2P donde los bonos NFT sirven como garantía para solicitar préstamos en USDC (Máximo 70% LTV, umbral de liquidación al 115% Health Factor).
 - **Línea Directa de Tesorería**: Permite la originación de créditos colateralizados financiados directamente por la Tesorería hasta un **límite máximo del 20.0% de las Reservas Exógenas Totales** (`maxCreditLineUSD = TotalAssetsUSD * 0.20`). El capital no prestado permanece colocado en el Vault de Morpho Blue al 6.45% APY produciendo rendimientos pasivos hasta que sea solicitado por prestatarios.
 
-#### 18. [`MorphoYieldVaultAdapter.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/adapters/MorphoYieldVaultAdapter.sol)
-- **Propósito**: Adaptador que gestiona la colocación del **90.0% de la tesorería en USDC** en vaults de rendimiento institucional MetaMorpho de Morpho Blue (generando un rendimiento real pasivo del 6.45% APY), reteniendo el **10.0% restante en `AlphaVault.sol`** como Búfer Líquido de Tesorería para garantizar rescates e inyecciones atómicas sin fricción.
+#### 18. Gestión de Rendimiento: Universal Yield Routing (ERC-4626)
+La Tesorería ya no depende de integraciones estáticas. `TreasuryManager.sol` implementa un enrutador de rendimiento agnóstico que gestiona el capital exógeno a través de un ecosistema dinámico de adaptadores que cumplen el estándar `IERC4626`:
+
+* **Agregadores y Mercados Monetarios:** `AaveV3Adapter.sol` para la rotación de stablecoins y derivados buscando la tasa óptima del mercado.
+* **Real World Assets (RWAs):** `OndoRWAAdapter.sol` para capturar el rendimiento de los bonos del tesoro de EE.UU. on-chain cuando las tasas DeFi caen por debajo de la tasa libre de riesgo.
+* **Extracción de Liquidez (`_ensureLiquidBuffer`):** Si el `AlphaVault.sol` agota su colchón líquido, el sistema jala capital de forma recursiva y automatizada desde los adaptadores externos sin romper la invariante $\text{PoR} \ge 100.00\%$.
 
 #### 19. [`MockSwapRouter.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/MockSwapRouter.sol)
 - **Propósito**: Router de pruebas de Uniswap V3 que implementa la interfaz `ISwapRouter.exactInputSingle` para entornos devnet/sandbox local (Anvil). Ejecuta swaps de colateral en tiempo real extrayendo USDC de `AlphaVault` y entregando WBTC y WETH a precios reales de mercado ($60,000 USD / $3,000 USD). En entornos de producción (Mainnet/L2), el selector dinámico de `deploy.ts` conmuta automáticamente a la dirección oficial del SwapRouter de Uniswap V3 / 1inch V5.
@@ -344,7 +348,11 @@ La aplicación frontend implementa una arquitectura **Pure UI Rendering** donde 
 | `VAULT_MANAGER_ROLE` | `keccak256("VAULT_MANAGER_ROLE")` | `TreasuryManager.sol` & `RealYieldRouter.sol` | Extracción autorizada de fondos de `AlphaVault`. |
 | `ORACLE_MANAGER_ROLE` | `keccak256("ORACLE_MANAGER_ROLE")` | Dirección de Gobernanza / Admin | Registro de feeds primarios, secundarios y staleness limits. |
 
----
+### 6.1. Cumplimiento Normativo (KYC/AML) On-Chain
+Para mitigar el riesgo de contagio institucional y cumplir con los estándares globales de prevención de lavado de dinero, `TreasuryManager.sol` implementa una barrera de entrada estricta:
+
+* **`onlyWhitelisted`:** Todas las funciones mutables que interactúan con capital exógeno (`deposit`, `redeem`) exigen que la dirección del usuario esté verificada en la `kycWhitelist`.
+* **Separación de Poderes (RBAC):** La gestión de la lista blanca es exclusiva de las direcciones asignadas al `COMPLIANCE_ROLE`, eliminando el patrón centralizado `Ownable` y estandarizando los permisos a través de OpenZeppelin `AccessControl`.
 
 ## 7. Protocolo de Auditoría y Verificación Integrada
 

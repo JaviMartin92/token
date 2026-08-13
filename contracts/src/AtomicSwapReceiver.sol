@@ -4,14 +4,17 @@ pragma solidity ^0.8.20;
 import "./interfaces/IAtomicSwapReceiver.sol";
 import "./interfaces/ISwapRouter.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./ProtocolRoles.sol";
 import "./lib/security/ReentrancyGuard.sol";
 
 /**
  * @title AtomicSwapReceiver
  * @notice Accepts USDT deposits and atomically swaps them to USDC via Uniswap V3.
  */
-contract AtomicSwapReceiver is IAtomicSwapReceiver, Ownable, ReentrancyGuard {
+contract AtomicSwapReceiver is IAtomicSwapReceiver, AccessControl, ReentrancyGuard {
+    using SafeERC20 for IERC20;
     address public immutable usdtToken;
     address public immutable usdcToken;
     address public immutable swapRouter;
@@ -23,21 +26,21 @@ contract AtomicSwapReceiver is IAtomicSwapReceiver, Ownable, ReentrancyGuard {
         address _swapRouter,
         address _treasury,
         address _initialOwner
-    ) Ownable() {
+    ) {
         usdtToken = _usdtToken;
         usdcToken = _usdcToken;
         swapRouter = _swapRouter;
         treasury = _treasury;
 
-        if (_initialOwner != msg.sender) {
-            transferOwnership(_initialOwner);
-        }
+        address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
     }
 
     /**
      * @notice Updates the treasury address. Restricted to owner.
      */
-    function setTreasury(address _treasury) external onlyOwner {
+    function setTreasury(address _treasury) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         require(_treasury != address(0), "AtomicSwapReceiver: Zero address");
         treasury = _treasury;
     }
@@ -57,7 +60,7 @@ contract AtomicSwapReceiver is IAtomicSwapReceiver, Ownable, ReentrancyGuard {
         require(minUsdcExpected >= maxSlippageLimit, "AtomicSwapReceiver: Slippage input exceeds 0.05% limit");
 
         // 1. Pull USDT from sender to this contract
-        require(IERC20(usdtToken).transferFrom(msg.sender, address(this), usdtAmount), "AtomicSwapReceiver: USDT transferFrom failed");
+        IERC20(usdtToken).safeTransferFrom(msg.sender, address(this), usdtAmount);
 
         // 2. Approve SwapRouter to spend USDT
         require(IERC20(usdtToken).approve(swapRouter, usdtAmount), "AtomicSwapReceiver: USDT approve failed");
@@ -78,7 +81,7 @@ contract AtomicSwapReceiver is IAtomicSwapReceiver, Ownable, ReentrancyGuard {
         usdcDeposited = ISwapRouter(swapRouter).exactInputSingle(params);
 
         // 5. Transfer resulting USDC to Treasury
-        require(IERC20(usdcToken).transfer(treasury, usdcDeposited), "AtomicSwapReceiver: USDC transfer failed");
+        IERC20(usdcToken).safeTransfer(treasury, usdcDeposited);
 
         emit AtomicSwapExecuted(msg.sender, usdtAmount, usdcDeposited, 0);
         return usdcDeposited;

@@ -22,6 +22,8 @@ contract AlphaToken is ERC20, AccessControl {
 
     /**
      * @notice Mints new ALPHA tokens. Strictly restricted to MINTER_ROLE.
+     * @param to The address that will receive the minted tokens.
+     * @param amount The number of tokens to mint.
      */
     function mint(address to, uint256 amount) external onlyRole(ProtocolRoles.MINTER_ROLE) {
         _mint(to, amount);
@@ -29,6 +31,7 @@ contract AlphaToken is ERC20, AccessControl {
 
     /**
      * @notice Burns ALPHA tokens from the caller. 
+     * @param amount The number of tokens to burn.
      */
     function burn(uint256 amount) external {
         _burn(msg.sender, amount);
@@ -36,6 +39,8 @@ contract AlphaToken is ERC20, AccessControl {
 
     /**
      * @notice Burns ALPHA tokens from a specific account. Restricted to BURNER_ROLE.
+     * @param account The account from which to burn the tokens.
+     * @param amount The number of tokens to burn.
      */
     function burnFrom(address account, uint256 amount) external onlyRole(ProtocolRoles.BURNER_ROLE) {
         if (account != msg.sender) {

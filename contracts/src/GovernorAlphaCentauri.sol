@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./ProtocolRoles.sol";
 
 interface IGovernanceStakingVotes {
     function getVotes(address account) external view returns (uint256);
@@ -9,6 +10,7 @@ interface IGovernanceStakingVotes {
 }
 
 interface ITimelock {
+    function delay() external view returns (uint256);
     function queueTransaction(address target, uint256 value, bytes calldata data) external returns (bytes32);
     function executeTransaction(address target, uint256 value, bytes calldata data, uint256 eta) external returns (bytes memory);
 }
@@ -17,14 +19,13 @@ interface ITimelock {
  * @title GovernorAlphaCentauri
  * @notice On-chain DAO Governor with 72-hour timelock execution and immutable veto on system vaults.
  */
-contract GovernorAlphaCentauri is Ownable {
+contract GovernorAlphaCentauri is AccessControl {
     IGovernanceStakingVotes public immutable stakingToken;
     address public timelock;
 
     // System vault addresses vetoed from participating in governance voting
     address public alphaVault;
-    address public corporateOpExVault;
-    address public corporateProfitVault;
+    address public communityYieldVault;
     address public treasuryManager;
 
     uint256 public constant VOTING_DELAY = 1; // 1 block voting delay
@@ -62,21 +63,18 @@ contract GovernorAlphaCentauri is Ownable {
         address _stakingToken,
         address _timelock,
         address _alphaVault,
-        address _opExVault,
-        address _profitVault,
+        address _communityYieldVault,
         address _treasuryManager,
         address _initialOwner
-    ) Ownable() {
+    ) {
+        address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
         stakingToken = IGovernanceStakingVotes(_stakingToken);
         timelock = _timelock;
         alphaVault = _alphaVault;
-        corporateOpExVault = _opExVault;
-        corporateProfitVault = _profitVault;
+        communityYieldVault = _communityYieldVault;
         treasuryManager = _treasuryManager;
-
-        if (_initialOwner != msg.sender && _initialOwner != address(0)) {
-            transferOwnership(_initialOwner);
-        }
     }
 
     /**
@@ -85,8 +83,7 @@ contract GovernorAlphaCentauri is Ownable {
     function _getVotes(address account, uint256 blockNumber) internal view returns (uint256) {
         if (
             account == alphaVault ||
-            account == corporateOpExVault ||
-            account == corporateProfitVault ||
+            account == communityYieldVault ||
             account == treasuryManager ||
             account == address(0)
         ) {
@@ -166,7 +163,7 @@ contract GovernorAlphaCentauri is Ownable {
 
         txHash = ITimelock(timelock).queueTransaction(p.target, p.value, p.data);
         p.timelockTxHash = txHash;
-        p.eta = block.timestamp + 3 days;
+        p.eta = block.timestamp + ITimelock(timelock).delay();
         emit ProposalQueued(proposalId, txHash, p.eta);
     }
 

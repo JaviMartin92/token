@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./ProtocolRoles.sol";
 
 /**
  * @title ProtocolTokenomicsEngine
@@ -9,7 +10,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * @dev Enforces 100% mathematical consistency, decimal conversions, fee splits,
  *      bond discounts, LTV capacity, interest calculations, and Proof-of-Reserves solvency.
  */
-contract ProtocolTokenomicsEngine is Ownable {
+contract ProtocolTokenomicsEngine is AccessControl {
 
     // --- PROTOCOL PARAMETERS & BASIS POINTS ---
     uint256 public constant BPS_DENOMINATOR = 10000;
@@ -33,10 +34,10 @@ contract ProtocolTokenomicsEngine is Ownable {
 
     event ParametersUpdated(string parameterGroup);
 
-    constructor(address initialOwner) Ownable() {
-        if (initialOwner != msg.sender && initialOwner != address(0)) {
-            transferOwnership(initialOwner);
-        }
+    constructor(address initialOwner) {
+        address admin = (initialOwner != address(0)) ? initialOwner : msg.sender;
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
     }
 
     // =========================================================================
@@ -180,9 +181,9 @@ contract ProtocolTokenomicsEngine is Ownable {
         calc.penaltyTotal = (discountedPricePaid * ragequitPenaltyBps) / BPS_DENOMINATOR;
         calc.userRefund = discountedPricePaid - calc.penaltyTotal;
         
-        calc.bunkerShare = calc.penaltyTotal / 2;           // 50%
-        calc.opsShare = calc.penaltyTotal / 4;              // 25%
-        calc.flywheelShare = calc.penaltyTotal - calc.bunkerShare - calc.opsShare; // 25%
+        calc.bunkerShare = calc.penaltyTotal / 2;           // 50% Strategic Reserve
+        calc.opsShare = 0;                                  // Pure DeFi: 0% corporate extraction
+        calc.flywheelShare = calc.penaltyTotal - calc.bunkerShare; // 50% Community Yield Flywheel
     }
 
     // =========================================================================

@@ -42,6 +42,7 @@ export function useStakingActions({ activeKey, account, userAddress, addLog, add
       await fetchData();
       setTimeout(fetchData, 500);
     } catch (err: any) {
+      console.error('[STAKING ERROR DETAIL]:', err);
       addLog(`[Error] Stake falló: ${err.message || err}`);
       addToast('error', 'Error Staking', err.message || 'Fallo');
     }

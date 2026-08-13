@@ -17,7 +17,7 @@ El protocolo está diseñado para garantizar **solvencia matemáticamente demost
 graph TD
     User[Inversor / Usuario] -->|USDC| Treasury[Treasury.sol]
     Treasury -->|Mint ALPHA| User
-    Treasury -->|Allocation| Stables[60.00% USDC / Búfer Líquido & Morpho]
+    Treasury -->|Allocation| Stables[60.00% USDC / Búfer Líquido & ERC-4626]
     Treasury -->|Allocation| WBTC[26.67% WBTC Target / Lombard]
     Treasury -->|Allocation| WETH[13.33% WETH Target / Lido]
     
@@ -45,13 +45,13 @@ graph TD
 - **Reserva Exógena Pura Respaldada por Activos**: Cada token ALPHA acuñado está respaldado $100\%$ por una cesta ponderada de activos exógenos de alta liquidez (60.00% USDC, 26.67% WBTC, 13.33% WETH).
 - **Proof of Reserves (PoR) Continuo**: Verificación on-chain de solvencia instantánea con ratio de colateralización $\ge 100\%$.
 - **NFTs de Posición Dinámicos**: Los bonos vestados a 3 o 5 años se representan como NFTs ERC-721 transferibles y utilizables como colateral de préstamos P2P.
-- **Rendimiento Real (Real Yield)**: Distribución de dividendos generados por comisiones de protocolo en USDC o activos de reserva elegidos por el usuario.
+- **Rendimiento Real (Real Yield)**: Distribución de dividendos generados por comisiones de protocolo en USDC o activos de reserva elegidos por el usuario, bajo un estricto modelo Pure DeFi Binario 50/50 (50% Reservas / 50% Stakers).
 
 ---
 
 ## 3. Arquitectura del Sistema
 
-El sistema se compone de **9 contratos inteligentes modulares** organizados en capas funcionales:
+El sistema se compone de **9 contratos inteligentes modulares** organizados en capas funcionales, implementando `AccessControl` unificado y eliminando dependencias de `Ownable`:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -74,7 +74,7 @@ El sistema se compone de **9 contratos inteligentes modulares** organizados en c
 │  │ VestedDiscountVault.sol│   │        P2PLendingMarket.sol          │  │
 │  └───────────┬───────────┘   └──────────────────┬───────────────────┘  │
 │  ┌───────────▼───────────┐   ┌──────────────────▼───────────────────┐  │
-│  │ VaultPositionNFT.sol  │   │     CorporateContribution.sol      │  │
+│  │ VaultPositionNFT.sol  │   │     CommunityYieldVault.sol        │  │
 │  └───────────────────────┘   └──────────────────────────────────────┘  │
 └──────────────────────────────────┬─────────────────────────────────────┘
                                    │
@@ -106,7 +106,7 @@ $$\text{Invariante 1: Solvencia PoR} \quad \Rightarrow \quad \text{Total Assets 
 
 $$\text{Invariante 2: Ratio de Colateral} \quad \Rightarrow \quad Ratio_{bps} = \frac{\sum (Balance_i \times Price_i)}{Supply_{ALPHA} \times NAV} \times 10,000 \ge 10,000$$
 
-$$\text{Invariante 3: Penalización Ragequit} \quad \Rightarrow \quad Penalty = Principal \times 15\% = (Treasury_{7.5\%} + OpEx_{3.75\%} + Profit_{3.75\%}) + Burn_{100\%Unvested}$$
+$$\text{Invariante 3: Penalización Ragequit} \quad \Rightarrow \quad Penalty = Principal \times 15\% = (Treasury_{7.5\%} + Profit_{7.5\%}) + Burn_{100\%Unvested}$$
 
 ---
 

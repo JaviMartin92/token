@@ -3,8 +3,10 @@ pragma solidity ^0.8.20;
 
 import "./interfaces/IYieldStreamingVault.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./ProtocolRoles.sol";
 import "./lib/security/ReentrancyGuard.sol";
 
 /**
@@ -12,7 +14,8 @@ import "./lib/security/ReentrancyGuard.sol";
  * @notice Distributes yield accumulated from yield vaults and consensus staking.
  *         Supports gasless signature-based claims using EIP-712.
  */
-contract YieldStreamingVault is IYieldStreamingVault, Ownable, ReentrancyGuard {
+contract YieldStreamingVault is IYieldStreamingVault, AccessControl, ReentrancyGuard {
+    using SafeERC20 for IERC20;
     bytes32 public constant CLAIM_TYPEHASH = keccak256(
         "ClaimRequest(address user,uint256 amount,uint256 nonce,uint256 deadline)"
     );
@@ -27,8 +30,12 @@ contract YieldStreamingVault is IYieldStreamingVault, Ownable, ReentrancyGuard {
 
     event CompoundingApyUpdated(uint256 newApyBps);
 
-    constructor(address _yieldToken, address _initialOwner) Ownable() {
+    constructor(address _yieldToken, address _initialOwner) {
         yieldToken = _yieldToken;
+
+        address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
 
         uint256 chainId;
         assembly {
@@ -43,13 +50,9 @@ contract YieldStreamingVault is IYieldStreamingVault, Ownable, ReentrancyGuard {
                 address(this)
             )
         );
-
-        if (_initialOwner != msg.sender) {
-            transferOwnership(_initialOwner);
-        }
     }
 
-    function setCompoundingApyBps(uint256 newApyBps) external onlyOwner {
+    function setCompoundingApyBps(uint256 newApyBps) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         compoundingApyBps = newApyBps;
         emit CompoundingApyUpdated(newApyBps);
     }
@@ -68,7 +71,7 @@ contract YieldStreamingVault is IYieldStreamingVault, Ownable, ReentrancyGuard {
     /**
      * @notice Allows governance/operator to add yield allocations to users.
      */
-    function allocateYield(address user, uint256 amount) external onlyOwner {
+    function allocateYield(address user, uint256 amount) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         require(user != address(0), "YieldStreamingVault: Zero address");
         require(amount > 0, "YieldStreamingVault: Amount must be > 0");
 
@@ -90,7 +93,7 @@ contract YieldStreamingVault is IYieldStreamingVault, Ownable, ReentrancyGuard {
         // Execute yield payout transfer
         uint256 bal = IERC20(yieldToken).balanceOf(address(this));
         uint256 payout = amount > bal ? bal : amount;
-        require(IERC20(yieldToken).transfer(msg.sender, payout), "YieldStreamingVault: yield transfer failed");
+        IERC20(yieldToken).safeTransfer(msg.sender, payout);
         
         emit YieldClaimed(msg.sender, payout, false);
     }
@@ -130,7 +133,7 @@ contract YieldStreamingVault is IYieldStreamingVault, Ownable, ReentrancyGuard {
         // Execute yield payout transfer to user
         uint256 bal = IERC20(yieldToken).balanceOf(address(this));
         uint256 payout = request.amount > bal ? bal : request.amount;
-        require(IERC20(yieldToken).transfer(request.user, payout), "YieldStreamingVault: yield transfer failed");
+        IERC20(yieldToken).safeTransfer(request.user, payout);
         
         emit YieldClaimed(request.user, payout, true);
     }

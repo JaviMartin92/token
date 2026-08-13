@@ -6,6 +6,7 @@ import "../src/lib/token/ERC20/ERC20.sol";
 import "../src/ProtocolAddressProvider.sol";
 import "../src/AlphaToken.sol";
 import "../src/AlphaVault.sol";
+import "../src/TreasuryProxy.sol";
 import "../src/OracleHub.sol";
 import "../src/TreasuryManager.sol";
 import "../src/ProtocolRoles.sol";
@@ -75,13 +76,19 @@ contract ModularProtocolTest is Test {
         oracleHub.setTrackedAsset(address(wbtc), address(wbtcFeed), address(0), 8);
 
         // 5. Treasury Manager
-        manager = new TreasuryManager(provider, admin, address(usdc), 6);
+        TreasuryManager logic = new TreasuryManager(provider);
+        TreasuryProxy proxy = new TreasuryProxy(address(logic));
+        manager = TreasuryManager(address(proxy));
+        manager.initialize(admin, address(usdc), 6);
         provider.setAddress(keccak256("TREASURY_MANAGER"), address(manager));
 
         // Roles
         alphaToken.grantRole(ProtocolRoles.MINTER_ROLE, address(manager));
         alphaToken.grantRole(ProtocolRoles.BURNER_ROLE, address(manager));
         vault.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(manager));
+        manager.grantRole(ProtocolRoles.COMPLIANCE_ROLE, admin);
+        
+        manager.setKYCStatus(user, true);
 
         vm.stopPrank();
     }
@@ -94,7 +101,7 @@ contract ModularProtocolTest is Test {
         usdc.approve(address(manager), 1000 * 10**6);
         
         // Calculate expected: 1000 USDC -> 1000 ALPHA (minus 0.5% fee = 995 ALPHA)
-        uint256 expectedMint = manager.deposit(1000 * 10**6);
+        uint256 expectedMint = manager.deposit(1000 * 10**6, 0);
         
         assertEq(expectedMint, 995 * 10**18);
         assertEq(alphaToken.balanceOf(user), 995 * 10**18);
@@ -106,7 +113,7 @@ contract ModularProtocolTest is Test {
         usdc.mint(user, 1000 * 10**6);
         vm.startPrank(user);
         usdc.approve(address(manager), 1000 * 10**6);
-        uint256 minted = manager.deposit(1000 * 10**6); // 995 ALPHA
+        uint256 minted = manager.deposit(1000 * 10**6, 0); // 995 ALPHA
 
         // Advance block height to pass Same-Block Deposit/Redeem Cooldown
         vm.roll(block.number + 1);
@@ -116,7 +123,7 @@ contract ModularProtocolTest is Test {
         alphaToken.approve(address(manager), redeemAmount);
         
         // 497.5 ALPHA at $1 NAV -> 497.5 USDC (minus 0.5% exit fee -> 495.0125 USDC)
-        manager.redeem(redeemAmount);
+        manager.redeem(redeemAmount, 0);
         
         assertEq(alphaToken.balanceOf(user), 4975 * 10**17);
         vm.stopPrank();
@@ -126,7 +133,7 @@ contract ModularProtocolTest is Test {
         usdc.mint(user, 1000 * 10**6);
         vm.startPrank(user);
         usdc.approve(address(manager), 1000 * 10**6);
-        manager.deposit(1000 * 10**6); // 995 ALPHA minted
+        manager.deposit(1000 * 10**6, 0); // 995 ALPHA minted
 
         // Manually check PoR
         uint256 totalReservesUsd = manager.getTotalNavUSD();

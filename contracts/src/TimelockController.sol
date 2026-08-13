@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./ProtocolRoles.sol";
 
 /**
  * @title TimelockController
  * @notice Delays administrative and governance operations by 72 hours for transparency and user protection.
  */
-contract TimelockController is Ownable {
+contract TimelockController is AccessControl {
     uint256 public constant MIN_DELAY = 1 days;
     uint256 public constant MAX_DELAY = 30 days;
 
@@ -26,19 +27,19 @@ contract TimelockController is Ownable {
     event TransactionExecuted(bytes32 indexed txHash, address indexed target, uint256 value, bytes data);
     event TransactionCancelled(bytes32 indexed txHash);
 
-    constructor(uint256 _delay, address _initialOwner) Ownable() {
+    constructor(uint256 _delay, address _initialOwner) {
+        address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
         require(_delay >= MIN_DELAY && _delay <= MAX_DELAY, "Timelock: Invalid delay");
         delay = _delay;
-        if (_initialOwner != msg.sender && _initialOwner != address(0)) {
-            transferOwnership(_initialOwner);
-        }
     }
 
     function queueTransaction(
         address target,
         uint256 value,
         bytes calldata data
-    ) external onlyOwner returns (bytes32 txHash) {
+    ) external onlyRole(ProtocolRoles.ADMIN_ROLE) returns (bytes32 txHash) {
         require(target != address(0), "Timelock: Zero target address");
         uint256 eta = block.timestamp + delay;
         txHash = keccak256(abi.encode(target, value, data, eta));
@@ -59,7 +60,7 @@ contract TimelockController is Ownable {
         uint256 value,
         bytes calldata data,
         uint256 eta
-    ) external onlyOwner returns (bytes memory) {
+    ) external onlyRole(ProtocolRoles.ADMIN_ROLE) returns (bytes memory) {
         bytes32 txHash = keccak256(abi.encode(target, value, data, eta));
         Transaction storage txRecord = queuedTransactions[txHash];
 
@@ -77,7 +78,7 @@ contract TimelockController is Ownable {
         return returnData;
     }
 
-    function cancelTransaction(bytes32 txHash) external onlyOwner {
+    function cancelTransaction(bytes32 txHash) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         require(queuedTransactions[txHash].timestamp != 0, "Timelock: Not queued");
         delete queuedTransactions[txHash];
         emit TransactionCancelled(txHash);

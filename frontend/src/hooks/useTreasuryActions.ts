@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { publicClient, getWalletClient, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
 import { parseEther, parseUnits } from 'viem';
 import type { TxConfirmDetails } from '../components/TransactionConfirmModal.js';
+import { parseWeb3Error } from '../utils/web3ErrorParser.js';
 
 interface TreasuryActionsParams {
   activeKey: string;
@@ -33,8 +34,9 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
       addToast('success', 'Éxito Faucet', 'Recibidos 10,000 USDC mock');
       await fetchData();
     } catch (err: any) {
-      addLog(`[Error] Faucet falló: ${err.message || err}`);
-      addToast('error', 'Error Faucet', err.message || 'Transacción fallida');
+      const parsedErr = parseWeb3Error(err);
+      addLog(`[Error] Faucet falló: ${parsedErr}`);
+      addToast('error', 'Error Faucet', parsedErr);
     }
   };
 
@@ -58,7 +60,7 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
         address: CONTRACT_ADDRESSES.TREASURY,
         abi: ABIS.TREASURY,
         functionName: 'deposit',
-        args: [amountWei]
+        args: [amountWei, 0n]
       });
       await publicClient.waitForTransactionReceipt({ hash: depHash });
       addLog(`Depósito completado. Shares ALPHA acuñadas a valor NAV.`);
@@ -67,8 +69,10 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
       await fetchData();
       setTimeout(fetchData, 500);
     } catch (err: any) {
-      addLog(`[Error] Depósito falló: ${err.message || err}`);
-      addToast('error', 'Error Depósito', err.message || 'Error al depositar');
+      console.error('[DEPOSIT ERROR DETAIL]:', err);
+      const parsedErr = parseWeb3Error(err);
+      addLog(`[Error] Depósito falló: ${parsedErr}`);
+      addToast('error', 'Error Depósito', parsedErr);
     }
   };
 
@@ -153,7 +157,7 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
         address: CONTRACT_ADDRESSES.TREASURY,
         abi: ABIS.TREASURY,
         functionName: 'redeem',
-        args: [amountWei]
+        args: [amountWei, 0n]
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
       addLog(`Rescate completado. USDC transferidos a tu billetera.`);
@@ -162,8 +166,9 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
       await fetchData();
       setTimeout(fetchData, 500);
     } catch (err: any) {
-      addLog(`[Error] Rescate falló: ${err.message || err}`);
-      addToast('error', 'Error Rescate', err.message || 'Error al rescatar');
+      const parsedErr = parseWeb3Error(err);
+      addLog(`[Error] Rescate falló: ${parsedErr}`);
+      addToast('error', 'Error Rescate', parsedErr);
     }
   };
 

@@ -6,6 +6,7 @@ import "../src/lib/token/ERC20/ERC20.sol";
 import "../src/ProtocolAddressProvider.sol";
 import "../src/AlphaToken.sol";
 import "../src/AlphaVault.sol";
+import "../src/TreasuryProxy.sol";
 import "../src/OracleHub.sol";
 import "../src/TreasuryManager.sol";
 import "../src/ProtocolRoles.sol";
@@ -28,6 +29,21 @@ contract MockChainlinkFeedAudit {
     }
     function latestRoundData() external view returns (uint80, int256, uint256, uint256, uint80) {
         return (1, _price, block.timestamp, block.timestamp, 1);
+    }
+    function decimals() external view returns (uint8) { return _decimals; }
+}
+
+contract StaleMockChainlinkFeedAudit {
+    int256 private _price;
+    uint8 private _decimals;
+    uint256 private _updatedAt;
+    constructor(int256 price, uint8 dec, uint256 updatedAt) {
+        _price = price;
+        _decimals = dec;
+        _updatedAt = updatedAt;
+    }
+    function latestRoundData() external view returns (uint80, int256, uint256, uint256, uint80) {
+        return (1, _price, _updatedAt, _updatedAt, 1);
     }
     function decimals() external view returns (uint8) { return _decimals; }
 }
@@ -81,14 +97,22 @@ contract InstitutionalAuditInvariantsTest is Test {
         oracleHub.setTrackedAsset(address(wbtc), address(wbtcFeed), address(0), 8);
         oracleHub.setTrackedAsset(address(weth), address(wethFeed), address(0), 18);
 
-        // 5. TreasuryManager
-        manager = new TreasuryManager(provider, admin, address(usdc), 6);
+        // Treasury Manager
+        TreasuryManager logic = new TreasuryManager(provider);
+        TreasuryProxy proxy = new TreasuryProxy(address(logic));
+        manager = TreasuryManager(address(proxy));
+        manager.initialize(admin, address(usdc), 6);
         provider.setAddress(keccak256("TREASURY_MANAGER"), address(manager));
 
         // Roles
         alphaToken.grantRole(ProtocolRoles.MINTER_ROLE, address(manager));
         alphaToken.grantRole(ProtocolRoles.BURNER_ROLE, address(manager));
         vault.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(manager));
+        manager.grantRole(ProtocolRoles.COMPLIANCE_ROLE, admin);
+        
+        manager.setKYCStatus(user, true);
+        manager.setKYCStatus(address(this), true);
+        manager.setKYCStatus(attacker, true);
 
         vm.stopPrank();
     }
@@ -125,7 +149,7 @@ contract InstitutionalAuditInvariantsTest is Test {
 
         vm.startPrank(user);
         usdc.approve(address(manager), 100_000 * 10**6);
-        manager.deposit(100_000 * 10**6);
+        manager.deposit(100_000 * 10**6, 0);
         vm.stopPrank();
 
         (uint256 totalAssetsUSD, uint256 totalLiabilitiesUSD, uint256 ratioBps) = manager.getProofOfReserves();
@@ -156,7 +180,7 @@ contract InstitutionalAuditInvariantsTest is Test {
         usdc.mint(user, depositAmount);
         vm.startPrank(user);
         usdc.approve(address(manager), depositAmount);
-        manager.deposit(depositAmount);
+        manager.deposit(depositAmount, 0);
         vm.stopPrank();
 
         uint256 navPre = getNavPerShare();
@@ -165,7 +189,7 @@ contract InstitutionalAuditInvariantsTest is Test {
         usdc.mint(attacker, depositAmount);
         vm.startPrank(attacker);
         usdc.approve(address(manager), depositAmount);
-        manager.deposit(depositAmount);
+        manager.deposit(depositAmount, 0);
         vm.stopPrank();
 
         uint256 navPost = getNavPerShare();
@@ -195,14 +219,14 @@ contract InstitutionalAuditInvariantsTest is Test {
         usdc.approve(address(manager), flashLoanAmount);
 
         // 1. Atacante deposita $100,000 USDC masivos (Fee dinámico = 500 BPS / 5.00%)
-        uint256 sharesMinted = manager.deposit(flashLoanAmount);
+        uint256 sharesMinted = manager.deposit(flashLoanAmount, 0);
         assertEq(sharesMinted, 95_000 * 10**18);
 
         // 2. Intento de rescate total en el bloque posterior -> REVERTIDO por protección de colateralización
         vm.roll(block.number + 1);
         alphaToken.approve(address(manager), sharesMinted);
-        vm.expectRevert("TreasuryManager: Security Violation - Transaction reduced collateralization ratio");
-        manager.redeem(sharesMinted);
+        vm.expectRevert("TreasuryManager: Invariant Violation - NAV per share decreased");
+        manager.redeem(sharesMinted, 0);
         vm.stopPrank();
     }
 
@@ -218,7 +242,7 @@ contract InstitutionalAuditInvariantsTest is Test {
         usdc.mint(user, initialVaultAssets);
         vm.startPrank(user);
         usdc.approve(address(manager), initialVaultAssets);
-        manager.deposit(initialVaultAssets);
+        manager.deposit(initialVaultAssets, 0);
         vm.stopPrank();
 
         // 2. Atacante realiza Flash Loan de $50,000 USDC
@@ -227,14 +251,14 @@ contract InstitutionalAuditInvariantsTest is Test {
 
         vm.startPrank(attacker);
         usdc.approve(address(manager), flashLoanAmount);
-        uint256 sharesMinted = manager.deposit(flashLoanAmount);
+        uint256 sharesMinted = manager.deposit(flashLoanAmount, 0);
 
         // Advance block height to pass Same-Block Deposit/Redeem Cooldown
         vm.roll(block.number + 1);
 
         // 3. Atacante intenta rescatar sus shares en el siguiente bloque
         alphaToken.approve(address(manager), sharesMinted);
-        uint256 usdcReturned = manager.redeem(sharesMinted);
+        uint256 usdcReturned = manager.redeem(sharesMinted, 0);
         vm.stopPrank();
 
         uint256 finalAttackerUsdc = usdc.balanceOf(attacker);
@@ -262,11 +286,66 @@ contract InstitutionalAuditInvariantsTest is Test {
 
         vm.startPrank(attacker);
         usdc.approve(address(manager), depositAmt);
-        uint256 shares = manager.deposit(depositAmt);
+        uint256 shares = manager.deposit(depositAmt, 0);
 
         alphaToken.approve(address(manager), shares);
         vm.expectRevert("TreasuryManager: Same-block deposit/redeem cooldown");
-        manager.redeem(shares);
+        manager.redeem(shares, 0);
         vm.stopPrank();
+    }
+
+    /**
+     * @notice Test AC-06: KYC Revoked wallet fails standard redeem, succeeds emergencyRedeem with 5% retained fee.
+     */
+    function test_EmergencyRedeem() public {
+        uint256 depositAmt = 10_000 * 10**6;
+        usdc.mint(user, depositAmt);
+
+        vm.startPrank(user);
+        usdc.approve(address(manager), depositAmt);
+        uint256 shares = manager.deposit(depositAmt, 0);
+        vm.stopPrank();
+
+        // Admin revokes KYC status of user
+        vm.prank(admin);
+        manager.setKYCStatus(user, false);
+
+        vm.roll(block.number + 1);
+
+        // 1. Standard redeem fails due to missing KYC
+        vm.startPrank(user);
+        alphaToken.approve(address(manager), shares);
+        vm.expectRevert("TreasuryManager: KYC verification required");
+        manager.redeem(shares, 0);
+
+        // 2. Emergency redeem succeeds with 5% fee retention
+        uint256 userUsdcBefore = usdc.balanceOf(user);
+        uint256 netAssetsReceived = manager.emergencyRedeem(shares, 0);
+        vm.stopPrank();
+
+        assertGt(netAssetsReceived, 0, "Emergency redeem failed");
+        assertEq(usdc.balanceOf(user) - userUsdcBefore, netAssetsReceived, "User received incorrect USDC amount");
+    }
+
+    /**
+     * @notice Test AC-04: Primary and secondary feed divergence > 500 BPS halts transaction.
+     */
+    function test_OracleDivergence() public {
+        // Warp block timestamp to 10,000 so timestamp subtraction does not underflow
+        vm.warp(10000);
+
+        // 1. Cache valid primary price ($1.00)
+        oracleHub.updatePrimaryPriceCache(address(usdc));
+
+        // 2. Deploy stale primary feed ($1.00 updated 4000s ago) and fresh secondary feed ($1.10 = 10% divergence)
+        StaleMockChainlinkFeedAudit stalePrimaryUsdcFeed = new StaleMockChainlinkFeedAudit(100_000_000, 8, block.timestamp - 4000);
+        MockChainlinkFeedAudit secondaryUsdcFeed = new MockChainlinkFeedAudit(110_000_000, 8);
+
+        vm.prank(admin);
+        oracleHub.setTrackedAsset(address(usdc), address(stalePrimaryUsdcFeed), address(secondaryUsdcFeed), 6);
+
+        // 3. Attempting to fetch price using stale primary falls back to secondary, which triggers divergence check revert
+        vm.expectRevert("OracleHub: High primary/secondary price divergence");
+        oracleHub.getAssetUsdValue(address(usdc), 1000 * 10**6);
     }
 }

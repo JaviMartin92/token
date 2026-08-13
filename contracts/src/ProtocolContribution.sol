@@ -4,14 +4,17 @@ pragma solidity ^0.8.20;
 import "./interfaces/IProtocolContribution.sol";
 import "./interfaces/ISwapRouter.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./ProtocolRoles.sol";
 
 /**
  * @title ProtocolContribution
  * @notice Receives external revenues and schedules TWAP orders to buy the native token,
  *         sending 50% to staking and 50% to the burn address.
  */
-contract ProtocolContribution is IProtocolContribution, Ownable {
+contract ProtocolContribution is IProtocolContribution, AccessControl {
+    using SafeERC20 for IERC20;
     address public immutable usdcToken;
     address public immutable nativeToken;
     address public immutable stakingAddress;
@@ -27,15 +30,15 @@ contract ProtocolContribution is IProtocolContribution, Ownable {
         address _stakingAddress,
         address _swapRouter,
         address _initialOwner
-    ) Ownable() {
+    ) {
         usdcToken = _usdcToken;
         nativeToken = _nativeToken;
         stakingAddress = _stakingAddress;
         swapRouter = _swapRouter;
 
-        if (_initialOwner != address(0) && _initialOwner != msg.sender) {
-            transferOwnership(_initialOwner);
-        }
+        address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
     }
 
     /**
@@ -43,7 +46,7 @@ contract ProtocolContribution is IProtocolContribution, Ownable {
      */
     function injectFunds(uint256 amount, string calldata auditRef) external override {
         require(amount > 0, "ProtocolContribution: Amount must be > 0");
-        require(IERC20(usdcToken).transferFrom(msg.sender, address(this), amount), "ProtocolContribution: USDC transferFrom failed");
+        IERC20(usdcToken).safeTransferFrom(msg.sender, address(this), amount);
         emit ContributionReceived(amount, auditRef);
     }
 
@@ -54,7 +57,7 @@ contract ProtocolContribution is IProtocolContribution, Ownable {
         uint256 amount,
         uint256 intervals,
         uint256 intervalSeconds
-    ) external override onlyOwner {
+    ) external override onlyRole(ProtocolRoles.ADMIN_ROLE) {
         require(amount > 0, "ProtocolContribution: TWAP amount must be > 0");
         require(intervals > 0, "ProtocolContribution: TWAP intervals must be > 0");
         require(intervalSeconds > 0, "ProtocolContribution: intervalSeconds must be > 0");
@@ -107,8 +110,8 @@ contract ProtocolContribution is IProtocolContribution, Ownable {
         uint256 half = tokensBought / 2;
         uint256 otherHalf = tokensBought - half;
 
-        require(IERC20(nativeToken).transfer(stakingAddress, half), "ProtocolContribution: staking transfer failed");
-        require(IERC20(nativeToken).transfer(burnAddress, otherHalf), "ProtocolContribution: burn transfer failed");
+        IERC20(nativeToken).safeTransfer(stakingAddress, half);
+        IERC20(nativeToken).safeTransfer(burnAddress, otherHalf);
 
         emit TwapStepExecuted(orderId, tokensBought, amountToSwap);
     }

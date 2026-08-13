@@ -1,4 +1,6 @@
 import React from 'react';
+import { useConnect, useDisconnect } from 'wagmi';
+import { injected } from 'wagmi/connectors';
 
 interface HeaderProps {
   navValue: string;
@@ -7,10 +9,6 @@ interface HeaderProps {
   blockDateStr: string;
   activeTab: 'client' | 'metrics' | 'governance';
   setActiveTab: (tab: 'client' | 'metrics' | 'governance') => void;
-  activeKey: string;
-  ADMIN_KEY: string;
-  USER_KEY: string;
-  onSwitchRole: (key: `0x${string}`, roleName: string) => void;
   walletConnected: boolean;
   userAddress: string;
   circuitBreakerFrozen: boolean;
@@ -25,16 +23,15 @@ export const Header: React.FC<HeaderProps> = ({
   blockDateStr,
   activeTab,
   setActiveTab,
-  activeKey,
-  ADMIN_KEY,
-  USER_KEY,
-  onSwitchRole,
-  walletConnected,
-  userAddress,
   circuitBreakerFrozen,
   onOpenReferral,
-  onOpenApyModal
+  onOpenApyModal,
+  walletConnected,
+  userAddress
 }) => {
+  const { connect } = useConnect();
+  const { disconnect } = useDisconnect();
+
   return (
     <header className="glass-panel header-container">
       <div className="header-inner">
@@ -83,24 +80,27 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Role Switcher */}
+          {/* Wallet Actions */}
           <div className="header-role-wrapper">
-            <div className="header-info-label">ENTORNO / ROL WALLET:</div>
+            <div className="header-info-label">CONEXIÓN WEB3:</div>
             <div className="header-role-box">
-              <button
-                data-testid="header-role-admin"
-                className={activeKey === ADMIN_KEY ? 'header-role-btn-admin-active' : 'header-role-btn-admin-inactive'}
-                onClick={() => onSwitchRole(ADMIN_KEY as `0x${string}`, 'Sandbox Tester / Operador Devnet')}
-              >
-                🧪 Devnet / Ops Sandbox
-              </button>
-              <button
-                data-testid="header-role-user"
-                className={activeKey === USER_KEY ? 'header-role-btn-user-active' : 'header-role-btn-user-inactive'}
-                onClick={() => onSwitchRole(USER_KEY as `0x${string}`, 'Usuario Retail / Staker')}
-              >
-                👤 Usuario Retail
-              </button>
+              {walletConnected ? (
+                <button
+                  className="btn-danger"
+                  style={{ padding: '0.25rem 0.75rem', fontSize: '0.85rem' }}
+                  onClick={() => disconnect()}
+                >
+                  Desconectar
+                </button>
+              ) : (
+                <button
+                  className="btn-primary"
+                  style={{ padding: '0.25rem 0.75rem', fontSize: '0.85rem' }}
+                  onClick={() => connect({ connector: injected() })}
+                >
+                  Conectar Wallet
+                </button>
+              )}
             </div>
           </div>
         </div>

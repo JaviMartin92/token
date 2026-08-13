@@ -1,4 +1,4 @@
-import { createPublicClient, createWalletClient, http, parseEther, keccak256, toHex } from 'viem';
+import { createPublicClient, createWalletClient, http, parseEther, keccak256, toHex, encodeFunctionData } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { arbitrum } from 'viem/chains';
 import fs from 'fs';
@@ -8,7 +8,7 @@ const ANVIL_URL = process.env.ANVIL_URL || 'http://localhost:8545';
 
 // SECURITY: Private key MUST be supplied via environment variable.
 // Never hardcode private keys in source code.
-const OPERATOR_KEY = process.env.BACKEND_OPERATOR_PRIVATE_KEY;
+const OPERATOR_KEY = (process.env.BACKEND_OPERATOR_PRIVATE_KEY || '').trim();
 if (!OPERATOR_KEY) {
   throw new Error('BACKEND_OPERATOR_PRIVATE_KEY environment variable is not set. Aborting deploy.');
 }
@@ -48,6 +48,7 @@ function loadArtifact(name: string, file: string) {
 async function main() {
   console.log('[*] Starting full deployment of Sandbox Smart Contracts onto Anvil...');
 
+  const TreasuryProxy = loadArtifact('TreasuryProxy', 'TreasuryProxy.sol');
   const MockERC20 = loadArtifact('MockERC20', 'ModularProtocol.t.sol');
   const MockChainlinkFeed = loadArtifact('MockChainlinkFeed', 'ModularProtocol.t.sol');
 
@@ -141,9 +142,20 @@ async function main() {
   const oracleAddr = (await publicClient.waitForTransactionReceipt({ hash: oracleTx })).contractAddress!;
   console.log(`[+] OracleHub deployed at: ${oracleAddr}`);
 
-  const tmTx = await walletClient.deployContract({ abi: TreasuryManager.abi, bytecode: TreasuryManager.bytecode.object, args: [apAddr, account.address, usdcAddr, 6] });
-  const treasuryAddr = (await publicClient.waitForTransactionReceipt({ hash: tmTx })).contractAddress!;
-  console.log(`[+] TreasuryManager deployed at: ${treasuryAddr}`);
+  const tmImplTx = await walletClient.deployContract({ abi: TreasuryManager.abi, bytecode: TreasuryManager.bytecode.object, args: [apAddr] });
+  const tmImplAddr = (await publicClient.waitForTransactionReceipt({ hash: tmImplTx })).contractAddress!;
+
+  const proxyTx = await walletClient.deployContract({ abi: TreasuryProxy.abi, bytecode: TreasuryProxy.bytecode.object, args: [tmImplAddr] });
+  const treasuryAddr = (await publicClient.waitForTransactionReceipt({ hash: proxyTx })).contractAddress!;
+  console.log(`[+] TreasuryManager deployed (Proxy) at: ${treasuryAddr}`);
+
+  const initTx = await walletClient.writeContract({
+    address: treasuryAddr,
+    abi: TreasuryManager.abi,
+    functionName: 'initialize',
+    args: [account.address, usdcAddr, 6]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: initTx });
 
   // Link core modules in AddressProvider
   const idToken = keccak256(toHex('ALPHA_TOKEN'));
@@ -181,8 +193,9 @@ async function main() {
   const hashVault = await walletClient.writeContract({ address: vaultAddr, abi: acAbi, functionName: 'grantRole', args: [VAULT_MANAGER_ROLE, treasuryAddr], account });
   await publicClient.waitForTransactionReceipt({ hash: hashVault });
 
-  const hashOracle = await walletClient.writeContract({ address: oracleAddr, abi: acAbi, functionName: 'grantRole', args: [ORACLE_MANAGER_ROLE, account.address], account });
-  await publicClient.waitForTransactionReceipt({ hash: hashOracle });
+  const COMPLIANCE_ROLE = keccak256(toHex('COMPLIANCE_ROLE'));
+  const hashCompliance = await walletClient.writeContract({ address: treasuryAddr, abi: acAbi, functionName: 'grantRole', args: [COMPLIANCE_ROLE, account.address], account });
+  await publicClient.waitForTransactionReceipt({ hash: hashCompliance });
 
   console.log(`[+] Role assignments configured correctly.`);
 
@@ -254,6 +267,10 @@ async function main() {
   await publicClient.waitForTransactionReceipt({ hash: hashStakingBurn });
   console.log(`[+] Granted BURNER_ROLE to GovernanceStaking on AlphaToken.`);
 
+  const hashTreasuryStakingBurn = await walletClient.writeContract({ address: treasuryAddr, abi: acAbi, functionName: 'grantRole', args: [BURNER_ROLE, stakingAddr], account });
+  await publicClient.waitForTransactionReceipt({ hash: hashTreasuryStakingBurn });
+  console.log(`[+] Granted BURNER_ROLE to GovernanceStaking on TreasuryManager.`);
+
   // 11. Deploy RealYieldRouter
   const routerYieldArtifact = loadArtifact('RealYieldRouter', 'RealYieldRouter.sol');
   const ryRouterTx = await walletClient.deployContract({
@@ -274,6 +291,17 @@ async function main() {
   });
   await publicClient.waitForTransactionReceipt({ hash: authStakingTx });
   console.log(`[+] Authorized RealYieldRouter on GovernanceStaking.`);
+
+  // Authorize TreasuryManager on RealYieldRouter so deposit/redeem protocol fee routing succeeds
+  const authTreasuryYieldTx = await walletClient.writeContract({
+    address: ryRouterAddr,
+    abi: routerYieldArtifact.abi,
+    functionName: 'setAuthorizedYieldCaller',
+    args: [treasuryAddr, true],
+    account
+  });
+  await publicClient.waitForTransactionReceipt({ hash: authTreasuryYieldTx });
+  console.log(`[+] Authorized TreasuryManager on RealYieldRouter.`);
 
   // 11.5 Deploy Protocol OpEx and Community Yield Vaults (Pure DeFi MiCA Compliance)
   const opExArtifact = loadArtifact('ProtocolOpExVault', 'ProtocolOpExVault.sol');
@@ -296,22 +324,23 @@ async function main() {
   const corpProfitAddr = (await publicClient.waitForTransactionReceipt({ hash: profitTx })).contractAddress!;
   console.log(`[+] CommunityYieldVault Contract deployed at: ${corpProfitAddr}`);
 
-  // Set Treasury, Protocol OpEx Vault, Community Yield Vault on RealYieldRouter for 50/25/25 liquid USDC fee split
+  // Set Treasury and Community Yield Vault on RealYieldRouter for 50/50 liquid USDC fee split
   const setRyWalletsTx = await walletClient.writeContract({
     address: ryRouterAddr,
     abi: routerYieldArtifact.abi,
     functionName: 'setProtocolVaults',
-    args: [treasuryAddr, corpOpExAddr, corpProfitAddr],
+    args: [treasuryAddr, corpProfitAddr],
     account
   });
   await publicClient.waitForTransactionReceipt({ hash: setRyWalletsTx });
-  console.log(`[+] Configured 50/25/25 Liquid USDC Vaults (50% Treasury, 25% Protocol OpEx, 25% Community Real Yield) on RealYieldRouter.`);
+  console.log(`[+] Configured 50/50 Liquid USDC Vaults (50% Treasury, 50% Community Real Yield) on RealYieldRouter.`);
 
   const setGovCorpHash = await walletClient.writeContract({
     address: stakingAddr,
     abi: stakingArtifact.abi,
     functionName: 'setProtocolVaults',
-    args: [corpOpExAddr, corpProfitAddr]
+    args: [corpProfitAddr],
+    account
   });
   await publicClient.waitForTransactionReceipt({ hash: setGovCorpHash });
 
@@ -331,10 +360,15 @@ async function main() {
   const vestedVaultTx = await walletClient.deployContract({
     abi: vaultArtifact.abi,
     bytecode: vaultArtifact.bytecode.object,
-    args: [usdcAddr, nftAddr, treasuryAddr, account.address, ryRouterAddr, treasuryAddr, account.address]
+    args: [usdcAddr, nftAddr, treasuryAddr, ryRouterAddr, alphaTokenAddr, account.address],
+    account
   });
   const vestedVaultAddr = (await publicClient.waitForTransactionReceipt({ hash: vestedVaultTx })).contractAddress!;
   console.log(`[+] VestedDiscountVault Contract deployed at: ${vestedVaultAddr}`);
+
+  const hashVestedBurner = await walletClient.writeContract({ address: treasuryAddr, abi: acAbi, functionName: 'grantRole', args: [BURNER_ROLE, vestedVaultAddr], account });
+  await publicClient.waitForTransactionReceipt({ hash: hashVestedBurner });
+  console.log(`[+] Granted BURNER_ROLE to VestedDiscountVault on TreasuryManager.`);
 
   // Set minter on VaultPositionNFT
   const setMinterHash = await walletClient.writeContract({
@@ -356,15 +390,6 @@ async function main() {
   await publicClient.waitForTransactionReceipt({ hash: setGovStakingHash });
   console.log('[+] Configured GovernanceStaking on VestedDiscountVault.');
 
-  // Configure VestedDiscountVault parameters for 5%/10%/15%/20%/25% discount scale
-  const setParamsHash = await walletClient.writeContract({
-    address: vestedVaultAddr,
-    abi: vaultArtifact.abi,
-    functionName: 'setVaultParameters',
-    args: [500n, 2000n, 0n, 100n] // 500 BPS base yield (5%/yr), 0 BPS subsidy
-  });
-  await publicClient.waitForTransactionReceipt({ hash: setParamsHash });
-  console.log('[+] Configured VestedDiscountVault discount scale (5%/10%/15%/20%/25%).');
 
   // 13. Deploy P2PLendingMarket
   const p2pArtifact = loadArtifact('P2PLendingMarket', 'P2PLendingMarket.sol');
@@ -415,7 +440,7 @@ async function main() {
     address: oracleAddr,
     abi: OracleHub.abi,
     functionName: 'setOracleStalenessLimit',
-    args: [3153600000n]
+    args: [86400n]
   });
   await publicClient.waitForTransactionReceipt({ hash: setStalenessHash });
   console.log('[+] Configured USDC, WBTC, and WETH as tracked reserve assets in OracleHub.');
@@ -456,18 +481,14 @@ async function main() {
     console.log('[+] Pre-funded MockSwapRouter with 100 WBTC and 1,000 WETH liquidity.');
   }
 
-  const tmConfigAbi = [
-    { name: 'setConfig', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: '_wbtc', type: 'address' }, { name: '_weth', type: 'address' }, { name: '_swapRouter', type: 'address' }, { name: '_opsWallet', type: 'address' }, { name: '_corpWallet', type: 'address' }], outputs: [] }
-  ] as const;
-
   const setTmConfigHash = await walletClient.writeContract({
     address: treasuryAddr,
-    abi: tmConfigAbi,
+    abi: TreasuryManager.abi,
     functionName: 'setConfig',
-    args: [wbtcAddr, wethAddr, swapRouterAddress, account.address, account.address]
+    args: [wbtcAddr, wethAddr, swapRouterAddress]
   });
   await publicClient.waitForTransactionReceipt({ hash: setTmConfigHash });
-  console.log('[+] Configured setConfig on TreasuryManager with SwapRouter, WBTC, WETH, and Corporate Wallets.');
+  console.log('[+] Configured setConfig on TreasuryManager with SwapRouter, WBTC, and WETH.');
 
   // Configure protocol modules for Proof of Reserves
   // Handled dynamically via AddressProvider now.
@@ -666,20 +687,21 @@ async function main() {
   const governorTx = await walletClient.deployContract({
     abi: governorArtifact.abi,
     bytecode: governorArtifact.bytecode.object,
-    args: [stakingAddr, timelockAddr, vaultAddr, corpOpExAddr, corpProfitAddr, treasuryAddr, account.address]
+    args: [stakingAddr, timelockAddr, vaultAddr, corpProfitAddr, treasuryAddr, account.address]
   });
   const governorAddr = (await publicClient.waitForTransactionReceipt({ hash: governorTx })).contractAddress!;
   console.log(`[+] GovernorAlphaCentauri Contract deployed at: ${governorAddr}`);
 
   // Wire Timelock ownership to GovernorAlphaCentauri
+  const adminRoleHash = keccak256(toHex('ADMIN_ROLE'));
   const setTimeOwnerHash = await walletClient.writeContract({
     address: timelockAddr,
     abi: timelockArtifact.abi,
-    functionName: 'transferOwnership',
-    args: [governorAddr]
+    functionName: 'grantRole',
+    args: [adminRoleHash, governorAddr]
   });
   await publicClient.waitForTransactionReceipt({ hash: setTimeOwnerHash });
-  console.log('[+] Zero-Privilege TimelockController ownership transferred to GovernorAlphaCentauri.');
+  console.log('[+] Granted ADMIN_ROLE on TimelockController to GovernorAlphaCentauri.');
 
   // 12. Pre-fund Admin and User accounts with 10,000 USDC mock
   console.log('[+] Pre-funding Admin and User accounts with 10,000 USDC mock...');
@@ -706,8 +728,26 @@ async function main() {
   // ─── FONDEO INICIAL DEL PROTOCOLO ───────────────────────────────────────────
   const depositAbi = [
     { name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ name: '', type: 'bool' }] },
-    { name: 'deposit', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'stableAmount', type: 'uint256' }], outputs: [{ name: '', type: 'uint256' }] }
+    { name: 'deposit', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'stableAmount', type: 'uint256' }, { name: 'minSharesOut', type: 'uint256' }], outputs: [{ name: '', type: 'uint256' }] }
   ] as const;
+
+  // Enable KYC on TreasuryManager for Admin and User accounts
+  const setKycAdmin = await walletClient.writeContract({
+    address: treasuryAddr as `0x${string}`,
+    abi: TreasuryManager.abi,
+    functionName: 'setKYCStatus',
+    args: [account.address, true]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: setKycAdmin });
+
+  const setKycUser = await walletClient.writeContract({
+    address: treasuryAddr as `0x${string}`,
+    abi: TreasuryManager.abi,
+    functionName: 'setKYCStatus',
+    args: [userAccountAddr as `0x${string}`, true]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: setKycUser });
+  console.log('[+] Admin and User accounts KYC whitelisted on TreasuryManager.');
 
   const initialDeposit = 100000n * 10n**6n; // 100,000 USDC
 
@@ -723,7 +763,7 @@ async function main() {
     address: treasuryAddr as `0x${string}`,
     abi: depositAbi,
     functionName: 'deposit',
-    args: [initialDeposit]
+    args: [initialDeposit, 0n]
   });
   await publicClient.waitForTransactionReceipt({ hash: depositInitial });
   console.log('[+] Protocolo fondeado con 100,000 USDC iniciales. Reservas activas y Stake Reservas iniciado.');

@@ -2,21 +2,25 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./ProtocolRoles.sol";
 import "./lib/security/ReentrancyGuard.sol";
 import "./GovernanceStaking.sol";
 import "./ProtocolOpExVault.sol";
 import "./CommunityYieldVault.sol";
 import "./interfaces/ISwapRouter.sol";
 
+import "./interfaces/IOracleHub.sol";
+
 /**
  * @title RealYieldRouter
  * @notice Universal Fee Router enforcing Pure DeFi MiCA Compliance:
  *         - 50%: Strategic Reserve (Treasury.sol - Subida inmediata de NAV)
- *         - 25%: Protocol OpEx Vault (Liquid USDC for RPCs, Oracles, Dev Grants)
- *         - 25%: Community Yield Vault (Liquid USDC for stALPHA stakers real-time dividend claims)
+ *         - 50%: Community Yield Vault (Liquid USDC for stALPHA stakers real-time dividend claims)
  */
-contract RealYieldRouter is Ownable, ReentrancyGuard {
+contract RealYieldRouter is AccessControl, ReentrancyGuard {
+    using SafeERC20 for IERC20;
     enum PayoutPreference { OPTION_A_STABLECOIN, OPTION_B_RESERVE_ASSET }
 
     address public immutable stablecoin;
@@ -25,18 +29,20 @@ contract RealYieldRouter is Ownable, ReentrancyGuard {
     GovernanceStaking public immutable stakingPool;
 
     address public treasuryBunker;
-    address public protocolOpExVault;
     address public communityYieldVault;
+    
+    address public oracleHub;
+    uint256 public slippageToleranceBps = 100; // default 1%
 
     mapping(address => PayoutPreference) public userPreferences;
     mapping(address => bool) public authorizedYieldCallers;
 
     event PayoutPreferenceSet(address indexed user, PayoutPreference preference);
     event YieldClaimed(address indexed user, uint256 yieldAmount, PayoutPreference preference, uint256 payoutAmount);
-    event UniversalFeeRouted(address indexed feeToken, uint256 totalAmount, uint256 toTreasury, uint256 toOpExUsdc, uint256 toCommunityYieldUsdc);
+    event UniversalFeeRouted(address indexed feeToken, uint256 totalAmount, uint256 toTreasury, uint256 toCommunityYieldUsdc);
 
     modifier onlyAuthorizedYield() {
-        require(authorizedYieldCallers[msg.sender] || msg.sender == owner(), "RealYieldRouter: Not authorized");
+        require(authorizedYieldCallers[msg.sender] || hasRole(ProtocolRoles.ADMIN_ROLE, msg.sender), "RealYieldRouter: Not authorized");
         _;
     }
 
@@ -46,31 +52,29 @@ contract RealYieldRouter is Ownable, ReentrancyGuard {
         address _swapRouter,
         address _stakingPool,
         address _initialOwner
-    ) Ownable() {
+    ) {
         stablecoin = _stablecoin;
         reserveAsset = _reserveAsset;
         swapRouter = _swapRouter;
         stakingPool = GovernanceStaking(_stakingPool);
 
-        if (_initialOwner != address(0) && _initialOwner != msg.sender) {
-            transferOwnership(_initialOwner);
-        }
+        address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
     }
 
-    function setProtocolVaults(address _treasuryBunker, address _opExVault, address _communityYieldVault) external onlyOwner {
+    function setProtocolVaults(address _treasuryBunker, address _communityYieldVault) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         treasuryBunker = _treasuryBunker;
-        protocolOpExVault = _opExVault;
         communityYieldVault = _communityYieldVault;
     }
 
-    function setWallets(address _treasuryBunker, address _opsWallet, address _communityVault) external onlyOwner {
-        treasuryBunker = _treasuryBunker;
-        protocolOpExVault = _opsWallet;
-        communityYieldVault = _communityVault;
+    function setAuthorizedYieldCaller(address caller, bool authorized) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        authorizedYieldCallers[caller] = authorized;
     }
 
-    function setAuthorizedYieldCaller(address caller, bool authorized) external onlyOwner {
-        authorizedYieldCallers[caller] = authorized;
+    function setOracleConfig(address _oracleHub, uint256 _slippageBps) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        oracleHub = _oracleHub;
+        slippageToleranceBps = _slippageBps;
     }
 
     function setPayoutPreference(PayoutPreference preference) external {
@@ -79,8 +83,8 @@ contract RealYieldRouter is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Routes incoming fees according to 50 / 25 / 25 Liquid USDC Specification:
-     *         50% Strategic Reserve, 25% Protocol OpEx (Liquid USDC), 25% Community Real Yield (Liquid USDC).
+     * @notice Routes incoming fees according to 50 / 50 Liquid USDC Specification:
+     *         50% Strategic Reserve, 50% Community Real Yield (Liquid USDC).
      */
     function notifyYield(uint256 /* amount */) external onlyAuthorizedYield {
         routeUniversalFee(stablecoin);
@@ -89,44 +93,34 @@ contract RealYieldRouter is Ownable, ReentrancyGuard {
     /**
      * @notice Universal fee processing for ANY token collected as fee across modules.
      */
-    function routeUniversalFee(address feeToken) public nonReentrant {
+    function routeUniversalFee(address feeToken) public nonReentrant onlyAuthorizedYield {
         uint256 bal = IERC20(feeToken).balanceOf(address(this));
         if (bal == 0) return;
 
         uint256 toTreasury = (treasuryBunker != address(0)) ? (bal * 5000) / 10000 : 0;
-        uint256 communitySharePool = bal - toTreasury; // 50% for OpEx + Community Yield
+        uint256 communityShare = bal - toTreasury; // 50% for Community Yield
 
         if (toTreasury > 0 && treasuryBunker != address(0)) {
-            require(IERC20(feeToken).transfer(treasuryBunker, toTreasury), "RealYieldRouter: Treasury transfer failed");
+            IERC20(feeToken).safeTransfer(treasuryBunker, toTreasury);
             if (feeToken == stablecoin) {
                 try ITreasury(treasuryBunker).notifyReserveFee(toTreasury) {} catch {}
             }
         }
 
-        if (communitySharePool > 0) {
-            uint256 opExShare = communitySharePool / 2;               // 25%
-            uint256 communityShare = communitySharePool - opExShare; // 25%
-
-            if (opExShare > 0 && protocolOpExVault != address(0)) {
-                IERC20(feeToken).approve(protocolOpExVault, opExShare);
-                try ProtocolOpExVault(protocolOpExVault).depositOpEx(opExShare) {} catch {
-                    IERC20(feeToken).transfer(protocolOpExVault, opExShare);
-                }
-            }
-
-            if (communityShare > 0 && communityYieldVault != address(0)) {
+        if (communityShare > 0) {
+            if (communityYieldVault != address(0)) {
                 IERC20(feeToken).approve(communityYieldVault, communityShare);
                 try CommunityYieldVault(communityYieldVault).depositYield(communityShare) {} catch {
-                    IERC20(feeToken).transfer(communityYieldVault, communityShare);
+                    IERC20(feeToken).safeTransfer(communityYieldVault, communityShare);
                 }
-            } else if (communityShare > 0 && address(stakingPool) != address(0) && feeToken == stablecoin) {
+            } else if (address(stakingPool) != address(0) && feeToken == stablecoin) {
                 IERC20(feeToken).approve(address(stakingPool), communityShare);
                 try stakingPool.notifyRewardAmount(communityShare) {} catch {
-                    IERC20(feeToken).transfer(address(stakingPool), communityShare);
+                    IERC20(feeToken).safeTransfer(address(stakingPool), communityShare);
                 }
             }
 
-            emit UniversalFeeRouted(feeToken, bal, toTreasury, opExShare, communityShare);
+            emit UniversalFeeRouted(feeToken, bal, toTreasury, communityShare);
         }
     }
 
@@ -137,10 +131,25 @@ contract RealYieldRouter is Ownable, ReentrancyGuard {
 
         if (pref == PayoutPreference.OPTION_A_STABLECOIN) {
             payoutAmount = yieldAmount;
-            require(IERC20(stablecoin).transfer(msg.sender, payoutAmount), "RealYieldRouter: Stablecoin payout failed");
+            IERC20(stablecoin).safeTransfer(msg.sender, payoutAmount);
         } else {
             // Option B: Reserve Asset
             if (swapRouter != address(0)) {
+                uint256 minReserve = 0;
+                if (oracleHub != address(0)) {
+                    uint256 reservePrice18 = IOracleHub(oracleHub).getPriceBase18(reserveAsset);
+                    uint8 reserveDec = 8;
+                    (bool success, bytes memory data) = reserveAsset.staticcall(abi.encodeWithSignature("decimals()"));
+                    if (success && data.length > 0) {
+                        reserveDec = abi.decode(data, (uint8));
+                    }
+                    // yieldAmount has 6 decimals (stablecoin).
+                    // USD value (18 dec) = yieldAmount * 10**12
+                    // reserveAmount = (USD value * 10**reserveDec) / reservePrice18
+                    uint256 expectedReserve = (yieldAmount * 10**12 * 10**reserveDec) / reservePrice18;
+                    minReserve = (expectedReserve * (10000 - slippageToleranceBps)) / 10000;
+                }
+
                 IERC20(stablecoin).approve(swapRouter, yieldAmount);
                 try ISwapRouter(swapRouter).exactInputSingle(
                     ISwapRouter.ExactInputSingleParams({
@@ -150,18 +159,18 @@ contract RealYieldRouter is Ownable, ReentrancyGuard {
                         recipient: msg.sender,
                         deadline: block.timestamp + 15 minutes,
                         amountIn: yieldAmount,
-                        amountOutMinimum: 0,
+                        amountOutMinimum: minReserve,
                         sqrtPriceLimitX96: 0
                     })
                 ) returns (uint256 tokensBought) {
                     payoutAmount = tokensBought;
                 } catch {
                     payoutAmount = yieldAmount;
-                    require(IERC20(stablecoin).transfer(msg.sender, payoutAmount), "RealYieldRouter: Fallback stablecoin transfer failed");
+                    IERC20(stablecoin).safeTransfer(msg.sender, payoutAmount);
                 }
             } else {
                 payoutAmount = yieldAmount;
-                require(IERC20(stablecoin).transfer(msg.sender, payoutAmount), "RealYieldRouter: Fallback stablecoin transfer failed");
+                IERC20(stablecoin).safeTransfer(msg.sender, payoutAmount);
             }
         }
 

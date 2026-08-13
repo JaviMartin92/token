@@ -2,7 +2,9 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "../ProtocolRoles.sol";
 import "../lib/security/ReentrancyGuard.sol";
 
 /**
@@ -10,7 +12,8 @@ import "../lib/security/ReentrancyGuard.sol";
  * @notice Adapts 80% of Treasury stablecoin liquid reserves and BTC/ETH staking positions to institutional Morpho Blue / MetaMorpho vaults.
  *         Harvests daily yields directly into the Treasury core to compound NAV per share.
  */
-contract MorphoYieldVaultAdapter is Ownable, ReentrancyGuard {
+contract MorphoYieldVaultAdapter is AccessControl, ReentrancyGuard {
+    using SafeERC20 for IERC20;
     address public immutable stablecoin;
     address public treasury;
 
@@ -27,22 +30,21 @@ contract MorphoYieldVaultAdapter is Ownable, ReentrancyGuard {
     event YieldHarvested(uint256 yieldAmount, uint256 timestamp);
     event APYsUpdated(uint256 stablecoinApy, uint256 ethApy, uint256 btcApy);
 
-    constructor(address _stablecoin, address _treasury, address _initialOwner) Ownable() {
+    constructor(address _stablecoin, address _treasury, address _initialOwner) {
+        address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
         stablecoin = _stablecoin;
         treasury = _treasury;
         lastHarvestTimestamp = block.timestamp;
-
-        if (_initialOwner != msg.sender) {
-            transferOwnership(_initialOwner);
-        }
     }
 
-    function setTreasury(address _treasury) external onlyOwner {
+    function setTreasury(address _treasury) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         require(_treasury != address(0), "MorphoAdapter: Zero address");
         treasury = _treasury;
     }
 
-    function setAPYs(uint256 _stablecoinApy, uint256 _ethApy, uint256 _btcApy) external onlyOwner {
+    function setAPYs(uint256 _stablecoinApy, uint256 _ethApy, uint256 _btcApy) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         morphoStablecoinApyBps = _stablecoinApy;
         lidoEthStakingApyBps = _ethApy;
         lombardBtcStakingApyBps = _btcApy;
@@ -54,7 +56,7 @@ contract MorphoYieldVaultAdapter is Ownable, ReentrancyGuard {
      */
     function depositStablecoins(uint256 amount) external nonReentrant returns (bool) {
         require(amount > 0, "MorphoAdapter: Amount must be > 0");
-        require(IERC20(stablecoin).transferFrom(msg.sender, address(this), amount), "MorphoAdapter: Transfer failed");
+        IERC20(stablecoin).safeTransferFrom(msg.sender, address(this), amount);
         
         totalStablecoinInvested += amount;
         emit DepositedToMorpho(amount);
@@ -77,7 +79,7 @@ contract MorphoYieldVaultAdapter is Ownable, ReentrancyGuard {
      * @notice Withdraws liquidity back to the Treasury to cover redemptions
      */
     function withdrawLiquidity(uint256 amount) external nonReentrant returns (uint256 withdrawn) {
-        require(msg.sender == treasury || msg.sender == owner(), "MorphoAdapter: Unauthorized caller");
+        require(msg.sender == treasury || hasRole(ProtocolRoles.ADMIN_ROLE, msg.sender), "MorphoAdapter: Unauthorized caller");
         require(amount > 0, "MorphoAdapter: Amount must be > 0");
 
         uint256 bal = IERC20(stablecoin).balanceOf(address(this));
@@ -89,7 +91,7 @@ contract MorphoYieldVaultAdapter is Ownable, ReentrancyGuard {
             } else {
                 totalStablecoinInvested = 0;
             }
-            require(IERC20(stablecoin).transfer(treasury, withdrawn), "MorphoAdapter: Transfer failed");
+            IERC20(stablecoin).safeTransfer(treasury, withdrawn);
         }
     }
 }

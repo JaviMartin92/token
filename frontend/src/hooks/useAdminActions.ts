@@ -90,7 +90,7 @@ export function useAdminActions({ activeKey, snapshotId, setSnapshotId, addLog, 
         address: CONTRACT_ADDRESSES.TREASURY,
         abi: ABIS.TREASURY,
         functionName: 'setAssetWeights',
-        args: [{ stablecoins: s, wbtc: b, weth: e, alphaProtocolStaking: a }]
+        args: [s, b, e, a]
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
       addLog('¡Pesos de tesorería ajustados con éxito on-chain!');
@@ -210,7 +210,7 @@ export function useAdminActions({ activeKey, snapshotId, setSnapshotId, addLog, 
       const tx = await client.writeContract({
         address: CONTRACT_ADDRESSES.CORPORATE_CONTRIBUTION,
         abi: ABIS.CORPORATE_CONTRIBUTION,
-        functionName: 'createTWAPOrder',
+        functionName: 'createTwapOrder',
         args: [amountWei, BigInt(5), BigInt(300)]
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });

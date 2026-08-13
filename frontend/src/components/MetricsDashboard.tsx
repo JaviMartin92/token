@@ -23,6 +23,7 @@ interface MetricsDashboardProps {
   loansList: any[];
   onOpenApyModal: () => void;
   liveApyStr: string;
+  targetWeights?: { stables: number; wbtc: number; weth: number; alts: number };
 }
 
 export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
@@ -43,7 +44,8 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   userPositions,
   loansList,
   onOpenApyModal,
-  liveApyStr
+  liveApyStr,
+  targetWeights = { stables: 60, wbtc: 26.67, weth: 13.33, alts: 0 }
 }) => {
   const numericRatioPct = parseFloat((porRatio || '100').replace(/,/g, '').replace('%', '')) || 100.0;
 
@@ -195,21 +197,21 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
             <tbody>
               <tr className="gcc-tr-border">
                 <td className={styles.tableTdCyan}>💵 USDC / Stablecoins</td>
-                <td className={styles.tableTd}>60.00% Target</td>
+                <td className={styles.tableTd}>{(targetWeights?.stables || 60).toFixed(2)}% Target</td>
                 <td data-testid="por-row-usdc-val" className={styles.tableTdBold}>${stablesUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
-                <td className={styles.tableTdMuted}>Morpho Blue (80% MetaMorpho Vault @ 6.45% APY)</td>
+                <td className={styles.tableTdMuted}>Morpho Blue MetaMorpho Vault / Créditos P2P</td>
               </tr>
               <tr className="gcc-tr-border">
                 <td className={styles.tableTdAmber}>🪙 Wrapped Bitcoin (WBTC)</td>
-                <td className={styles.tableTd}>26.67% Target</td>
+                <td className={styles.tableTd}>{(targetWeights?.wbtc || 26.67).toFixed(2)}% Target</td>
                 <td data-testid="por-row-wbtc-val" className={styles.tableTdBold}>${btcUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
-                <td className={styles.tableTdMuted}>Staking Lombard LBTC / Chainlink Feed</td>
+                <td className={styles.tableTdMuted}>Staking Lombard LBTC / Oráculo Chainlink</td>
               </tr>
               <tr className="gcc-tr-border">
                 <td className={styles.tableTdIndigo}>🔷 Wrapped Ethereum (WETH)</td>
-                <td className={styles.tableTd}>13.33% Target</td>
+                <td className={styles.tableTd}>{(targetWeights?.weth || 13.33).toFixed(2)}% Target</td>
                 <td data-testid="por-row-weth-val" className={styles.tableTdBold}>${ethUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
-                <td className={styles.tableTdMuted}>Lido Liquid Staking stETH / Chainlink Feed</td>
+                <td className={styles.tableTdMuted}>Lido Liquid Staking stETH / Oráculo Chainlink</td>
               </tr>
             </tbody>
           </table>
@@ -226,6 +228,8 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
         claimableYield={claimableYield}
         userPositions={userPositions}
         loansList={loansList}
+        liveApyStr={liveApyStr}
+        targetWeights={targetWeights}
       />
     </div>
   );

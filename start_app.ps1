@@ -20,7 +20,7 @@ $ROOT_DIR = Get-Location
 # 1. Reset instantaneo de Anvil Blockchain a Estado 0 (Purga completa de memoria)
 Write-Host "[1/3] Reiniciando memoria de Anvil Blockchain a Estado 0 (Fresh Genesis)..." -ForegroundColor Yellow
 docker rm -f alpha-anvil 2>$null | Out-Null
-docker run -d --name alpha-anvil -p 8545:8545 --entrypoint anvil ghcr.io/foundry-rs/foundry:latest --host 0.0.0.0 --port 8545 --chain-id 31337 | Out-Null
+docker run -d --name alpha-anvil -p 8545:8545 --entrypoint anvil ghcr.io/foundry-rs/foundry:latest --host 0.0.0.0 --port 8545 --chain-id 31337 --code-size-limit 120000 | Out-Null
 Start-Sleep -Seconds 2
 
 # 2. Compilar y Desplegar Smart Contracts y Pre-fondear Billeteras

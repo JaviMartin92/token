@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./lib/security/ReentrancyGuard.sol";
 import "./VaultPositionNFT.sol";
@@ -15,6 +16,7 @@ import "./interfaces/IRealYieldRouter.sol";
  * @notice Collateralized P2P lending market allowing position NFT holders to leverage positions up to 70% LTV.
  */
 contract P2PLendingMarket is Ownable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
     address public immutable stablecoin;
     VaultPositionNFT public immutable positionNFT;
     address public feeCollector;
@@ -116,7 +118,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
         require(borrowAmount <= maxBorrow, "P2P: Exceeds 70% max LTV");
 
         // Transfer position NFT to market contract as collateral lock
-        positionNFT.transferFrom(msg.sender, address(this), positionTokenId);
+        positionNFT.safeTransferFrom(msg.sender, address(this), positionTokenId);
 
         loanId = nextLoanId++;
         loans[loanId] = Loan({
@@ -141,7 +143,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
         require(loan.state == LoanState.CREATED, "P2P: Cannot cancel active loan");
 
         loan.state = LoanState.CANCELLED;
-        positionNFT.transferFrom(address(this), msg.sender, loan.positionTokenId);
+        positionNFT.safeTransferFrom(address(this), msg.sender, loan.positionTokenId);
 
         emit LoanCancelled(loanId);
     }
@@ -162,9 +164,9 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
         uint256 netBorrow = loan.borrowAmount - originationFee;
 
         // Pull funds from Lender (msg.sender) to Borrower (loan.borrower) and FeeCollector
-        require(IERC20(stablecoin).transferFrom(msg.sender, loan.borrower, netBorrow), "P2P: Lender payout failed");
+        IERC20(stablecoin).safeTransferFrom(msg.sender, loan.borrower, netBorrow);
         if (originationFee > 0) {
-            require(IERC20(stablecoin).transferFrom(msg.sender, feeCollector, originationFee), "P2P: Fee payout failed");
+            IERC20(stablecoin).safeTransferFrom(msg.sender, feeCollector, originationFee);
         }
 
         emit LoanAccepted(loanId, msg.sender, loan.borrowAmount);
@@ -189,20 +191,20 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
         if (treasury != address(0) && (msg.sender == owner() || msg.sender == treasury)) {
             loan.lender = treasury;
             ITreasury(treasury).disburseTreasuryLoan(address(this), loan.borrowAmount);
-            require(IERC20(stablecoin).transfer(loan.borrower, netBorrow), "P2P: Lender payout failed");
+            IERC20(stablecoin).safeTransfer(loan.borrower, netBorrow);
             if (originationFee > 0 && feeCollector != address(0)) {
-                require(IERC20(stablecoin).transfer(feeCollector, originationFee), "P2P: Origination fee failed");
+                IERC20(stablecoin).safeTransfer(feeCollector, originationFee);
                 if (feeCollector.code.length > 0) {
                     try IRealYieldRouter(feeCollector).routeUniversalFee(stablecoin) {} catch {}
                 }
             } else if (originationFee > 0 && treasury != address(0)) {
-                require(IERC20(stablecoin).transfer(treasury, originationFee), "P2P: Treasury orig fee failed");
+                IERC20(stablecoin).safeTransfer(treasury, originationFee);
             }
         } else {
             // Standard P2P Lender
-            require(IERC20(stablecoin).transferFrom(msg.sender, loan.borrower, netBorrow), "P2P: Lender payout failed");
+            IERC20(stablecoin).safeTransferFrom(msg.sender, loan.borrower, netBorrow);
             if (originationFee > 0 && feeCollector != address(0)) {
-                require(IERC20(stablecoin).transferFrom(msg.sender, feeCollector, originationFee), "P2P: Fee payout failed");
+                IERC20(stablecoin).safeTransferFrom(msg.sender, feeCollector, originationFee);
                 if (feeCollector.code.length > 0) {
                     try IRealYieldRouter(feeCollector).routeUniversalFee(stablecoin) {} catch {}
                 }
@@ -280,22 +282,22 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
 
         if (treasury != address(0) && (loan.lender == owner() || loan.lender == treasury)) {
             // Treasury Reserve Loan: Principal returned to Treasury reserves + 50/25/25 interest split
-            require(IERC20(stablecoin).transferFrom(msg.sender, treasury, loan.borrowAmount), "P2P: Principal repayment failed");
+            IERC20(stablecoin).safeTransferFrom(msg.sender, treasury, loan.borrowAmount);
             if (interest > 0 && feeCollector != address(0)) {
-                require(IERC20(stablecoin).transferFrom(msg.sender, feeCollector, interest), "P2P: Interest fee failed");
+                IERC20(stablecoin).safeTransferFrom(msg.sender, feeCollector, interest);
                 if (feeCollector.code.length > 0) {
                     try IRealYieldRouter(feeCollector).routeUniversalFee(stablecoin) {} catch {}
                 }
             } else if (interest > 0 && treasury != address(0)) {
-                require(IERC20(stablecoin).transferFrom(msg.sender, treasury, interest), "P2P: Interest to treasury failed");
+                IERC20(stablecoin).safeTransferFrom(msg.sender, treasury, interest);
             }
         } else {
             // Standard P2P Lender
             uint256 feeSpread = (interest * INTEREST_SPREAD_BPS) / 10000; // 10% of interest
             uint256 lenderPayout = totalOwed - feeSpread;
-            require(IERC20(stablecoin).transferFrom(msg.sender, loan.lender, lenderPayout), "P2P: Lender payout failed");
+            IERC20(stablecoin).safeTransferFrom(msg.sender, loan.lender, lenderPayout);
             if (feeSpread > 0 && feeCollector != address(0)) {
-                require(IERC20(stablecoin).transferFrom(msg.sender, feeCollector, feeSpread), "P2P: Fee spread failed");
+                IERC20(stablecoin).safeTransferFrom(msg.sender, feeCollector, feeSpread);
                 if (feeCollector.code.length > 0) {
                     try IRealYieldRouter(feeCollector).routeUniversalFee(stablecoin) {} catch {}
                 }
@@ -304,12 +306,12 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
 
         // Return Position NFT to borrower if colateralized
         if (loan.positionTokenId > 0 && address(positionNFT) != address(0)) {
-            positionNFT.transferFrom(address(this), loan.borrower, loan.positionTokenId);
+            positionNFT.safeTransferFrom(address(this), loan.borrower, loan.positionTokenId);
         }
 
         // Return stablecoin collateral to borrower if colateralized in USDC
         if (loan.collateralAmount > 0) {
-            require(IERC20(stablecoin).transfer(loan.borrower, loan.collateralAmount), "P2P: Failed to return borrower collateral");
+            IERC20(stablecoin).safeTransfer(loan.borrower, loan.collateralAmount);
         }
 
         emit LoanRepaid(loanId, totalOwed);
@@ -321,7 +323,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
 
         uint256 healthRatio = calculateHealthFactor(loanId);
         bool isExpired = block.timestamp > (loan.startTime + (loan.durationDays * 1 days));
-        require(healthRatio < LIQUIDATION_THRESHOLD || isExpired || msg.sender == owner() || msg.sender == loan.lender, "P2P: Loan health factor >= 115% and not expired");
+        require(healthRatio < LIQUIDATION_THRESHOLD || isExpired, "P2P: Loan health factor >= 115% and not expired");
 
         (uint256 totalOwed, ) = calculateTotalOwed(loanId);
 
@@ -329,9 +331,17 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard {
 
         uint256 totalCollateral = loan.collateralAmount;
 
-        // Transfer position NFT collateral to lender in full settlement of defaulted loan
+        // Liquidator repays the debt to the lender
+        IERC20(stablecoin).safeTransferFrom(msg.sender, loan.lender, totalOwed);
+
+        // Transfer position NFT collateral to liquidator in full settlement of defaulted loan
         if (loan.positionTokenId > 0 && address(positionNFT) != address(0)) {
-            positionNFT.transferFrom(address(this), loan.lender, loan.positionTokenId);
+            positionNFT.safeTransferFrom(address(this), msg.sender, loan.positionTokenId);
+        }
+
+        // Return stablecoin collateral to liquidator if collateralized in USDC
+        if (loan.collateralAmount > 0) {
+            IERC20(stablecoin).safeTransfer(msg.sender, loan.collateralAmount);
         }
 
         emit LoanLiquidated(loanId, msg.sender, totalCollateral);

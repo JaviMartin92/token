@@ -3,7 +3,9 @@ pragma solidity ^0.8.20;
 
 import "./interfaces/ISwapRouter.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./ProtocolRoles.sol";
 
 interface IMockMintableERC20 {
     function mint(address to, uint256 amount) external;
@@ -15,7 +17,8 @@ interface IMockMintableERC20 {
  * @notice Mock Uniswap V3 SwapRouter for sandbox local devnet (Anvil).
  *         Executes real ERC20 swaps using mock prices ($60,000 WBTC, $3,000 WETH, $1 USDC).
  */
-contract MockSwapRouter is ISwapRouter, Ownable {
+contract MockSwapRouter is ISwapRouter, AccessControl {
+    using SafeERC20 for IERC20;
     address public immutable usdcToken;
     address public immutable wbtcToken;
     address public immutable wethToken;
@@ -28,17 +31,17 @@ contract MockSwapRouter is ISwapRouter, Ownable {
         address _wbtcToken,
         address _wethToken,
         address _initialOwner
-    ) Ownable() {
+    ) {
         usdcToken = _usdcToken;
         wbtcToken = _wbtcToken;
         wethToken = _wethToken;
 
-        if (_initialOwner != msg.sender && _initialOwner != address(0)) {
-            transferOwnership(_initialOwner);
-        }
+        address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
     }
 
-    function setPrices(uint256 _btcPriceUsd, uint256 _ethPriceUsd) external onlyOwner {
+    function setPrices(uint256 _btcPriceUsd, uint256 _ethPriceUsd) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         btcPriceUsd = _btcPriceUsd;
         ethPriceUsd = _ethPriceUsd;
     }
@@ -50,7 +53,7 @@ contract MockSwapRouter is ISwapRouter, Ownable {
         address payer = (params.recipient != address(0) && IERC20(params.tokenIn).allowance(params.recipient, address(this)) >= params.amountIn) 
             ? params.recipient 
             : msg.sender;
-        require(IERC20(params.tokenIn).transferFrom(payer, address(this), params.amountIn), "MockSwapRouter: transferFrom failed");
+        IERC20(params.tokenIn).safeTransferFrom(payer, address(this), params.amountIn);
 
         // 2. Compute amountOut based on token pair
         if (params.tokenIn == usdcToken && params.tokenOut == wbtcToken) {
@@ -76,12 +79,12 @@ contract MockSwapRouter is ISwapRouter, Ownable {
         // 3. Deliver tokenOut to recipient
         uint256 routerBal = IERC20(params.tokenOut).balanceOf(address(this));
         if (routerBal >= amountOut) {
-            require(IERC20(params.tokenOut).transfer(params.recipient, amountOut), "MockSwapRouter: transfer failed");
+            IERC20(params.tokenOut).safeTransfer(params.recipient, amountOut);
         } else {
             // Mint if mock token allows minting
             try IMockMintableERC20(params.tokenOut).mint(params.recipient, amountOut) {} catch {
                 if (routerBal > 0) {
-                    IERC20(params.tokenOut).transfer(params.recipient, routerBal);
+                    IERC20(params.tokenOut).safeTransfer(params.recipient, routerBal);
                 }
             }
         }

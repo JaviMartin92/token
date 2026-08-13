@@ -32,13 +32,12 @@ El Protocolo Alpha Centauri opera bajo un modelo estricto de Real Yield Respalda
 
 ---
 
-## 🏛️ 1. Reparto Universal de Comisiones (Modelo Pure DeFi 50 / 25 / 25)
+## 🏛️ 1. Reparto Universal de Comisiones (Modelo Pure DeFi Binario 50/50)
 
-Toda comisión generada por cualquier operativa de la plataforma (depósitos, rescates, compra de bonos vestados, penalizaciones por ragequit, originación e intereses de préstamos P2P) ingresa a través del contrato `RealYieldRouter.sol` y se distribuye strictly bajo la siguiente regla universal:
+Toda comisión generada por cualquier operativa de la plataforma (depósitos, rescates, compra de bonos vestados, penalizaciones por *ragequit*, originación e intereses de préstamos P2P) ingresa a través del contrato `RealYieldRouter.sol` y se distribuye estrictamente bajo un modelo binario, habiendo erradicado cualquier extracción corporativa para cumplir con la exención del Recital 22 de MiCA:
 
-* **50.00%: Reservas Estratégicas (`TreasuryManager.sol`):** Depósito directo en Tesorería (`AlphaVault.sol`) -> Incrementa el NAV por token y fortalece las reservas respaldadas por activos exógenos.
-* **25.00%: Protocol OpEx & Dev Grants Vault (`ProtocolOpExVault.sol`):** Auto-Swap en DEX a ALPHA y Staking -> Financia la infraestructura descentralizada, nodos RPC y otorga presupuestos de desarrollo (*Dev Grants*) aprobados por la DAO mediante votaciones on-chain.
-* **25.00%: Community Real Yield Vault (`CommunityYieldVault.sol`):** Auto-Swap en DEX a ALPHA y Staking -> Acumula y distribuye beneficios exclusivamente entre los *stakers* de stALPHA de la comunidad.
+* **50.00% - Reservas Estratégicas (`TreasuryManager.sol`):** Inyección directa al `AlphaVault.sol`. Incrementa instantáneamente el $NAV_{\text{spot}}$ por token y fortalece el respaldo patrimonial de los activos exógenos.
+* **50.00% - Community Real Yield Vault (`CommunityYieldVault.sol`):** Capital líquido destinado exclusivamente a los *stakers* de la comunidad. Se acabó la bóveda de operaciones (OpEx); el protocolo es un bien público puro.
 
 ---
 
@@ -113,13 +112,10 @@ Para proteger la masa patrimonial del protocolo y evitar arbitrajes por volumen 
 
 ## 📊 8. Matriz Completa de Comisiones On-Chain (`ProtocolTokenomicsEngine.sol`)
 
-* **Depósito en Tesorería (`TreasuryManager.sol`):** Dinámico (0.50% a 5.00%) (50 a 500 BPS) -> Reparto: 50% Reservas / 25% OpEx Grants / 25% Community Yield.
-* **Rescate / Redeem (`TreasuryManager.sol`):** 1.00% (100 BPS) -> Reparto: 50% Reservas / 25% OpEx Grants / 25% Community Yield.
-* **Entrada a Staking (`GovernanceStaking.sol`):** 1.00% (100 BPS) -> Reparto: 0.50% Quema Deflacionaria Permanente, 0.25% OpEx Grants, 0.25% Community Yield.
-* **Acuñación de Bonos (`VestedDiscountVault.sol`):** 1.50% Mint Fee + 1.50% Referidos -> Reparto: 50% Reservas / 25% OpEx Grants / 25% Community Yield.
-* **Ragequit de Bonos (`VestedDiscountVault.sol`):** 15.00% Penalización USDC -> Reparto: 100% de la penalización enrutada 50/25/25 + Quema 100% Unvested.
-* **Originación Préstamo P2P (`P2PLendingMarket.sol`):** 0.50% (50 BPS) -> Reparto: 50% Reservas / 25% OpEx Grants / 25% Community Yield.
-* **Spread Interés P2P (`P2PLendingMarket.sol`):** 10.00% del Interés Generado -> Reparto: 50% Reservas / 25% OpEx Grants / 25% Community Yield.
+* **Depósito en Tesorería (`TreasuryManager.sol`):** Dinámico (0.50% a 5.00%) -> Reparto: 50% Reservas / 50% Community Yield.
+* **Rescate / Redeem (`TreasuryManager.sol`):** 1.00% fijo -> Reparto: 50% Reservas / 50% Community Yield.
+* **Entrada a Staking (`GovernanceStaking.sol`):** 1.00% -> Reparto: 0.50% Quema Deflacionaria Permanente, 0.50% Community Yield.
+* **Originación Préstamo P2P (`P2PLendingMarket.sol`):** 0.50% -> Reparto: 50% Reservas / 50% Community Yield.
 
 ---
 

@@ -22,8 +22,8 @@ export const CONTRACT_ADDRESSES = {
   YIELD_VAULT: ((contractsJson as any).YIELD_VAULT || import.meta.env.VITE_YIELD_STREAMING_VAULT_ADDRESS) as `0x${string}`,
   PROTOCOL_OPEX_VAULT: ((contractsJson as any).PROTOCOL_OPEX_VAULT || import.meta.env.VITE_PROTOCOL_OPEX_VAULT_ADDRESS) as `0x${string}`,
   COMMUNITY_YIELD_VAULT: ((contractsJson as any).COMMUNITY_YIELD_VAULT || import.meta.env.VITE_COMMUNITY_YIELD_VAULT_ADDRESS) as `0x${string}`,
-  CORPORATE_OPEX_VAULT: ((contractsJson as any).PROTOCOL_OPEX_VAULT) as `0x${string}`,
-  CORPORATE_PROFIT_VAULT: ((contractsJson as any).COMMUNITY_YIELD_VAULT) as `0x${string}`,
+  CORPORATE_OPEX_VAULT: ((contractsJson as any).CORPORATE_OPEX_VAULT || (contractsJson as any).PROTOCOL_OPEX_VAULT) as `0x${string}`,
+  CORPORATE_PROFIT_VAULT: ((contractsJson as any).CORPORATE_PROFIT_VAULT || (contractsJson as any).COMMUNITY_YIELD_VAULT) as `0x${string}`,
   ALPHA_VAULT: ((contractsJson as any).ALPHA_VAULT) as `0x${string}`,
   PRICE_FEED: ((contractsJson as any).ORACLE_ROUTER || (contractsJson as any).PRICE_FEED) as `0x${string}`,
   PROMOTIONAL_VAULT: ((contractsJson as any).PROMO_VAULT) as `0x${string}`,
@@ -86,15 +86,13 @@ export const ABIS = {
       ]}
     ]},
     { name: 'validateSanityBounds', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'bool' }] },
-    { name: 'deposit', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'stableAmount', type: 'uint256' }], outputs: [{ name: 'sharesMinted', type: 'uint256' }] },
-    { name: 'redeem', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'sharesAmount', type: 'uint256' }], outputs: [{ name: 'assetsReceived', type: 'uint256' }] },
+    { name: 'deposit', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'stableAmount', type: 'uint256' }, { name: 'minSharesOut', type: 'uint256' }], outputs: [{ name: 'sharesMinted', type: 'uint256' }] },
+    { name: 'redeem', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'sharesAmount', type: 'uint256' }, { name: 'minUsdcOut', type: 'uint256' }], outputs: [{ name: 'assetsReceived', type: 'uint256' }] },
     { name: 'setAssetWeights', type: 'function', stateMutability: 'nonpayable', inputs: [
-      { name: 'newWeights', type: 'tuple', components: [
-        { name: 'stablecoins', type: 'uint256' },
-        { name: 'wbtc', type: 'uint256' },
-        { name: 'weth', type: 'uint256' },
-        { name: 'alphaProtocolStaking', type: 'uint256' }
-      ]}
+      { name: '_stables', type: 'uint256' },
+      { name: '_wbtc', type: 'uint256' },
+      { name: '_weth', type: 'uint256' },
+      { name: '_alpha', type: 'uint256' }
     ], outputs: [] },
     { name: 'currentWeights', type: 'function', stateMutability: 'view', inputs: [], outputs: [
       { name: 'stablecoins', type: 'uint256' },
@@ -193,7 +191,7 @@ export const ABIS = {
     { name: 'getStakingBreakdown', type: 'function', stateMutability: 'view', inputs: [], outputs: [
       { name: 'breakdown', type: 'tuple', components: [
         { name: 'communityStaked', type: 'uint256' },
-        { name: 'corporateStaked', type: 'uint256' },
+        { name: 'communityVaultStaked', type: 'uint256' },
         { name: 'treasuryStaked', type: 'uint256' },
         { name: 'globalTotalStaked', type: 'uint256' },
         { name: 'netCirculatingSupply', type: 'uint256' },
@@ -249,7 +247,7 @@ export const ABIS = {
   ] as const,
   CORPORATE_CONTRIBUTION: [
     { name: 'injectFunds', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'amount', type: 'uint256' }, { name: 'auditRef', type: 'string' }], outputs: [] },
-    { name: 'createTWAPOrder', type: 'function', stateMutability: 'nonpayable', inputs: [
+    { name: 'createTwapOrder', type: 'function', stateMutability: 'nonpayable', inputs: [
       { name: 'totalAmountUSD', type: 'uint256' },
       { name: 'intervals', type: 'uint256' },
       { name: 'intervalSeconds', type: 'uint256' }

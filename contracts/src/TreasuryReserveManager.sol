@@ -2,7 +2,9 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./ProtocolRoles.sol";
 import "./lib/security/ReentrancyGuard.sol";
 
 import "./interfaces/I1inchAggregator.sol";
@@ -19,7 +21,8 @@ import "./interfaces/IMorphoVault.sol";
  *         4. Morpho Blue MetaMorpho Vaults for 80% Stablecoin Yield (6.45% APY).
  *         5. P2P Lending Market for 20% Direct Treasury Credit Line (8.00% APR).
  */
-contract TreasuryReserveManager is Ownable, ReentrancyGuard {
+contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
+    using SafeERC20 for IERC20;
     address public treasury;
     address public usdcToken;
     address public wbtcToken;
@@ -33,7 +36,7 @@ contract TreasuryReserveManager is Ownable, ReentrancyGuard {
     address public lombardLBTC        = 0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd; // LBTC Arbitrum
     address public morphoUsdcVault   = 0x488102554708C23C0227d8D86f4A2fAffbb27357;
 
-    function setOracleRouter(address _oracleRouter) external onlyOwner {
+    function setOracleRouter(address _oracleRouter) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         oracleRouter = _oracleRouter;
     }
 
@@ -53,16 +56,15 @@ contract TreasuryReserveManager is Ownable, ReentrancyGuard {
         address _wbtcToken,
         address _wethToken,
         address _initialOwner
-    ) Ownable() {
+    ) {
+        address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
         treasury = _treasury;
         usdcToken = _usdcToken;
         wbtcToken = _wbtcToken;
         wethToken = _wethToken;
         lastProductionRebalanceTimestamp = block.timestamp;
-
-        if (_initialOwner != msg.sender) {
-            transferOwnership(_initialOwner);
-        }
     }
 
     function setProductionAddresses(
@@ -70,7 +72,7 @@ contract TreasuryReserveManager is Ownable, ReentrancyGuard {
         address _lido,
         address _lombard,
         address _morpho
-    ) external onlyOwner {
+    ) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         oneInchAggregator = _oneInch;
         lidoWstETH = _lido;
         lombardLBTC = _lombard;
@@ -82,20 +84,20 @@ contract TreasuryReserveManager is Ownable, ReentrancyGuard {
      */
     function executeProductionRebalance(uint256 usdcAmount) external nonReentrant returns (bool) {
         require(usdcAmount > 0, "ReserveManager: Amount must be > 0");
-        require(IERC20(usdcToken).transferFrom(msg.sender, address(this), usdcAmount), "ReserveManager: Transfer failed");
+        IERC20(usdcToken).safeTransferFrom(msg.sender, address(this), usdcAmount);
 
         uint256 liquidReserve10 = (usdcAmount * 1000) / 10000; // 10%
         uint256 morphoVault90  = usdcAmount - liquidReserve10; // 90%
 
         // Send 10% to Treasury for liquid buffer / P2P reserve line
-        require(IERC20(usdcToken).transfer(treasury, liquidReserve10), "ReserveManager: Liquid transfer failed");
+        IERC20(usdcToken).safeTransfer(treasury, liquidReserve10);
 
         // Deposit 90% to Morpho Blue Vault if configured
         if (morphoUsdcVault.code.length > 0) {
             IERC20(usdcToken).approve(morphoUsdcVault, morphoVault90);
             try IMorphoVault(morphoUsdcVault).deposit(morphoVault90, treasury) {} catch {}
         } else {
-            require(IERC20(usdcToken).transfer(treasury, morphoVault90), "ReserveManager: Morpho transfer fallback failed");
+            IERC20(usdcToken).safeTransfer(treasury, morphoVault90);
         }
 
         totalRebalancedVolume += usdcAmount;

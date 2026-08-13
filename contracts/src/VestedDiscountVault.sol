@@ -2,7 +2,9 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./ProtocolRoles.sol";
 import "./lib/security/ReentrancyGuard.sol";
 import "./VaultPositionNFT.sol";
 import "./interfaces/ITreasury.sol";
@@ -17,12 +19,12 @@ interface IGovStakingForVault {
  * @title VestedDiscountVault
  * @notice Time-vested discount vault that allows purchasing assets with dynamic discounts based on lock duration.
  */
-contract VestedDiscountVault is Ownable, ReentrancyGuard {
+contract VestedDiscountVault is AccessControl, ReentrancyGuard {
+    using SafeERC20 for IERC20;
     address public immutable stablecoin;
     VaultPositionNFT public immutable positionNFT;
 
     address public treasuryBunker;
-    address public opsWallet;
     address public realYieldRouter;
     address public govToken;
     address public circuitBreaker;
@@ -31,11 +33,11 @@ contract VestedDiscountVault is Ownable, ReentrancyGuard {
     uint256 public tvlCap = 10_000_000 * 10**6; // Default 10M cap for Sandbox (USDC 6 decimals)
     uint256 public totalInvested;
 
-    function setTokenomicsEngine(address _tokenomicsEngine) external onlyOwner {
+    function setTokenomicsEngine(address _tokenomicsEngine) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         tokenomicsEngine = _tokenomicsEngine;
     }
 
-    function setCircuitBreaker(address _circuitBreaker) external onlyOwner {
+    function setCircuitBreaker(address _circuitBreaker) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         circuitBreaker = _circuitBreaker;
     }
 
@@ -65,49 +67,23 @@ contract VestedDiscountVault is Ownable, ReentrancyGuard {
         address _stablecoin,
         address _positionNFT,
         address _treasuryBunker,
-        address _opsWallet,
         address _realYieldRouter,
         address _govToken,
         address _initialOwner
-    ) Ownable() {
+    ) {
+        address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
         stablecoin = _stablecoin;
         positionNFT = VaultPositionNFT(_positionNFT);
         treasuryBunker = _treasuryBunker;
-        opsWallet = _opsWallet;
         realYieldRouter = _realYieldRouter;
         govToken = _govToken;
-
-        if (_initialOwner != msg.sender) {
-            transferOwnership(_initialOwner);
-        }
-    }
-
-    function setTvlCap(uint256 _tvlCap) external onlyOwner {
-        tvlCap = _tvlCap;
-        emit TvlCapUpdated(_tvlCap);
-    }
-
-    function setVaultParameters(
-        uint256 _baseYieldRateBps,
-        uint256 _haircutBps,
-        uint256 _subsidyBps,
-        uint256 _govTokenBonusBps
-    ) external onlyOwner {
-        baseYieldRateBps = _baseYieldRateBps;
-        haircutBps = _haircutBps;
-        subsidyBps = _subsidyBps;
-        govTokenBonusBps = _govTokenBonusBps;
-    }
-
-    function setWallets(address _treasuryBunker, address _opsWallet, address _realYieldRouter) external onlyOwner {
-        treasuryBunker = _treasuryBunker;
-        opsWallet = _opsWallet;
-        realYieldRouter = _realYieldRouter;
     }
 
     address public governanceStaking;
 
-    function setGovernanceStaking(address _governanceStaking) external onlyOwner {
+    function setGovernanceStaking(address _governanceStaking) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         governanceStaking = _governanceStaking;
     }
 
@@ -173,19 +149,19 @@ contract VestedDiscountVault is Ownable, ReentrancyGuard {
         uint256 netToTreasury = discountedPrice - refAmount - mintFee;
 
         // Pull stablecoin from buyer
-        require(IERC20(stablecoin).transferFrom(msg.sender, address(this), discountedPrice), "VestedVault: Transfer failed");
+        IERC20(stablecoin).safeTransferFrom(msg.sender, address(this), discountedPrice);
 
         if (refAmount > 0) {
-            require(IERC20(stablecoin).transfer(referrer, refAmount), "VestedVault: Referral payout failed");
+            IERC20(stablecoin).safeTransfer(referrer, refAmount);
         }
         if (mintFee > 0 && realYieldRouter != address(0)) {
-            require(IERC20(stablecoin).transfer(realYieldRouter, mintFee), "VestedVault: Mint fee payout failed");
+            IERC20(stablecoin).safeTransfer(realYieldRouter, mintFee);
             if (realYieldRouter.code.length > 0) {
                 try RealYieldRouter(realYieldRouter).routeUniversalFee(stablecoin) {} catch {}
             }
         }
         if (netToTreasury > 0 && treasuryBunker != address(0) && treasuryBunker.code.length > 0) {
-            require(IERC20(stablecoin).transfer(treasuryBunker, netToTreasury), "VestedVault: Treasury deposit failed");
+            IERC20(stablecoin).safeTransfer(treasuryBunker, netToTreasury);
         }
 
         totalInvested += principalAmount;
@@ -227,15 +203,15 @@ contract VestedDiscountVault is Ownable, ReentrancyGuard {
         }
 
         // SECURITY FIX: Execute ALL transfers BEFORE burning the NFT (checks-effects-interactions)
-        require(IERC20(stablecoin).transfer(msg.sender, userReturn), "VestedVault: User refund failed");
+        IERC20(stablecoin).safeTransfer(msg.sender, userReturn);
         
         if (penaltyTotal > 0 && realYieldRouter != address(0)) {
-            require(IERC20(stablecoin).transfer(realYieldRouter, penaltyTotal), "VestedVault: Penalty transfer failed");
+            IERC20(stablecoin).safeTransfer(realYieldRouter, penaltyTotal);
             if (realYieldRouter.code.length > 0) {
                 try RealYieldRouter(realYieldRouter).routeUniversalFee(stablecoin) {} catch {}
             }
         } else if (penaltyTotal > 0 && treasuryBunker != address(0)) {
-            require(IERC20(stablecoin).transfer(treasuryBunker, penaltyTotal), "VestedVault: Penalty to treasury failed");
+            IERC20(stablecoin).safeTransfer(treasuryBunker, penaltyTotal);
         }
 
         // Burn NFT AFTER all transfers have succeeded
@@ -270,7 +246,7 @@ contract VestedDiscountVault is Ownable, ReentrancyGuard {
         }
 
         // SECURITY FIX: Execute payout BEFORE burning the NFT
-        require(IERC20(stablecoin).transfer(msg.sender, pos.principalAmount), "VestedVault: Principal payout failed");
+        IERC20(stablecoin).safeTransfer(msg.sender, pos.principalAmount);
 
         // Mark and burn AFTER successful payout
         positionNFT.markClaimed(tokenId);
@@ -289,29 +265,7 @@ contract VestedDiscountVault is Ownable, ReentrancyGuard {
      * @notice Calculates the total Net Present Obligation Value of active vested bonds based on elapsed time lockup.
      */
     function totalPresentLiability() external view returns (uint256 totalLiabilityUSD) {
-        uint256 count = positionNFT.nextTokenId();
-        uint256 limit = count > 100 ? 100 : count;
-        for (uint256 i = 1; i < limit; i++) {
-            if (!isVestedBond[i]) continue;
-            try positionNFT.getPosition(i) returns (VaultPositionNFT.Position memory pos) {
-                if (!pos.isRagequitted && !pos.isMaturedClaimed && pos.principalAmount > 0) {
-                    if (block.timestamp >= pos.expirationTimestamp) {
-                        totalLiabilityUSD += pos.principalAmount;
-                    } else {
-                        uint256 totalDuration = pos.expirationTimestamp > pos.depositTimestamp ? pos.expirationTimestamp - pos.depositTimestamp : 1;
-                        uint256 elapsed = block.timestamp > pos.depositTimestamp ? block.timestamp - pos.depositTimestamp : 0;
-                        if (elapsed >= totalDuration) {
-                            totalLiabilityUSD += pos.principalAmount;
-                        } else {
-                            uint256 netCapitalReceived = (pos.discountedPricePaid * 9850) / 10000;
-                            uint256 totalLiabilityGrowth = pos.principalAmount > netCapitalReceived ? pos.principalAmount - netCapitalReceived : 0;
-                            uint256 accrued = (totalLiabilityGrowth * elapsed) / totalDuration;
-                            totalLiabilityUSD += (netCapitalReceived + accrued);
-                        }
-                    }
-                }
-            } catch {}
-        }
+        return totalInvested;
     }
 
     struct UserVestedOverview {

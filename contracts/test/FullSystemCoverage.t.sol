@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import "../src/ProtocolAddressProvider.sol";
 import "../src/AlphaToken.sol";
 import "../src/AlphaVault.sol";
+import "../src/TreasuryProxy.sol";
 import "../src/OracleHub.sol";
 import "../src/TreasuryManager.sol";
 import "../src/RealYieldRouter.sol";
@@ -99,17 +100,20 @@ contract FullSystemCoverageTest is Test {
         provider.setAddress(keccak256("GOVERNANCE_STAKING"), address(staking));
 
         router = new RealYieldRouter(address(usdc), address(wbtc), address(0), address(staking), admin);
-        router.setProtocolVaults(address(vault), address(opExVault), address(yieldVault));
+        router.setProtocolVaults(address(vault), address(yieldVault));
         provider.setAddress(keccak256("REAL_YIELD_ROUTER"), address(router));
 
         engine = new ProtocolTokenomicsEngine(admin);
         provider.setAddress(keccak256("TOKENOMICS_ENGINE"), address(engine));
 
-        manager = new TreasuryManager(provider, admin, address(usdc), 6);
+        TreasuryManager logic = new TreasuryManager(provider);
+        TreasuryProxy proxy = new TreasuryProxy(address(logic));
+        manager = TreasuryManager(address(proxy));
+        manager.initialize(admin, address(usdc), 6);
         provider.setAddress(keccak256("TREASURY_MANAGER"), address(manager));
 
         nft = new VaultPositionNFT(admin);
-        vestedVault = new VestedDiscountVault(address(usdc), address(nft), address(vault), admin, address(router), address(alphaToken), admin);
+        vestedVault = new VestedDiscountVault(address(usdc), address(nft), address(vault), address(router), address(alphaToken), admin);
         provider.setAddress(keccak256("VESTED_VAULT"), address(vestedVault));
 
         p2pMarket = new P2PLendingMarket(address(usdc), address(nft), address(router), address(usdcFeed), admin);
@@ -127,7 +131,7 @@ contract FullSystemCoverageTest is Test {
         atomicSwap = new AtomicSwapReceiver(address(usdc), address(usdc), address(0), address(vault), admin);
 
         nft.setMinter(address(vestedVault));
-        staking.setProtocolVaults(address(opExVault), address(yieldVault));
+        staking.setProtocolVaults(address(yieldVault));
 
         alphaToken.grantRole(ProtocolRoles.MINTER_ROLE, address(manager));
         alphaToken.grantRole(ProtocolRoles.MINTER_ROLE, admin);
@@ -139,14 +143,13 @@ contract FullSystemCoverageTest is Test {
         vm.stopPrank();
     }
 
-    function test_RealYieldRouter_50_25_25_FeeRouting() public {
+    function test_RealYieldRouter_50_50_FeeRouting() public {
         usdc.mint(address(router), 1000 * 10**6);
 
         vm.prank(admin);
         router.routeUniversalFee(address(usdc));
 
-        assertEq(usdc.balanceOf(address(opExVault)), 250 * 10**6);
-        assertEq(usdc.balanceOf(address(yieldVault)), 250 * 10**6);
+        assertEq(usdc.balanceOf(address(yieldVault)), 500 * 10**6);
     }
 
     function test_ProtocolTokenomicsEngine_AllMath() public view {
@@ -177,6 +180,7 @@ contract FullSystemCoverageTest is Test {
         staking.stake(1000 * 10**18);
         assertEq(staking.balanceOf(user), 990 * 10**18); // 1% staking fee
 
+        vm.warp(block.timestamp + 7 days);
         staking.unstake(400 * 10**18);
         assertEq(staking.balanceOf(user), 590 * 10**18);
         vm.stopPrank();

@@ -2,13 +2,14 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./ProtocolRoles.sol";
 
 /**
  * @title VaultPositionNFT
  * @notice Represents ownership of a locked position in the Vested Discount Vaults.
  */
-contract VaultPositionNFT is ERC721, Ownable {
+contract VaultPositionNFT is ERC721, AccessControl {
     struct Position {
         uint256 id;
         address underlyingAsset;
@@ -27,17 +28,17 @@ contract VaultPositionNFT is ERC721, Ownable {
     mapping(uint256 => Position) public positions;
 
     modifier onlyMinter() {
-        require(msg.sender == minter || msg.sender == owner(), "VaultPositionNFT: Caller is not minter or owner");
+        require(msg.sender == minter || hasRole(ProtocolRoles.ADMIN_ROLE, msg.sender), "VaultPositionNFT: Caller is not minter or owner");
         _;
     }
 
-    constructor(address _initialOwner) ERC721("Vested Position NFT", "vPOS") Ownable() {
-        if (_initialOwner != msg.sender) {
-            transferOwnership(_initialOwner);
-        }
+    constructor(address _initialOwner) ERC721("Vested Position NFT", "vPOS") {
+        address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
     }
 
-    function setMinter(address _minter) external onlyOwner {
+    function setMinter(address _minter) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         require(_minter != address(0), "VaultPositionNFT: Zero address minter");
         minter = _minter;
     }

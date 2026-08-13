@@ -78,8 +78,8 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({
             <span>💎</span> Beneficios Exclusivos del Programa:
           </h4>
           <ul className={styles.benefitsUl}>
-            <li><strong className="text-green-bright">1.5% de Comisión Directa en USDC</strong> transferidos a tu wallet por cada amigo que compre un Bono.</li>
-            <li><strong className="text-cyan">Hasta 20% de Descuento</strong> para tus invitados en la compra de sus Bonos Vestados.</li>
+            <li><strong className="text-green-bright">Comisión Directa en USDC</strong> transferidos a tu wallet por cada amigo que compre un Bono.</li>
+            <li><strong className="text-cyan">Descuento Progresivo</strong> para tus invitados en la compra de sus Bonos Vestados.</li>
             <li><strong className="text-pink-light">Sin Límites de Ingresos</strong>: Gana comisiones recurrentes por cada referido activo.</li>
           </ul>
         </div>

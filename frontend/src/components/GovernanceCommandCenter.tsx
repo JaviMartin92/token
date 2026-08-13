@@ -29,8 +29,22 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
     navPerShareNum,
     proofOfReserves,
     totalBurnedTokens,
-    reserveBreakdown
+    porBreakdown,
+    targetWeights
   } = web3Data;
+
+  const twStables = targetWeights?.stables ?? 60.00;
+  const twWbtc = targetWeights?.wbtc ?? 26.67;
+  const twWeth = targetWeights?.weth ?? 13.33;
+  const twAlts = targetWeights?.alts ?? 0.00;
+
+  // Map porBreakdown (from useUniversalYield) to the reserveBreakdown shape used in this component
+  const reserveBreakdown = porBreakdown ? {
+    usdcUsd: String(porBreakdown.stables ?? 0),
+    wbtcUsd: String(porBreakdown.wbtc ?? 0),
+    wethUsd: String(porBreakdown.weth ?? 0),
+    stakedAlphaUsd: String(porBreakdown.alphaStaking ?? 0)
+  } : { usdcUsd: '0', wbtcUsd: '0', wethUsd: '0', stakedAlphaUsd: '0' };
 
   const isProductionChain = web3Data.chainId !== 31337 && web3Data.chainId !== undefined;
   const currentChainId = web3Data.chainId ?? 31337;
@@ -154,15 +168,15 @@ Descripción: "${description}"
             </div>
 
             <div className={styles.metricCard}>
-              <div className={styles.metricLabel}>MODELO DE INGRESOS (50/25/25)</div>
+              <div className={styles.metricLabel}>MODELO DE INGRESOS LIQUIDUS (50/50)</div>
               <div className={styles.modelText}>
-                🏛️ 50% Res | 💼 25% OpEx | 🏦 25% Prof
+                🏛️ 50% Res. Tesorería | 🏦 50% Yield Comunidad
               </div>
-              <div className={styles.metricSubtextGreen}>Reparto Automático On-Chain</div>
+              <div className={styles.metricSubtextGreen}>Reparto Automático On-Chain Real Yield</div>
             </div>
           </div>
 
-          <h3 className={styles.sectionTitle}>📌 Distribución Target de Activos de Reserva (50/25/12.5/12.5)</h3>
+          <h3 className={styles.sectionTitle}>📌 Distribución Target de Activos de Reserva ({twStables.toFixed(1)} / {twWbtc.toFixed(1)} / {twWeth.toFixed(1)} / {twAlts.toFixed(1)})</h3>
           <div className={styles.tableContainer}>
             <table className={styles.table}>
               <thead>
@@ -175,27 +189,27 @@ Descripción: "${description}"
               </thead>
               <tbody>
                 <tr className={styles.trBorder}>
-                  <td className={styles.tdBlue}>💵 USDC (Sub-Reserva 80/20)</td>
+                  <td className={styles.tdBlue}>💵 USDC (Sub-Reserva Exógena)</td>
                   <td className={styles.tdCell}>${parseFloat(reserveBreakdown?.usdcUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                  <td className={styles.tdGreen}>50.00%</td>
-                  <td className={styles.tdMuted}>Morpho Yield (80%) + Líquido (20%)</td>
+                  <td className={styles.tdGreen}>{twStables.toFixed(2)}%</td>
+                  <td className={styles.tdMuted}>Morpho Yield + Créditos P2P + Líquido</td>
                 </tr>
                 <tr className={styles.trBorder}>
                   <td className={styles.tdAmber}>₿ Wrapped Bitcoin (WBTC)</td>
                   <td className={styles.tdCell}>${parseFloat(reserveBreakdown?.wbtcUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                  <td className={styles.tdGreen}>25.00%</td>
+                  <td className={styles.tdGreen}>{twWbtc.toFixed(2)}%</td>
                   <td className={styles.tdMuted}>Compras DEX en Mercado Secundario</td>
                 </tr>
                 <tr className={styles.trBorder}>
                   <td className={styles.tdPurple}>Ξ Wrapped Ethereum (WETH)</td>
                   <td className={styles.tdCell}>${parseFloat(reserveBreakdown?.wethUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                  <td className={styles.tdGreen}>12.50%</td>
+                  <td className={styles.tdGreen}>{twWeth.toFixed(2)}%</td>
                   <td className={styles.tdMuted}>Compras DEX en Mercado Secundario</td>
                 </tr>
                 <tr>
                   <td className={styles.tdPink}>🥩 Native ALPHA Staked</td>
                   <td className={styles.tdCell}>${parseFloat(reserveBreakdown?.stakedAlphaUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                  <td className={styles.tdGreen}>12.50%</td>
+                  <td className={styles.tdGreen}>{twAlts.toFixed(2)}%</td>
                   <td className={styles.tdMuted}>Auto-stake Institucional Governance</td>
                 </tr>
               </tbody>
@@ -245,7 +259,7 @@ Descripción: "${description}"
                   {isProductionChain ? '🏛️ Proponer Votación DAO (72h)' : '🧪 Guardar (Sandbox)'}
                 </button>
               </div>
-              <span className={styles.metricSubtext}>Actual: 0.50% (50 Bps)</span>
+              <span className={styles.metricSubtext}>Actual: {depositFeeInput}% ({Math.round(parseFloat(depositFeeInput || '0') * 100)} Bps)</span>
             </div>
 
             <div className={styles.paramCard}>
@@ -277,7 +291,7 @@ Descripción: "${description}"
                   {isProductionChain ? '🏛️ Proponer Votación DAO (72h)' : '🧪 Guardar (Sandbox)'}
                 </button>
               </div>
-              <span className={styles.metricSubtext}>Actual: 1.00% (100 Bps)</span>
+              <span className={styles.metricSubtext}>Actual: {redeemFeeInput}% ({Math.round(parseFloat(redeemFeeInput || '0') * 100)} Bps)</span>
             </div>
 
             <div className={styles.paramCard}>
@@ -309,7 +323,7 @@ Descripción: "${description}"
                   {isProductionChain ? '🏛️ Proponer Votación DAO (72h)' : '🧪 Guardar (Sandbox)'}
                 </button>
               </div>
-              <span className={styles.metricSubtext}>Actual: 0.50% (50 Bps)</span>
+              <span className={styles.metricSubtext}>Actual: {p2pFeeInput}% ({Math.round(parseFloat(p2pFeeInput || '0') * 100)} Bps)</span>
             </div>
           </div>
         </div>
@@ -322,7 +336,7 @@ Descripción: "${description}"
           <div className={styles.promoCard}>
             <div className="acp-control-stack">
               <div>
-                <label className="acp-label-sm">🏛️ BILLETERA BUNKER TESORERÍA (50% RESERVAS)</label>
+                <label className="acp-label-sm">🏛️ BILLETERA BUNKER TESORERÍA (CONTRATO SUB-RESERVA)</label>
                 <input
                   type="text"
                   readOnly
@@ -332,7 +346,7 @@ Descripción: "${description}"
               </div>
 
               <div>
-                <label className="acp-label-sm">🛡️ BÓVEDA PROTOCOL OPEX (25% DAO INFRAESTRUCTURA & GRANTS)</label>
+                <label className="acp-label-sm">🛡️ BÓVEDA PROTOCOL OPEX (BÓVEDA OPEX INFRAESTRUCTURA & GRANTS)</label>
                 <input
                   type="text"
                   readOnly
@@ -342,7 +356,7 @@ Descripción: "${description}"
               </div>
 
               <div>
-                <label className="acp-label-sm">💎 BÓVEDA COMMUNITY REAL YIELD (25% REAL YIELD STAKERS)</label>
+                <label className="acp-label-sm">💎 BÓVEDA COMMUNITY REAL YIELD (BÓVEDA REAL YIELD STAKERS)</label>
                 <input
                   type="text"
                   readOnly

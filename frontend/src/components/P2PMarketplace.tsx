@@ -39,6 +39,7 @@ interface P2PMarketplaceProps {
   userPositions?: UserPosition[];
   userAddress?: string;
   navPerShareNum?: number;
+  assetPrices?: { wbtc: number; weth: number };
   onAcceptLoanById?: (loanId: number, borrowAmount: string) => void;
   onCancelLoanOffer?: (loanId: number) => void;
   onRepayLoanById?: (loanId: number, loanObj?: any) => void;
@@ -66,7 +67,8 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
   loansList = [],
   userPositions = [],
   userAddress = '',
-  navPerShareNum = 1.0098,
+  navPerShareNum = 1.0,
+  assetPrices = { wbtc: 60000.0, weth: 3000.0 },
   onAcceptLoanById,
   onCancelLoanOffer,
   onRepayLoanById,
@@ -83,9 +85,9 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
   };
 
   const ASSET_PRICE_MAP: Record<string, number> = {
-    alpha: navPerShareNum && navPerShareNum > 0 ? navPerShareNum : 1.0098,
-    wbtc: 60000.0,
-    weth: 3000.0
+    alpha: navPerShareNum && navPerShareNum > 0 ? navPerShareNum : 1.0,
+    wbtc: assetPrices?.wbtc && assetPrices.wbtc > 0 ? assetPrices.wbtc : 60000.0,
+    weth: assetPrices?.weth && assetPrices.weth > 0 ? assetPrices.weth : 3000.0
   };
 
   const borrowAmtNum = parseFloat(p2pBorrowAmount || '0') || 0;
@@ -101,8 +103,8 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
     if (filterTab === 'active') return loan.state === 1;
     if (filterTab === 'my') {
       return (
-        loan.lender.toLowerCase() === userAddress.toLowerCase() ||
-        loan.borrower.toLowerCase() === userAddress.toLowerCase()
+        (loan.lender || '').toLowerCase() === (userAddress || '').toLowerCase() ||
+        (loan.borrower || '').toLowerCase() === (userAddress || '').toLowerCase()
       );
     }
     return true;
@@ -136,8 +138,8 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
               🏛️ Respaldo Institucional: Préstamos con Reservas de Tesorería (Treasury APY Booster)
             </h4>
             <p className={styles.boosterDesc}>
-              Las reservas de la tesorería despliegan hasta un <strong>20% máximo de su pool de stablecoins</strong> en préstamos sobre-colateralizados.
-              Puedes solicitar financiación directa a la Tesorería al <strong>8.00% APR fijo</strong>. Los rendimientos generados retornan <strong>100% a la Tesorería</strong> aumentando el NAV del token ALPHA.
+              Las reservas de la tesorería despliegan su fondo de liquidez en préstamos sobre-colateralizados.
+              Puedes solicitar financiación directa a la Tesorería a la <strong>Tasa Fija On-Chain de Tesorería</strong>. Los rendimientos generados retornan <strong>100% a la Tesorería</strong> aumentando el NAV del token ALPHA.
             </p>
           </div>
           <div className="acp-flex-row-gap5">
@@ -145,7 +147,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
               🛡️ Fondo de Reserva Activo
             </span>
             <span className={styles.tagBlue}>
-              ⚡ Tasa Promocional 8.00% APR
+              ⚡ Tasa Fija Tesorería On-Chain
             </span>
           </div>
         </div>
@@ -211,7 +213,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
             <h3 className="gcc-metric-subtext-green font-bold text-sm margin-none">Pedir Préstamo a la Tesorería</h3>
           </div>
           <p className="acp-label-sm margin-bottom-lg line-height-normal">
-            Accede al <strong>20% de Reserva Líquida de la Tesorería</strong>. Desembolso instantáneo en USDC usando tu NFT como garantía a una <strong>tasa fija del 8.00% APR</strong>.
+            Accede a la Reserva Líquida de la Tesorería. Desembolso instantáneo en USDC usando tu garantía a la tasa fija acordada on-chain.
           </p>
 
           <div className="acp-control-stack">
@@ -222,10 +224,10 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                 onChange={(e) => setTreasuryColType(e.target.value)}
                 className={styles.selectGreen}
               >
-                <option value="nft">🖼️ NFT de Posición Bonos ERC-721 (70.00% Max LTV)</option>
-                <option value="alpha">🥩 Token ALPHA Staked (50.00% Max LTV)</option>
-                <option value="wbtc">₿ Wrapped Bitcoin - WBTC (70.00% Max LTV)</option>
-                <option value="weth">Ξ Wrapped Ethereum - WETH (75.00% Max LTV)</option>
+                <option value="nft">🖼️ NFT de Posición Bonos ERC-721 (Max LTV On-Chain)</option>
+                <option value="alpha">🥩 Token ALPHA Staked (Max LTV On-Chain)</option>
+                <option value="wbtc">₿ Wrapped Bitcoin - WBTC (Max LTV On-Chain)</option>
+                <option value="weth">Ξ Wrapped Ethereum - WETH (Max LTV On-Chain)</option>
               </select>
 
               {treasuryColType === 'nft' ? (

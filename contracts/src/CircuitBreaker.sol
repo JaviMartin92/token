@@ -3,13 +3,14 @@ pragma solidity ^0.8.20;
 
 import "./interfaces/ICircuitBreaker.sol";
 import "./interfaces/IAggregatorV3.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./ProtocolRoles.sol";
 
 /**
  * @title CircuitBreaker
  * @notice Freezes buying orders for assets experiencing major losses (>15% in 6 hours).
  */
-contract CircuitBreaker is ICircuitBreaker, Ownable {
+contract CircuitBreaker is ICircuitBreaker, AccessControl {
     mapping(address => address) public priceFeeds;
     mapping(address => bool) private frozenAssets;
 
@@ -28,16 +29,16 @@ contract CircuitBreaker is ICircuitBreaker, Ownable {
     uint256 public oracleStalenessLimit = 86400;
 
     constructor(address _initialOwner) {
-        if (_initialOwner != msg.sender) {
-            transferOwnership(_initialOwner);
-        }
+        address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
     }
 
-    function setOracleStalenessLimit(uint256 limit) external onlyOwner {
+    function setOracleStalenessLimit(uint256 limit) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         oracleStalenessLimit = limit;
     }
 
-    function setPriceFeed(address asset, address feed) external onlyOwner {
+    function setPriceFeed(address asset, address feed) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         require(asset != address(0), "CircuitBreaker: Zero address asset");
         require(feed != address(0), "CircuitBreaker: Zero address feed");
         priceFeeds[asset] = feed;
@@ -113,7 +114,7 @@ contract CircuitBreaker is ICircuitBreaker, Ownable {
     }
 
     /// @inheritdoc ICircuitBreaker
-    function resetBreaker(address asset) external override onlyOwner {
+    function resetBreaker(address asset) external override onlyRole(ProtocolRoles.ADMIN_ROLE) {
         frozenAssets[asset] = false;
         emit CircuitReset(asset, block.timestamp);
     }

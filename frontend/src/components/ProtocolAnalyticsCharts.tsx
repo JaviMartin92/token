@@ -12,6 +12,8 @@ interface ProtocolAnalyticsChartsProps {
   claimableYield?: string;
   userPositions?: UserPosition[];
   loansList?: MarketplaceLoan[];
+  liveApyStr?: string;
+  targetWeights?: { stables: number; wbtc: number; weth: number; alts: number };
 }
 
 interface HistoricalSnapshot {
@@ -35,7 +37,9 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
   stakedBalance = '0',
   claimableYield = '0',
   userPositions = [],
-  loansList = []
+  loansList = [],
+  liveApyStr,
+  targetWeights = { stables: 60, wbtc: 26.67, weth: 13.33, alts: 0 }
 }) => {
   const [timeRange, setTimeRange] = useState<'1W' | '1M' | '3M' | '1Y' | 'ALL'>('1M');
   const [activeChart, setActiveChart] = useState<'reserves' | 'cashflow' | 'apy'>('reserves');
@@ -49,10 +53,14 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
   const realStakedAlpha = parseFloat(stakedBalance.replace(/,/g, '')) || 0;
   const realClaimableYield = parseFloat(claimableYield.replace(/,/g, '')) || 0;
 
+  const targetStablesPct = (targetWeights?.stables || 60.0) / 100;
+  const targetBtcPct = (targetWeights?.wbtc || 26.67) / 100;
+  const targetEthPct = (targetWeights?.weth || 13.33) / 100;
+
   // Reparto Exógeno Puro directo del smart contract
-  const realStablesUsd = porBreakdown.stables > 0 ? porBreakdown.stables : Math.round(realReservesUsd * 0.60);
-  const realBtcUsd = porBreakdown.wbtc > 0 ? porBreakdown.wbtc : Math.round(realReservesUsd * 0.2667);
-  const realEthUsd = porBreakdown.weth > 0 ? porBreakdown.weth : Math.round(realReservesUsd * 0.1333);
+  const realStablesUsd = porBreakdown.stables > 0 ? porBreakdown.stables : Math.round(realReservesUsd * targetStablesPct);
+  const realBtcUsd = porBreakdown.wbtc > 0 ? porBreakdown.wbtc : Math.round(realReservesUsd * targetBtcPct);
+  const realEthUsd = porBreakdown.weth > 0 ? porBreakdown.weth : Math.round(realReservesUsd * targetEthPct);
 
   // Flujo de Caja Real
   const realBondCashflow = userPositions.reduce((sum, pos) => sum + (pos.isRagequitted ? 0 : parseFloat(pos.principal || '0')), 0);
@@ -61,9 +69,10 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
   const realLoanInterest = loansList.reduce((sum, loan) => sum + (loan.state === 1 ? (parseFloat(loan.borrowAmount || "0") * (loan.interestRateBps / 10000)) : 0), 0);
   const realYieldPayoutUsd = Math.round(realClaimableYield + realLoanInterest);
 
+  const onChainApyNum = parseFloat((liveApyStr || '0').replace('%', '')) || 0;
   const baseYieldComponent = realReservesUsd > 0 ? (realLoanInterest / realReservesUsd) * 100 : 0;
   const flywheelBoost = realReservesUsd > 0 ? Math.min((realGrossCashflowUsd / realReservesUsd) * 15, 12.0) : 0;
-  const realWeightedApy = parseFloat((baseYieldComponent + flywheelBoost).toFixed(2));
+  const realWeightedApy = onChainApyNum > 0 ? onChainApyNum : parseFloat((baseYieldComponent + flywheelBoost).toFixed(2));
 
   // 2. Histórico de Persistencia con Curva Orgánica Suavizada
   useEffect(() => {
@@ -506,15 +515,15 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
           <>
             <div className="analytics-legend-pill">
               <span className={styles.dotLgGreen}></span>
-              <span className="text-slate-100 font-semibold">🟢 Stablecoins (Morpho + P2P - 60.00%)</span>
+              <span className="text-slate-100 font-semibold">🟢 Stablecoins (Morpho + P2P - {(targetWeights?.stables || 60).toFixed(2)}%)</span>
             </div>
             <div className="analytics-legend-pill">
               <span className={styles.dotLgAmber}></span>
-              <span className="text-slate-100 font-semibold">🟠 Bitcoin (Lombard - 26.67%)</span>
+              <span className="text-slate-100 font-semibold">🟠 Bitcoin (Lombard - {(targetWeights?.wbtc || 26.67).toFixed(2)}%)</span>
             </div>
             <div className="analytics-legend-pill">
               <span className={styles.dotLgBlue}></span>
-              <span className="text-slate-100 font-semibold">🔵 Ethereum (Lido - 13.33%)</span>
+              <span className="text-slate-100 font-semibold">🔵 Ethereum (Lido - {(targetWeights?.weth || 13.33).toFixed(2)}%)</span>
             </div>
           </>
         ) : (

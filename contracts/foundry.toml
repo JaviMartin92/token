@@ -17,3 +17,9 @@ runs = 1000
 [rpc_endpoints]
 arbitrum = "https://arb1.arbitrum.io/rpc"
 local = "http://localhost:8545"
+sepolia = "https://rpc.sepolia.org"
+base_sepolia = "https://sepolia.base.org"
+
+[etherscan]
+sepolia = { key = "${ETHERSCAN_API_KEY}" }
+base_sepolia = { key = "${BASESCAN_API_KEY}" }

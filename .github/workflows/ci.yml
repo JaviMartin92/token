@@ -18,13 +18,35 @@ jobs:
         with:
           version: nightly
 
-      - name: Run Forge Tests & Fuzzing
+      - name: Run Forge Tests & Gas Report
         run: |
           cd contracts
-          forge test --verbosity 2
+          forge test --gas-report --verbosity 2
 
-  frontend-typecheck:
-    name: Frontend TypeScript & Build Check
+      - name: Enforce 80% Smart Contract Coverage
+        run: |
+          cd contracts
+          forge coverage --report summary > coverage.txt
+          cat coverage.txt
+          
+          # Extract Line Coverage Total %
+          LINE_COV=$(grep -A 5 "Total" coverage.txt | grep "Lines" | awk '{print $4}' | tr -d '%')
+          
+          if [ -z "$LINE_COV" ]; then
+            echo "Failed to extract coverage"
+            exit 1
+          fi
+          
+          # Use bc or awk to compare floating point numbers
+          if awk "BEGIN {exit !($LINE_COV >= 80.0)}"; then
+            echo "Coverage is $LINE_COV% (Passes 80% threshold)"
+          else
+            echo "Coverage is $LINE_COV% (Fails 80% threshold)"
+            exit 1
+          fi
+
+  frontend-typecheck-and-test:
+    name: Frontend TypeScript, Tests & Build Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,4 +63,13 @@ jobs:
           cd frontend
           npm ci
           npx tsc --noEmit
+          
+      - name: Run Frontend Tests (Vitest)
+        run: |
+          cd frontend
+          npm run test:ci
+
+      - name: Build Frontend
+        run: |
+          cd frontend
           npm run build

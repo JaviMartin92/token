@@ -23,10 +23,12 @@ contract OracleHub is AccessControl {
     mapping(address => address) public priceFeeds;
     mapping(address => address) public secondaryPriceFeeds;
     mapping(address => uint8) public assetDecimals;
+    mapping(address => uint256) public lastValidPrimaryPrice18;
 
     address public sequencerUptimeFeed;
     uint256 public constant GRACE_PERIOD_TIME = 3600; // 1 hour grace period post sequencer recovery
-    uint256 public oracleStalenessLimit = 365 days; // Sandbox default
+    uint256 public constant MAX_DIVERGENCE_BPS = 500; // 5% max allowed divergence between primary and secondary
+    uint256 public oracleStalenessLimit = 3600; // 1 hour default
 
     event OracleStalenessUpdated(uint256 newLimit);
     event AssetFeedUpdated(address indexed asset, address indexed feed, address indexed secondaryFeed, uint8 decimals);
@@ -35,7 +37,10 @@ contract OracleHub is AccessControl {
     constructor(ProtocolAddressProvider _addressProvider, address initialAdmin) {
         require(address(_addressProvider) != address(0), "OracleHub: Zero address provider");
         addressProvider = _addressProvider;
-        _grantRole(DEFAULT_ADMIN_ROLE, initialAdmin);
+        address admin = (initialAdmin != address(0)) ? initialAdmin : msg.sender;
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
+        _grantRole(ProtocolRoles.ORACLE_MANAGER_ROLE, admin);
     }
 
     /**
@@ -43,6 +48,7 @@ contract OracleHub is AccessControl {
      * @param limit New staleness limit in seconds.
      */
     function setOracleStalenessLimit(uint256 limit) external onlyRole(ProtocolRoles.ORACLE_MANAGER_ROLE) {
+        require(limit > 0 && limit <= 1 days, "OracleHub: Staleness limit out of bounds");
         oracleStalenessLimit = limit;
         emit OracleStalenessUpdated(limit);
     }
@@ -89,17 +95,23 @@ contract OracleHub is AccessControl {
         }
     }
 
-    /**
-     * @notice Safely fetches the USD value of an asset balance using primary feed with automatic secondary fallback.
-     * @param asset Target asset address.
-     * @param assetBalance Raw asset balance wei.
-     * @return usdValue USD value scaled to 18 decimals.
-     * @dev Invariant: usdValue >= 0 and never relies on stale feeds.
-     */
-    function getAssetUsdValue(address asset, uint256 assetBalance) public view returns (uint256 usdValue) {
-        if (assetBalance == 0) return 0;
-        checkSequencerUptime();
+    function updatePrimaryPriceCache(address asset) public {
+        address primaryFeed = priceFeeds[asset];
+        if (primaryFeed != address(0)) {
+            try IAggregatorV3(primaryFeed).latestRoundData() returns (uint80, int256 p, uint256, uint256 u, uint80) {
+                if (p > 0 && block.timestamp >= u && block.timestamp - u <= oracleStalenessLimit) {
+                    uint8 pDec = IAggregatorV3(primaryFeed).decimals();
+                    lastValidPrimaryPrice18[asset] = (uint256(p) * 10**18) / (10**pDec);
+                }
+            } catch {}
+        }
+    }
 
+    /**
+     * @notice Internal helper to resolve asset price base 18 with divergence verification.
+     */
+    function _fetchPriceBase18(address asset) internal view returns (uint256 priceBase18) {
+        checkSequencerUptime();
         address primaryFeed = priceFeeds[asset];
         require(primaryFeed != address(0), "OracleHub: Asset not tracked");
         
@@ -115,18 +127,47 @@ contract OracleHub is AccessControl {
             }
         } catch {}
 
-        if (!primaryValid) {
-            address secondaryFeed = secondaryPriceFeeds[asset];
-            require(secondaryFeed != address(0), "OracleHub: Primary stale and no secondary fallback");
-            (, price, , updatedAt, ) = IAggregatorV3(secondaryFeed).latestRoundData();
+        if (primaryValid) {
+            uint8 pDec = IAggregatorV3(primaryFeed).decimals();
+            priceBase18 = (uint256(price) * 10**18) / (10**pDec);
+        } else {
+            address activeFeed = secondaryPriceFeeds[asset];
+            require(activeFeed != address(0), "OracleHub: Primary stale and no secondary fallback");
+            (, price, , updatedAt, ) = IAggregatorV3(activeFeed).latestRoundData();
             require(price > 0, "OracleHub: Secondary invalid price");
             require(block.timestamp >= updatedAt && block.timestamp - updatedAt <= oracleStalenessLimit, "OracleHub: Secondary stale price feed");
+            
+            uint8 sDec = IAggregatorV3(activeFeed).decimals();
+            priceBase18 = (uint256(price) * 10**18) / (10**sDec);
+
+            // AC-04: Divergence verification against last known primary price
+            uint256 lastPrimary = lastValidPrimaryPrice18[asset];
+            if (lastPrimary > 0) {
+                uint256 diff = priceBase18 > lastPrimary ? priceBase18 - lastPrimary : lastPrimary - priceBase18;
+                require((diff * 10000) / lastPrimary <= MAX_DIVERGENCE_BPS, "OracleHub: High primary/secondary price divergence");
+            }
         }
+    }
 
-        uint8 feedDecimals = IAggregatorV3(primaryFeed).decimals();
+    /**
+     * @notice Safely fetches the USD value of an asset balance using primary feed with automatic secondary fallback.
+     * @param asset Target asset address.
+     * @param assetBalance Raw asset balance wei.
+     * @return usdValue USD value scaled to 18 decimals.
+     * @dev Invariant: usdValue >= 0 and never relies on stale feeds.
+     */
+    function getAssetUsdValue(address asset, uint256 assetBalance) public view returns (uint256 usdValue) {
+        if (assetBalance == 0) return 0;
+        uint256 priceBase18 = _fetchPriceBase18(asset);
         uint8 assetDec = assetDecimals[asset];
+        usdValue = (assetBalance * priceBase18) / (10**assetDec);
+    }
 
-        usdValue = (assetBalance * uint256(price) * 10**18) / (10**assetDec * 10**feedDecimals);
+    /**
+     * @notice Fetches the price of an asset in USD scaled to 18 decimals.
+     */
+    function getPriceBase18(address asset) public view returns (uint256 priceBase18) {
+        priceBase18 = _fetchPriceBase18(asset);
     }
 
     /**

@@ -36,8 +36,7 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
   isAdmin = false,
   loansList = []
 }) => {
-  const activeLoans = loansList.filter((l) => l.state === 1);
-  const totalLentUsd = activeLoans.reduce((acc, l) => acc + (parseFloat((l.borrowAmount || '0').replace(/,/g, '')) || 0) * 1.08, 0);
+  const totalLentUsd = porBreakdown.alphaStaking || (loansList.length ? 0 : 0);
 
   return (
     <div className={`treasury-main-container ${styles.container}`}>
@@ -148,11 +147,11 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
               <div className={styles.stratList}>
                 <div className="acp-banner-flex">
                   <span>• Créditos Directos / P2P:</span>
-                  <strong>${p2pAllocationUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} @ 8.00% APR</strong>
+                  <strong>${p2pAllocationUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong>
                 </div>
                 <div className="acp-banner-flex">
                   <span>• Bóvedas Morpho Blue:</span>
-                  <strong>${morphoAllocationUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} @ Vault APY</strong>
+                  <strong>${morphoAllocationUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong>
                 </div>
               </div>
             </div>
@@ -165,12 +164,8 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
               </div>
               <div className={styles.stratList}>
                 <div className="acp-banner-flex">
-                  <span>• Staking Lombard (LBTC):</span>
-                  <strong>${(btcAllocationUsd * 0.6).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (LBTC)</strong>
-                </div>
-                <div className="acp-banner-flex">
-                  <span>• Suministro Morpho:</span>
-                  <strong>${(btcAllocationUsd * 0.4).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Low LTV)</strong>
+                  <span>• Reserva On-Chain Auditada:</span>
+                  <strong>${btcAllocationUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (WBTC)</strong>
                 </div>
               </div>
             </div>
@@ -183,12 +178,8 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
               </div>
               <div className={styles.stratList}>
                 <div className="acp-banner-flex">
-                  <span>• Liquid Staking Lido:</span>
-                  <strong>${(ethAllocationUsd * 0.6).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (stETH)</strong>
-                </div>
-                <div className="acp-banner-flex">
-                  <span>• Colateral Morpho/Aave:</span>
-                  <strong>${(ethAllocationUsd * 0.4).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Vaults)</strong>
+                  <span>• Reserva On-Chain Auditada:</span>
+                  <strong>${ethAllocationUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (WETH)</strong>
                 </div>
               </div>
             </div>

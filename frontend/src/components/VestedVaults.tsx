@@ -1,5 +1,7 @@
 import React from 'react';
 import styles from './VestedVaults.module.css';
+import { useQuery } from '@tanstack/react-query';
+import { publicClient, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
 
 export interface UserPosition {
   id: number;
@@ -25,6 +27,7 @@ interface VestedVaultsProps {
   onClaimMatured: (tokenId: number) => void;
   onRagequit: (tokenId: number) => void;
   onOpenReferral?: () => void;
+  userAddress?: string;
 }
 
 export const VestedVaults: React.FC<VestedVaultsProps> = ({
@@ -38,13 +41,33 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
   userPositions,
   onClaimMatured,
   onRagequit,
-  onOpenReferral
+  onOpenReferral,
+  userAddress = '0x0000000000000000000000000000000000000000'
 }) => {
   const principalNum = parseFloat(bondPrincipal) || 0;
   const yearsNum = parseInt(bondLockYears) || 1;
-  const baseDiscountBps = Math.min(yearsNum * 500, 2500); // 5% per year (1yr=5%, 3yr=15%, 5yr=25%)
-  const discountPct = (baseDiscountBps / 100).toFixed(1);
-  const discountedPrice = (principalNum * (1 - baseDiscountBps / 10000)).toFixed(2);
+
+  const { data: discountBps = yearsNum * 500 } = useQuery({
+    queryKey: ['bondDiscountBps', userAddress, yearsNum],
+    queryFn: async () => {
+      if (!CONTRACT_ADDRESSES.VESTED_VAULT) return yearsNum * 500;
+      try {
+        const bps = await publicClient.readContract({
+          address: CONTRACT_ADDRESSES.VESTED_VAULT,
+          abi: ABIS.VESTED_VAULT,
+          functionName: 'calculateDiscountBps',
+          args: [(userAddress || '0x0000000000000000000000000000000000000000') as `0x${string}`, BigInt(yearsNum)]
+        }) as bigint;
+        return Number(bps);
+      } catch (e) {
+        return yearsNum * 500;
+      }
+    },
+    refetchInterval: 3000
+  });
+
+  const discountPct = (discountBps / 100).toFixed(1);
+  const discountedPrice = (principalNum * (1 - discountBps / 10000)).toFixed(2);
 
   return (
     <div className="met-grid-subtle margin-bottom-xl">
@@ -75,11 +98,11 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
               onChange={(e) => setBondLockYears(e.target.value)}
               className={styles.inputDark}
             >
-              <option value="1">1 Año (Descuento ~10%)</option>
-              <option value="2">2 Años (Descuento ~18%)</option>
-              <option value="3">3 Años (Descuento ~26%)</option>
-              <option value="4">4 Años (Descuento ~34%)</option>
-              <option value="5">5 Años (Descuento Máximo 40%)</option>
+              <option value="1">1 Año (Descuento Base 5.0% + Bonus Staking)</option>
+              <option value="2">2 Años (Descuento Base 10.0% + Bonus Staking)</option>
+              <option value="3">3 Años (Descuento Base 15.0% + Bonus Staking)</option>
+              <option value="4">4 Años (Descuento Base 20.0% + Bonus Staking)</option>
+              <option value="5">5 Años (Descuento Base 25.0% + Bonus Staking)</option>
             </select>
           </div>
 

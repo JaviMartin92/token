@@ -512,36 +512,10 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
         }) as bigint;
         tokenIdBig = nextNftId - 1n;
 
-        // 3. Lock collateral ERC20 tokens in Escrow contract
-        let colTokenAddr = CONTRACT_ADDRESSES.ALPHA_TOKEN;
-        let colDecimals = 18;
-        if (collateralType === 'wbtc') {
-          colTokenAddr = CONTRACT_ADDRESSES.WBTC;
-          colDecimals = 8;
-        } else if (collateralType === 'weth') {
-          colTokenAddr = CONTRACT_ADDRESSES.WETH;
-          colDecimals = 18;
-        }
-
-        const formattedColStr = parseFloat(tokenIdOrAmountStr || '0').toFixed(colDecimals > 8 ? 6 : colDecimals);
-        const colAmountWei = parseUnits(formattedColStr, colDecimals);
-
-        const appCol = await userClient.writeContract({
-          address: colTokenAddr,
-          abi: ABIS.ERC20,
-          functionName: 'approve',
-          args: [CONTRACT_ADDRESSES.P2P_MARKET, colAmountWei]
-        });
-        await publicClient.waitForTransactionReceipt({ hash: appCol });
-
-        const txEscrow = await userClient.writeContract({
-          address: colTokenAddr,
-          abi: ABIS.ERC20,
-          functionName: 'transfer',
-          args: [CONTRACT_ADDRESSES.P2P_MARKET, colAmountWei]
-        });
-        await publicClient.waitForTransactionReceipt({ hash: txEscrow });
-        addLog(`[Escrow On-Chain] ${tokenIdOrAmountStr} ${assetSymbol} bloqueados en custodia.`);
+        // Note: The Position NFT minted above already represents the collateral position.
+        // The P2P Market contract only supports NFT-based collateral custody.
+        // Raw ERC20 tokens should NOT be transferred directly to the contract.
+        addLog(`[Colateral Registrado] Posición NFT #${tokenIdBig} creada representando ${tokenIdOrAmountStr} ${assetSymbol}.`);
       }
 
       // 4. Approve Position NFT to P2P Market

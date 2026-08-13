@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./ProtocolRoles.sol";
 import "./ProtocolAddressProvider.sol";
 
@@ -13,6 +14,7 @@ import "./ProtocolAddressProvider.sol";
  *         Only the VAULT_MANAGER_ROLE (usually TreasuryManager) can move funds.
  */
 contract AlphaVault is AccessControl {
+    using SafeERC20 for IERC20;
     ProtocolAddressProvider public immutable addressProvider;
 
     event FundsTransferred(address indexed token, address indexed to, uint256 amount);
@@ -30,7 +32,7 @@ contract AlphaVault is AccessControl {
     function transferFunds(address token, address to, uint256 amount) external onlyRole(ProtocolRoles.VAULT_MANAGER_ROLE) {
         require(to != address(0), "AlphaVault: Transfer to zero address");
         require(amount > 0, "AlphaVault: Amount must be > 0");
-        require(IERC20(token).transfer(to, amount), "AlphaVault: Transfer failed");
+        IERC20(token).safeTransfer(to, amount);
         emit FundsTransferred(token, to, amount);
     }
 
