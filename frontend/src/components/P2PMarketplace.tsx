@@ -78,7 +78,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
   onLiquidateLoanById,
   onBorrowFromTreasury
 }) => {
-  const [filterTab, setFilterTab] = useState<'all' | 'created' | 'active' | 'my'>('all');
+  const [filterTab, setFilterTab] = useState<'all' | 'created' | 'active' | 'my' | 'history'>('all');
   const [treasuryColType, setTreasuryColType] = useState<string>('nft');
 
   const MAX_LTV_MAP: Record<string, number> = {
@@ -105,11 +105,11 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
     if (filterTab === 'created') return loan.state === 0;
     if (filterTab === 'active') return loan.state === 1;
     if (filterTab === 'my') {
-      return (
-        (loan.lender || '').toLowerCase() === (userAddress || '').toLowerCase() ||
-        (loan.borrower || '').toLowerCase() === (userAddress || '').toLowerCase()
-      );
+      const isMine = (loan.lender || '').toLowerCase() === (userAddress || '').toLowerCase() ||
+                     (loan.borrower || '').toLowerCase() === (userAddress || '').toLowerCase();
+      return isMine && (loan.state === 0 || loan.state === 1);
     }
+    if (filterTab === 'history') return loan.state === 2 || loan.state === 3 || loan.state === 4;
     return true;
   });
 
@@ -459,7 +459,13 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
               onClick={() => setFilterTab('my')}
               className={`${styles.filterBtn} ${filterTab === 'my' ? styles.filterBtnActiveMy : ''}`}
             >
-              {UI_STRINGS.P2P_MARKETPLACE.TAB_MY_LOANS}
+              {UI_STRINGS.P2P_MARKETPLACE.TAB_MY_LOANS} ({loansList.filter((l) => ((l.lender || '').toLowerCase() === (userAddress || '').toLowerCase() || (l.borrower || '').toLowerCase() === (userAddress || '').toLowerCase()) && (l.state === 0 || l.state === 1)).length})
+            </button>
+            <button
+              onClick={() => setFilterTab('history')}
+              className={`${styles.filterBtn} ${filterTab === 'history' ? styles.filterBtnActiveMy : ''}`}
+            >
+              📜 Historial ({loansList.filter((l) => l.state === 2 || l.state === 3 || l.state === 4).length})
             </button>
           </div>
         </div>
@@ -568,16 +574,32 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                         )}
 
                         {loan.state === 1 && onLiquidateLoanById && (
-                          <button
-                            className={`btn-primary acp-pure-warning-card text-red-light border-red-500 ${styles.actionBtnSm}`}
-                            onClick={() => onLiquidateLoanById(loan.id, loan)}
-                          >
-                            {UI_STRINGS.P2P_MARKETPLACE.BTN_LIQUIDATE_LOAN}
-                          </button>
+                          parseFloat(loan.healthFactor?.replace('%', '') || '1000') < 115 ? (
+                            <button
+                              className={`btn-primary acp-pure-warning-card text-red-light border-red-500 ${styles.actionBtnSm}`}
+                              onClick={() => onLiquidateLoanById(loan.id, loan)}
+                            >
+                              ⚡ {UI_STRINGS.P2P_MARKETPLACE.BTN_LIQUIDATE_LOAN}
+                            </button>
+                          ) : (
+                            <button
+                              className={`btn-primary opacity-60 cursor-not-allowed ${styles.actionBtnSm}`}
+                              title="Préstamo solvente (HF ≥ 115%). Solo liquidable si cae por debajo del 115% o si vence el plazo."
+                              onClick={() => onLiquidateLoanById(loan.id, loan)}
+                            >
+                              🛡️ Solvente
+                            </button>
+                          )
                         )}
 
-                        {(loan.state === 2 || loan.state === 3 || loan.state === 4) && (
-                          <span className="opacity-40 text-xs">{UI_STRINGS.COMMON.STATUS_COMPLETED}</span>
+                        {loan.state === 2 && (
+                          <span className="text-cyan text-xs font-semibold">🔵 Reembolsado</span>
+                        )}
+                        {loan.state === 3 && (
+                          <span className="text-red-light text-xs font-semibold">🔴 Liquidado</span>
+                        )}
+                        {loan.state === 4 && (
+                          <span className="opacity-40 text-xs">⚪ Cancelado</span>
                         )}
                       </td>
                     </tr>

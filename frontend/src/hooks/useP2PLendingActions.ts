@@ -522,31 +522,78 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
     }
   };
 
-  const handleLiquidateLoanById = (loanId: number, loanObj?: any) => {
-    const borrowAmt = loanObj ? (parseFloat((loanObj.borrowAmount || '0').toString().replace(/,/g, '')) || 0) : 0;
-    const nftId = loanObj ? loanObj.positionTokenId : null;
+  const handleLiquidateLoanById = async (loanId: number, loanObj?: any) => {
+    if (!loanId || loanId <= 0) {
+      addToast('warning', 'ID Inválido', 'Indica un ID de préstamo válido para liquidar');
+      return;
+    }
 
-    if (requestConfirmation) {
-      requestConfirmation({
-        title: `Auto-Liquidación de Préstamo #${loanId}`,
-        actionIcon: '⚡',
-        typeBadge: 'Ejecución por Impago / HF < 115%',
-        targetContractName: 'P2PLendingMarket.sol',
-        targetContractAddress: CONTRACT_ADDRESSES.P2P_MARKET,
-        inputAmount: `Préstamo #${loanId}`,
-        inputSymbol: borrowAmt > 0 ? `$${borrowAmt.toFixed(2)} Deuda Impagada` : 'Posición en Impago',
-        expectedOutput: nftId ? `NFT #${nftId}` : 'Colateral en Custodia',
-        expectedOutputSymbol: 'Transferido al Liquidador tras saldar deuda',
-        details: [
-          { label: 'Umbral de Liquidación', value: 'Health Factor < 115% o Expiración de Plazo', isHighlight: true },
-          ...(borrowAmt > 0 ? [{ label: 'Deuda en Impago Afectada', value: `$${borrowAmt.toFixed(2)} USDC` }] : [])
-        ],
-        warningNote: 'Solo se ejecutará si el préstamo está en impago o con ratio < 115%. El liquidador salda la deuda pendiente y recibe el colateral en custodia.',
-        confirmButtonText: '⚡ Confirmar Liquidación',
-        confirmButtonVariant: 'danger'
-      }, () => executeLiquidateLoanById(loanId));
-    } else {
-      executeLiquidateLoanById(loanId);
+    try {
+      const rawLoan = await publicClient.readContract({
+        address: CONTRACT_ADDRESSES.P2P_MARKET,
+        abi: ABIS.P2P_MARKET,
+        functionName: 'loans',
+        args: [BigInt(loanId)]
+      }) as any;
+
+      if (!rawLoan) {
+        addToast('error', 'Préstamo Inexistente', `El préstamo #${loanId} no fue encontrado on-chain`);
+        return;
+      }
+
+      const state = Array.isArray(rawLoan) ? Number(rawLoan[9]) : Number(rawLoan.state);
+      if (state !== 1) {
+        addToast('warning', 'Préstamo No Activo', `El préstamo #${loanId} no está activo (Estado: ${state === 0 ? 'Oferta' : state === 2 ? 'Reembolsado' : state === 3 ? 'Liquidado' : 'Cancelado'})`);
+        return;
+      }
+
+      const startTime = Array.isArray(rawLoan) ? Number(rawLoan[8]) : Number(rawLoan.startTime);
+      const durationDays = Array.isArray(rawLoan) ? Number(rawLoan[7]) : Number(rawLoan.durationDays);
+      const isExpired = Date.now() / 1000 > (startTime + durationDays * 86400);
+
+      const hfRatio = await publicClient.readContract({
+        address: CONTRACT_ADDRESSES.P2P_MARKET,
+        abi: ABIS.P2P_MARKET,
+        functionName: 'calculateHealthFactor',
+        args: [BigInt(loanId)]
+      }) as bigint;
+
+      const healthPercent = Number(hfRatio);
+
+      if (healthPercent >= 115 && !isExpired) {
+        addToast('warning', 'Préstamo Solvente (No Liquidable)', `El préstamo #${loanId} es 100% solvente (Factor de Salud: ${healthPercent}%, seguro ≥ 115%) y su plazo está vigente. No puede ser liquidado.`);
+        addLog(`[Info] Préstamo #${loanId} es 100% solvente (${healthPercent}% salud, plazo vigente). Liquidación no permitida.`);
+        return;
+      }
+
+      const borrowAmt = loanObj ? (parseFloat((loanObj.borrowAmount || '0').toString().replace(/,/g, '')) || 0) : 0;
+      const nftId = loanObj ? loanObj.positionTokenId : null;
+
+      if (requestConfirmation) {
+        requestConfirmation({
+          title: `Ejecutar Liquidación de Préstamo #${loanId}`,
+          actionIcon: '⚡',
+          typeBadge: isExpired ? 'Plazo Vencido' : 'Health Factor < 115%',
+          targetContractName: 'P2PLendingMarket.sol',
+          targetContractAddress: CONTRACT_ADDRESSES.P2P_MARKET,
+          inputAmount: `Préstamo #${loanId}`,
+          inputSymbol: borrowAmt > 0 ? `$${borrowAmt.toFixed(2)} Deuda Impagada` : 'Posición en Impago',
+          expectedOutput: nftId ? `NFT #${nftId}` : 'Colateral en Custodia',
+          expectedOutputSymbol: 'Transferido al Liquidador (+10% Bono de Liquidación)',
+          details: [
+            { label: 'Estado de Solvencia', value: isExpired ? 'Plazo Vencido' : `Bajo Umbral (${healthPercent}% < 115%)`, isHighlight: true },
+            ...(borrowAmt > 0 ? [{ label: 'Deuda a Amortizar', value: `$${borrowAmt.toFixed(2)} USDC` }] : []),
+            { label: 'Incentivo Liquidador', value: '+10.00% Bono sobre Deuda', badge: 'Fair Liquidation' }
+          ],
+          warningNote: 'Al confirmar, pagarás la deuda del préstamo y recibirás el colateral en custodia con bonificación del 10%.',
+          confirmButtonText: '⚡ Confirmar y Liquidar',
+          confirmButtonVariant: 'danger'
+        }, () => executeLiquidateLoanById(loanId));
+      } else {
+        executeLiquidateLoanById(loanId);
+      }
+    } catch (err: any) {
+      addToast('error', 'Error Verificación', err.message || 'Fallo al verificar préstamo');
     }
   };
 

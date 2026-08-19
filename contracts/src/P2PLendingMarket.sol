@@ -250,6 +250,8 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
             state: LoanState.CREATED
         });
 
+        loanCollateralAsset[loanId] = stablecoin;
+
         IERC20(stablecoin).safeTransferFrom(msg.sender, address(this), collateralAmount);
 
         emit LoanCreated(loanId, msg.sender, 0, borrowAmount);
@@ -436,10 +438,10 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
 
         if (loan.positionTokenId > 0 && address(positionNFT) != address(0)) {
             positionNFT.safeTransferFrom(address(this), msg.sender, loan.positionTokenId);
-        } else if (loan.collateralAmount > 0 && alphaToken != address(0)) {
-            IERC20(alphaToken).safeTransfer(msg.sender, loan.collateralAmount);
         } else if (loan.collateralAmount > 0) {
-            IERC20(stablecoin).safeTransfer(msg.sender, loan.collateralAmount);
+            address colAsset = loanCollateralAsset[loanId];
+            address targetAsset = colAsset != address(0) ? colAsset : (alphaToken != address(0) ? alphaToken : stablecoin);
+            IERC20(targetAsset).safeTransfer(msg.sender, loan.collateralAmount);
         }
 
         emit LoanCancelled(loanId);
@@ -652,18 +654,8 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
             positionNFT.safeTransferFrom(address(this), loan.borrower, loan.positionTokenId);
         } else if (loan.collateralAmount > 0) {
             address colAsset = loanCollateralAsset[loanId];
-            if (colAsset != address(0)) {
-                IERC20(colAsset).safeTransfer(loan.borrower, loan.collateralAmount);
-            } else if (alphaToken != address(0)) {
-                IERC20(alphaToken).safeTransfer(loan.borrower, loan.collateralAmount);
-            } else {
-                bool isGracePeriod = _checkGracePeriod();
-                if (isGracePeriod) {
-                    claimableBorrowerEquity[loan.borrower] += loan.collateralAmount;
-                } else {
-                    IERC20(stablecoin).safeTransfer(loan.borrower, loan.collateralAmount);
-                }
-            }
+            address targetAsset = colAsset != address(0) ? colAsset : (alphaToken != address(0) ? alphaToken : stablecoin);
+            IERC20(targetAsset).safeTransfer(loan.borrower, loan.collateralAmount);
         }
 
         emit LoanRepaid(loanId, totalOwed);
