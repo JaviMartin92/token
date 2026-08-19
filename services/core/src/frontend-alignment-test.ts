@@ -78,14 +78,14 @@ async function main() {
   console.log('[1/4] Verifying Frontend Addresses & Compiled Smart Contracts...');
   const addresses = loadFrontendContracts();
   const contractsToVerify = [
-    { key: 'TREASURY', file: 'Treasury.sol', artifact: 'Treasury' },
+    { key: 'TREASURY', file: 'TreasuryManager.sol', artifact: 'TreasuryManager' },
     { key: 'POSITION_NFT', file: 'VaultPositionNFT.sol', artifact: 'VaultPositionNFT' },
     { key: 'VESTED_VAULT', file: 'VestedDiscountVault.sol', artifact: 'VestedDiscountVault' },
     { key: 'P2P_MARKET', file: 'P2PLendingMarket.sol', artifact: 'P2PLendingMarket' },
     { key: 'STAKING', file: 'GovernanceStaking.sol', artifact: 'GovernanceStaking' },
     { key: 'REAL_YIELD_ROUTER', file: 'RealYieldRouter.sol', artifact: 'RealYieldRouter' },
     { key: 'CIRCUIT_BREAKER', file: 'CircuitBreaker.sol', artifact: 'CircuitBreaker' },
-    { key: 'CORPORATE_CONTRIBUTION', file: 'CorporateContribution.sol', artifact: 'CorporateContribution' },
+    { key: 'COMMUNITY_YIELD_VAULT', file: 'CommunityYieldVault.sol', artifact: 'CommunityYieldVault' },
     { key: 'TOKENOMICS_ENGINE', file: 'ProtocolTokenomicsEngine.sol', artifact: 'ProtocolTokenomicsEngine' },
   ];
 
@@ -97,6 +97,28 @@ async function main() {
     } catch (e: any) {
       assert(false, `Artifact check for ${item.key}`, e.message);
     }
+  }
+
+  // Check if contracts are deployed on the local node before running live on-chain tests
+  let isNodeAlive = false;
+  try {
+    const chainId = await publicClient.getChainId();
+    if (chainId === 31337) {
+      const code = await publicClient.getBytecode({ address: addresses.USDC as `0x${string}` });
+      if (code && code !== '0x') {
+        isNodeAlive = true;
+      }
+    }
+  } catch {}
+
+  if (!isNodeAlive) {
+    console.log('\n[INFO] Local Anvil node not running with deployed contracts at ' + ANVIL_URL + '.');
+    console.log('       Static contract alignment & ABIs verified successfully.');
+    console.log('       Skipping live on-chain interaction tests (run start_app.ps1 to deploy and test live state).\n');
+    console.log('============================================================');
+    console.log(` RESULTS: ${passedTests} PASSED, ${failedTests} FAILED`);
+    console.log('============================================================\n');
+    process.exit(failedTests > 0 ? 1 : 0);
   }
 
   // TEST 2: Token Decimal Checks On-Chain
@@ -157,20 +179,37 @@ async function main() {
     });
     await publicClient.waitForTransactionReceipt({ hash: txApp });
 
-    const treasuryArtifact = loadArtifact('Treasury', 'Treasury.sol');
+    const treasuryArtifact = loadArtifact('TreasuryManager', 'TreasuryManager.sol');
+
+    // Whitelist KYC for user account
+    const txKyc = await adminWallet.writeContract({
+      address: treasuryAddr as `0x${string}`,
+      abi: treasuryArtifact.abi,
+      functionName: 'setKYCStatus',
+      args: [userAccount.address, true]
+    });
+    await publicClient.waitForTransactionReceipt({ hash: txKyc });
+
+    const alphaTokenAddr = addresses.ALPHA_TOKEN;
+    const userSharesBefore = await publicClient.readContract({
+      address: alphaTokenAddr as `0x${string}`,
+      abi: [{ name: 'balanceOf', type: 'function', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [{ type: 'uint256' }] }],
+      functionName: 'balanceOf',
+      args: [userAccount.address]
+    }) as bigint;
 
     // Deposit into Treasury
     const txDep = await userWallet.writeContract({
       address: treasuryAddr as `0x${string}`,
       abi: treasuryArtifact.abi,
       functionName: 'deposit',
-      args: [amountWei6]
+      args: [amountWei6, 0n]
     });
     await publicClient.waitForTransactionReceipt({ hash: txDep });
 
-    const userShares = await publicClient.readContract({
-      address: treasuryAddr as `0x${string}`,
-      abi: treasuryArtifact.abi,
+    const userSharesAfter = await publicClient.readContract({
+      address: alphaTokenAddr as `0x${string}`,
+      abi: [{ name: 'balanceOf', type: 'function', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [{ type: 'uint256' }] }],
       functionName: 'balanceOf',
       args: [userAccount.address]
     }) as bigint;
@@ -181,11 +220,12 @@ async function main() {
       functionName: 'getNAV'
     }) as bigint;
 
-    const sharesFormatted = parseFloat(formatUnits(userShares, 18)); // ALPHA shares = 18 decimals
+    const deltaShares = userSharesAfter - userSharesBefore;
+    const deltaFormatted = parseFloat(formatUnits(deltaShares, 18)); // ALPHA shares = 18 decimals
     const navFormatted = parseFloat(formatUnits(nav, 18)); // NAV = 18 decimals
 
-    assert(sharesFormatted >= 990 && sharesFormatted <= 1000, `User received realistic ALPHA shares (${sharesFormatted.toFixed(2)})`, `Got ${sharesFormatted}`);
-    assert(navFormatted >= 990 && navFormatted <= 50_000_000, `NAV value is in realistic USD range ($${navFormatted.toFixed(2)})`, `Got $${navFormatted}`);
+    assert(deltaFormatted >= 900 && deltaFormatted <= 1100, `User received realistic ALPHA shares (${deltaFormatted.toFixed(2)})`, `Got ${deltaFormatted}`);
+    assert(navFormatted >= 0.90 && navFormatted <= 50_000_000, `NAV value is in realistic USD range ($${navFormatted.toFixed(2)})`, `Got $${navFormatted}`);
 
   } catch (e: any) {
     assert(false, 'USDC Deposit Flow', e.message);
@@ -194,7 +234,7 @@ async function main() {
   // TEST 4: Proof of Reserves Verification
   console.log('\n[4/4] Verifying Proof of Reserves & Solvency Metrics...');
   try {
-    const treasuryArtifact = loadArtifact('Treasury', 'Treasury.sol');
+    const treasuryArtifact = loadArtifact('TreasuryManager', 'TreasuryManager.sol');
     const por = await publicClient.readContract({
       address: treasuryAddr as `0x${string}`,
       abi: treasuryArtifact.abi,

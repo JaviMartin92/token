@@ -11,10 +11,10 @@ import "../src/ProtocolRoles.sol";
 contract DeployTestnetMocks is Script {
     function run() external {
         require(block.chainid != 1 && block.chainid != 8453, "Cannot deploy faucet on mainnet");
-        
+
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployerAddress = vm.addr(deployerPrivateKey);
-        
+
         vm.startBroadcast(deployerPrivateKey);
 
         // 1. Deploy Mock Tokens
@@ -38,18 +38,18 @@ contract DeployTestnetMocks is Script {
         console.log("Mock WBTC Feed deployed at:", address(wbtcFeed));
         console.log("Mock WETH Feed deployed at:", address(wethFeed));
 
-        // NOTE: The TreasuryManager would need to be deployed next, 
+        // NOTE: The TreasuryManager would need to be deployed next,
         // passing in these token addresses and feeds to the OracleHub.
         // For the sake of this script, let's assume TreasuryManager is already deployed
         // or will be deployed by another script.
-        
+
         address treasuryAddress = vm.envOr("TREASURY_ADDRESS", address(0));
-        
+
         if (treasuryAddress != address(0)) {
             // 3. Deploy Testnet Faucet
             TestnetFaucet faucet = new TestnetFaucet(address(mockUSDC), treasuryAddress);
             console.log("TestnetFaucet deployed at:", address(faucet));
-            
+
             // 4. Grant COMPLIANCE_ROLE to the Faucet so it can auto-whitelist testers
             TreasuryManager treasury = TreasuryManager(payable(treasuryAddress));
             treasury.grantRole(ProtocolRoles.COMPLIANCE_ROLE, address(faucet));

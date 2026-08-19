@@ -1,39 +1,14 @@
-import { createPublicClient, createWalletClient, http } from 'viem';
+import { createPublicClient, createWalletClient, custom, http } from 'viem';
+import { VALIDATED_CONTRACT_ADDRESSES } from '../config/contracts.js';
+import { ENV } from '../config/env.js';
 
-import contractsJson from '../contracts.json';
+const ANVIL_URL = typeof window !== 'undefined' ? `${window.location.origin}/rpc` : ENV.VITE_PUBLIC_RPC_URL;
 
-export const ANVIL_URL = typeof window !== 'undefined' ? `${window.location.origin}/rpc` : 'http://127.0.0.1:8545';
-
-// Deployed contract addresses (matches Anvil setup)
-export const CONTRACT_ADDRESSES = {
-  USDC: ((contractsJson as any).USDC || import.meta.env.VITE_USDC_ADDRESS) as `0x${string}`,
-  USDT: ((contractsJson as any).USDT || import.meta.env.VITE_USDT_ADDRESS) as `0x${string}`,
-  WBTC: ((contractsJson as any).WBTC || import.meta.env.VITE_WBTC_ADDRESS) as `0x${string}`,
-  WETH: ((contractsJson as any).WETH || import.meta.env.VITE_WETH_ADDRESS) as `0x${string}`,
-  TREASURY: ((contractsJson as any).TREASURY || import.meta.env.VITE_TREASURY_MANAGER_ADDRESS) as `0x${string}`,
-  ALPHA_TOKEN: ((contractsJson as any).ALPHA_TOKEN || import.meta.env.VITE_ALPHA_TOKEN_ADDRESS) as `0x${string}`,
-  CORPORATE_CONTRIBUTION: ((contractsJson as any).CORPORATE_CONTRIBUTION || import.meta.env.VITE_CORPORATE_CONTRIBUTION_ADDRESS) as `0x${string}`,
-  CIRCUIT_BREAKER: ((contractsJson as any).CIRCUIT_BREAKER || import.meta.env.VITE_CIRCUIT_BREAKER_ADDRESS) as `0x${string}`,
-  POSITION_NFT: ((contractsJson as any).POSITION_NFT || import.meta.env.VITE_POSITION_NFT_ADDRESS) as `0x${string}`,
-  VESTED_VAULT: ((contractsJson as any).VESTED_VAULT || import.meta.env.VITE_VESTED_VAULT_ADDRESS) as `0x${string}`,
-  P2P_MARKET: ((contractsJson as any).P2P_MARKET || import.meta.env.VITE_P2P_MARKET_ADDRESS) as `0x${string}`,
-  STAKING: ((contractsJson as any).STAKING || import.meta.env.VITE_STAKING_ADDRESS) as `0x${string}`,
-  REAL_YIELD_ROUTER: ((contractsJson as any).REAL_YIELD_ROUTER || import.meta.env.VITE_REAL_YIELD_ROUTER_ADDRESS) as `0x${string}`,
-  YIELD_VAULT: ((contractsJson as any).YIELD_VAULT || import.meta.env.VITE_YIELD_STREAMING_VAULT_ADDRESS) as `0x${string}`,
-  PROTOCOL_OPEX_VAULT: ((contractsJson as any).PROTOCOL_OPEX_VAULT || import.meta.env.VITE_PROTOCOL_OPEX_VAULT_ADDRESS) as `0x${string}`,
-  COMMUNITY_YIELD_VAULT: ((contractsJson as any).COMMUNITY_YIELD_VAULT || import.meta.env.VITE_COMMUNITY_YIELD_VAULT_ADDRESS) as `0x${string}`,
-  CORPORATE_OPEX_VAULT: ((contractsJson as any).CORPORATE_OPEX_VAULT || (contractsJson as any).PROTOCOL_OPEX_VAULT) as `0x${string}`,
-  CORPORATE_PROFIT_VAULT: ((contractsJson as any).CORPORATE_PROFIT_VAULT || (contractsJson as any).COMMUNITY_YIELD_VAULT) as `0x${string}`,
-  ALPHA_VAULT: ((contractsJson as any).ALPHA_VAULT) as `0x${string}`,
-  PRICE_FEED: ((contractsJson as any).ORACLE_ROUTER || (contractsJson as any).PRICE_FEED) as `0x${string}`,
-  PROMOTIONAL_VAULT: ((contractsJson as any).PROMO_VAULT) as `0x${string}`,
-  DYNAMIC_YIELD_ORACLE: ((contractsJson as any).DYNAMIC_YIELD_ORACLE) as `0x${string}`,
-  GOVERNOR: ((contractsJson as any).GOVERNOR) as `0x${string}`,
-  TIMELOCK: ((contractsJson as any).TIMELOCK) as `0x${string}`
-};
+// Deployed contract addresses (validated via Zod)
+export const CONTRACT_ADDRESSES = VALIDATED_CONTRACT_ADDRESSES;
 
 const anvilChain = {
-  id: 31337,
+  id: ENV.VITE_CHAIN_ID,
   name: 'Anvil Localhost',
   nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
   rpcUrls: {
@@ -47,21 +22,17 @@ export const publicClient = createPublicClient({
   transport: http(ANVIL_URL)
 });
 
-import { privateKeyToAccount } from 'viem/accounts';
-
-export const getWalletClient = (privateKey: string) => {
-  const account = privateKeyToAccount(privateKey as `0x${string}`);
+export const getWalletClient = (userAddress?: string) => {
+  if (typeof window === 'undefined' || !(window as any).ethereum) {
+    throw new Error('Conecta una cartera compatible para firmar transacciones.');
+  }
+  const account = (userAddress && userAddress.startsWith('0x') ? (userAddress as `0x${string}`) : '0x0000000000000000000000000000000000000000');
   return createWalletClient({
     account,
     chain: anvilChain,
-    transport: http(ANVIL_URL)
+    transport: custom((window as any).ethereum)
   });
 };
-
-export const walletClient = createWalletClient({
-  chain: anvilChain,
-  transport: http(ANVIL_URL)
-});
 
 // Minimum required ABIs for dashboard actions
 export const ABIS = {
@@ -71,6 +42,7 @@ export const ABIS = {
     { name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'spender', type: 'address' }, { name: 'value', type: 'uint256' }], outputs: [{ name: '', type: 'bool' }] },
     { name: 'transfer', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'to', type: 'address' }, { name: 'value', type: 'uint256' }], outputs: [{ name: '', type: 'bool' }] },
     { name: 'transferFrom', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'from', type: 'address' }, { name: 'to', type: 'address' }, { name: 'value', type: 'uint256' }], outputs: [{ name: '', type: 'bool' }] },
+    { name: 'allowance', type: 'function', stateMutability: 'view', inputs: [{ name: 'owner', type: 'address' }, { name: 'spender', type: 'address' }], outputs: [{ name: '', type: 'uint256' }] },
     { name: 'mint', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'to', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [] }
   ] as const,
   TREASURY: [
@@ -158,6 +130,7 @@ export const ABIS = {
     { name: 'repayLoan', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'loanId', type: 'uint256' }], outputs: [] },
     { name: 'liquidateLoan', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'loanId', type: 'uint256' }], outputs: [] },
     { name: 'calculateHealthFactor', type: 'function', stateMutability: 'view', inputs: [{ name: 'loanId', type: 'uint256' }], outputs: [{ name: 'healthFactorRatio', type: 'uint256' }] },
+    { name: 'calculateTotalOwed', type: 'function', stateMutability: 'view', inputs: [{ name: 'loanId', type: 'uint256' }], outputs: [{ name: 'totalOwed', type: 'uint256' }, { name: 'interest', type: 'uint256' }] },
     { name: 'getMarketplaceOverview', type: 'function', stateMutability: 'view', inputs: [], outputs: [
       { name: 'stats', type: 'tuple', components: [
         { name: 'totalActiveLoans', type: 'uint256' },
@@ -180,7 +153,24 @@ export const ABIS = {
       { name: 'startTime', type: 'uint256' },
       { name: 'state', type: 'uint8' }
     ]},
-    { name: 'cancelLoanOffer', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'loanId', type: 'uint256' }], outputs: [] }
+    { name: 'cancelLoanOffer', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'loanId', type: 'uint256' }], outputs: [] },
+    { name: 'borrowFromTreasury', type: 'function', stateMutability: 'nonpayable', inputs: [
+      { name: 'positionTokenId', type: 'uint256' },
+      { name: 'borrowAmount', type: 'uint256' },
+      { name: 'durationDays', type: 'uint256' }
+    ], outputs: [{ name: 'loanId', type: 'uint256' }] },
+    { name: 'borrowFromTreasuryWithAlpha', type: 'function', stateMutability: 'nonpayable', inputs: [
+      { name: 'alphaCollateralAmount', type: 'uint256' },
+      { name: 'borrowAmount', type: 'uint256' },
+      { name: 'durationDays', type: 'uint256' }
+    ], outputs: [{ name: 'loanId', type: 'uint256' }] },
+    { name: 'borrowFromTreasuryWithAsset', type: 'function', stateMutability: 'nonpayable', inputs: [
+      { name: 'collateralAsset', type: 'address' },
+      { name: 'collateralAmount', type: 'uint256' },
+      { name: 'borrowAmount', type: 'uint256' },
+      { name: 'durationDays', type: 'uint256' }
+    ], outputs: [{ name: 'loanId', type: 'uint256' }] },
+    { name: 'loanCollateralAsset', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'uint256' }], outputs: [{ name: '', type: 'address' }] }
   ] as const,
   STAKING: [
     { name: 'stake', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'amount', type: 'uint256' }], outputs: [] },
@@ -224,6 +214,7 @@ export const ABIS = {
     { name: 'balanceOf', type: 'function', stateMutability: 'view', inputs: [{ name: 'owner', type: 'address' }], outputs: [{ name: '', type: 'uint256' }] },
     { name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'to', type: 'address' }, { name: 'tokenId', type: 'uint256' }], outputs: [] },
     { name: 'getApproved', type: 'function', stateMutability: 'view', inputs: [{ name: 'tokenId', type: 'uint256' }], outputs: [{ name: '', type: 'address' }] },
+    { name: 'isApprovedForAll', type: 'function', stateMutability: 'view', inputs: [{ name: 'owner', type: 'address' }, { name: 'operator', type: 'address' }], outputs: [{ name: '', type: 'bool' }] },
     { name: 'setApprovalForAll', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'operator', type: 'address' }, { name: 'approved', type: 'bool' }], outputs: [] },
     { name: 'mintPosition', type: 'function', stateMutability: 'nonpayable', inputs: [
       { name: 'to', type: 'address' },
@@ -233,33 +224,21 @@ export const ABIS = {
       { name: 'lockYears', type: 'uint256' }
     ], outputs: [{ name: 'tokenId', type: 'uint256' }] },
     { name: 'nextTokenId', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
-    { name: 'getPosition', type: 'function', stateMutability: 'view', inputs: [{ name: 'tokenId', type: 'uint256' }], outputs: [
-      { name: 'id', type: 'uint256' },
-      { name: 'underlyingAsset', type: 'address' },
-      { name: 'principalAmount', type: 'uint256' },
-      { name: 'discountedPricePaid', type: 'uint256' },
-      { name: 'depositTimestamp', type: 'uint256' },
-      { name: 'expirationTimestamp', type: 'uint256' },
-      { name: 'lockYears', type: 'uint256' },
-      { name: 'isRagequitted', type: 'bool' },
-      { name: 'isMaturedClaimed', type: 'bool' }
-    ]}
-  ] as const,
-  CORPORATE_CONTRIBUTION: [
-    { name: 'injectFunds', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'amount', type: 'uint256' }, { name: 'auditRef', type: 'string' }], outputs: [] },
-    { name: 'createTwapOrder', type: 'function', stateMutability: 'nonpayable', inputs: [
-      { name: 'totalAmountUSD', type: 'uint256' },
-      { name: 'intervals', type: 'uint256' },
-      { name: 'intervalSeconds', type: 'uint256' }
-    ], outputs: [{ name: '', type: 'uint256' }] },
-    { name: 'twapOrders', type: 'function', stateMutability: 'view', inputs: [{ name: 'orderId', type: 'uint256' }], outputs: [
-      { name: 'id', type: 'uint256' },
-      { name: 'totalAmount', type: 'uint256' },
-      { name: 'amountPerInterval', type: 'uint256' },
-      { name: 'intervalSeconds', type: 'uint256' },
-      { name: 'nextExecutionTime', type: 'uint256' },
-      { name: 'executionsRemaining', type: 'uint256' }
-    ]}
+    { name: 'getPosition', type: 'function', stateMutability: 'view', inputs: [{ name: 'tokenId', type: 'uint256' }], outputs: [{
+      name: 'position',
+      type: 'tuple',
+      components: [
+        { name: 'id', type: 'uint256' },
+        { name: 'underlyingAsset', type: 'address' },
+        { name: 'depositTimestamp', type: 'uint64' },
+        { name: 'lockYears', type: 'uint32' },
+        { name: 'expirationTimestamp', type: 'uint64' },
+        { name: 'isRagequitted', type: 'bool' },
+        { name: 'isMaturedClaimed', type: 'bool' },
+        { name: 'principalAmount', type: 'uint256' },
+        { name: 'discountedPricePaid', type: 'uint256' }
+      ]
+    }]}
   ] as const,
   CIRCUIT_BREAKER: [
     { name: 'isFrozen', type: 'function', stateMutability: 'view', inputs: [{ name: 'asset', type: 'address' }], outputs: [{ name: '', type: 'bool' }] },

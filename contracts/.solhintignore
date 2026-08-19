@@ -1,0 +1,12 @@
+node_modules
+lib/**
+out/**
+test/**
+script/**
+src/lib/access/**
+src/lib/token/**
+src/lib/utils/**
+src/lib/security/**
+src/lib/proxy/**
+src/lib/governance/**
+src/mocks/**

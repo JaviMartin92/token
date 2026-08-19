@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import styles from './P2PMarketplace.module.css';
+import { UI_STRINGS } from '../constants/strings.js';
+import { TokenAmountInput } from './common/TokenAmountInput.js';
 
 import type { UserPosition } from './VestedVaults.js';
 
@@ -10,6 +12,7 @@ export interface MarketplaceLoan {
   positionTokenId: number;
   borrowAmount: string;
   collateralAmount: string;
+  collateralSymbol?: string;
   interestRateBps: number;
   interestRateApr: string;
   durationDays: number;
@@ -43,7 +46,7 @@ interface P2PMarketplaceProps {
   onAcceptLoanById?: (loanId: number, borrowAmount: string) => void;
   onCancelLoanOffer?: (loanId: number) => void;
   onRepayLoanById?: (loanId: number, loanObj?: any) => void;
-  onLiquidateLoanById?: (loanId: number) => void;
+  onLiquidateLoanById?: (loanId: number, loanObj?: any) => void;
   onBorrowFromTreasury?: (collateralType: string, tokenIdOrAmt: string, amount: string, days: string) => void;
 }
 
@@ -113,15 +116,15 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
   const getStatusBadge = (state: number) => {
     switch (state) {
       case 0:
-        return <span className={styles.badgeAvailable}>🟡 Disponible (Oferta)</span>;
+        return <span className={styles.badgeAvailable}>🟡 {UI_STRINGS.COMMON.STATUS_AVAILABLE} (Oferta)</span>;
       case 1:
-        return <span className={styles.badgeActive}>🟢 Activo (Financiado)</span>;
+        return <span className={styles.badgeActive}>🟢 {UI_STRINGS.COMMON.STATUS_ACTIVE} ({UI_STRINGS.COMMON.STATUS_FUNDED})</span>;
       case 2:
-        return <span className={styles.badgeRepaid}>🔵 Reembolsado</span>;
+        return <span className={styles.badgeRepaid}>🔵 {UI_STRINGS.COMMON.STATUS_REPAID}</span>;
       case 3:
-        return <span className={styles.badgeLiquidated}>🔴 Liquidado</span>;
+        return <span className={styles.badgeLiquidated}>🔴 {UI_STRINGS.COMMON.STATUS_LIQUIDATED}</span>;
       case 4:
-        return <span className={styles.badgeCancelled}>⚪ Cancelado</span>;
+        return <span className={styles.badgeCancelled}>⚪ {UI_STRINGS.COMMON.STATUS_CANCELLED}</span>;
       default:
         return null;
     }
@@ -135,19 +138,18 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
         <div className="acp-banner-flex">
           <div>
             <h4 className={styles.boosterTitle}>
-              🏛️ Respaldo Institucional: Préstamos con Reservas de Tesorería (Treasury APY Booster)
+              {UI_STRINGS.P2P_MARKETPLACE.CARD_TREASURY_TITLE}
             </h4>
             <p className={styles.boosterDesc}>
-              Las reservas de la tesorería despliegan su fondo de liquidez en préstamos sobre-colateralizados.
-              Puedes solicitar financiación directa a la Tesorería a la <strong>Tasa Fija On-Chain de Tesorería</strong>. Los rendimientos generados retornan <strong>100% a la Tesorería</strong> aumentando el NAV del token ALPHA.
+              {UI_STRINGS.P2P_MARKETPLACE.CARD_TREASURY_DESC}
             </p>
           </div>
           <div className="acp-flex-row-gap5">
             <span className={styles.tagGreen}>
-              🛡️ Fondo de Reserva Activo
+              {UI_STRINGS.P2P_MARKETPLACE.TAG_RESERVE_ACTIVE}
             </span>
             <span className={styles.tagBlue}>
-              ⚡ Tasa Fija Tesorería On-Chain
+              {UI_STRINGS.P2P_MARKETPLACE.TAG_FIXED_RATE}
             </span>
           </div>
         </div>
@@ -157,10 +159,10 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
       {loansList.filter(l => (l.borrower.toLowerCase() === userAddress.toLowerCase() || l.lender.toLowerCase() === userAddress.toLowerCase()) && (l.state === 0 || l.state === 1)).length > 0 && (
         <div className={`glass-panel ${styles.activePanel}`}>
           <h3 className={styles.activeTitle}>
-            💳 Mis Préstamos Solicitados & Activos ({loansList.filter(l => (l.borrower.toLowerCase() === userAddress.toLowerCase() || l.lender.toLowerCase() === userAddress.toLowerCase()) && (l.state === 0 || l.state === 1)).length})
+            {UI_STRINGS.P2P_MARKETPLACE.CARD_ACTIVE_LOANS_TITLE} ({loansList.filter(l => (l.borrower.toLowerCase() === userAddress.toLowerCase() || l.lender.toLowerCase() === userAddress.toLowerCase()) && (l.state === 0 || l.state === 1)).length})
           </h3>
           <p className="acp-label-sm margin-bottom-lg">
-            Aquí puedes ver claramente todos los préstamos solicitados u ofertas activas y <strong>reembolsarlos o cancelarlos en 1-clic</strong> para gestionar tu custodia.
+            {UI_STRINGS.P2P_MARKETPLACE.CARD_ACTIVE_LOANS_DESC}
           </p>
 
           <div className="met-grid-subtle">
@@ -172,13 +174,13 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                     {getStatusBadge(loan.state)}
                   </div>
                   <div className="text-cyan font-semibold text-xs">
-                    Monto: <strong>${loan.borrowAmount} USDC</strong> @ {loan.interestRateApr}% APR
+                    Monto: <strong>${loan.borrowAmount} {UI_STRINGS.COMMON.SYMBOL_USDC}</strong> @ {loan.interestRateApr}% APR
                   </div>
                   <div className="text-muted text-xs margin-top-xs">
-                    Garantía Garantizada: <strong className="text-pink-light">NFT #{loan.positionTokenId} en Custodia</strong>
+                    Garantía Custodiada: <strong className="text-pink-light">{loan.positionTokenId > 0 ? `NFT #${loan.positionTokenId}` : `${loan.collateralAmount} ${loan.collateralSymbol || 'ALPHA'}`}</strong>
                   </div>
                   <div className="text-muted-dark text-xs margin-top-xs">
-                    Plazo: {loan.durationDays} días • Factor Salud: <strong className="text-green-bright">{loan.healthFactor || '140% (Seguro)'}</strong>
+                    Plazo: {loan.durationDays} días • {loan.state === 1 ? (loan.lender.toLowerCase() === loan.borrower.toLowerCase() ? 'Financiado' : '🏛️ Fondeado por Tesorería') : '🟡 Oferta Disponible'}
                   </div>
                 </div>
 
@@ -187,14 +189,14 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                     className={`btn-primary ${styles.btnBlueGrad}`}
                     onClick={() => onRepayLoanById(loan.id, loan)}
                   >
-                    💳 Reembolsar Deuda (+$ Interest)
+                    💳 {UI_STRINGS.P2P_MARKETPLACE.BTN_REPAY_LOAN}
                   </button>
                 ) : loan.state === 0 && loan.borrower.toLowerCase() === userAddress.toLowerCase() && onCancelLoanOffer ? (
                   <button
                     className="btn-primary acp-pure-warning-card text-red-light border-red-500"
                     onClick={() => onCancelLoanOffer(loan.id)}
                   >
-                    ❌ Cancelar Solicitud #{loan.id}
+                    ❌ {UI_STRINGS.P2P_MARKETPLACE.BTN_CANCEL_OFFER} #{loan.id}
                   </button>
                 ) : null}
               </div>
@@ -210,50 +212,50 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
         <div className={`glass-panel ${styles.treasuryCard}`}>
           <div className="acp-flex-row-gap5 margin-bottom-sm">
             <span className="text-md">🏛️</span>
-            <h3 className="gcc-metric-subtext-green font-bold text-sm margin-none">Pedir Préstamo a la Tesorería</h3>
+            <h3 className="gcc-metric-subtext-green font-bold text-sm margin-none">{UI_STRINGS.P2P_MARKETPLACE.CARD_TREASURY_TITLE}</h3>
           </div>
           <p className="acp-label-sm margin-bottom-lg line-height-normal">
-            Accede a la Reserva Líquida de la Tesorería. Desembolso instantáneo en USDC usando tu garantía a la tasa fija acordada on-chain.
+            {UI_STRINGS.P2P_MARKETPLACE.CARD_TREASURY_DESC}
           </p>
 
           <div className="acp-control-stack">
             <div>
-              <label className="acp-label-sm">Selecciona Tipo de Garantía Colateral:</label>
+              <label className="acp-label-sm">{UI_STRINGS.P2P_MARKETPLACE.LABEL_COL_TYPE}</label>
               <select
                 value={treasuryColType}
                 onChange={(e) => setTreasuryColType(e.target.value)}
                 className={styles.selectGreen}
               >
-                <option value="nft">🖼️ NFT de Posición Bonos ERC-721 (Max LTV On-Chain)</option>
-                <option value="alpha">🥩 Token ALPHA Staked (Max LTV On-Chain)</option>
-                <option value="wbtc">₿ Wrapped Bitcoin - WBTC (Max LTV On-Chain)</option>
-                <option value="weth">Ξ Wrapped Ethereum - WETH (Max LTV On-Chain)</option>
+                <option value="nft">🖼️ {UI_STRINGS.P2P_MARKETPLACE.COL_NFT}</option>
+                <option value="alpha">🥩 {UI_STRINGS.P2P_MARKETPLACE.COL_ALPHA}</option>
+                <option value="wbtc">₿ {UI_STRINGS.P2P_MARKETPLACE.COL_WBTC}</option>
+                <option value="weth">Ξ {UI_STRINGS.P2P_MARKETPLACE.COL_WETH}</option>
               </select>
 
               {treasuryColType === 'nft' ? (
                 <>
-                  <label className="acp-label-sm">NFT Token ID como Garantía:</label>
+                  <label className="acp-label-sm">{UI_STRINGS.P2P_MARKETPLACE.LABEL_NFT_SELECT}</label>
                   <select
                     data-testid="p2p-treasury-nft-id-input"
                     value={p2pTokenId}
                     onChange={(e) => setP2pTokenId(e.target.value)}
                     className="gcc-input-dark"
                   >
-                    <option value="">-- Selecciona un NFT de tu Billetera --</option>
+                    <option value="">{UI_STRINGS.COMMON.SELECT_OPTION_DEFAULT}</option>
                     {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).map((pos) => (
                       <option key={pos.id} value={pos.id.toString()}>
-                        NFT #{pos.id} (Principal: ${pos.principal} USDC)
+                        NFT #{pos.id} (Principal: ${pos.principal} {UI_STRINGS.COMMON.SYMBOL_USDC})
                       </option>
                     ))}
                     {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).length === 0 && (
-                      <option value="2">NFT #2 (Posición Activa)</option>
+                      <option value="" disabled>{UI_STRINGS.COMMON.NO_POSITIONS_AVAILABLE}</option>
                     )}
                   </select>
                 </>
               ) : (
                 <div>
                   <label className="acp-label-sm">
-                    Garantía Requerida en {treasuryColType.toUpperCase()} (Calculada Automáticamente):
+                    {UI_STRINGS.P2P_MARKETPLACE.LABEL_REQ_COL_AMOUNT} ({treasuryColType.toUpperCase()}):
                   </label>
                   <div className={styles.colCalcBox}>
                     ⚡ {autoCalculatedColAmount} {treasuryColType.toUpperCase()} (${requiredUsdBacking.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD Respaldo @ {(currentLtv * 100).toFixed(0)}% LTV)
@@ -264,18 +266,19 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
 
             <div className="admin-grid-2col">
               <div>
-                <label className="acp-label-xs">Monto USDC a Solicitar:</label>
-                <input
-                  data-testid="p2p-treasury-amount-input"
-                  type="number"
+                <TokenAmountInput
+                  label={UI_STRINGS.P2P_MARKETPLACE.LABEL_BORROW_AMOUNT}
+                  testId="p2p-treasury-amount-input"
                   placeholder="ej. 500"
                   value={p2pBorrowAmount}
-                  onChange={(e) => setP2pBorrowAmount(e.target.value)}
-                  className={styles.inputGreen}
+                  onChange={setP2pBorrowAmount}
+                  tokenSymbol={UI_STRINGS.COMMON.SYMBOL_USDC}
+                  tokenDecimals={6}
+                  showMaxButton={false}
                 />
               </div>
               <div>
-                <label className="acp-label-xs">Duración (Días):</label>
+                <label className="acp-label-xs">{UI_STRINGS.P2P_MARKETPLACE.LABEL_DURATION_DAYS}</label>
                 <input
                   data-testid="p2p-treasury-duration-input"
                   type="number"
@@ -298,54 +301,55 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                 p2pDays
               )}
             >
-              🏛️ Solicitar Crédito a la Tesorería ({treasuryColType.toUpperCase()})
+              {UI_STRINGS.P2P_MARKETPLACE.BTN_BORROW_TREASURY} ({treasuryColType.toUpperCase()})
             </button>
           </div>
         </div>
         
         {/* Create Loan Offer Card */}
         <div className="glass-panel acp-proposal-card">
-          <h3 className="margin-bottom-xs font-bold text-sm">🤝 Publicar Oferta de Préstamo P2P</h3>
+          <h3 className="margin-bottom-xs font-bold text-sm">{UI_STRINGS.P2P_MARKETPLACE.CARD_OFFER_TITLE}</h3>
           <p className="acp-label-sm margin-bottom-lg">
-            Deposita un NFT de Posición como colateral en escrow para solicitar un préstamo. Tu oferta se publicará inmediatamente en el Marketplace.
+            {UI_STRINGS.P2P_MARKETPLACE.CARD_OFFER_DESC}
           </p>
 
           <div className="acp-control-stack">
             <div>
-              <label className="acp-label-sm">NFT Token ID a Colateralizar:</label>
+              <label className="acp-label-sm">{UI_STRINGS.P2P_MARKETPLACE.LABEL_OFFER_NFT}</label>
               <select
                 data-testid="p2p-offer-nft-id-input"
                 value={p2pTokenId}
                 onChange={(e) => setP2pTokenId(e.target.value)}
                 className="gcc-input-dark"
               >
-                <option value="">-- Selecciona un NFT de tu Billetera --</option>
+                <option value="">{UI_STRINGS.COMMON.SELECT_OPTION_DEFAULT}</option>
                 {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).map((pos) => (
                   <option key={pos.id} value={pos.id.toString()}>
-                    NFT #{pos.id} (Principal: ${pos.principal} USDC — Bloqueo: {pos.lockYears} Años)
+                    NFT #{pos.id} (Principal: ${pos.principal} {UI_STRINGS.COMMON.SYMBOL_USDC} — Bloqueo: {pos.lockYears} Años)
                   </option>
                 ))}
                 {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).length === 0 && (
-                  <option value="1">NFT #1 (Posición Activa)</option>
+                  <option value="" disabled>{UI_STRINGS.COMMON.NO_POSITIONS_AVAILABLE}</option>
                 )}
               </select>
             </div>
 
             <div>
-              <label className="acp-label-sm">Monto a Pedir Prestado (USDC):</label>
-              <input
-                data-testid="p2p-offer-amount-input"
-                type="number"
+              <TokenAmountInput
+                label={UI_STRINGS.P2P_MARKETPLACE.LABEL_OFFER_AMOUNT}
+                testId="p2p-offer-amount-input"
                 placeholder="ej. 500"
                 value={p2pBorrowAmount}
-                onChange={(e) => setP2pBorrowAmount(e.target.value)}
-                className="gcc-input-dark"
+                onChange={setP2pBorrowAmount}
+                tokenSymbol={UI_STRINGS.COMMON.SYMBOL_USDC}
+                tokenDecimals={6}
+                showMaxButton={false}
               />
             </div>
 
             <div className="admin-grid-2col">
               <div>
-                <label className="acp-label-xs">Interés (BPS - 1000 = 10%):</label>
+                <label className="acp-label-xs">{UI_STRINGS.P2P_MARKETPLACE.LABEL_OFFER_INTEREST}</label>
                 <input
                   data-testid="p2p-offer-interest-input"
                   type="number"
@@ -355,7 +359,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                 />
               </div>
               <div>
-                <label className="acp-label-xs">Duración (Días):</label>
+                <label className="acp-label-xs">{UI_STRINGS.P2P_MARKETPLACE.LABEL_OFFER_DURATION}</label>
                 <input
                   data-testid="p2p-offer-duration-input"
                   type="number"
@@ -367,21 +371,21 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
             </div>
 
             <button data-testid="p2p-offer-create-btn" className={`btn-primary ${styles.btnBlueGrad}`} onClick={onCreateLoanOffer}>
-              🚀 Crear y Publicar Oferta de Préstamo
+              {UI_STRINGS.P2P_MARKETPLACE.BTN_CREATE_OFFER}
             </button>
           </div>
         </div>
 
         {/* Manual Operation Card */}
         <div className="glass-panel acp-proposal-card">
-          <h3 className="margin-bottom-xs font-bold text-sm">⚖️ Gestor Manual por ID</h3>
+          <h3 className="margin-bottom-xs font-bold text-sm">{UI_STRINGS.P2P_MARKETPLACE.LABEL_MANUAL_MANAGER}</h3>
           <p className="acp-label-sm margin-bottom-lg">
-            Financia, reembolsa o liquida préstamos ingresando directamente el ID correspondiente.
+            {UI_STRINGS.P2P_MARKETPLACE.DESC_MANUAL_MANAGER}
           </p>
 
           <div className="acp-control-stack">
             <div>
-              <label className="acp-label-sm">ID Préstamo Objetivo:</label>
+              <label className="acp-label-sm">{UI_STRINGS.P2P_MARKETPLACE.LABEL_TARGET_LOAN_ID}</label>
               <input
                 data-testid="p2p-manual-loan-id-input"
                 type="number"
@@ -393,7 +397,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
             </div>
 
             <div>
-              <label className="acp-label-sm">Colateral USDC Requerido (130%-150%):</label>
+              <label className="acp-label-sm">{UI_STRINGS.P2P_MARKETPLACE.LABEL_REQ_COL_PERCENT}</label>
               <input
                 type="number"
                 placeholder="ej. 700"
@@ -405,15 +409,15 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
 
             <div className="admin-grid-2col margin-top-xs">
               <button data-testid="p2p-manual-fund-btn" className="btn-primary stk-btn-green-grad" onClick={onAcceptLoan}>
-                ✅ Financiar
+                {UI_STRINGS.P2P_MARKETPLACE.BTN_FUND_LOAN}
               </button>
               <button data-testid="p2p-manual-repay-btn" className="btn-primary stk-btn-indigo-outline" onClick={onRepayLoan}>
-                💰 Reembolsar
+                {UI_STRINGS.P2P_MARKETPLACE.BTN_REPAY_LOAN}
               </button>
             </div>
 
             <button data-testid="p2p-autoliquidate-btn" className={`btn-primary ${styles.btnDangerGrad}`} onClick={onLiquidateLoan}>
-              ⚡ Auto-Liquidar si HF &lt; 115%
+              {UI_STRINGS.P2P_MARKETPLACE.BTN_LIQUIDATE_LOAN} (HF &lt; 115%)
             </button>
           </div>
         </div>
@@ -424,10 +428,10 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
         <div className="acp-banner-flex margin-bottom-lg">
           <div>
             <h3 className="margin-none text-sm font-bold acp-flex-row-gap5">
-              📊 Explorador & Marketplace de Préstamos P2P ({filteredLoans.length})
+              {UI_STRINGS.P2P_MARKETPLACE.TABLE_MARKET_TITLE} ({filteredLoans.length})
             </h3>
             <p className="acp-label-sm margin-top-xs">
-              Todas las ofertas creadas on-chain visibles en tiempo real. Financia préstamos para obtener rendimiento o gestiona tus posiciones.
+              {UI_STRINGS.P2P_MARKETPLACE.SUBTITLE}
             </p>
           </div>
 
@@ -437,25 +441,25 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
               onClick={() => setFilterTab('all')}
               className={`${styles.filterBtn} ${filterTab === 'all' ? styles.filterBtnActiveAll : ''}`}
             >
-              Todos ({loansList.length})
+              {UI_STRINGS.P2P_MARKETPLACE.TAB_ALL_OFFERS} ({loansList.length})
             </button>
             <button
               onClick={() => setFilterTab('created')}
               className={`${styles.filterBtn} ${filterTab === 'created' ? styles.filterBtnActiveCreated : ''}`}
             >
-              Disponibles ({loansList.filter((l) => l.state === 0).length})
+              {UI_STRINGS.P2P_MARKETPLACE.TAB_AVAILABLE} ({loansList.filter((l) => l.state === 0).length})
             </button>
             <button
               onClick={() => setFilterTab('active')}
               className={`${styles.filterBtn} ${filterTab === 'active' ? styles.filterBtnActiveActive : ''}`}
             >
-              Financiados ({loansList.filter((l) => l.state === 1).length})
+              {UI_STRINGS.P2P_MARKETPLACE.TAB_FUNDED} ({loansList.filter((l) => l.state === 1).length})
             </button>
             <button
               onClick={() => setFilterTab('my')}
               className={`${styles.filterBtn} ${filterTab === 'my' ? styles.filterBtnActiveMy : ''}`}
             >
-              Mis Préstamos
+              {UI_STRINGS.P2P_MARKETPLACE.TAB_MY_LOANS}
             </button>
           </div>
         </div>
@@ -463,23 +467,22 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
         {/* Loan Table */}
         {filteredLoans.length === 0 ? (
           <div className={styles.emptyBox}>
-            <p className="margin-none text-sm opacity-60">No hay préstamos P2P disponibles en esta categoría.</p>
-            <p className="acp-label-sm margin-top-xs opacity-40">¡Crea una nueva oferta utilizando el formulario superior!</p>
+            <p className="margin-none text-sm opacity-60">{UI_STRINGS.P2P_MARKETPLACE.TABLE_MARKET_EMPTY}</p>
           </div>
         ) : (
           <div className="table-responsive">
             <table className="gcc-table">
               <thead>
                 <tr className="gcc-tr-border text-muted">
-                  <th className="met-table-th">ID</th>
+                  <th className="met-table-th">{UI_STRINGS.P2P_MARKETPLACE.TH_LOAN_ID}</th>
                   <th className="met-table-th">Estado</th>
-                  <th className="met-table-th">NFT Colateral</th>
-                  <th className="met-table-th">Monto Solicitado</th>
-                  <th className="met-table-th">Tasa APR</th>
-                  <th className="met-table-th">Plazo</th>
-                  <th className="met-table-th">Creador / Ofertante</th>
-                  <th className="met-table-th">Salud / HF</th>
-                  <th className="met-table-th text-right">Acción Directa</th>
+                  <th className="met-table-th">{UI_STRINGS.P2P_MARKETPLACE.TH_COLLATERAL}</th>
+                  <th className="met-table-th">{UI_STRINGS.P2P_MARKETPLACE.TH_AMOUNT}</th>
+                  <th className="met-table-th">{UI_STRINGS.P2P_MARKETPLACE.TH_APR}</th>
+                  <th className="met-table-th">{UI_STRINGS.P2P_MARKETPLACE.TH_DURATION}</th>
+                  <th className="met-table-th">{UI_STRINGS.P2P_MARKETPLACE.TH_BORROWER}</th>
+                  <th className="met-table-th">{UI_STRINGS.P2P_MARKETPLACE.TH_HEALTH}</th>
+                  <th className="met-table-th text-right">{UI_STRINGS.P2P_MARKETPLACE.TH_ACTIONS}</th>
                 </tr>
               </thead>
               <tbody>
@@ -492,12 +495,26 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                       <td className="met-table-td-bold">#{loan.id}</td>
                       <td className="met-table-td">{getStatusBadge(loan.state)}</td>
                       <td className="met-table-td">
-                        <span className="gcc-badge-indigo">
-                          NFT #{loan.positionTokenId}
-                        </span>
+                        {loan.positionTokenId > 0 ? (
+                          <span className="gcc-badge-indigo">
+                            NFT #{loan.positionTokenId}
+                          </span>
+                        ) : loan.collateralSymbol === 'WBTC' ? (
+                          <span className="gcc-badge-amber">
+                            ₿ {loan.collateralAmount} WBTC
+                          </span>
+                        ) : loan.collateralSymbol === 'WETH' ? (
+                          <span className="gcc-badge-indigo">
+                            Ξ {loan.collateralAmount} WETH
+                          </span>
+                        ) : (
+                          <span className="gcc-badge-cyan">
+                            🥩 {loan.collateralAmount} ALPHA
+                          </span>
+                        )}
                       </td>
                       <td className="met-table-td-cyan">
-                        ${loan.borrowAmount} USDC
+                        ${loan.borrowAmount} {UI_STRINGS.COMMON.SYMBOL_USDC}
                       </td>
                       <td className="stk-val-green met-table-td">
                         {loan.interestRateApr}% APR
@@ -505,7 +522,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                       <td className="met-table-td">{loan.durationDays} días</td>
                       <td className="met-table-td opacity-80 text-xs">
                         {isBorrower ? (
-                          <span className="text-amber-bright font-semibold">Tú (Solicitante)</span>
+                          <span className="text-amber-bright font-semibold">Tú ({loan.state === 1 ? 'Prestatario' : 'Solicitante'})</span>
                         ) : isLender ? (
                           <span className="text-cyan font-semibold">Tú (Prestamista)</span>
                         ) : (
@@ -528,7 +545,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                             className={`btn-primary stk-btn-green-grad ${styles.actionBtnSm}`}
                             onClick={() => onAcceptLoanById(loan.id, loan.borrowAmount)}
                           >
-                            ✅ Financiar Oferta
+                            {UI_STRINGS.P2P_MARKETPLACE.BTN_FUND_LOAN}
                           </button>
                         )}
 
@@ -537,7 +554,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                             className={`btn-primary acp-pure-warning-card text-red-light border-red-500 ${styles.actionBtnSm}`}
                             onClick={() => onCancelLoanOffer(loan.id)}
                           >
-                            ❌ Cancelar Oferta
+                            {UI_STRINGS.P2P_MARKETPLACE.BTN_CANCEL_OFFER}
                           </button>
                         )}
 
@@ -546,21 +563,21 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                             className={`btn-primary ${styles.btnBlueGrad} ${styles.actionBtnSm}`}
                             onClick={() => onRepayLoanById(loan.id, loan)}
                           >
-                            💰 Reembolsar
+                            {UI_STRINGS.P2P_MARKETPLACE.BTN_REPAY_LOAN}
                           </button>
                         )}
 
                         {loan.state === 1 && onLiquidateLoanById && (
                           <button
                             className={`btn-primary acp-pure-warning-card text-red-light border-red-500 ${styles.actionBtnSm}`}
-                            onClick={() => onLiquidateLoanById(loan.id)}
+                            onClick={() => onLiquidateLoanById(loan.id, loan)}
                           >
-                            ⚡ Auto-Liquidar
+                            {UI_STRINGS.P2P_MARKETPLACE.BTN_LIQUIDATE_LOAN}
                           </button>
                         )}
 
                         {(loan.state === 2 || loan.state === 3 || loan.state === 4) && (
-                          <span className="opacity-40 text-xs">Completado</span>
+                          <span className="opacity-40 text-xs">{UI_STRINGS.COMMON.STATUS_COMPLETED}</span>
                         )}
                       </td>
                     </tr>

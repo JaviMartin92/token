@@ -8,6 +8,7 @@ import "./ProtocolRoles.sol";
 import "./lib/token/ERC20/ERC20.sol";
 import "./lib/security/ReentrancyGuard.sol";
 import "./interfaces/ITreasury.sol";
+import "./interfaces/IProtocolErrors.sol";
 
 interface IBurnable {
     function burn(uint256 amount) external;
@@ -58,7 +59,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
     }
 
     function getPastVotes(address account, uint256 blockNumber) public view returns (uint256) {
-        require(blockNumber < block.number, "Governance: Block not yet mined");
+        if (blockNumber >= block.number) revert IProtocolErrors.BlockNotMined(blockNumber, block.number);
         uint32 nCheckpoints = _numCheckpoints[account];
         if (nCheckpoints == 0) return 0;
         if (_checkpoints[account][nCheckpoints - 1].fromBlock <= blockNumber) {
@@ -145,9 +146,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
 
     event AddressExclusionSet(address indexed account, bool excluded);
 
-    constructor(address _govToken, address _rewardToken, address _initialOwner)
-        ERC20("Staked ALPHA", "stALPHA")
-    {
+    constructor(address _govToken, address _rewardToken, address _initialOwner) ERC20("Staked ALPHA", "stALPHA") {
         govToken = IERC20(_govToken);
         rewardToken = IERC20(_rewardToken);
 
@@ -160,7 +159,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
      * @notice Registers or unregisters CEX accounts so they do not receive yield distribution.
      */
     function setExcludedAddress(address account, bool excluded) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
-        require(account != address(0), "Staking: Zero address");
+        if (account == address(0)) revert IProtocolErrors.ZeroAddress();
         isExcludedFromYield[account] = excluded;
         emit AddressExclusionSet(account, excluded);
     }
@@ -183,12 +182,14 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
      * @notice Grants or revokes permission for an address to call notifyRewardAmount.
      */
     function setAuthorizedCaller(address caller, bool authorized) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
-        require(caller != address(0), "Staking: Zero address");
+        if (caller == address(0)) revert IProtocolErrors.ZeroAddress();
         authorizedCallers[caller] = authorized;
     }
 
     modifier onlyAuthorized() {
-        require(authorizedCallers[msg.sender] || hasRole(ProtocolRoles.ADMIN_ROLE, msg.sender), "Staking: Not authorized to notify rewards");
+        if (!authorizedCallers[msg.sender] && !hasRole(ProtocolRoles.ADMIN_ROLE, msg.sender)) {
+            revert IProtocolErrors.Unauthorized();
+        }
         _;
     }
 
@@ -218,8 +219,8 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
     }
 
     function notifyRewardAmount(uint256 amount) external nonReentrant onlyAuthorized updateReward(address(0)) {
-        require(amount > 0, "Staking: Reward amount must be > 0");
-        require(totalStaked > 0, "Staking: No active stakers, cannot distribute rewards");
+        if (amount == 0) revert IProtocolErrors.ZeroAmount();
+        if (totalStaked == 0) revert IProtocolErrors.NoActiveStakers();
         rewardToken.safeTransferFrom(msg.sender, address(this), amount);
 
         rewardPerTokenStored += (amount * 1e18) / totalStaked;
@@ -233,7 +234,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
      * @param amount The amount of Governance tokens to stake.
      */
     function stake(uint256 amount) external nonReentrant updateReward(msg.sender) {
-        require(amount > 0, "Staking: Cannot stake 0");
+        if (amount == 0) revert IProtocolErrors.ZeroAmount();
 
         lastStakeTime[msg.sender] = block.timestamp;
 
@@ -248,7 +249,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
         govToken.safeTransferFrom(msg.sender, address(this), amount);
         if (fee > 0) {
             uint256 treasuryShare = fee / 2; // 50%
-            uint256 profitShare = fee - treasuryShare; // 50%
+            uint256 communityShare = fee - treasuryShare; // 50%
 
             if (treasuryShare > 0) {
                 IBurnable(address(govToken)).burn(treasuryShare);
@@ -256,8 +257,8 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
                     ITreasury(treasury).recordBurn(treasuryShare);
                 }
             }
-            if (profitShare > 0 && communityYieldVault != address(0)) {
-                govToken.safeTransfer(communityYieldVault, profitShare);
+            if (communityShare > 0 && communityYieldVault != address(0)) {
+                govToken.safeTransfer(communityYieldVault, communityShare);
             }
         }
 
@@ -270,9 +271,13 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
      * @param amount The amount of staked tokens to withdraw.
      */
     function unstake(uint256 amount) external nonReentrant updateReward(msg.sender) {
-        require(amount > 0, "Staking: Cannot unstake 0");
-        require(balanceOf(msg.sender) >= amount, "Staking: Exceeds staked balance");
-        require(block.timestamp >= lastStakeTime[msg.sender] + MIN_STAKE_DURATION, "Staking: Timelock active");
+        if (amount == 0) revert IProtocolErrors.ZeroAmount();
+        if (balanceOf(msg.sender) < amount) {
+            revert IProtocolErrors.InsufficientStakedBalance(amount, balanceOf(msg.sender));
+        }
+        if (block.timestamp < lastStakeTime[msg.sender] + MIN_STAKE_DURATION) {
+            revert IProtocolErrors.TimelockActive(lastStakeTime[msg.sender] + MIN_STAKE_DURATION);
+        }
 
         totalStaked -= amount;
         // AC-15: _burn already calls _moveVotingPower internally via ERC20 override
@@ -283,7 +288,13 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
         emit Unstaked(msg.sender, amount);
     }
 
-    function claimRewardFor(address user) external nonReentrant onlyAuthorized updateReward(user) returns (uint256 reward) {
+    function claimRewardFor(address user)
+        external
+        nonReentrant
+        onlyAuthorized
+        updateReward(user)
+        returns (uint256 reward)
+    {
         reward = rewards[user];
         if (reward > 0) {
             rewards[user] = 0;
@@ -310,10 +321,10 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
     }
 
     function getStakingBreakdown() external view returns (StakingBreakdown memory breakdown) {
-        uint256 profitStaked = communityYieldVault != address(0) ? balanceOf(communityYieldVault) : 0;
-        uint256 profitBal = communityYieldVault != address(0) ? govToken.balanceOf(communityYieldVault) : 0;
+        uint256 communityVaultStaked = communityYieldVault != address(0) ? balanceOf(communityYieldVault) : 0;
+        uint256 communityVaultBalance = communityYieldVault != address(0) ? govToken.balanceOf(communityYieldVault) : 0;
 
-        breakdown.communityVaultStaked = profitStaked + profitBal;
+        breakdown.communityVaultStaked = communityVaultStaked + communityVaultBalance;
 
         uint256 tmStaked = treasury != address(0) ? balanceOf(treasury) : 0;
         uint256 tmBal = treasury != address(0) ? govToken.balanceOf(treasury) : 0;
@@ -324,16 +335,19 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
 
         breakdown.treasuryStaked = tmStaked + tmBal + avStaked + avBal + pvStaked + pvBal;
 
-        uint256 instGovStaked = profitStaked + tmStaked + avStaked + pvStaked;
+        uint256 instGovStaked = communityVaultStaked + tmStaked + avStaked + pvStaked;
         breakdown.communityStaked = totalStaked > instGovStaked ? totalStaked - instGovStaked : totalStaked;
-        breakdown.globalTotalStaked = breakdown.communityStaked + breakdown.communityVaultStaked + breakdown.treasuryStaked;
+        breakdown.globalTotalStaked =
+            breakdown.communityStaked + breakdown.communityVaultStaked + breakdown.treasuryStaked;
 
         uint256 totalSupply = govToken.totalSupply();
         uint256 burned = 0;
         if (treasury != address(0)) {
             try ITreasury(treasury).totalBurnedTokens() returns (uint256 b) {
                 burned = b;
-            } catch {}
+            } catch {
+                // Default to 0 burned on query revert
+            }
         }
         breakdown.totalBurned = burned;
         if (treasury != address(0)) {
@@ -347,7 +361,11 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
         }
     }
 
-    function getUserStakingInfo(address account) external view returns (uint256 stakedBalance, uint256 claimableYieldUSD) {
+    function getUserStakingInfo(address account)
+        external
+        view
+        returns (uint256 stakedBalance, uint256 claimableYieldUSD)
+    {
         stakedBalance = balanceOf(account);
         claimableYieldUSD = earned(account);
     }

@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "./interfaces/IAtomicSwapReceiver.sol";
 import "./interfaces/ISwapRouter.sol";
+import "./interfaces/IProtocolErrors.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -20,13 +21,7 @@ contract AtomicSwapReceiver is IAtomicSwapReceiver, AccessControl, ReentrancyGua
     address public immutable swapRouter;
     address public treasury;
 
-    constructor(
-        address _usdtToken,
-        address _usdcToken,
-        address _swapRouter,
-        address _treasury,
-        address _initialOwner
-    ) {
+    constructor(address _usdtToken, address _usdcToken, address _swapRouter, address _treasury, address _initialOwner) {
         usdtToken = _usdtToken;
         usdcToken = _usdcToken;
         swapRouter = _swapRouter;
@@ -41,29 +36,35 @@ contract AtomicSwapReceiver is IAtomicSwapReceiver, AccessControl, ReentrancyGua
      * @notice Updates the treasury address. Restricted to owner.
      */
     function setTreasury(address _treasury) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
-        require(_treasury != address(0), "AtomicSwapReceiver: Zero address");
+        if (_treasury == address(0)) revert IProtocolErrors.ZeroAddress();
         treasury = _treasury;
     }
 
     /**
      * @inheritdoc IAtomicSwapReceiver
      */
-    function depositUSDT(
-        uint256 usdtAmount,
-        uint256 minUsdcExpected
-    ) external override nonReentrant returns (uint256 usdcDeposited) {
-        require(usdtAmount > 0, "AtomicSwapReceiver: Deposit amount must be > 0");
-        require(treasury != address(0), "AtomicSwapReceiver: Treasury not configured");
+    function depositUSDT(uint256 usdtAmount, uint256 minUsdcExpected)
+        external
+        override
+        nonReentrant
+        returns (uint256 usdcDeposited)
+    {
+        if (usdtAmount == 0) revert IProtocolErrors.ZeroAmount();
+        if (treasury == address(0)) revert IProtocolErrors.ZeroAddress();
 
         // Enforce maximum 0.05% slippage check on-chain (USDT -> USDC)
         uint256 maxSlippageLimit = (usdtAmount * 9995) / 10000;
-        require(minUsdcExpected >= maxSlippageLimit, "AtomicSwapReceiver: Slippage input exceeds 0.05% limit");
+        if (minUsdcExpected < maxSlippageLimit) {
+            revert IProtocolErrors.SlippageExceeded(maxSlippageLimit, minUsdcExpected);
+        }
 
         // 1. Pull USDT from sender to this contract
         IERC20(usdtToken).safeTransferFrom(msg.sender, address(this), usdtAmount);
 
         // 2. Approve SwapRouter to spend USDT
-        require(IERC20(usdtToken).approve(swapRouter, usdtAmount), "AtomicSwapReceiver: USDT approve failed");
+        if (!IERC20(usdtToken).approve(swapRouter, usdtAmount)) {
+            revert IProtocolErrors.ApproveFailed();
+        }
 
         // 3. Configure Uniswap swap parameters
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({

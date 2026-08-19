@@ -104,6 +104,41 @@ $$\text{expect}(\text{Math.abs}(\text{porAssetsTotal} - \text{sumRows})).\text{t
 
 ---
 
+## 🏛️ Los 7 Pilares Centrales Auditados (100% Mainnet-Ready)
+
+| Módulo | Contrato Principal | Características Clave & Invariantes |
+| :--- | :--- | :--- |
+| **1. Tesorería & NAV On-Chain** | [`TreasuryManager.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/TreasuryManager.sol) | 4 Librerías PoR $O(1)$, Invariante de Solvencia $100\%$, Slippage $0.05\%$, Anti-MEV Cooldown. |
+| **2. Bonos Vestados vPOS** | [`VestedDiscountVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/VestedDiscountVault.sol) | NFTs ERC-721 transferibles, Descuento dinámico 5-25%, Ragequit con 15% penalty 50/50. |
+| **3. Préstamos Multi-Colateral** | [`P2PLendingMarket.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/P2PLendingMarket.sol) | Fair Liquidation con restitución de equity al prestatario, APR dinámico por DAO y Circuit Breaker. |
+| **4. Motor de Recompras** | [`DiscountBuybackEngine.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/DiscountBuybackEngine.sol) | 10 Candados de Control Matemático, Fee Tier configurable, Keeper Bounty y Sweep Tokens. |
+| **5. Real Yield Router 50/50** | [`RealYieldRouter.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/RealYieldRouter.sol) | Reparto Pure DeFi, Fee Tier de reserva configurable, Protección Circuit Breaker y Sweep Tokens. |
+| **6. Circuit Breaker Automático** | [`CircuitBreaker.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/CircuitBreaker.sol) | Búfer circular gas $O(1)$, Umbrales configurables por DAO y blindaje en préstamos. |
+| **7. Gobernanza DAO & Timelock 72h** | [`GovernorAlphaCentauri.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/GovernorAlphaCentauri.sol) | Veto inmutable a bóvedas, Timelock 72h, Cancelación de propuestas y Votación de 3 Vías con Razón. |
+
+---
+
+## 🚦 Institutional Quality Gate (12/12 Comprobaciones en Verde)
+
+El pipeline de integración y calidad institucional certifica la integridad del protocolo ejecutando:
+```bash
+npm run quality
+```
+1. **Frontend Strict Typecheck** (`tsc -b`)
+2. **Backend Services Strict Typecheck** (`tsc`)
+3. **Frontend Fast Linter** (`oxlint`)
+4. **Frontend Unit Tests** (`vitest 21/21`)
+5. **Frontend Production Bundle Build** (`vite`)
+6. **Backend Architecture & Reorg Tests** (`43/43`)
+7. **Frontend / Smart Contract Alignment** (`18/18`)
+8. **Institutional E2E Multi-Persona Suite** (5 Personas)
+9. **Chaos & Market Shock Stress Suite**
+10. **Dependencies Security Audit** (`npm audit`)
+11. **Smart Contracts Security Linter** (`solhint`)
+12. **Dead Code & Orphaned Exports Scanner** (`knip`)
+
+---
+
 ## 🌿 Estrategia de Ramas Git & Flujo de Desarrollo
 
 El repositorio sigue un modelo de ramificación estricto:
@@ -121,4 +156,5 @@ La carpeta [`docs/`](file:///C:/Users/Admin/Desktop/token/docs) contiene los man
 - 🔒 [**Seguridad, Auditoría & Operaciones**](file:///C:/Users/Admin/Desktop/token/docs/SECURITY_AND_OPERATIONS.md)
 - 📊 [**Modelo Económico & Tokenomics (Biblia Canónica)**](file:///C:/Users/Admin/Desktop/token/docs/TOKENOMICS.md)
 - 📄 [**Whitepaper Completo**](file:///C:/Users/Admin/Desktop/token/docs/WHITE_PAPER.md)
+- 🏗️ [**Especificación de Arquitectura Completa**](file:///C:/Users/Admin/Desktop/token/docs/FULL_ARCHITECTURE_SPECIFICATION.md)
 - 🧪 [**Flujo de Simulación Master Playwright**](file:///C:/Users/Admin/Desktop/token/MASTER_TOKENOMICS_SIMULATION_FLOW.md)

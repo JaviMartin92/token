@@ -2,16 +2,18 @@ import { useState } from 'react';
 import { publicClient, getWalletClient, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
 import { parseUnits } from 'viem';
 import type { TxConfirmDetails } from '../components/TransactionConfirmModal.js';
+import { UI_STRINGS } from '../constants/strings.js';
 
 interface VestedVaultActionsParams {
   activeKey: string;
+  userAddress?: string;
   addLog: (msg: string) => void;
   addToast: (type: 'info' | 'success' | 'warning' | 'error', title: string, message: string) => void;
   fetchData: () => Promise<void>;
   requestConfirmation?: (details: TxConfirmDetails, action: () => Promise<void>) => void;
 }
 
-export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, requestConfirmation }: VestedVaultActionsParams) {
+export function useVestedVaultActions({ activeKey, userAddress, addLog, addToast, fetchData, requestConfirmation }: VestedVaultActionsParams) {
   const [bondPrincipal, setBondPrincipal] = useState('1000');
   const [bondLockYears, setBondLockYears] = useState('3');
   const [bondReferrer, setBondReferrer] = useState('');
@@ -40,11 +42,10 @@ export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, 
         args: [principalWei, BigInt(bondLockYears), refAddr]
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
-      addLog(`¡Bono Vestado adquirido! NFT de Posición acuñado.`);
-      addToast('success', 'Bono Adquirido', 'NFT colateral acuñado en tu billetera');
+      addLog(UI_STRINGS.TOASTS_AND_LOGS.BOND_BUY_SUCCESS);
+      addToast('success', 'Bono Adquirido', UI_STRINGS.TOASTS_AND_LOGS.BOND_BUY_SUCCESS);
       setBondPrincipal('1000');
       await fetchData();
-      setTimeout(fetchData, 500);
     } catch (err: any) {
       addLog(`[Error] Compra de bono falló: ${err.message || err}`);
       addToast('error', 'Error Compra Bono', err.message || 'Fallo en compra');
@@ -59,7 +60,7 @@ export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, 
     const yearsNum = parseInt(bondLockYears) || 1;
     let totalDiscountBps = Math.min(yearsNum * 500, 2500);
     try {
-      const userAddr = activeKey ? getWalletClient(activeKey).account.address : '0x0000000000000000000000000000000000000000';
+      const userAddr = (userAddress && userAddress.startsWith('0x') ? userAddress : '0x0000000000000000000000000000000000000000') as `0x${string}`;
       const onChainBps = await publicClient.readContract({
         address: CONTRACT_ADDRESSES.VESTED_VAULT,
         abi: ABIS.VESTED_VAULT,
@@ -94,7 +95,7 @@ export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, 
         ],
         warningNote: `Tu capital de $${principalNum.toLocaleString('en-US')} estará bloqueado durante ${yearsNum} ${yearsNum === 1 ? 'año' : 'años'}. Podrás usar el NFT en el mercado P2P o ejecutar Ragequit con 15% penalización si necesitas liquidez.`,
         confirmButtonText: '✍️ Confirmar y Adquirir Bono',
-        confirmButtonColor: 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)'
+        confirmButtonVariant: 'purple'
       }, executeBuyBond);
     } else {
       executeBuyBond();
@@ -113,7 +114,7 @@ export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, 
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
       addLog(`¡Bono NFT #${tokenId} reclamado con éxito!`);
-      addToast('success', 'Bono Reclamado', `Reclamado NFT #${tokenId}`);
+      addToast('success', 'Bono Reclamado', UI_STRINGS.TOASTS_AND_LOGS.BOND_CLAIM_SUCCESS);
       fetchData();
     } catch (err: any) {
       addLog(`[Error] Reclamo de bono falló: ${err.message || err}`);
@@ -142,7 +143,7 @@ export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, 
           { label: 'Comisión de Liberación', value: '0.00% ($0.00 USDC)' }
         ],
         confirmButtonText: '✍️ Confirmar Reclamo',
-        confirmButtonColor: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+        confirmButtonVariant: 'emerald'
       }, () => executeClaimMatured(tokenId));
     } else {
       executeClaimMatured(tokenId);
@@ -161,7 +162,7 @@ export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, 
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
       addLog(`Ragequit ejecutado en NFT #${tokenId}. Reembolso recibido.`);
-      addToast('warning', 'Ragequit Ejecutado', `Aplicada penalización del 15% en NFT #${tokenId}`);
+      addToast('warning', 'Ragequit Ejecutado', UI_STRINGS.TOASTS_AND_LOGS.RAGEQUIT_SUCCESS);
       fetchData();
     } catch (err: any) {
       addLog(`[Error] Ragequit falló: ${err.message || err}`);
@@ -174,8 +175,7 @@ export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, 
     const netRefund = pricePaid * 0.85;
     const penalty = pricePaid * 0.15;
     const feeReserves = pricePaid * 0.075;
-    const feeOps = pricePaid * 0.0375;
-    const feeProfit = pricePaid * 0.0375;
+    const feeCommunity = pricePaid * 0.075;
 
     const outputStr = pricePaid > 0 ? `$${netRefund.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '85%';
 
@@ -196,17 +196,15 @@ export function useVestedVaultActions({ activeKey, addLog, addToast, fetchData, 
           ...(pricePaid > 0 ? [
             { label: 'Reembolso Neto en USDC (85.00%)', value: `$${netRefund.toFixed(2)} USDC`, badge: 'Transferencia Inmediata' },
             { label: 'Destino 50% Penalización (Reservas)', value: `$${feeReserves.toFixed(2)} USDC (Treasury.sol)` },
-            { label: 'Destino 25% Penalización (Protocol OpEx Vault)', value: `$${feeOps.toFixed(2)} USDC (ProtocolOpExVault)` },
-            { label: 'Destino 25% Penalización (Community Yield Vault)', value: `$${feeProfit.toFixed(2)} USDC (CommunityYieldVault)` }
+            { label: 'Destino 50% Penalización (Community Yield Vault)', value: `$${feeCommunity.toFixed(2)} USDC (Liquid Real Yield para stakers)` }
           ] : [
             { label: 'Destino 50% Penalización (Reservas)', value: '7.50% a Reservas Tesorería (Treasury.sol)' },
-            { label: 'Destino 25% Penalización (Protocol OpEx Vault)', value: '3.75% a ProtocolOpExVault (Liquid USDC Grants)' },
-            { label: 'Destino 25% Penalización (Community Yield Vault)', value: '3.75% a CommunityYieldVault (Liquid USDC Real Yield)' }
+            { label: 'Destino 50% Penalización (Community Yield Vault)', value: '7.50% a CommunityYieldVault (Liquid USDC Real Yield)' }
           ])
         ],
         warningNote: '¡Atención! El contrato inteligente VestedDiscountVault.sol ejecutará una retención irreversible del 15.00% sobre el valor del bono.',
         confirmButtonText: '⚠️ Confirmar Ragequit (15% Penalty)',
-        confirmButtonColor: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)'
+        confirmButtonVariant: 'danger'
       }, () => executeRagequit(tokenId));
     } else {
       executeRagequit(tokenId);

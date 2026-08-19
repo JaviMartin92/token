@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "./interfaces/IProtocolContribution.sol";
 import "./interfaces/ISwapRouter.sol";
+import "./interfaces/IProtocolErrors.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -15,12 +16,19 @@ import "./ProtocolRoles.sol";
  */
 contract ProtocolContribution is IProtocolContribution, AccessControl {
     using SafeERC20 for IERC20;
+
+    // Domain Custom Errors
+    error InsufficientContractBalance();
+    error OrderFullyExecuted();
+    error IntervalLockActive();
+    error ZeroTokensBought();
+
     address public immutable usdcToken;
     address public immutable nativeToken;
     address public immutable stakingAddress;
     address public immutable swapRouter;
     address public immutable burnAddress = 0x000000000000000000000000000000000000dEaD;
-    
+
     uint256 public nextOrderId;
     mapping(uint256 => TwapOrder) public twapOrders;
 
@@ -45,7 +53,7 @@ contract ProtocolContribution is IProtocolContribution, AccessControl {
      * @inheritdoc IProtocolContribution
      */
     function injectFunds(uint256 amount, string calldata auditRef) external override {
-        require(amount > 0, "ProtocolContribution: Amount must be > 0");
+        if (amount == 0) revert IProtocolErrors.ZeroAmount();
         IERC20(usdcToken).safeTransferFrom(msg.sender, address(this), amount);
         emit ContributionReceived(amount, auditRef);
     }
@@ -53,17 +61,18 @@ contract ProtocolContribution is IProtocolContribution, AccessControl {
     /**
      * @inheritdoc IProtocolContribution
      */
-    function createTwapOrder(
-        uint256 amount,
-        uint256 intervals,
-        uint256 intervalSeconds
-    ) external override onlyRole(ProtocolRoles.ADMIN_ROLE) {
-        require(amount > 0, "ProtocolContribution: TWAP amount must be > 0");
-        require(intervals > 0, "ProtocolContribution: TWAP intervals must be > 0");
-        require(intervalSeconds > 0, "ProtocolContribution: intervalSeconds must be > 0");
-        require(IERC20(usdcToken).balanceOf(address(this)) >= amount, "ProtocolContribution: Insufficient contract balance");
+    function createTwapOrder(uint256 amount, uint256 intervals, uint256 intervalSeconds)
+        external
+        override
+        onlyRole(ProtocolRoles.ADMIN_ROLE)
+    {
+        if (amount == 0 || intervals == 0 || intervalSeconds == 0) revert IProtocolErrors.InvalidParameters();
+        if (IERC20(usdcToken).balanceOf(address(this)) < amount) revert InsufficientContractBalance();
 
-        uint256 orderId = nextOrderId++;
+        uint256 orderId = nextOrderId;
+        unchecked {
+            ++nextOrderId;
+        }
         uint256 amountPerInterval = amount / intervals;
 
         twapOrders[orderId] = TwapOrder({
@@ -83,15 +92,17 @@ contract ProtocolContribution is IProtocolContribution, AccessControl {
      */
     function executeTwapStep(uint256 orderId) external override {
         TwapOrder storage order = twapOrders[orderId];
-        require(order.executionsRemaining > 0, "ProtocolContribution: Order fully executed");
-        require(block.timestamp >= order.nextExecutionTime, "ProtocolContribution: Interval lock active");
+        if (order.executionsRemaining == 0) revert OrderFullyExecuted();
+        if (block.timestamp < order.nextExecutionTime) revert IntervalLockActive();
 
-        order.executionsRemaining--;
+        unchecked {
+            --order.executionsRemaining;
+        }
         order.nextExecutionTime = block.timestamp + order.intervalSeconds;
 
         uint256 amountToSwap = order.amountPerInterval;
 
-        require(IERC20(usdcToken).approve(swapRouter, amountToSwap), "ProtocolContribution: USDC approve failed");
+        if (!IERC20(usdcToken).approve(swapRouter, amountToSwap)) revert IProtocolErrors.ApproveFailed();
 
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
             tokenIn: usdcToken,
@@ -105,7 +116,7 @@ contract ProtocolContribution is IProtocolContribution, AccessControl {
         });
 
         uint256 tokensBought = ISwapRouter(swapRouter).exactInputSingle(params);
-        require(tokensBought > 0, "ProtocolContribution: Swapped zero tokens");
+        if (tokensBought == 0) revert ZeroTokensBought();
 
         uint256 half = tokensBought / 2;
         uint256 otherHalf = tokensBought - half;

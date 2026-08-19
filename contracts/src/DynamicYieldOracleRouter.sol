@@ -10,13 +10,17 @@ import "./ProtocolRoles.sol";
  *         Compares APYs across Morpho Blue, Aave V3, Compound V3, Ethena, Lido, Rocket Pool, Lombard, Babylon, etc.
  */
 contract DynamicYieldOracleRouter is AccessControl {
-    enum AssetClass { STABLECOIN, ETHEREUM, BITCOIN }
+    enum AssetClass {
+        STABLECOIN,
+        ETHEREUM,
+        BITCOIN
+    }
 
     struct ProtocolYieldInfo {
         string name;
         address vaultAddress;
-        uint256 apyBps; // e.g. 645 Bps = 6.45% APY
         bool isVerifiedSecurity;
+        uint256 apyBps; // e.g. 645 Bps = 6.45% APY
         uint256 lastUpdatedTimestamp;
     }
 
@@ -35,38 +39,54 @@ contract DynamicYieldOracleRouter is AccessControl {
 
     function _initDefaultProtocols() internal {
         // STABLECOIN
-        protocolOptions[uint8(AssetClass.STABLECOIN)].push(ProtocolYieldInfo({
-            name: "Morpho Blue MetaMorpho Vault",
-            vaultAddress: 0x488102554708C23C0227d8D86f4A2fAffbb27357,
-            apyBps: 645, // 6.45% APY
-            isVerifiedSecurity: true,
-            lastUpdatedTimestamp: block.timestamp
-        }));
+        protocolOptions[uint8(
+                AssetClass.STABLECOIN
+            )].push(
+            ProtocolYieldInfo({
+                name: "Morpho Blue MetaMorpho Vault",
+                vaultAddress: 0x488102554708C23C0227d8D86f4A2fAffbb27357,
+                apyBps: 645, // 6.45% APY
+                isVerifiedSecurity: true,
+                lastUpdatedTimestamp: block.timestamp
+            })
+        );
 
         // ETHEREUM
-        protocolOptions[uint8(AssetClass.ETHEREUM)].push(ProtocolYieldInfo({
-            name: "Lido Liquid Staking wstETH",
-            vaultAddress: 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0,
-            apyBps: 320, // 3.20% APY
-            isVerifiedSecurity: true,
-            lastUpdatedTimestamp: block.timestamp
-        }));
+        protocolOptions[uint8(
+                AssetClass.ETHEREUM
+            )].push(
+            ProtocolYieldInfo({
+                name: "Lido Liquid Staking wstETH",
+                vaultAddress: 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0,
+                apyBps: 320, // 3.20% APY
+                isVerifiedSecurity: true,
+                lastUpdatedTimestamp: block.timestamp
+            })
+        );
 
         // BITCOIN
-        protocolOptions[uint8(AssetClass.BITCOIN)].push(ProtocolYieldInfo({
-            name: "Lombard LBTC Babylon Staking",
-            vaultAddress: 0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd,
-            apyBps: 380, // 3.80% APY
-            isVerifiedSecurity: true,
-            lastUpdatedTimestamp: block.timestamp
-        }));
-        protocolOptions[uint8(AssetClass.BITCOIN)].push(ProtocolYieldInfo({
-            name: "Bedrock uniBTC Vault",
-            vaultAddress: 0x0000000000000000000000000000000000000000,
-            apyBps: 310, // 3.10% APY
-            isVerifiedSecurity: true,
-            lastUpdatedTimestamp: block.timestamp
-        }));
+        protocolOptions[uint8(
+                AssetClass.BITCOIN
+            )].push(
+            ProtocolYieldInfo({
+                name: "Lombard LBTC Babylon Staking",
+                vaultAddress: 0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd,
+                apyBps: 380, // 3.80% APY
+                isVerifiedSecurity: true,
+                lastUpdatedTimestamp: block.timestamp
+            })
+        );
+        protocolOptions[uint8(
+                AssetClass.BITCOIN
+            )].push(
+            ProtocolYieldInfo({
+                name: "Bedrock uniBTC Vault",
+                vaultAddress: 0x0000000000000000000000000000000000000000,
+                apyBps: 310, // 3.10% APY
+                isVerifiedSecurity: true,
+                lastUpdatedTimestamp: block.timestamp
+            })
+        );
     }
 
     /**
@@ -82,7 +102,7 @@ contract DynamicYieldOracleRouter is AccessControl {
         ProtocolYieldInfo[] storage list = protocolOptions[assetClass];
         bool found = false;
 
-        for (uint256 i = 0; i < list.length; ) {
+        for (uint256 i = 0; i < list.length;) {
             if (keccak256(bytes(list[i].name)) == keccak256(bytes(name)) || list[i].vaultAddress == vaultAddress) {
                 list[i].apyBps = apyBps;
                 list[i].isVerifiedSecurity = isVerified;
@@ -90,17 +110,21 @@ contract DynamicYieldOracleRouter is AccessControl {
                 found = true;
                 break;
             }
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
         if (!found) {
-            list.push(ProtocolYieldInfo({
-                name: name,
-                vaultAddress: vaultAddress,
-                apyBps: apyBps,
-                isVerifiedSecurity: isVerified,
-                lastUpdatedTimestamp: block.timestamp
-            }));
+            list.push(
+                ProtocolYieldInfo({
+                    name: name,
+                    vaultAddress: vaultAddress,
+                    apyBps: apyBps,
+                    isVerifiedSecurity: isVerified,
+                    lastUpdatedTimestamp: block.timestamp
+                })
+            );
         }
 
         emit ProtocolYieldUpdated(assetClass, name, vaultAddress, apyBps);
@@ -112,9 +136,9 @@ contract DynamicYieldOracleRouter is AccessControl {
     mapping(uint8 => string) public adminSelectedName;
 
     struct OpportunityAlert {
-        bool isPending;
         string betterName;
         address betterVault;
+        bool isPending;
         uint256 betterApyBps;
         uint256 currentApyBps;
     }
@@ -122,14 +146,19 @@ contract DynamicYieldOracleRouter is AccessControl {
     mapping(uint8 => OpportunityAlert) public opportunityAlerts;
 
     event ManualOverrideSet(uint8 indexed assetClass, string name, address vault, bool enabled);
-    event OpportunityDetected(uint8 indexed assetClass, string betterName, address betterVault, uint256 betterApy, uint256 currentApy);
+    event OpportunityDetected(
+        uint8 indexed assetClass, string betterName, address betterVault, uint256 betterApy, uint256 currentApy
+    );
     event OpportunityAccepted(uint8 indexed assetClass, string newName, address newVault, uint256 newApy);
     event OpportunityRejected(uint8 indexed assetClass);
 
     /**
      * @notice Admin method to lock a specific vault manually or return to 100% autonomous mode
      */
-    function setManualOverride(uint8 assetClass, address vaultAddress, string calldata name, bool enabled) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+    function setManualOverride(uint8 assetClass, address vaultAddress, string calldata name, bool enabled)
+        external
+        onlyRole(ProtocolRoles.ADMIN_ROLE)
+    {
         manualOverrideEnabled[assetClass] = enabled;
         if (enabled) {
             adminSelectedVault[assetClass] = vaultAddress;
@@ -141,28 +170,37 @@ contract DynamicYieldOracleRouter is AccessControl {
     /**
      * @notice Daily check: compares active vault vs top available yield and triggers alert notification if a better option is found
      */
-    function checkDailyOpportunity(uint8 assetClass) external onlyRole(ProtocolRoles.ADMIN_ROLE) returns (bool opportunityFound) {
+    function checkDailyOpportunity(uint8 assetClass)
+        external
+        onlyRole(ProtocolRoles.ADMIN_ROLE)
+        returns (bool opportunityFound)
+    {
         ProtocolYieldInfo[] storage list = protocolOptions[assetClass];
-        if (list.length == 0) return false;
+        uint256 len = list.length;
+        if (len == 0) return false;
 
         uint256 maxApy = 0;
         uint256 bestIndex = 0;
-        for (uint256 i = 0; i < list.length; ) {
+        for (uint256 i = 0; i < len;) {
             if (list[i].isVerifiedSecurity && list[i].apyBps > maxApy) {
                 maxApy = list[i].apyBps;
                 bestIndex = i;
             }
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
         uint256 currentApy = 0;
         if (manualOverrideEnabled[assetClass]) {
-            for (uint256 i = 0; i < list.length; ) {
+            for (uint256 i = 0; i < len;) {
                 if (list[i].vaultAddress == adminSelectedVault[assetClass]) {
                     currentApy = list[i].apyBps;
                     break;
                 }
-                unchecked { ++i; }
+                unchecked {
+                    ++i;
+                }
             }
         } else {
             currentApy = maxApy;
@@ -182,12 +220,15 @@ contract DynamicYieldOracleRouter is AccessControl {
         return false;
     }
 
+    error NoPendingOpportunity();
+    error NoProtocolsRegistered();
+
     /**
      * @notice Admin accepts the suggested opportunity notification and switches to the better protocol
      */
     function acceptOpportunity(uint8 assetClass) external onlyRole(ProtocolRoles.ADMIN_ROLE) returns (bool) {
         OpportunityAlert storage alert = opportunityAlerts[assetClass];
-        require(alert.isPending, "YieldOracle: No pending opportunity");
+        if (!alert.isPending) revert NoPendingOpportunity();
 
         adminSelectedVault[assetClass] = alert.betterVault;
         adminSelectedName[assetClass] = alert.betterName;
@@ -210,33 +251,38 @@ contract DynamicYieldOracleRouter is AccessControl {
     /**
      * @notice Queries on-chain and dynamically returns the active protocol (respecting Admin manual choice if enabled)
      */
-    function getBestYieldVault(uint8 assetClass) external view returns (
-        string memory bestName,
-        address bestVaultAddress,
-        uint256 highestApyBps
-    ) {
+    function getBestYieldVault(uint8 assetClass)
+        external
+        view
+        returns (string memory bestName, address bestVaultAddress, uint256 highestApyBps)
+    {
         ProtocolYieldInfo[] storage list = protocolOptions[assetClass];
+        uint256 len = list.length;
         if (manualOverrideEnabled[assetClass] && adminSelectedVault[assetClass] != address(0)) {
-            for (uint256 i = 0; i < list.length; ) {
+            for (uint256 i = 0; i < len;) {
                 if (list[i].vaultAddress == adminSelectedVault[assetClass]) {
                     return (list[i].name, list[i].vaultAddress, list[i].apyBps);
                 }
-                unchecked { ++i; }
+                unchecked {
+                    ++i;
+                }
             }
             return (adminSelectedName[assetClass], adminSelectedVault[assetClass], 645);
         }
 
-        require(list.length > 0, "YieldOracle: No protocols registered");
+        if (len == 0) revert NoProtocolsRegistered();
 
         uint256 maxApy = 0;
         uint256 bestIndex = 0;
 
-        for (uint256 i = 0; i < list.length; ) {
+        for (uint256 i = 0; i < len;) {
             if (list[i].isVerifiedSecurity && list[i].apyBps > maxApy) {
                 maxApy = list[i].apyBps;
                 bestIndex = i;
             }
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
         bestName = list[bestIndex].name;
@@ -251,10 +297,14 @@ contract DynamicYieldOracleRouter is AccessControl {
     /**
      * @notice Computes the protocol-wide weighted APY in BPS (e.g. 580 BPS = 5.80%) based on current reserve asset balances and 90% Morpho deployment ratio
      */
-    function calculateWeightedYieldBps(uint256 stablesUsd, uint256 wbtcUsd, uint256 wethUsd) external view returns (uint256 weightedApyBps) {
-        (, , uint256 stableApy) = this.getBestYieldVault(0);
-        (, , uint256 ethApy) = this.getBestYieldVault(1);
-        (, , uint256 btcApy) = this.getBestYieldVault(2);
+    function calculateWeightedYieldBps(uint256 stablesUsd, uint256 wbtcUsd, uint256 wethUsd)
+        external
+        view
+        returns (uint256 weightedApyBps)
+    {
+        (,, uint256 stableApy) = this.getBestYieldVault(0);
+        (,, uint256 ethApy) = this.getBestYieldVault(1);
+        (,, uint256 btcApy) = this.getBestYieldVault(2);
 
         uint256 totalUsd = stablesUsd + wbtcUsd + wethUsd;
         if (totalUsd == 0) return 0;

@@ -131,8 +131,17 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-    filePath = path.join(DIST_DIR, 'index.html');
+  // Only fall back to index.html for non-asset SPA navigation routes
+  if (sanitizedUrl.startsWith('/assets/') || sanitizedUrl.startsWith('/static/')) {
+    if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('404 Not Found: Asset Missing');
+      return;
+    }
+  } else {
+    if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+      filePath = path.join(DIST_DIR, 'index.html');
+    }
   }
 
   const ext = path.extname(filePath);

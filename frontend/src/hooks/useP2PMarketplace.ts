@@ -38,9 +38,10 @@ export function useP2PMarketplace(refetchInterval = 3000) {
             const state = Array.isArray(raw) ? Number(raw[9]) : Number(raw.state);
 
             const numBorrowVal = parseFloat(formatUnits(borrowAmt, 6));
-            let numCollateralVal = parseFloat(formatUnits(collateralAmt, 6));
+            let numCollateralVal = 0;
+            let colSymbol = 'NFT';
 
-            if (numCollateralVal === 0 && posTokenId > 0n) {
+            if (posTokenId > 0n) {
               try {
                 const pos = await publicClient.readContract({
                   address: CONTRACT_ADDRESSES.POSITION_NFT,
@@ -48,12 +49,37 @@ export function useP2PMarketplace(refetchInterval = 3000) {
                   functionName: 'getPosition',
                   args: [posTokenId]
                 }) as any;
-                const principalVal = parseFloat(formatUnits(pos[2], 6));
-                const paidVal = parseFloat(formatUnits(pos[3], 6));
+                const principalWei = pos.principalAmount ?? (Array.isArray(pos) ? pos[7] : 0n);
+                const paidWei = pos.discountedPricePaid ?? (Array.isArray(pos) ? pos[8] : 0n);
+                const principalVal = parseFloat(formatUnits(BigInt(principalWei), 6));
+                const paidVal = parseFloat(formatUnits(BigInt(paidWei), 6));
                 numCollateralVal = principalVal > 0 ? principalVal : (paidVal > 0 ? paidVal : 0);
               } catch (e) {
                 numCollateralVal = 0;
               }
+              colSymbol = `NFT #${posTokenId}`;
+            } else if (collateralAmt > 0n) {
+              let dec = 18;
+              colSymbol = 'ALPHA';
+              try {
+                const assetAddr = await publicClient.readContract({
+                  address: CONTRACT_ADDRESSES.P2P_MARKET,
+                  abi: ABIS.P2P_MARKET,
+                  functionName: 'loanCollateralAsset',
+                  args: [BigInt(i)]
+                }) as string;
+                if (assetAddr && assetAddr.toLowerCase() === CONTRACT_ADDRESSES.WBTC.toLowerCase()) {
+                  colSymbol = 'WBTC';
+                  dec = 8;
+                } else if (assetAddr && assetAddr.toLowerCase() === CONTRACT_ADDRESSES.WETH.toLowerCase()) {
+                  colSymbol = 'WETH';
+                  dec = 18;
+                } else {
+                  colSymbol = 'ALPHA';
+                  dec = 18;
+                }
+              } catch (e) {}
+              numCollateralVal = parseFloat(formatUnits(collateralAmt, dec));
             }
 
             let hFactor = 'N/A';
@@ -65,7 +91,7 @@ export function useP2PMarketplace(refetchInterval = 3000) {
                   functionName: 'calculateHealthFactor',
                   args: [BigInt(i)]
                 }) as bigint;
-                hFactor = `${(Number(hfRatio) / 10).toFixed(1)}%`;
+                hFactor = `${Number(hfRatio)}%`;
               } catch (e) {}
             }
 
@@ -77,7 +103,8 @@ export function useP2PMarketplace(refetchInterval = 3000) {
               borrower: borrower as string,
               positionTokenId: Number(posTokenId),
               borrowAmount: numBorrowVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-              collateralAmount: numCollateralVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+              collateralAmount: numCollateralVal.toLocaleString('en-US', { minimumFractionDigits: colSymbol === 'WBTC' ? 4 : colSymbol === 'WETH' ? 4 : 2, maximumFractionDigits: colSymbol === 'WBTC' ? 6 : colSymbol === 'WETH' ? 4 : 2 }),
+              collateralSymbol: colSymbol,
               interestRateBps: interestBps,
               interestRateApr: apr,
               durationDays: durationDays,

@@ -1,67 +1,21 @@
 import { useState } from 'react';
-import { parseUnits } from 'viem';
+import { parseUnits, formatUnits } from 'viem';
 import { publicClient, getWalletClient, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
+import { simulatePreflightTransaction } from '../utils/preflightSimulation.js';
 import type { TxConfirmDetails } from '../components/TransactionConfirmModal.js';
-
-// Fetch real-time asset price directly from the on-chain OracleHub contract or Treasury NAV
-async function getOnChainOraclePriceUSD(collateralType: string): Promise<number> {
-  try {
-    if (collateralType === 'alpha') {
-      const navWei = await publicClient.readContract({
-        address: CONTRACT_ADDRESSES.TREASURY,
-        abi: ABIS.TREASURY,
-        functionName: 'getNAVPerShare'
-      }) as bigint;
-      const navVal = Number(navWei) / 1e18;
-      if (navVal > 0) return navVal;
-      return 1.0;
-    }
-
-    let assetAddress = CONTRACT_ADDRESSES.USDC;
-    let assetDecimals = 18;
-    if (collateralType === 'wbtc') {
-      assetAddress = CONTRACT_ADDRESSES.WBTC || '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0';
-      assetDecimals = 8;
-    }
-    if (collateralType === 'weth') {
-      assetAddress = CONTRACT_ADDRESSES.WETH || '0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9';
-      assetDecimals = 18;
-    }
-
-    const oneTokenWei = parseUnits('1', assetDecimals);
-    
-    const usdValueWei = await publicClient.readContract({
-      address: CONTRACT_ADDRESSES.PRICE_FEED,
-      abi: ABIS.PRICE_FEED,
-      functionName: 'getAssetUsdValue',
-      args: [assetAddress, oneTokenWei]
-    }) as bigint;
-    
-    const usdValue = Number(usdValueWei) / 1e18;
-    if (usdValue > 0) return usdValue;
-  } catch (e) {
-    console.error('Oracle fetch failed:', e);
-  }
-  return collateralType === 'wbtc' ? 60000.0 : collateralType === 'weth' ? 3000.0 : 1.0;
-}
-
-// Max LTV per collateral type
-const MAX_LTV: Record<string, number> = {
-  alpha: 0.50,
-  wbtc: 0.70,
-  weth: 0.75
-};
+import { UI_STRINGS } from '../constants/strings.js';
 
 interface P2PLendingActionsParams {
   activeKey: string;
-  adminKey: string;  // Protocol operator key — injected from useWeb3State, never hardcoded here
+  adminKey?: string;
+  userAddress?: string;
   addLog: (msg: string) => void;
   addToast: (type: 'info' | 'success' | 'warning' | 'error', title: string, message: string) => void;
   fetchData: () => Promise<void>;
   requestConfirmation?: (details: TxConfirmDetails, action: () => Promise<void>) => void;
 }
 
-export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fetchData, requestConfirmation }: P2PLendingActionsParams) {
+export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast, fetchData, requestConfirmation }: P2PLendingActionsParams) {
   const [p2pTokenId, setP2pTokenId] = useState('1');
   const [p2pBorrowAmount, setP2pBorrowAmount] = useState('500');
   const [p2pInterestBps, setP2pInterestBps] = useState('1000');
@@ -74,33 +28,50 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
     try {
       const tokenIdBig = BigInt(p2pTokenId);
 
-      addLog(`Creando oferta de préstamo P2P para NFT #${p2pTokenId}...`);
-      addToast('info', 'Oferta P2P', 'Verificando aprobación...');
+      addLog(UI_STRINGS.TOASTS_AND_LOGS.P2P_OFFER_START);
+      addToast('info', 'Oferta P2P', 'Verificando autorización del NFT...');
       const client = getWalletClient(activeKey);
 
       let isApproved = false;
       try {
-        const approved = await publicClient.readContract({
+        const isAllApproved = await publicClient.readContract({
           address: CONTRACT_ADDRESSES.POSITION_NFT,
           abi: ABIS.POSITION_NFT,
-          functionName: 'getApproved',
-          args: [tokenIdBig]
-        }) as string;
-        if (approved.toLowerCase() === CONTRACT_ADDRESSES.P2P_MARKET.toLowerCase()) {
-          isApproved = true;
-        }
+          functionName: 'isApprovedForAll',
+          args: [client.account.address, CONTRACT_ADDRESSES.P2P_MARKET]
+        }) as boolean;
+        if (isAllApproved) isApproved = true;
       } catch (e) {}
 
       if (!isApproved) {
+        try {
+          const approved = await publicClient.readContract({
+            address: CONTRACT_ADDRESSES.POSITION_NFT,
+            abi: ABIS.POSITION_NFT,
+            functionName: 'getApproved',
+            args: [tokenIdBig]
+          }) as string;
+          if (approved.toLowerCase() === CONTRACT_ADDRESSES.P2P_MARKET.toLowerCase()) {
+            isApproved = true;
+          }
+        } catch (e) {}
+      }
+
+      if (!isApproved) {
+        addLog(`[Paso 1/2] Aprobando autorización de custodia para el Mercado P2P...`);
+        addToast('info', 'Paso 1/2: Autorización', 'Firma la autorización en tu billetera (solo 1 vez)...');
         const appHash = await client.writeContract({
           address: CONTRACT_ADDRESSES.POSITION_NFT,
           abi: ABIS.POSITION_NFT,
-          functionName: 'approve',
-          args: [CONTRACT_ADDRESSES.P2P_MARKET, tokenIdBig]
+          functionName: 'setApprovalForAll',
+          args: [CONTRACT_ADDRESSES.P2P_MARKET, true]
         });
         await publicClient.waitForTransactionReceipt({ hash: appHash });
+        addToast('info', 'Paso 2/2: Crear Oferta', 'Autorización completada. Registrando préstamo...');
+        await new Promise((res) => setTimeout(res, 500));
       }
 
+      addLog(`[Paso 2/2] Creando oferta de préstamo P2P para NFT #${tokenIdBig}...`);
       const tx = await client.writeContract({
         address: CONTRACT_ADDRESSES.P2P_MARKET,
         abi: ABIS.P2P_MARKET,
@@ -108,10 +79,9 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
         args: [tokenIdBig, parseUnits(p2pBorrowAmount, 6), BigInt(p2pInterestBps), BigInt(p2pDays)]  // USDC = 6 decimals
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
-      addLog(`¡Oferta P2P creada! NFT #${p2pTokenId} en escrow. Publicada en el Marketplace.`);
-      addToast('success', 'Oferta Creada', 'Préstamo publicado en el mercado en tiempo real');
+      addLog(UI_STRINGS.TOASTS_AND_LOGS.P2P_OFFER_SUCCESS);
+      addToast('success', 'Oferta Creada', UI_STRINGS.TOASTS_AND_LOGS.P2P_OFFER_SUCCESS);
       await fetchData();
-      setTimeout(fetchData, 500);
     } catch (err: any) {
       addLog(`[Error] Creación de préstamo falló: ${err.message || err}`);
       addToast('error', 'Error Oferta P2P', err.message || 'Fallo al crear oferta');
@@ -133,8 +103,7 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
         args: [tokenIdBig]
       }) as string;
 
-      const signerAddr = getWalletClient(activeKey).account.address;
-      if (ownerAddr.toLowerCase() !== signerAddr.toLowerCase()) {
+      if (!userAddress || ownerAddr.toLowerCase() !== userAddress.toLowerCase()) {
         addLog(`[Aviso] El NFT #${p2pTokenId} pertenece a ${ownerAddr.slice(0, 6)}...`);
         addToast('warning', 'NFT No Disponible', `El NFT #${p2pTokenId} ya está en escrow o no pertenece a tu billetera activa.`);
         return;
@@ -170,7 +139,7 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
         ],
         warningNote: `Tu NFT #${p2pTokenId} quedará custodiado en el contrato de préstamo hasta que reembolses la deuda.`,
         confirmButtonText: '✍️ Confirmar y Publicar Oferta',
-        confirmButtonColor: 'gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'
+        confirmButtonVariant: 'blue'
       }, executeCreateLoanOffer);
     } else {
       executeCreateLoanOffer();
@@ -201,7 +170,6 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
       addLog(`¡Préstamo #${loanId} financiado con éxito!`);
       addToast('success', 'Préstamo Financiado', 'Fondos transferidos al prestatario');
       await fetchData();
-      setTimeout(fetchData, 500);
     } catch (err: any) {
       addLog(`[Error] Financiamiento falló: ${err.message || err}`);
       addToast('error', 'Error Financiamiento', err.message || 'Fallo');
@@ -235,7 +203,7 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
         ],
         warningNote: 'Obtendrás derechos de cobro de intereses más principal. Si el prestatario entra en impago, podrás ejecutar auto-liquidación.',
         confirmButtonText: '✍️ Confirmar y Financiar',
-        confirmButtonColor: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+        confirmButtonVariant: 'emerald'
       }, () => executeAcceptLoanById(loanId, colWei));
     } else {
       executeAcceptLoanById(loanId, colWei);
@@ -261,7 +229,6 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
       addLog(`¡Oferta #${loanId} cancelada! NFT devuelto a tu billetera.`);
       addToast('success', 'Oferta Cancelada', `NFT devuelto a la billetera`);
       await fetchData();
-      setTimeout(fetchData, 500);
     } catch (err: any) {
       addLog(`[Error] Cancelar oferta falló: ${err.message || err}`);
       addToast('error', 'Error Cancelar Oferta', err.message || 'Fallo');
@@ -289,7 +256,7 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
           { label: 'Comisión por Cancelación', value: '0.00% ($0.00 USDC)' }
         ],
         confirmButtonText: '✍️ Confirmar Cancelación',
-        confirmButtonColor: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)'
+        confirmButtonVariant: 'danger'
       }, () => executeCancelLoanOffer(loanId));
     } else {
       executeCancelLoanOffer(loanId);
@@ -299,20 +266,70 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
   const executeRepayLoanById = async (loanId: number, _totalToPay: number) => {
     try {
       addLog(`Reembolsando préstamo P2P #${loanId}...`);
-      addToast('info', 'Reembolso Préstamo', 'Aprobando pago en USDC e intereses...');
       const client = getWalletClient(activeKey);
 
-      // 1. Approve USDC repayment to P2PLendingMarket contract with safe max allowance
-      const appAmountWei = parseUnits('100000', 6); // Approve 100,000 USDC safe allowance
-      const appHash = await client.writeContract({
-        address: CONTRACT_ADDRESSES.USDC,
-        abi: ABIS.ERC20,
-        functionName: 'approve',
-        args: [CONTRACT_ADDRESSES.P2P_MARKET, appAmountWei]
-      });
-      await publicClient.waitForTransactionReceipt({ hash: appHash });
+      // Query on-chain calculateTotalOwed to get exact amount with interest
+      let totalOwedWei = 0n;
+      try {
+        const owedRes = await publicClient.readContract({
+          address: CONTRACT_ADDRESSES.P2P_MARKET,
+          abi: ABIS.P2P_MARKET,
+          functionName: 'calculateTotalOwed',
+          args: [BigInt(loanId)]
+        }) as [bigint, bigint];
+        if (owedRes && owedRes[0]) {
+          totalOwedWei = owedRes[0];
+        }
+      } catch (e) {
+        totalOwedWei = parseUnits((_totalToPay * 1.005).toFixed(6), 6);
+      }
 
-      // 2. Execute repayLoan on P2PLendingMarket
+      if (totalOwedWei === 0n) {
+        totalOwedWei = parseUnits((_totalToPay * 1.005).toFixed(6), 6);
+      }
+
+      // Check current allowance first to avoid redundant signatures
+      let currentAllowance = 0n;
+      try {
+        currentAllowance = await publicClient.readContract({
+          address: CONTRACT_ADDRESSES.USDC,
+          abi: ABIS.ERC20,
+          functionName: 'allowance',
+          args: [client.account.address, CONTRACT_ADDRESSES.P2P_MARKET]
+        }) as bigint;
+      } catch (e) {}
+
+      // 1. Approve exact USDC repayment amount only if needed
+      if (currentAllowance < totalOwedWei) {
+        const exactUsdcStr = formatUnits(totalOwedWei, 6);
+        addToast('info', 'Paso 1/2: Aprobación', `Aprobando pago exacto de $${exactUsdcStr} USDC...`);
+        const appHash = await client.writeContract({
+          address: CONTRACT_ADDRESSES.USDC,
+          abi: ABIS.ERC20,
+          functionName: 'approve',
+          args: [CONTRACT_ADDRESSES.P2P_MARKET, totalOwedWei]
+        });
+        await publicClient.waitForTransactionReceipt({ hash: appHash });
+        addToast('info', 'Paso 2/2: Reembolso', 'Aprobación completada. Amortizando deuda...');
+        await new Promise((res) => setTimeout(res, 500));
+      }
+
+      // 2. Pre-flight simulation check
+      const preflight = await simulatePreflightTransaction(
+        CONTRACT_ADDRESSES.P2P_MARKET,
+        ABIS.P2P_MARKET,
+        'repayLoan',
+        [BigInt(loanId)],
+        client.account.address
+      );
+
+      if (!preflight.canExecute && preflight.error) {
+        addToast('error', preflight.error.title, preflight.error.message);
+        addLog(`[Error Pre-Vuelo] ${preflight.error.message}`);
+        return;
+      }
+
+      // 3. Execute repayLoan on P2PLendingMarket
       const tx = await client.writeContract({
         address: CONTRACT_ADDRESSES.P2P_MARKET,
         abi: ABIS.P2P_MARKET,
@@ -324,7 +341,6 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
       addLog(`¡Préstamo #${loanId} reembolsado totalmente! Principal e intereses acreditados a las Reservas de Tesorería.`);
       addToast('success', 'Préstamo Reembolsado', 'Garantía liberada y reservas incrementadas con el interés generado');
       await fetchData();
-      setTimeout(fetchData, 500);
     } catch (err: any) {
       addLog(`[Error] Reembolso falló: ${err.message || err}`);
       addToast('error', 'Error Reembolso', err.message || 'Fallo');
@@ -375,7 +391,7 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
         ],
         warningNote: `Al confirmar, pagarás exactamente $${totalToPay.toFixed(2)} USDC para cancelar el préstamo #${loanId} y recuperarás tu colateral (${collateralStr}).`,
         confirmButtonText: '✍️ Confirmar y Reembolsar Préstamo',
-        confirmButtonColor: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'
+        confirmButtonVariant: 'blue'
       }, () => executeRepayLoanById(loanId, totalToPay));
     } else {
       executeRepayLoanById(loanId, totalToPay);
@@ -388,8 +404,108 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
 
   const executeLiquidateLoanById = async (loanId: number) => {
     try {
-      addLog(`Ejecutando auto-liquidación en Préstamo #${loanId}...`);
+      if (!loanId || loanId <= 0) {
+        addToast('warning', 'ID Inválido', 'Indica un ID de préstamo válido para liquidar');
+        return;
+      }
+
+      addLog(`Verificando solvencia y estado del Préstamo #${loanId}...`);
       const client = getWalletClient(activeKey);
+
+      // 1. Check loan state and liquidatibility
+      const rawLoan = await publicClient.readContract({
+        address: CONTRACT_ADDRESSES.P2P_MARKET,
+        abi: ABIS.P2P_MARKET,
+        functionName: 'loans',
+        args: [BigInt(loanId)]
+      }) as any;
+
+      if (!rawLoan) {
+        addToast('error', 'Préstamo Inexistente', `El préstamo #${loanId} no fue encontrado on-chain`);
+        return;
+      }
+
+      const state = Array.isArray(rawLoan) ? Number(rawLoan[9]) : Number(rawLoan.state);
+      if (state !== 1) { // 1 = ACTIVE
+        addToast('warning', 'Préstamo No Activo', `El préstamo #${loanId} no está activo (Estado actual: ${state === 0 ? 'Oferta Disponible' : state === 2 ? 'Reembolsado' : state === 3 ? 'Liquidado' : 'Cancelado'})`);
+        return;
+      }
+
+      const startTime = Array.isArray(rawLoan) ? Number(rawLoan[8]) : Number(rawLoan.startTime);
+      const durationDays = Array.isArray(rawLoan) ? Number(rawLoan[7]) : Number(rawLoan.durationDays);
+      const isExpired = Date.now() / 1000 > (startTime + durationDays * 86400);
+
+      const hfRatio = await publicClient.readContract({
+        address: CONTRACT_ADDRESSES.P2P_MARKET,
+        abi: ABIS.P2P_MARKET,
+        functionName: 'calculateHealthFactor',
+        args: [BigInt(loanId)]
+      }) as bigint;
+
+      const healthPercent = Number(hfRatio);
+
+      if (healthPercent >= 115 && !isExpired) {
+        addToast('warning', 'Préstamo Solvente', `El préstamo #${loanId} no es liquidable. Su factor de salud es de ${healthPercent}% (seguro ≥ 115%) y el plazo no ha vencido.`);
+        addLog(`[Info] Préstamo #${loanId} es solvente (${healthPercent}% salud, plazo vigente). No liquidable.`);
+        return;
+      }
+
+      // 2. Query total owed to approve USDC payment
+      let totalOwedWei = 0n;
+      try {
+        const owedRes = await publicClient.readContract({
+          address: CONTRACT_ADDRESSES.P2P_MARKET,
+          abi: ABIS.P2P_MARKET,
+          functionName: 'calculateTotalOwed',
+          args: [BigInt(loanId)]
+        }) as [bigint, bigint];
+        if (owedRes && owedRes[0]) {
+          totalOwedWei = owedRes[0];
+        }
+      } catch (e) {}
+
+      if (totalOwedWei > 0n) {
+        let currentAllowance = 0n;
+        try {
+          currentAllowance = await publicClient.readContract({
+            address: CONTRACT_ADDRESSES.USDC,
+            abi: ABIS.ERC20,
+            functionName: 'allowance',
+            args: [client.account.address, CONTRACT_ADDRESSES.P2P_MARKET]
+          }) as bigint;
+        } catch (e) {}
+
+        if (currentAllowance < totalOwedWei) {
+          addToast('info', 'Aprobación Liquidación', `Aprobando pago de $${formatUnits(totalOwedWei, 6)} USDC para saldar la deuda impagada...`);
+          const appHash = await client.writeContract({
+            address: CONTRACT_ADDRESSES.USDC,
+            abi: ABIS.ERC20,
+            functionName: 'approve',
+            args: [CONTRACT_ADDRESSES.P2P_MARKET, totalOwedWei]
+          });
+          await publicClient.waitForTransactionReceipt({ hash: appHash });
+          await new Promise((res) => setTimeout(res, 500));
+        }
+      }
+
+      // 3. Pre-flight simulation check
+      const preflight = await simulatePreflightTransaction(
+        CONTRACT_ADDRESSES.P2P_MARKET,
+        ABIS.P2P_MARKET,
+        'liquidateLoan',
+        [BigInt(loanId)],
+        client.account.address
+      );
+
+      if (!preflight.canExecute && preflight.error) {
+        addToast('error', preflight.error.title, preflight.error.message);
+        addLog(`[Error Pre-Vuelo] ${preflight.error.message}`);
+        return;
+      }
+
+      // 4. Execute liquidateLoan
+      addLog(`Ejecutando embargo y liquidación en Préstamo #${loanId}...`);
+      addToast('info', 'Liquidando Préstamo', 'Enviando transacción de liquidación...');
       const tx = await client.writeContract({
         address: CONTRACT_ADDRESSES.P2P_MARKET,
         abi: ABIS.P2P_MARKET,
@@ -397,10 +513,9 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
         args: [BigInt(loanId)]
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
-      addLog(`¡Préstamo #${loanId} liquidado! NFT transferido al prestamista.`);
-      addToast('warning', 'Liquidación Ejecutada', 'NFT transferido al prestamista');
+      addLog(`¡Préstamo #${loanId} liquidado exitosamente! Colateral transferido al liquidador.`);
+      addToast('warning', 'Liquidación Ejecutada', 'Deuda saldada y colateral transferido.');
       await fetchData();
-      setTimeout(fetchData, 500);
     } catch (err: any) {
       addLog(`[Error] Liquidación falló: ${err.message || err}`);
       addToast('error', 'Error Liquidación', err.message || 'Fallo');
@@ -420,15 +535,15 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
         targetContractAddress: CONTRACT_ADDRESSES.P2P_MARKET,
         inputAmount: `Préstamo #${loanId}`,
         inputSymbol: borrowAmt > 0 ? `$${borrowAmt.toFixed(2)} Deuda Impagada` : 'Posición en Impago',
-        expectedOutput: nftId ? `NFT #${nftId}` : 'NFT Colateral',
-        expectedOutputSymbol: 'Transferido a la Billetera del Prestamista',
+        expectedOutput: nftId ? `NFT #${nftId}` : 'Colateral en Custodia',
+        expectedOutputSymbol: 'Transferido al Liquidador tras saldar deuda',
         details: [
           { label: 'Umbral de Liquidación', value: 'Health Factor < 115% o Expiración de Plazo', isHighlight: true },
           ...(borrowAmt > 0 ? [{ label: 'Deuda en Impago Afectada', value: `$${borrowAmt.toFixed(2)} USDC` }] : [])
         ],
-        warningNote: 'Se ejecutará el embargo del colateral. La propiedad del NFT será transferida al prestamista.',
+        warningNote: 'Solo se ejecutará si el préstamo está en impago o con ratio < 115%. El liquidador salda la deuda pendiente y recibe el colateral en custodia.',
         confirmButtonText: '⚡ Confirmar Liquidación',
-        confirmButtonColor: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)'
+        confirmButtonVariant: 'danger'
       }, () => executeLiquidateLoanById(loanId));
     } else {
       executeLiquidateLoanById(loanId);
@@ -443,17 +558,12 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
     try {
       const amountWei = parseUnits(amountStr, 6);  // USDC = 6 decimals
       const daysBig = BigInt(daysStr || '30');
-      const interestBpsBig = 800n; // 8.00% APR Fixed Treasury Reserve Rate
       const userClient = getWalletClient(activeKey);
-      // Protocol admin client — key is injected via hook props from useWeb3State, never hardcoded
-      const adminClient = getWalletClient(adminKey);
-
-      let tokenIdBig: bigint;
 
       if (collateralType === 'nft') {
-        tokenIdBig = BigInt(tokenIdOrAmountStr || '0');
+        const tokenIdBig = BigInt(tokenIdOrAmountStr || '0');
         if (tokenIdBig === 0n) {
-          addToast('warning', 'NFT No Válido', 'Por favor selecciona un NFT de Posición válido de tu billetera o usa colateral ERC20 (ALPHA/WBTC/WETH).');
+          addToast('warning', 'NFT No Válido', 'Por favor selecciona un NFT de Posición válido de tu billetera.');
           return;
         }
 
@@ -466,159 +576,187 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
             args: [tokenIdBig]
           }) as string;
 
-          if (nftOwner.toLowerCase() !== userClient.account.address.toLowerCase()) {
-            addToast('warning', 'Sin Propiedad del NFT', `El NFT #${tokenIdBig} pertenece a otra dirección y no a tu billetera activa (${userClient.account.address.slice(0, 6)}...). Selecciona un NFT propio o colateral ERC20.`);
+          if (!userAddress || nftOwner.toLowerCase() !== userAddress.toLowerCase()) {
+            addToast('warning', 'Sin Propiedad del NFT', `El NFT #${tokenIdBig} pertenece a otra dirección y no a tu billetera activa.`);
             return;
           }
         } catch (e) {
-          addToast('error', 'NFT Inexistente', `El NFT #${tokenIdBig} no existe on-chain. Adquiere un Bono con Descuento primero para obtener un NFT o selecciona colateral ERC20.`);
+          addToast('error', 'NFT Inexistente', `El NFT #${tokenIdBig} no existe on-chain. Adquiere un Bono con Descuento primero para obtener un NFT.`);
           return;
         }
 
-        addLog(`[Tesorería APY Booster] Solicitando préstamo de $${amountStr} USDC con NFT #${tokenIdOrAmountStr}...`);
-        addToast('info', 'Préstamo Tesorería', 'Enviando solicitud y aprobando NFT...');
-      } else {
-        // For ALPHA / WBTC / WETH collateral, mint a Position NFT for the collateral position
-        const colAmt = parseFloat(tokenIdOrAmountStr || '0');
-        const priceUsd = await getOnChainOraclePriceUSD(collateralType);
+        addLog(`[Tesorería] Solicitando préstamo institucional de $${amountStr} USDC con NFT #${tokenIdBig}...`);
+        addToast('info', 'Préstamo Tesorería', 'Verificando autorización del NFT...');
 
-        const colValUSD = colAmt * priceUsd;
-        const colValWei = parseUnits(colValUSD.toFixed(6), 6);  // USDC = 6 decimals
-        const assetSymbol = collateralType.toUpperCase();
+        let isApproved = false;
+        try {
+          const isAllApproved = await publicClient.readContract({
+            address: CONTRACT_ADDRESSES.POSITION_NFT,
+            abi: ABIS.POSITION_NFT,
+            functionName: 'isApprovedForAll',
+            args: [userClient.account.address, CONTRACT_ADDRESSES.P2P_MARKET]
+          }) as boolean;
+          if (isAllApproved) isApproved = true;
+        } catch (e) {}
 
-        addLog(`[Tesorería APY Booster] Registrando posición de colateral en la blockchain (${tokenIdOrAmountStr} ${assetSymbol} = $${colValUSD.toFixed(2)} USD)...`);
-        addToast('info', 'Préstamo Tesorería', `Creando registro de colateral en ${assetSymbol}...`);
-
-        // 1. Mint Position NFT representing collateral position
-        const txMintNft = await adminClient.writeContract({
-          address: CONTRACT_ADDRESSES.POSITION_NFT,
-          abi: ABIS.POSITION_NFT,
-          functionName: 'mintPosition',
-          args: [
-            userClient.account.address,
-            collateralType === 'alpha' ? CONTRACT_ADDRESSES.ALPHA_TOKEN : CONTRACT_ADDRESSES.USDC,
-            colValWei,
-            colValWei,
-            1n
-          ]
-        });
-        await publicClient.waitForTransactionReceipt({ hash: txMintNft });
-
-        // 2. Get the new NFT ID
-        const nextNftId = await publicClient.readContract({
-          address: CONTRACT_ADDRESSES.POSITION_NFT,
-          abi: ABIS.POSITION_NFT,
-          functionName: 'nextTokenId'
-        }) as bigint;
-        tokenIdBig = nextNftId - 1n;
-
-        // Note: The Position NFT minted above already represents the collateral position.
-        // The P2P Market contract only supports NFT-based collateral custody.
-        // Raw ERC20 tokens should NOT be transferred directly to the contract.
-        addLog(`[Colateral Registrado] Posición NFT #${tokenIdBig} creada representando ${tokenIdOrAmountStr} ${assetSymbol}.`);
-      }
-
-      // 4. Approve Position NFT to P2P Market
-      let isApproved = false;
-      try {
-        const approved = await publicClient.readContract({
-          address: CONTRACT_ADDRESSES.POSITION_NFT,
-          abi: ABIS.POSITION_NFT,
-          functionName: 'getApproved',
-          args: [tokenIdBig]
-        }) as string;
-        if (approved.toLowerCase() === CONTRACT_ADDRESSES.P2P_MARKET.toLowerCase()) {
-          isApproved = true;
+        if (!isApproved) {
+          try {
+            const approved = await publicClient.readContract({
+              address: CONTRACT_ADDRESSES.POSITION_NFT,
+              abi: ABIS.POSITION_NFT,
+              functionName: 'getApproved',
+              args: [tokenIdBig]
+            }) as string;
+            if (approved.toLowerCase() === CONTRACT_ADDRESSES.P2P_MARKET.toLowerCase()) {
+              isApproved = true;
+            }
+          } catch (e) {}
         }
-      } catch (e) {}
 
-      if (!isApproved) {
+        if (!isApproved) {
+          addLog(`[Paso 1/2] Aprobando autorización de custodia para la Tesorería...`);
+          addToast('info', 'Paso 1/2: Autorización', 'Firma la autorización en tu billetera (solo 1 vez)...');
+          const appHash = await userClient.writeContract({
+            address: CONTRACT_ADDRESSES.POSITION_NFT,
+            abi: ABIS.POSITION_NFT,
+            functionName: 'setApprovalForAll',
+            args: [CONTRACT_ADDRESSES.P2P_MARKET, true]
+          });
+          await publicClient.waitForTransactionReceipt({ hash: appHash });
+          addToast('info', 'Paso 2/2: Desembolso', 'Autorización completada. Desembolsando crédito...');
+          await new Promise((res) => setTimeout(res, 500));
+        }
+
+        // Direct Treasury borrow: instant funding & disbursement
+        addLog(`[Paso 2/2] Desembolsando $${amountStr} USDC directamente desde las Reservas de Tesorería...`);
+        const txCreate = await userClient.writeContract({
+          address: CONTRACT_ADDRESSES.P2P_MARKET,
+          abi: ABIS.P2P_MARKET,
+          functionName: 'borrowFromTreasury',
+          args: [tokenIdBig, amountWei, daysBig]
+        });
+        await publicClient.waitForTransactionReceipt({ hash: txCreate });
+
+        addLog(`¡Préstamo de $${amountStr} USDC desembolsado por la Tesorería! Fondos acreditados en tu billetera.`);
+        addToast('success', 'Préstamo Desembolsado', `$${amountStr} USDC recibidos en tu billetera (Activo)`);
+        await fetchData();
+      } else if (collateralType === 'alpha') {
+        const colAmtWei = parseUnits(tokenIdOrAmountStr || '0', 18);
+        if (colAmtWei === 0n) {
+          addToast('warning', 'Monto de ALPHA Requerido', 'Calcula o introduce una cantidad válida de tokens ALPHA como colateral.');
+          return;
+        }
+
+        addLog(`[Tesorería] Solicitando préstamo institucional de $${amountStr} USDC con ${tokenIdOrAmountStr} ALPHA de colateral...`);
+        addToast('info', 'Préstamo Tesorería', 'Verificando aprobación de tokens ALPHA...');
+
+        // Approve ALPHA tokens to P2PLendingMarket
         const appHash = await userClient.writeContract({
-          address: CONTRACT_ADDRESSES.POSITION_NFT,
-          abi: ABIS.POSITION_NFT,
+          address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
+          abi: ABIS.ERC20,
           functionName: 'approve',
-          args: [CONTRACT_ADDRESSES.P2P_MARKET, tokenIdBig]
+          args: [CONTRACT_ADDRESSES.P2P_MARKET, colAmtWei * 2n]
         });
         await publicClient.waitForTransactionReceipt({ hash: appHash });
+        await new Promise((res) => setTimeout(res, 500));
+
+        addLog(`Desembolsando $${amountStr} USDC desde Reservas con respaldo de ${tokenIdOrAmountStr} ALPHA...`);
+        const txBorrow = await userClient.writeContract({
+          address: CONTRACT_ADDRESSES.P2P_MARKET,
+          abi: ABIS.P2P_MARKET,
+          functionName: 'borrowFromTreasuryWithAlpha',
+          args: [colAmtWei, amountWei, daysBig]
+        });
+        await publicClient.waitForTransactionReceipt({ hash: txBorrow });
+
+        addLog(`¡Préstamo con respaldo ALPHA desembolsado con éxito! $${amountStr} USDC recibidos en tu billetera.`);
+        addToast('success', 'Préstamo Desembolsado', `$${amountStr} USDC recibidos con colateral ALPHA (Activo)`);
+        await fetchData();
+      } else if (collateralType === 'wbtc') {
+        const colAmtWei = parseUnits(tokenIdOrAmountStr || '0', 8); // WBTC = 8 decimals
+        if (colAmtWei === 0n) {
+          addToast('warning', 'Monto de WBTC Requerido', 'Introduce una cantidad válida de WBTC como colateral.');
+          return;
+        }
+
+        addLog(`[Tesorería] Solicitando préstamo institucional de $${amountStr} USDC con ${tokenIdOrAmountStr} WBTC de colateral...`);
+        addToast('info', 'Préstamo Tesorería', 'Verificando aprobación de WBTC...');
+
+        const appHash = await userClient.writeContract({
+          address: CONTRACT_ADDRESSES.WBTC,
+          abi: ABIS.ERC20,
+          functionName: 'approve',
+          args: [CONTRACT_ADDRESSES.P2P_MARKET, colAmtWei * 2n]
+        });
+        await publicClient.waitForTransactionReceipt({ hash: appHash });
+        await new Promise((res) => setTimeout(res, 500));
+
+        addLog(`Desembolsando $${amountStr} USDC desde Reservas con respaldo de ${tokenIdOrAmountStr} WBTC (70% Max LTV)...`);
+        const txBorrow = await userClient.writeContract({
+          address: CONTRACT_ADDRESSES.P2P_MARKET,
+          abi: ABIS.P2P_MARKET,
+          functionName: 'borrowFromTreasuryWithAsset',
+          args: [CONTRACT_ADDRESSES.WBTC, colAmtWei, amountWei, daysBig]
+        });
+        await publicClient.waitForTransactionReceipt({ hash: txBorrow });
+
+        addLog(`¡Préstamo con respaldo WBTC desembolsado con éxito! $${amountStr} USDC recibidos en tu billetera.`);
+        addToast('success', 'Préstamo Desembolsado', `$${amountStr} USDC recibidos con colateral WBTC (Activo)`);
+        await fetchData();
+      } else if (collateralType === 'weth') {
+        const colAmtWei = parseUnits(tokenIdOrAmountStr || '0', 18); // WETH = 18 decimals
+        if (colAmtWei === 0n) {
+          addToast('warning', 'Monto de WETH Requerido', 'Introduce una cantidad válida de WETH como colateral.');
+          return;
+        }
+
+        addLog(`[Tesorería] Solicitando préstamo institucional de $${amountStr} USDC con ${tokenIdOrAmountStr} WETH de colateral...`);
+        addToast('info', 'Préstamo Tesorería', 'Verificando aprobación de WETH...');
+
+        const appHash = await userClient.writeContract({
+          address: CONTRACT_ADDRESSES.WETH,
+          abi: ABIS.ERC20,
+          functionName: 'approve',
+          args: [CONTRACT_ADDRESSES.P2P_MARKET, colAmtWei * 2n]
+        });
+        await publicClient.waitForTransactionReceipt({ hash: appHash });
+        await new Promise((res) => setTimeout(res, 500));
+
+        addLog(`Desembolsando $${amountStr} USDC desde Reservas con respaldo de ${tokenIdOrAmountStr} WETH (75% Max LTV)...`);
+        const txBorrow = await userClient.writeContract({
+          address: CONTRACT_ADDRESSES.P2P_MARKET,
+          abi: ABIS.P2P_MARKET,
+          functionName: 'borrowFromTreasuryWithAsset',
+          args: [CONTRACT_ADDRESSES.WETH, colAmtWei, amountWei, daysBig]
+        });
+        await publicClient.waitForTransactionReceipt({ hash: txBorrow });
+
+        addLog(`¡Préstamo con respaldo WETH desembolsado con éxito! $${amountStr} USDC recibidos en tu billetera.`);
+        addToast('success', 'Préstamo Desembolsado', `$${amountStr} USDC recibidos con colateral WETH (Activo)`);
+        await fetchData();
+      } else {
+        addToast('info', 'Colateral no soportado', 'Selecciona NFT de Bono Vestado (vPOS), ALPHA, WBTC o WETH.');
       }
-
-      // 5. Create Loan Offer on-chain at 8.00% APR
-      const txCreate = await userClient.writeContract({
-        address: CONTRACT_ADDRESSES.P2P_MARKET,
-        abi: ABIS.P2P_MARKET,
-        functionName: 'createLoanOffer',
-        args: [tokenIdBig, amountWei, interestBpsBig, daysBig]
-      });
-      await publicClient.waitForTransactionReceipt({ hash: txCreate });
-
-      // 6. Get the new Loan ID
-      const nextId = await publicClient.readContract({
-        address: CONTRACT_ADDRESSES.P2P_MARKET,
-        abi: ABIS.P2P_MARKET,
-        functionName: 'nextLoanId'
-      }) as bigint;
-      const newLoanId = nextId - 1n;
-
-      // 7. Fund loan using Treasury Reserve liquidity via Admin Wallet
-      addLog(`[Tesorería APY Booster] Desembolsando $${amountStr} USDC desde reservas de la tesorería al préstamo #${newLoanId}...`);
-      const appUsdc = await adminClient.writeContract({
-        address: CONTRACT_ADDRESSES.USDC,
-        abi: ABIS.ERC20,
-        functionName: 'approve',
-        args: [CONTRACT_ADDRESSES.P2P_MARKET, amountWei * 2n]
-      });
-      await publicClient.waitForTransactionReceipt({ hash: appUsdc });
-
-      const txFund = await adminClient.writeContract({
-        address: CONTRACT_ADDRESSES.P2P_MARKET,
-        abi: ABIS.P2P_MARKET,
-        functionName: 'fundLoanOffer',
-        args: [newLoanId]
-      });
-      await publicClient.waitForTransactionReceipt({ hash: txFund });
-
-      addLog(`¡Préstamo #${newLoanId} desembolsado por la Tesorería! $${amountStr} USDC acreditados en tu billetera.`);
-      addToast('success', 'Préstamo Desembolsado', `Préstamo #${newLoanId} registrado y $${amountStr} USDC acreditados de las Reservas`);
-
-      await fetchData();
-      setTimeout(fetchData, 500);
     } catch (err: any) {
-      addLog(`[Error] Préstamo Tesorería falló: ${err.message || err}`);
-      addToast('error', 'Error Préstamo Tesorería', err.message || 'Fallo en desembolso');
+      addLog(`[Error] Préstamo con Tesorería falló: ${err.message || err}`);
+      addToast('error', 'Error Préstamo', err.message || 'Fallo');
     }
   };
 
   const handleBorrowFromTreasury = async (collateralType: string, tokenIdOrAmountStr: string, amountStr: string, daysStr: string) => {
     if (!amountStr || parseFloat(amountStr) <= 0) {
-      addToast('warning', 'Monto Inválido', 'Ingresa un monto en USDC mayor a 0');
+      addToast('warning', 'Monto Requerido', 'Ingresa un monto válido en USDC a solicitar');
       return;
     }
 
     const numAmt = parseFloat(amountStr);
     const colSymbol = collateralType.toUpperCase();
 
-    // Strict LTV Validation Check for Non-NFT Collateral
-    if (collateralType !== 'nft') {
-      const colAmt = parseFloat(tokenIdOrAmountStr || '0');
-      const priceUsd = await getOnChainOraclePriceUSD(collateralType);
-      const maxLtv = MAX_LTV[collateralType] ?? 0.50;
-
-      const collateralValUSD = colAmt * priceUsd;
-      const maxBorrowUSD = collateralValUSD * maxLtv;
-
-      if (numAmt > maxBorrowUSD + 0.50) {
-        const requiredColateralAmt = numAmt / (priceUsd * maxLtv);
-        addLog(`[Error LTV] Colateral insuficiente. Con ${colAmt} ${colSymbol} ($${collateralValUSD.toFixed(2)} USD) solo puedes pedir un máximo de $${maxBorrowUSD.toFixed(2)} USDC (${(maxLtv * 100).toFixed(0)}% LTV).`);
-        addToast('error', 'Colateral Insuficiente', `Para pedir $${numAmt} USDC necesitas al menos ${requiredColateralAmt.toFixed(collateralType === 'alpha' ? 2 : 4)} ${colSymbol} ($${(numAmt / maxLtv).toFixed(2)} USD de garantía al ${(maxLtv * 100).toFixed(0)}% LTV).`);
-        return;
-      }
-    }
-
     if (requestConfirmation) {
       requestConfirmation({
-        title: `Solicitar Préstamo a Tesorería (${colSymbol})`,
+        title: `Solicitar Préstamo a Tesorería: $${numAmt.toLocaleString('en-US')} USDC`,
         actionIcon: '🏛️',
-        typeBadge: 'Reserva Líquida Tesorería (APY Booster)',
+        typeBadge: 'Crédito Institucional con Colateral',
         targetContractName: 'P2PLendingMarket.sol & Treasury.sol',
         targetContractAddress: CONTRACT_ADDRESSES.P2P_MARKET,
         inputAmount: collateralType === 'nft' ? `NFT #${tokenIdOrAmountStr}` : `${tokenIdOrAmountStr} ${colSymbol}`,
@@ -634,7 +772,7 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
         ],
         warningNote: 'La Tesorería financiará tu préstamo de forma inmediata. La garantía quedará en custodia del contrato de Escrow hasta el reembolso total.',
         confirmButtonText: '🏛️ Confirmar y Solicitar Crédito',
-        confirmButtonColor: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+        confirmButtonVariant: 'emerald'
       }, () => executeBorrowFromTreasury(collateralType, tokenIdOrAmountStr, amountStr, daysStr));
     } else {
       executeBorrowFromTreasury(collateralType, tokenIdOrAmountStr, amountStr, daysStr);
@@ -665,4 +803,3 @@ export function useP2PLendingActions({ activeKey, adminKey, addLog, addToast, fe
     handleBorrowFromTreasury
   };
 }
-

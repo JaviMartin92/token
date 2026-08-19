@@ -1,0 +1,21 @@
+{
+  "fuzzing": {
+    "workers": 8,
+    "timeout": 86400,
+    "testLimit": 1000000,
+    "chainFlag": true,
+    "targetContracts": [
+      "TreasuryInvariantsTest",
+      "InstitutionalAuditInvariantsTest",
+      "DiscountBuybackEngineTest"
+    ],
+    "compilation": {
+      "platform": "foundry"
+    }
+  },
+  "invariants": [
+    "invariant_NAVPerShareMonotonicity",
+    "invariant_SolvencyRatioNeverBreached",
+    "invariant_VaultAccountingIntegrity"
+  ]
+}

@@ -4,22 +4,27 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./ProtocolRoles.sol";
+import "./interfaces/IProtocolErrors.sol";
 
 /**
  * @title VaultPositionNFT
  * @notice Represents ownership of a locked position in the Vested Discount Vaults.
  */
 contract VaultPositionNFT is ERC721, AccessControl {
+    // Domain Custom Errors
+    error NotMinterOrAdmin();
+    error NonexistentToken();
+
     struct Position {
         uint256 id;
         address underlyingAsset;
-        uint256 principalAmount;
-        uint256 discountedPricePaid;
-        uint256 depositTimestamp;
-        uint256 expirationTimestamp;
-        uint256 lockYears;
+        uint64 depositTimestamp;
+        uint32 lockYears;
+        uint64 expirationTimestamp;
         bool isRagequitted;
         bool isMaturedClaimed;
+        uint256 principalAmount;
+        uint256 discountedPricePaid;
     }
 
     uint256 public nextTokenId = 1;
@@ -28,7 +33,13 @@ contract VaultPositionNFT is ERC721, AccessControl {
     mapping(uint256 => Position) public positions;
 
     modifier onlyMinter() {
-        require(msg.sender == minter || hasRole(ProtocolRoles.ADMIN_ROLE, msg.sender), "VaultPositionNFT: Caller is not minter or owner");
+        if (
+            msg.sender != minter &&
+            !hasRole(ProtocolRoles.MINTER_ROLE, msg.sender) &&
+            !hasRole(ProtocolRoles.ADMIN_ROLE, msg.sender)
+        ) {
+            revert NotMinterOrAdmin();
+        }
         _;
     }
 
@@ -39,7 +50,7 @@ contract VaultPositionNFT is ERC721, AccessControl {
     }
 
     function setMinter(address _minter) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
-        require(_minter != address(0), "VaultPositionNFT: Zero address minter");
+        if (_minter == address(0)) revert IProtocolErrors.ZeroAddress();
         minter = _minter;
     }
 
@@ -50,30 +61,33 @@ contract VaultPositionNFT is ERC721, AccessControl {
         uint256 discountedPricePaid,
         uint256 lockYears
     ) external onlyMinter returns (uint256 tokenId) {
-        tokenId = nextTokenId++;
+        tokenId = nextTokenId;
+        unchecked {
+            ++nextTokenId;
+        }
 
         positions[tokenId] = Position({
             id: tokenId,
             underlyingAsset: underlyingAsset,
-            principalAmount: principalAmount,
-            discountedPricePaid: discountedPricePaid,
-            depositTimestamp: block.timestamp,
-            expirationTimestamp: block.timestamp + (lockYears * 365 days),
-            lockYears: lockYears,
+            depositTimestamp: uint64(block.timestamp),
+            lockYears: uint32(lockYears),
+            expirationTimestamp: uint64(block.timestamp + (lockYears * 365 days)),
             isRagequitted: false,
-            isMaturedClaimed: false
+            isMaturedClaimed: false,
+            principalAmount: principalAmount,
+            discountedPricePaid: discountedPricePaid
         });
 
         _mint(to, tokenId);
     }
 
     function markRagequitted(uint256 tokenId) external onlyMinter {
-        require(_ownerOf(tokenId) != address(0), "VaultPositionNFT: Nonexistent token");
+        if (_ownerOf(tokenId) == address(0)) revert NonexistentToken();
         positions[tokenId].isRagequitted = true;
     }
 
     function markClaimed(uint256 tokenId) external onlyMinter {
-        require(_ownerOf(tokenId) != address(0), "VaultPositionNFT: Nonexistent token");
+        if (_ownerOf(tokenId) == address(0)) revert NonexistentToken();
         positions[tokenId].isMaturedClaimed = true;
     }
 
@@ -83,7 +97,7 @@ contract VaultPositionNFT is ERC721, AccessControl {
     }
 
     function getPosition(uint256 tokenId) external view returns (Position memory) {
-        require(tokenId > 0 && tokenId < nextTokenId, "VaultPositionNFT: Nonexistent token");
+        if (tokenId == 0 || tokenId >= nextTokenId) revert NonexistentToken();
         return positions[tokenId];
     }
 }

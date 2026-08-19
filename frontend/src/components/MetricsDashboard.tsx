@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from './MetricsDashboard.module.css';
 import { ProtocolAnalyticsCharts } from './ProtocolAnalyticsCharts.js';
+import { UI_STRINGS } from '../constants/strings.js';
 
 interface MetricsDashboardProps {
   porAssets: string;
@@ -15,7 +16,7 @@ interface MetricsDashboardProps {
   circulatingSupply: string;
   totalStakedSupply: string;
   communityStakedSupply: string;
-  corporateStakedSupply: string;
+  communityVaultStakedSupply: string;
   treasuryStakedSupply: string;
   stakingRatioPct: string;
   navPerShareUSD: string;
@@ -37,7 +38,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   circulatingSupply,
   totalStakedSupply,
   communityStakedSupply,
-  corporateStakedSupply,
+  communityVaultStakedSupply,
   treasuryStakedSupply,
   stakingRatioPct,
   navPerShareUSD,
@@ -62,10 +63,10 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
         <div className={styles.headerRow}>
           <div>
             <h2 className={styles.headerH2}>
-              📊 Panel Consolidado de Métricas & Contadores On-Chain
+              {UI_STRINGS.METRICS.TITLE}
             </h2>
             <p className={styles.headerSubtitle}>
-              Monitoreo en tiempo real respaldado 100% por Proof of Reserves (PoR) y oráculos auditados.
+              {UI_STRINGS.METRICS.SUBTITLE}
             </p>
           </div>
 
@@ -80,7 +81,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
         {/* KPIs Grid */}
         <div className={styles.kpiGrid}>
           <div className={styles.kpiCard}>
-            <div className={styles.kpiTitle}>🛡️ Solvencia Global PoR</div>
+            <div className={styles.kpiTitle}>🛡️ {UI_STRINGS.METRICS.SOLVENCY_CARD_TITLE}</div>
             <div data-testid="por-collateral-ratio" className={`font-black text-md margin-top-sm ${numericRatioPct >= 100 ? 'text-green-bright' : styles.valLgRed}`}>
               {porRatio.includes('%') ? porRatio : `${porRatio}%`}
             </div>
@@ -100,7 +101,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
           </div>
 
           <div className={styles.kpiCard}>
-            <div className={styles.kpiTitle}>🏦 Activos Exógenos PoR</div>
+            <div className={styles.kpiTitle}>🏦 {UI_STRINGS.METRICS.TOTAL_ASSETS_LABEL}</div>
             <div data-testid="por-assets-total" className="font-black text-md text-purple-bright margin-top-sm">
               ${porAssets} USD
             </div>
@@ -110,7 +111,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
           </div>
 
           <div className={styles.kpiCard}>
-            <div className={styles.kpiTitle}>📄 Pasivos Totales (Shares)</div>
+            <div className={styles.kpiTitle}>📄 {UI_STRINGS.METRICS.TOTAL_LIABILITIES_LABEL}</div>
             <div data-testid="por-liabilities-total" className="font-black text-md margin-top-sm">
               ${porLiabilities} USD
             </div>
@@ -129,9 +130,9 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
 
         <div className={styles.gridSubtle}>
           <div className={styles.boxSubtle}>
-            <div className={styles.boxTitle}>🪙 En Circulación</div>
+            <div className={styles.boxTitle}>🪙 {UI_STRINGS.STAKING.METRIC_CIRCULATING}</div>
             <div data-testid="staking-circulating-supply" className={styles.valLgCyan}>
-              {circulatingSupply} ALPHA
+              {circulatingSupply} {UI_STRINGS.COMMON.SYMBOL_ALPHA}
             </div>
             <div className={styles.kpiSubtext}>Suministro Libre Flotante</div>
           </div>
@@ -139,39 +140,39 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
           <div className={styles.boxSubtle}>
             <div className={styles.boxTitle}>👤 Stake Comunidad</div>
             <div data-testid="staking-community-staked" className={styles.valLgPurple}>
-              {communityStakedSupply} stALPHA
+              {communityStakedSupply} {UI_STRINGS.COMMON.SYMBOL_STALPHA}
             </div>
             <div className={styles.kpiSubtext}>Bloqueado por Inversores</div>
           </div>
 
           <div className={styles.boxSubtle}>
-            <div className={styles.boxTitle}>🏢 Stake Bóvedas</div>
-            <div data-testid="staking-corporate-staked" className={styles.valLgPink}>
-              <span data-testid="staking-vaults-staked">{corporateStakedSupply}</span> stALPHA
+            <div className={styles.boxTitle}>💎 Stake Bóveda Comunitaria</div>
+            <div data-testid="staking-community-vault-staked" className={styles.valLgPink}>
+              <span data-testid="staking-vaults-staked">{communityVaultStakedSupply}</span> {UI_STRINGS.COMMON.SYMBOL_STALPHA}
             </div>
-            <div className={styles.kpiSubtext}>Protocol OpEx & Community Yield</div>
+            <div className={styles.kpiSubtext}>Community Yield Vault</div>
           </div>
 
           <div className={styles.boxSubtle}>
             <div className={styles.boxTitle}>🏛️ Stake Reservas</div>
             <div data-testid="staking-reserves-staked" className={styles.valLgGreen}>
-              {treasuryStakedSupply} stALPHA
+              {treasuryStakedSupply} {UI_STRINGS.COMMON.SYMBOL_STALPHA}
             </div>
             <div className={styles.kpiSubtext}>Sub-Reserva Tesorería</div>
           </div>
 
           <div className={styles.boxSubtle}>
-            <div className={styles.boxTitle}>🥩 Total Global Staked</div>
+            <div className={styles.boxTitle}>🥩 {UI_STRINGS.STAKING.METRIC_TOTAL_STAKED}</div>
             <div data-testid="staking-total-staked" className={styles.valLgViolet}>
-              <span data-testid="staking-global-staked">{totalStakedSupply}</span> ALPHA ({stakingRatioPct.includes('%') ? stakingRatioPct : `${stakingRatioPct}%`})
+              <span data-testid="staking-global-staked">{totalStakedSupply}</span> {UI_STRINGS.COMMON.SYMBOL_ALPHA} ({stakingRatioPct.includes('%') ? stakingRatioPct : `${stakingRatioPct}%`})
             </div>
             <div className={styles.kpiSubtext}>Total stALPHA en Gobernanza</div>
           </div>
 
           <div className={styles.boxSubtle}>
-            <div className={styles.boxTitle}>🔥 Deflación Acumulada</div>
+            <div className={styles.boxTitle}>🔥 {UI_STRINGS.STAKING.METRIC_TOTAL_BURNED}</div>
             <div data-testid="staking-deflation-burned" className={styles.valLgRed}>
-              <span data-testid="staking-deflation-destroyed">{totalBurnedTokens}</span> ALPHA Destruidos
+              <span data-testid="staking-deflation-destroyed">{totalBurnedTokens}</span> {UI_STRINGS.COMMON.SYMBOL_ALPHA} Destruidos
             </div>
             <div className={styles.kpiSubtext}>Quema Definitiva Irreversible</div>
           </div>
@@ -181,17 +182,17 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
       {/* 📊 SECCIÓN 3: TABLA DE RESPALDO EXÓGENO DE RESERVAS */}
       <div className={`card ${styles.sectionCard}`}>
         <h3 className={styles.sectionH3}>
-          🛡️ Ponderaciones Exógenas de Reserva Pura (Proof of Reserves)
+          {UI_STRINGS.METRICS.TABLE_ASSETS_TITLE}
         </h3>
 
         <div className="table-responsive">
           <table className="gcc-table">
             <thead>
               <tr className="gcc-tr-border text-muted">
-                <th className={styles.tableTh}>Activo de Reserva</th>
-                <th className={styles.tableTh}>Objetivo Protocolo</th>
-                <th className={styles.tableTh}>Valor USD en Caja</th>
-                <th className={styles.tableTh}>Bóvedas Deployed</th>
+                <th className={styles.tableTh}>{UI_STRINGS.METRICS.TH_ASSET}</th>
+                <th className={styles.tableTh}>{UI_STRINGS.METRICS.TH_TARGET_WEIGHT}</th>
+                <th className={styles.tableTh}>{UI_STRINGS.METRICS.TH_TOTAL_VALUE_USD}</th>
+                <th className={styles.tableTh}>{UI_STRINGS.METRICS.TH_YIELD_SOURCE}</th>
               </tr>
             </thead>
             <tbody>
@@ -199,19 +200,19 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
                 <td className={styles.tableTdCyan}>💵 USDC / Stablecoins</td>
                 <td className={styles.tableTd}>{(targetWeights?.stables || 60).toFixed(2)}% Target</td>
                 <td data-testid="por-row-usdc-val" className={styles.tableTdBold}>${stablesUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
-                <td className={styles.tableTdMuted}>Morpho Blue MetaMorpho Vault / Créditos P2P</td>
+                <td className={styles.tableTdMuted}>{UI_STRINGS.METRICS.MORPHO_USDC_SOURCE} / Créditos P2P</td>
               </tr>
               <tr className="gcc-tr-border">
                 <td className={styles.tableTdAmber}>🪙 Wrapped Bitcoin (WBTC)</td>
                 <td className={styles.tableTd}>{(targetWeights?.wbtc || 26.67).toFixed(2)}% Target</td>
                 <td data-testid="por-row-wbtc-val" className={styles.tableTdBold}>${btcUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
-                <td className={styles.tableTdMuted}>Staking Lombard LBTC / Oráculo Chainlink</td>
+                <td className={styles.tableTdMuted}>{UI_STRINGS.METRICS.LOMBARD_LBTC_SOURCE} / Oráculo Chainlink</td>
               </tr>
               <tr className="gcc-tr-border">
                 <td className={styles.tableTdIndigo}>🔷 Wrapped Ethereum (WETH)</td>
                 <td className={styles.tableTd}>{(targetWeights?.weth || 13.33).toFixed(2)}% Target</td>
                 <td data-testid="por-row-weth-val" className={styles.tableTdBold}>${ethUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
-                <td className={styles.tableTdMuted}>Lido Liquid Staking stETH / Oráculo Chainlink</td>
+                <td className={styles.tableTdMuted}>{UI_STRINGS.METRICS.LIDO_WSTETH_SOURCE} / Oráculo Chainlink</td>
               </tr>
             </tbody>
           </table>

@@ -1,57 +1,56 @@
 import { useState } from 'react';
-import { publicClient, getWalletClient, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
-import { parseEther, parseUnits } from 'viem';
+import { parseEther } from 'viem';
+import { CONTRACT_ADDRESSES, ABIS, publicClient, getWalletClient } from '../utils/web3.js';
 import type { TxConfirmDetails } from '../components/TransactionConfirmModal.js';
+import { UI_STRINGS } from '../constants/strings.js';
 
-interface AdminActionsParams {
+interface UseAdminActionsProps {
   activeKey: string;
-  snapshotId: string;
-  setSnapshotId: (id: string) => void;
-  addLog: (msg: string) => void;
-  addToast: (type: 'info' | 'success' | 'warning' | 'error', title: string, message: string) => void;
+  snapshotId: string | null;
+  setSnapshotId: any;
   fetchData: () => Promise<void>;
+  addLog: (msg: string) => void;
+  addToast: (type: 'success' | 'error' | 'info', title: string, message: string) => void;
   requestConfirmation?: (details: TxConfirmDetails, action: () => Promise<void>) => void;
 }
 
-export function useAdminActions({ activeKey, snapshotId, setSnapshotId, addLog, addToast, fetchData, requestConfirmation }: AdminActionsParams) {
-  const [injectionAmount, setInjectionAmount] = useState('');
+export function useAdminActions({
+  activeKey,
+  snapshotId,
+  setSnapshotId,
+  fetchData,
+  addLog,
+  addToast,
+  requestConfirmation
+}: UseAdminActionsProps) {
   const [oraclePrice, setOraclePrice] = useState('1.00');
-
-  const [newStablesWeight, setNewStablesWeight] = useState('60');
-  const [newWbtcWeight, setNewWbtcWeight] = useState('26.67');
-  const [newWethWeight, setNewWethWeight] = useState('13.33');
-  const [newAltsWeight, setNewAltsWeight] = useState('0');
+  const [newStablesWeight, setNewStablesWeight] = useState('50');
+  const [newWbtcWeight, setNewWbtcWeight] = useState('25');
+  const [newWethWeight, setNewWethWeight] = useState('15');
+  const [newAltsWeight, setNewAltsWeight] = useState('10');
 
   const executeUpdateOracle = async () => {
-    if (!oraclePrice) return;
     try {
-      addLog(`Actualizando precio del oráculo Chainlink...`);
+      addLog(`Actualizando precio de oráculo USDC a $${oraclePrice}...`);
       const client = getWalletClient(activeKey);
-      const feedAddress = await publicClient.readContract({
-        address: CONTRACT_ADDRESSES.TREASURY,
-        abi: ABIS.TREASURY,
-        functionName: 'priceFeeds',
-        args: [CONTRACT_ADDRESSES.USDC]
-      }) as `0x${string}`;
+      const priceScaled = BigInt(Math.round(parseFloat(oraclePrice) * 1e8));
 
-      const newPriceInt = BigInt(Math.round(parseFloat(oraclePrice) * 1e8));
       const tx = await client.writeContract({
-        address: feedAddress,
-        abi: [{ name: 'setPrice', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'price_', type: 'int256' }], outputs: [] }] as const,
-        functionName: 'setPrice',
-        args: [newPriceInt]
+        address: CONTRACT_ADDRESSES.USDC,
+        abi: [{ name: 'updateAnswer', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: '_answer', type: 'int256' }], outputs: [] }],
+        functionName: 'updateAnswer',
+        args: [priceScaled]
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
-      addLog(`¡Oráculo de precio actualizado a $${oraclePrice}!`);
-      addToast('success', 'Oráculo Actualizado', `Precio: $${oraclePrice}`);
+      addLog(UI_STRINGS.TOASTS_AND_LOGS.ORACLE_UPDATE_SUCCESS);
+      addToast('success', 'Oráculo Actualizado', `USDC Feed fijado en $${oraclePrice}`);
       fetchData();
     } catch (err: any) {
-      addLog(`[Error] Actualización de oráculo falló: ${err.message || err}`);
+      addLog(`[Error] Falló actualización de oráculo: ${err.message || err}`);
     }
   };
 
   const handleUpdateOracle = () => {
-    if (!oraclePrice) return;
     if (requestConfirmation) {
       requestConfirmation({
         title: 'Actualizar Oráculo de Precio Chainlink',
@@ -70,7 +69,7 @@ export function useAdminActions({ activeKey, snapshotId, setSnapshotId, addLog, 
         ],
         warningNote: 'Actualizar el precio del oráculo recalculará inmediatamente la valoración de reservas líquidas del protocolo.',
         confirmButtonText: '✍️ Confirmar y Actualizar Oráculo',
-        confirmButtonColor: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
+        confirmButtonVariant: 'indigo'
       }, executeUpdateOracle);
     } else {
       executeUpdateOracle();
@@ -93,7 +92,7 @@ export function useAdminActions({ activeKey, snapshotId, setSnapshotId, addLog, 
         args: [s, b, e, a]
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
-      addLog('¡Pesos de tesorería ajustados con éxito on-chain!');
+      addLog(UI_STRINGS.TOASTS_AND_LOGS.WEIGHTS_ADJUST_SUCCESS);
       addToast('success', 'Pesos Rebalanceados', 'Tesorería ajustada on-chain');
       fetchData();
     } catch (err: any) {
@@ -123,7 +122,7 @@ export function useAdminActions({ activeKey, snapshotId, setSnapshotId, addLog, 
         ],
         warningNote: 'El ajuste reconfigura los flujos de re-acumulación de reservas del contrato inteligente Treasury.sol.',
         confirmButtonText: '✍️ Confirmar Rebalanceo',
-        confirmButtonColor: 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)'
+        confirmButtonVariant: 'purple'
       }, executeAdjustWeights);
     } else {
       executeAdjustWeights();
@@ -160,7 +159,7 @@ export function useAdminActions({ activeKey, snapshotId, setSnapshotId, addLog, 
         args: [CONTRACT_ADDRESSES.USDC]
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
-      addLog('¡CircuitBreaker reiniciado on-chain! Operatividad restablecida.');
+      addLog(UI_STRINGS.TOASTS_AND_LOGS.BREAKER_RESET_SUCCESS);
       addToast('success', 'Breaker Reiniciado', 'Operatividad restablecida');
       fetchData();
     } catch (err: any) {
@@ -184,71 +183,10 @@ export function useAdminActions({ activeKey, snapshotId, setSnapshotId, addLog, 
           { label: 'Activo a Descongelar', value: 'USDC Reserve' }
         ],
         confirmButtonText: '✍️ Confirmar y Reiniciar Breaker',
-        confirmButtonColor: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)'
+        confirmButtonVariant: 'danger'
       }, executeResetBreaker);
     } else {
       executeResetBreaker();
-    }
-  };
-
-  const executeExecuteTWAP = async () => {
-    if (!injectionAmount) return;
-    try {
-      addLog(`Creando orden TWAP de recompra por $${injectionAmount} USDC...`);
-      const amountWei = parseUnits(injectionAmount, 6);  // USDC = 6 decimals
-
-      const client = getWalletClient(activeKey);
-
-      const appHash = await client.writeContract({
-        address: CONTRACT_ADDRESSES.USDC,
-        abi: ABIS.ERC20,
-        functionName: 'approve',
-        args: [CONTRACT_ADDRESSES.CORPORATE_CONTRIBUTION, amountWei]
-      });
-      await publicClient.waitForTransactionReceipt({ hash: appHash });
-
-      const tx = await client.writeContract({
-        address: CONTRACT_ADDRESSES.CORPORATE_CONTRIBUTION,
-        abi: ABIS.CORPORATE_CONTRIBUTION,
-        functionName: 'createTwapOrder',
-        args: [amountWei, BigInt(5), BigInt(300)]
-      });
-      await publicClient.waitForTransactionReceipt({ hash: tx });
-      addLog('¡Orden TWAP de recompra creada con éxito!');
-      addToast('success', 'TWAP Creado', 'Orden de compra ejecutada');
-      setInjectionAmount('');
-      fetchData();
-    } catch (err: any) {
-      addLog(`[Error] Recompra TWAP falló: ${err.message || err}`);
-    }
-  };
-
-  const handleExecuteTWAP = () => {
-    if (!injectionAmount) return;
-    const num = parseFloat(injectionAmount);
-    if (isNaN(num) || num <= 0) return;
-
-    if (requestConfirmation) {
-      requestConfirmation({
-        title: 'Orden TWAP de Recompra Protocolo',
-        actionIcon: '📈',
-        typeBadge: 'Inyección Algorítmica TWAP',
-        targetContractName: 'ProtocolContribution.sol',
-        targetContractAddress: CONTRACT_ADDRESSES.CORPORATE_CONTRIBUTION,
-        inputAmount: `$${num.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-        inputSymbol: 'USDC Recompra',
-        expectedOutput: '5 Intervalos',
-        expectedOutputSymbol: 'Ejecución Gradual',
-        details: [
-          { label: 'Intervalos de Ejecución', value: '5 Tranchas de Compra' },
-          { label: 'Tiempo entre Intervalos', value: '300 Segundos (5 Minutos)' },
-          { label: 'Efecto', value: 'Soporte Directo al NAV y Liquidez de ALPHA' }
-        ],
-        confirmButtonText: '✍️ Confirmar y Ejecutar TWAP',
-        confirmButtonColor: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
-      }, executeExecuteTWAP);
-    } else {
-      executeExecuteTWAP();
     }
   };
 
@@ -262,7 +200,7 @@ export function useAdminActions({ activeKey, snapshotId, setSnapshotId, addLog, 
       } else {
         await (publicClient.request as any)({ method: 'anvil_reset', params: [] });
       }
-      addLog('[Reset 🔄] ¡Entorno reiniciado con éxito!');
+      addLog(UI_STRINGS.TOASTS_AND_LOGS.BLOCKCHAIN_RESET_SUCCESS);
       addToast('info', 'Reset Anvil', 'Blockchain restaurada desde snapshot');
       fetchData();
     } catch (err: any) {
@@ -287,7 +225,7 @@ export function useAdminActions({ activeKey, snapshotId, setSnapshotId, addLog, 
         ],
         warningNote: 'Esta acción revertirá todas las transacciones recientes del entorno local Anvil.',
         confirmButtonText: '🔄 Confirmar Reset Blockchain',
-        confirmButtonColor: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)'
+        confirmButtonVariant: 'danger'
       }, executeResetBlockchain);
     } else {
       executeResetBlockchain();
@@ -332,7 +270,7 @@ export function useAdminActions({ activeKey, snapshotId, setSnapshotId, addLog, 
           { label: 'Fondo Asignado', value: `${amount} ALPHA` }
         ],
         confirmButtonText: '✍️ Confirmar y Crear Campaña',
-        confirmButtonColor: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)'
+        confirmButtonVariant: 'pink'
       }, () => executeCreateCampaign(name, amount));
     } else {
       executeCreateCampaign(name, amount);
@@ -340,8 +278,6 @@ export function useAdminActions({ activeKey, snapshotId, setSnapshotId, addLog, 
   };
 
   return {
-    injectionAmount,
-    setInjectionAmount,
     oraclePrice,
     setOraclePrice,
     newStablesWeight,
@@ -356,7 +292,6 @@ export function useAdminActions({ activeKey, snapshotId, setSnapshotId, addLog, 
     handleAdjustWeights,
     handleSimulateDrop,
     handleResetBreaker,
-    handleExecuteTWAP,
     handleResetBlockchain,
     handleCreateCampaign
   };

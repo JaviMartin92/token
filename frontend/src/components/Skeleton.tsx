@@ -11,8 +11,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({ className = '', count = 1 })
       {Array.from({ length: count }).map((_, idx) => (
         <div 
           key={idx} 
-          className={`animate-pulse bg-gray-700 rounded ${className}`}
-          style={{ minHeight: '1rem', width: '100%' }}
+          className={`skeleton-box animate-pulse bg-gray-700 rounded ${className}`}
         />
       ))}
     </>

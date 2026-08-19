@@ -21,8 +21,8 @@ describe('useGlobalState', () => {
 
     const { result } = renderHook(() => useGlobalState());
 
-    expect(result.current.walletConnected).toBe(true);
-    expect(result.current.userAddress).toBe('0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266');
+    expect(result.current.walletConnected).toBe(false);
+    expect(result.current.userAddress).toBe('');
     expect(result.current.snapshotId).toBe('');
   });
 

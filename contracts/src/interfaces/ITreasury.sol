@@ -3,9 +3,9 @@ pragma solidity ^0.8.20;
 
 interface ITreasury {
     struct AssetWeights {
-        uint256 stablecoins;          // Target: 50% (Min 40%, Max 60%)
-        uint256 wbtc;                 // Target: 25% (Min 20%, Max 30%)
-        uint256 weth;                 // Target: 12.5% (Min 10%, Max 15%)
+        uint256 stablecoins; // Target: 50% (Min 40%, Max 60%)
+        uint256 wbtc; // Target: 25% (Min 20%, Max 30%)
+        uint256 weth; // Target: 12.5% (Min 10%, Max 15%)
         uint256 alphaProtocolStaking; // Target: 12.5% (Min 5%, Max 15%) - Auto-staked for Real Yield
     }
 
@@ -41,7 +41,7 @@ interface ITreasury {
     function deposit(uint256 stableAmount) external returns (uint256 sharesMinted);
 
     /**
-     * @notice Allows RealYieldRouter to convert corporate fee shares into ALPHA tokens without triggering reentrancy locks.
+     * @notice Allows RealYieldRouter to convert protocol fee shares into ALPHA tokens without triggering reentrancy locks.
      */
     function mintCorporateFeeShares(uint256 stableAmount) external returns (uint256 sharesMinted);
 
@@ -57,7 +57,10 @@ interface ITreasury {
      */
     function redeem(uint256 sharesAmount) external returns (uint256 assetsReceived);
 
-    function getProofOfReserves() external view returns (uint256 totalAssetsUSD, uint256 totalLiabilitiesUSD, uint256 collateralRatioBps);
+    function getProofOfReserves()
+        external
+        view
+        returns (uint256 totalAssetsUSD, uint256 totalLiabilitiesUSD, uint256 collateralRatioBps);
 
     /**
      * @notice Validates that the current portfolio weights are within the sanity bounds.
@@ -80,7 +83,7 @@ interface ITreasury {
     function recordBurn(uint256 amount) external;
 
     /**
-     * @notice Processes 1% staking entry fee ALPHA tokens, burning them and routing equivalent USDC yield to RealYieldRouter (50/25/25 flywheel).
+     * @notice Processes staking entry fees under the Pure DeFi 50/50 reserve/community-yield model.
      */
     function processStakingFee(uint256 feeShares) external;
 

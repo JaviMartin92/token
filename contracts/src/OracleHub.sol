@@ -3,11 +3,15 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./interfaces/IAggregatorV3.sol";
+import "./interfaces/IProtocolErrors.sol";
 import "./ProtocolRoles.sol";
 import "./ProtocolAddressProvider.sol";
 
 interface ISequencerUptimeFeed {
-    function latestRoundData() external view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
+    function latestRoundData()
+        external
+        view
+        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
 }
 
 /**
@@ -17,6 +21,12 @@ interface ISequencerUptimeFeed {
  * @dev Invariant: Ensures asset price valuations > 0 and fresh within oracleStalenessLimit.
  */
 contract OracleHub is AccessControl {
+    // Domain Custom Errors
+    error SequencerDown();
+    error GracePeriodNotElapsed();
+    error AssetNotTracked();
+    error PriceDivergenceExceeded(uint256 diffBps, uint256 maxBps);
+
     ProtocolAddressProvider public immutable addressProvider;
 
     address[] public trackedAssets;
@@ -35,7 +45,7 @@ contract OracleHub is AccessControl {
     event SequencerUptimeFeedUpdated(address indexed feed);
 
     constructor(ProtocolAddressProvider _addressProvider, address initialAdmin) {
-        require(address(_addressProvider) != address(0), "OracleHub: Zero address provider");
+        if (address(_addressProvider) == address(0)) revert IProtocolErrors.ZeroAddressProvider();
         addressProvider = _addressProvider;
         address admin = (initialAdmin != address(0)) ? initialAdmin : msg.sender;
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
@@ -48,7 +58,7 @@ contract OracleHub is AccessControl {
      * @param limit New staleness limit in seconds.
      */
     function setOracleStalenessLimit(uint256 limit) external onlyRole(ProtocolRoles.ORACLE_MANAGER_ROLE) {
-        require(limit > 0 && limit <= 1 days, "OracleHub: Staleness limit out of bounds");
+        if (limit == 0 || limit > 1 days) revert IProtocolErrors.InvalidParameters();
         oracleStalenessLimit = limit;
         emit OracleStalenessUpdated(limit);
     }
@@ -69,10 +79,12 @@ contract OracleHub is AccessControl {
      * @param secondaryFeed Secondary Pyth/Fallback feed address (optional, zero if none).
      * @param decimals_ Underlying asset decimals.
      */
-    function setTrackedAsset(address asset, address feed, address secondaryFeed, uint8 decimals_) public onlyRole(ProtocolRoles.ORACLE_MANAGER_ROLE) {
-        require(asset != address(0), "OracleHub: Zero asset");
-        require(feed != address(0), "OracleHub: Zero feed");
-        
+    function setTrackedAsset(address asset, address feed, address secondaryFeed, uint8 decimals_)
+        public
+        onlyRole(ProtocolRoles.ORACLE_MANAGER_ROLE)
+    {
+        if (asset == address(0) || feed == address(0)) revert IProtocolErrors.ZeroAddress();
+
         if (priceFeeds[asset] == address(0)) {
             trackedAssets.push(asset);
         }
@@ -83,15 +95,40 @@ contract OracleHub is AccessControl {
     }
 
     /**
-     * @notice Checks L2 Sequencer status if configured.
+     * @notice Returns true if the L2 Sequencer is down or currently within the 1-hour post-restart grace period.
+     */
+    function isSequencerGracePeriod() public view returns (bool) {
+        if (sequencerUptimeFeed == address(0)) return false;
+        try ISequencerUptimeFeed(sequencerUptimeFeed).latestRoundData() returns (
+            uint80, int256 answer, uint256 startedAt, uint256, uint80
+        ) {
+            if (answer != 0) return true; // Sequencer is down
+            return (block.timestamp - startedAt < GRACE_PERIOD_TIME); // In grace period
+        } catch {
+            return true; // Fail-safe: treat revert as unsafe grace period
+        }
+    }
+
+    /**
+     * @notice Checks that the sequencer is actively running (answer == 0), without enforcing the grace period.
+     */
+    function checkSequencerActive() public view {
+        if (sequencerUptimeFeed != address(0)) {
+            (, int256 answer,,,) = ISequencerUptimeFeed(sequencerUptimeFeed).latestRoundData();
+            if (answer != 0) revert SequencerDown();
+        }
+    }
+
+    /**
+     * @notice Checks full L2 Sequencer status including post-restart grace period.
      */
     function checkSequencerUptime() public view {
         if (sequencerUptimeFeed != address(0)) {
-            (, int256 answer, uint256 startedAt, , ) = ISequencerUptimeFeed(sequencerUptimeFeed).latestRoundData();
+            (, int256 answer, uint256 startedAt,,) = ISequencerUptimeFeed(sequencerUptimeFeed).latestRoundData();
             bool isSequencerUp = answer == 0;
-            require(isSequencerUp, "OracleHub: L2 Sequencer is down");
+            if (!isSequencerUp) revert SequencerDown();
             uint256 timeSinceUp = block.timestamp - startedAt;
-            require(timeSinceUp >= GRACE_PERIOD_TIME, "OracleHub: Grace period not elapsed");
+            if (timeSinceUp < GRACE_PERIOD_TIME) revert GracePeriodNotElapsed();
         }
     }
 
@@ -101,9 +138,11 @@ contract OracleHub is AccessControl {
             try IAggregatorV3(primaryFeed).latestRoundData() returns (uint80, int256 p, uint256, uint256 u, uint80) {
                 if (p > 0 && block.timestamp >= u && block.timestamp - u <= oracleStalenessLimit) {
                     uint8 pDec = IAggregatorV3(primaryFeed).decimals();
-                    lastValidPrimaryPrice18[asset] = (uint256(p) * 10**18) / (10**pDec);
+                    lastValidPrimaryPrice18[asset] = (uint256(p) * 10 ** 18) / (10 ** pDec);
                 }
-            } catch {}
+            } catch {
+                // Ignore transient oracle revert during cache warmup
+            }
         }
     }
 
@@ -113,8 +152,8 @@ contract OracleHub is AccessControl {
     function _fetchPriceBase18(address asset) internal view returns (uint256 priceBase18) {
         checkSequencerUptime();
         address primaryFeed = priceFeeds[asset];
-        require(primaryFeed != address(0), "OracleHub: Asset not tracked");
-        
+        if (primaryFeed == address(0)) revert AssetNotTracked();
+
         int256 price;
         uint256 updatedAt;
         bool primaryValid = false;
@@ -125,26 +164,33 @@ contract OracleHub is AccessControl {
                 updatedAt = u;
                 primaryValid = true;
             }
-        } catch {}
+        } catch {
+            // Primary oracle failed or reverted; trigger fallback to secondary feed
+        }
 
         if (primaryValid) {
             uint8 pDec = IAggregatorV3(primaryFeed).decimals();
-            priceBase18 = (uint256(price) * 10**18) / (10**pDec);
+            priceBase18 = (uint256(price) * 10 ** 18) / (10 ** pDec);
         } else {
             address activeFeed = secondaryPriceFeeds[asset];
-            require(activeFeed != address(0), "OracleHub: Primary stale and no secondary fallback");
-            (, price, , updatedAt, ) = IAggregatorV3(activeFeed).latestRoundData();
-            require(price > 0, "OracleHub: Secondary invalid price");
-            require(block.timestamp >= updatedAt && block.timestamp - updatedAt <= oracleStalenessLimit, "OracleHub: Secondary stale price feed");
-            
+            if (activeFeed == address(0)) revert IProtocolErrors.PriceFeedNotSet();
+            (, price,, updatedAt,) = IAggregatorV3(activeFeed).latestRoundData();
+            if (price <= 0) revert IProtocolErrors.InvalidPrice();
+            if (block.timestamp < updatedAt || block.timestamp - updatedAt > oracleStalenessLimit) {
+                revert IProtocolErrors.StalePriceFeed(updatedAt, oracleStalenessLimit);
+            }
+
             uint8 sDec = IAggregatorV3(activeFeed).decimals();
-            priceBase18 = (uint256(price) * 10**18) / (10**sDec);
+            priceBase18 = (uint256(price) * 10 ** 18) / (10 ** sDec);
 
             // AC-04: Divergence verification against last known primary price
             uint256 lastPrimary = lastValidPrimaryPrice18[asset];
             if (lastPrimary > 0) {
                 uint256 diff = priceBase18 > lastPrimary ? priceBase18 - lastPrimary : lastPrimary - priceBase18;
-                require((diff * 10000) / lastPrimary <= MAX_DIVERGENCE_BPS, "OracleHub: High primary/secondary price divergence");
+                uint256 diffBps = (diff * 10000) / lastPrimary;
+                if (diffBps > MAX_DIVERGENCE_BPS) {
+                    revert PriceDivergenceExceeded(diffBps, MAX_DIVERGENCE_BPS);
+                }
             }
         }
     }
@@ -160,7 +206,7 @@ contract OracleHub is AccessControl {
         if (assetBalance == 0) return 0;
         uint256 priceBase18 = _fetchPriceBase18(asset);
         uint8 assetDec = assetDecimals[asset];
-        usdValue = (assetBalance * priceBase18) / (10**assetDec);
+        usdValue = (assetBalance * priceBase18) / (10 ** assetDec);
     }
 
     /**

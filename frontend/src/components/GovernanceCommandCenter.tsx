@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import styles from './GovernanceCommandCenter.module.css';
 import { CONTRACT_ADDRESSES, publicClient, getWalletClient } from '../utils/web3.js';
 import { encodeFunctionData, parseEther } from 'viem';
+import { UI_STRINGS } from '../constants/strings.js';
 
 interface GovernanceCommandCenterProps {
   web3Data: any;
@@ -58,7 +59,8 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
   const submitGovernanceProposal = async (target: `0x${string}`, data: `0x${string}`, description: string) => {
     try {
       const client = getWalletClient(web3Data.activeKey);
-      const governorAddress = CONTRACT_ADDRESSES.GOVERNOR || '0x04c89607413713ec9775e14b954286519d836fef';
+      const governorAddress = CONTRACT_ADDRESSES.GOVERNOR;
+      if (!governorAddress) throw new Error('Dirección de Governor no configurada');
       const tx = await client.writeContract({
         address: governorAddress as `0x${string}`,
         abi: [
@@ -102,10 +104,10 @@ Descripción: "${description}"
             <span className={styles.headerIcon}>🏛️</span>
             <div>
               <h2 className="gcc-header-title">
-                Centro de Comando de Gobernanza & DAO
+                {UI_STRINGS.GOVERNANCE.TITLE}
               </h2>
               <p className="gcc-header-subtitle">
-                Auditoría Exhaustiva en Tiempo Real, Control de Parámetros On-Chain y Gestor Promocional Empresarial
+                {UI_STRINGS.GOVERNANCE.SUBTITLE}
               </p>
             </div>
           </div>
@@ -113,15 +115,15 @@ Descripción: "${description}"
 
         <div className={styles.headerRight}>
           <div className="gcc-badge-indigo">
-            <div className={styles.badgeTitleIndigo}>EVM CHAIN DETECTADO</div>
+            <div className={styles.badgeTitleIndigo}>{UI_STRINGS.GOVERNANCE.BANNER_EVM_CHAIN}</div>
             <div className={styles.badgeValIndigo}>Chain ID: {currentChainId}</div>
           </div>
           <div className="gcc-badge-green">
-            <div className={styles.badgeTitleGreen}>RATIO SOLVENCIA PoR</div>
+            <div className={styles.badgeTitleGreen}>{UI_STRINGS.GOVERNANCE.BANNER_POR_RATIO}</div>
             <div data-testid="admin-por-solvency-ratio" className={styles.badgeValGreen}>{solvencyRatio}%</div>
           </div>
           <div className="gcc-badge-purple">
-            <div className={styles.badgeTitlePurple}>NAV / TOKEN ALPHA</div>
+            <div className={styles.badgeTitlePurple}>{UI_STRINGS.GOVERNANCE.BANNER_NAV_TOKEN} {UI_STRINGS.COMMON.SYMBOL_ALPHA}</div>
             <div data-testid="admin-nav-per-share" className={styles.badgeValPurple}>${navValueNum.toFixed(4)}</div>
           </div>
         </div>
@@ -130,11 +132,11 @@ Descripción: "${description}"
       {/* Sub-Tabs Navigation */}
       <div className="gcc-subtabs-row">
         {[
-          { key: 'metrics', label: '📊 Auditoría & Métricas', icon: '📊' },
-          { key: 'parameters', label: '⚙️ Control Parámetros', icon: '⚙️' },
-          { key: 'wallets', label: '💼 Billeteras Corporativas', icon: '💼' },
-          { key: 'promotions', label: '🎁 Eventos & Promociones', icon: '🎁' },
-          { key: 'security', label: '🛡️ Consola Seguridad', icon: '🛡️' }
+          { key: 'metrics', label: UI_STRINGS.GOVERNANCE.TAB_AUDIT_METRICS, icon: '📊' },
+          { key: 'parameters', label: UI_STRINGS.GOVERNANCE.TAB_PARAM_CONTROL, icon: '⚙️' },
+          { key: 'wallets', label: UI_STRINGS.GOVERNANCE.TAB_PROTOCOL_VAULTS, icon: '💼' },
+          { key: 'promotions', label: UI_STRINGS.GOVERNANCE.TAB_PROMOTIONS, icon: '🎁' },
+          { key: 'security', label: UI_STRINGS.GOVERNANCE.TAB_SECURITY, icon: '🛡️' }
         ].map(tab => (
           <button
             key={tab.key}
@@ -152,65 +154,65 @@ Descripción: "${description}"
         <div>
           <div className={styles.metricsGrid}>
             <div className={styles.metricCard}>
-              <div className={styles.metricLabel}>ACTIVOS TOTALES (PoR)</div>
+              <div className={styles.metricLabel}>{UI_STRINGS.METRICS.TOTAL_ASSETS_LABEL}</div>
               <div data-testid="admin-total-assets-por" className={styles.metricValCyan}>
                 ${totalAssetsVal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </div>
-              <div className={styles.metricSubtext}>Cobertura On-Chain 100% Verificada</div>
+              <div className={styles.metricSubtext}>{UI_STRINGS.GOVERNANCE.COVERAGE_VERIFIED}</div>
             </div>
 
             <div className={styles.metricCard}>
-              <div className={styles.metricLabel}>DEFLACIÓN ACUMULADA</div>
+              <div className={styles.metricLabel}>{UI_STRINGS.STAKING.METRIC_TOTAL_BURNED}</div>
               <div data-testid="admin-deflation-accumulated" className={styles.metricValRed}>
-                🔥 {burnedTokensStr} ALPHA
+                🔥 {burnedTokensStr} {UI_STRINGS.COMMON.SYMBOL_ALPHA}
               </div>
-              <div className={styles.metricSubtext}>Tokens Destruidos por Fees Staking</div>
+              <div className={styles.metricSubtext}>{UI_STRINGS.GOVERNANCE.BURNED_BY_FEES}</div>
             </div>
 
             <div className={styles.metricCard}>
-              <div className={styles.metricLabel}>MODELO DE INGRESOS LIQUIDUS (50/50)</div>
+              <div className={styles.metricLabel}>{UI_STRINGS.GOVERNANCE.INCOME_MODEL_TITLE}</div>
               <div className={styles.modelText}>
-                🏛️ 50% Res. Tesorería | 🏦 50% Yield Comunidad
+                {UI_STRINGS.GOVERNANCE.INCOME_MODEL_DESC}
               </div>
-              <div className={styles.metricSubtextGreen}>Reparto Automático On-Chain Real Yield</div>
+              <div className={styles.metricSubtextGreen}>{UI_STRINGS.GOVERNANCE.INCOME_MODEL_AUTODISTRIB}</div>
             </div>
           </div>
 
-          <h3 className={styles.sectionTitle}>📌 Distribución Target de Activos de Reserva ({twStables.toFixed(1)} / {twWbtc.toFixed(1)} / {twWeth.toFixed(1)} / {twAlts.toFixed(1)})</h3>
+          <h3 className={styles.sectionTitle}>{UI_STRINGS.GOVERNANCE.SECTION_TARGET_DISTRIB} ({twStables.toFixed(1)} / {twWbtc.toFixed(1)} / {twWeth.toFixed(1)} / {twAlts.toFixed(1)})</h3>
           <div className={styles.tableContainer}>
             <table className={styles.table}>
               <thead>
                 <tr className={styles.thRow}>
-                  <th className={styles.thCell}>Activo de Reserva</th>
-                  <th className={styles.thCell}>Valor USD Real</th>
-                  <th className={styles.thCell}>Ponderación Target</th>
-                  <th className={styles.thCell}>Función en Tesorería</th>
+                  <th className={styles.thCell}>{UI_STRINGS.METRICS.TH_ASSET}</th>
+                  <th className={styles.thCell}>{UI_STRINGS.GOVERNANCE.TH_REAL_USD_VAL}</th>
+                  <th className={styles.thCell}>{UI_STRINGS.METRICS.TH_TARGET_WEIGHT}</th>
+                  <th className={styles.thCell}>{UI_STRINGS.GOVERNANCE.TH_TREASURY_ROLE}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr className={styles.trBorder}>
-                  <td className={styles.tdBlue}>💵 USDC (Sub-Reserva Exógena)</td>
+                  <td className={styles.tdBlue}>💵 {UI_STRINGS.COMMON.SYMBOL_USDC} (Sub-Reserva Exógena)</td>
                   <td className={styles.tdCell}>${parseFloat(reserveBreakdown?.usdcUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                   <td className={styles.tdGreen}>{twStables.toFixed(2)}%</td>
-                  <td className={styles.tdMuted}>Morpho Yield + Créditos P2P + Líquido</td>
+                  <td className={styles.tdMuted}>{UI_STRINGS.GOVERNANCE.ROLE_MORPHO_P2P}</td>
                 </tr>
                 <tr className={styles.trBorder}>
-                  <td className={styles.tdAmber}>₿ Wrapped Bitcoin (WBTC)</td>
+                  <td className={styles.tdAmber}>₿ Wrapped Bitcoin ({UI_STRINGS.COMMON.SYMBOL_WBTC})</td>
                   <td className={styles.tdCell}>${parseFloat(reserveBreakdown?.wbtcUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                   <td className={styles.tdGreen}>{twWbtc.toFixed(2)}%</td>
-                  <td className={styles.tdMuted}>Compras DEX en Mercado Secundario</td>
+                  <td className={styles.tdMuted}>{UI_STRINGS.GOVERNANCE.ROLE_DEX_BUYS}</td>
                 </tr>
                 <tr className={styles.trBorder}>
-                  <td className={styles.tdPurple}>Ξ Wrapped Ethereum (WETH)</td>
+                  <td className={styles.tdPurple}>Ξ Wrapped Ethereum ({UI_STRINGS.COMMON.SYMBOL_WETH})</td>
                   <td className={styles.tdCell}>${parseFloat(reserveBreakdown?.wethUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                   <td className={styles.tdGreen}>{twWeth.toFixed(2)}%</td>
-                  <td className={styles.tdMuted}>Compras DEX en Mercado Secundario</td>
+                  <td className={styles.tdMuted}>{UI_STRINGS.GOVERNANCE.ROLE_DEX_BUYS}</td>
                 </tr>
                 <tr>
-                  <td className={styles.tdPink}>🥩 Native ALPHA Staked</td>
+                  <td className={styles.tdPink}>🥩 Native {UI_STRINGS.COMMON.SYMBOL_ALPHA} Staked</td>
                   <td className={styles.tdCell}>${parseFloat(reserveBreakdown?.stakedAlphaUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                   <td className={styles.tdGreen}>{twAlts.toFixed(2)}%</td>
-                  <td className={styles.tdMuted}>Auto-stake Institucional Governance</td>
+                  <td className={styles.tdMuted}>{UI_STRINGS.GOVERNANCE.ROLE_AUTO_STAKE}</td>
                 </tr>
               </tbody>
             </table>
@@ -221,17 +223,17 @@ Descripción: "${description}"
       {/* TAB 2: CONTROL DE PARAMETROS */}
       {activeSubTab === 'parameters' && (
         <div>
-          <h3 className={styles.sectionTitle}>⚙️ Configuración Global de Parámetros y Comisiones</h3>
+          <h3 className={styles.sectionTitle}>{UI_STRINGS.GOVERNANCE.SECTION_GLOBAL_CONFIG}</h3>
           
           {isProductionChain && (
             <div className={styles.pureBanner}>
-              🏛️ <strong>Pure DeFi Governance Active (Mainnet Live - Chain ID {currentChainId})</strong>: Ajusta los parámetros en las casillas inferiores y pulsa <strong>"Proponer Votación DAO (72h)"</strong> para firmar y enviar la propuesta on-chain a <code>GovernorAlphaCentauri.sol</code>.
+              🏛️ <strong>Pure DeFi Governance Active (Mainnet Live - Chain ID {currentChainId})</strong>: Ajusta los parámetros en las casillas inferiores y pulsa <strong>"{UI_STRINGS.GOVERNANCE.BTN_PROPOSE_DAO}"</strong> para firmar y enviar la propuesta on-chain a <code>GovernorAlphaCentauri.sol</code>.
             </div>
           )}
 
           <div className={styles.paramGrid}>
             <div className={styles.paramCard}>
-              <label className="acp-label-sm">COMISIÓN DE DEPÓSITO TESORERÍA (%)</label>
+              <label className="acp-label-sm">{UI_STRINGS.GOVERNANCE.LABEL_DEPOSIT_FEE_PCT}</label>
               <div className="acp-flex-row-gap5">
                 <input
                   type="number"
@@ -256,14 +258,14 @@ Descripción: "${description}"
                   }}
                   className={isProductionChain ? styles.btnProd : styles.btnSandbox}
                 >
-                  {isProductionChain ? '🏛️ Proponer Votación DAO (72h)' : '🧪 Guardar (Sandbox)'}
+                  {isProductionChain ? UI_STRINGS.GOVERNANCE.BTN_PROPOSE_DAO : UI_STRINGS.GOVERNANCE.BTN_SAVE_SANDBOX}
                 </button>
               </div>
               <span className={styles.metricSubtext}>Actual: {depositFeeInput}% ({Math.round(parseFloat(depositFeeInput || '0') * 100)} Bps)</span>
             </div>
 
             <div className={styles.paramCard}>
-              <label className="acp-label-sm">COMISIÓN DE CANJE DIRECTO / REDEEM (%)</label>
+              <label className="acp-label-sm">{UI_STRINGS.GOVERNANCE.LABEL_REDEEM_FEE_PCT}</label>
               <div className="acp-flex-row-gap5">
                 <input
                   type="number"
@@ -288,14 +290,14 @@ Descripción: "${description}"
                   }}
                   className={isProductionChain ? styles.btnProd : styles.btnSandbox}
                 >
-                  {isProductionChain ? '🏛️ Proponer Votación DAO (72h)' : '🧪 Guardar (Sandbox)'}
+                  {isProductionChain ? UI_STRINGS.GOVERNANCE.BTN_PROPOSE_DAO : UI_STRINGS.GOVERNANCE.BTN_SAVE_SANDBOX}
                 </button>
               </div>
               <span className={styles.metricSubtext}>Actual: {redeemFeeInput}% ({Math.round(parseFloat(redeemFeeInput || '0') * 100)} Bps)</span>
             </div>
 
             <div className={styles.paramCard}>
-              <label className="acp-label-sm">FEE ORIGINACIÓN PRÉSTAMOS P2P (%)</label>
+              <label className="acp-label-sm">{UI_STRINGS.GOVERNANCE.LABEL_P2P_FEE_PCT}</label>
               <div className="acp-flex-row-gap5">
                 <input
                   type="number"
@@ -320,7 +322,7 @@ Descripción: "${description}"
                   }}
                   className={isProductionChain ? styles.btnProd : styles.btnSandbox}
                 >
-                  {isProductionChain ? '🏛️ Proponer Votación DAO (72h)' : '🧪 Guardar (Sandbox)'}
+                  {isProductionChain ? UI_STRINGS.GOVERNANCE.BTN_PROPOSE_DAO : UI_STRINGS.GOVERNANCE.BTN_SAVE_SANDBOX}
                 </button>
               </div>
               <span className={styles.metricSubtext}>Actual: {p2pFeeInput}% ({Math.round(parseFloat(p2pFeeInput || '0') * 100)} Bps)</span>
@@ -329,14 +331,14 @@ Descripción: "${description}"
         </div>
       )}
 
-      {/* TAB 3: BILLETERAS CORPORATIVAS */}
+      {/* TAB 3: BÓVEDAS DEL PROTOCOLO */}
       {activeSubTab === 'wallets' && (
         <div>
-          <h3 className={styles.sectionTitle}>💼 Control y Direccionamiento de Billeteras Corporativas</h3>
+          <h3 className={styles.sectionTitle}>{UI_STRINGS.GOVERNANCE.SECTION_VAULT_ADDRESSES}</h3>
           <div className={styles.promoCard}>
             <div className="acp-control-stack">
               <div>
-                <label className="acp-label-sm">🏛️ BILLETERA BUNKER TESORERÍA (CONTRATO SUB-RESERVA)</label>
+                <label className="acp-label-sm">{UI_STRINGS.GOVERNANCE.LABEL_BUNKER_WALLET}</label>
                 <input
                   type="text"
                   readOnly
@@ -346,17 +348,7 @@ Descripción: "${description}"
               </div>
 
               <div>
-                <label className="acp-label-sm">🛡️ BÓVEDA PROTOCOL OPEX (BÓVEDA OPEX INFRAESTRUCTURA & GRANTS)</label>
-                <input
-                  type="text"
-                  readOnly
-                  value={CONTRACT_ADDRESSES.PROTOCOL_OPEX_VAULT || '0x...'}
-                  className={styles.walletInputPurple}
-                />
-              </div>
-
-              <div>
-                <label className="acp-label-sm">💎 BÓVEDA COMMUNITY REAL YIELD (BÓVEDA REAL YIELD STAKERS)</label>
+                <label className="acp-label-sm">{UI_STRINGS.GOVERNANCE.LABEL_COMMUNITY_YIELD_VAULT}</label>
                 <input
                   type="text"
                   readOnly
@@ -372,12 +364,12 @@ Descripción: "${description}"
       {/* TAB 4: PROMOCIONES Y EVENTOS ESPECIALES */}
       {activeSubTab === 'promotions' && (
         <div>
-          <h3 className={styles.sectionTitle}>🎁 Gestor de Promociones, Incentivos & Eventos Especiales</h3>
+          <h3 className={styles.sectionTitle}>{UI_STRINGS.GOVERNANCE.SECTION_PROMOS_TITLE}</h3>
           <div className={styles.promoCard}>
-            <h4 className={styles.promoH4}>✨ Lanzar Nueva Campaña Promocional On-Chain</h4>
+            <h4 className={styles.promoH4}>{UI_STRINGS.GOVERNANCE.LABEL_LAUNCH_PROMO}</h4>
             <div className="admin-grid-2col">
               <div>
-                <label className="acp-label-sm">NOMBRE DE LA CAMPAÑA / EVENTO</label>
+                <label className="acp-label-sm">{UI_STRINGS.ADMIN.LABEL_CAMPAIGN_NAME}</label>
                 <input
                   type="text"
                   placeholder="Ej. Summer APY Boost 2026"
@@ -387,7 +379,7 @@ Descripción: "${description}"
                 />
               </div>
               <div>
-                <label className="acp-label-sm">PRESUPUESTO DE INCENTIVOS (ALPHA)</label>
+                <label className="acp-label-sm">{UI_STRINGS.ADMIN.LABEL_CAMPAIGN_AMOUNT}</label>
                 <input
                   type="number"
                   placeholder="1000"
@@ -416,7 +408,7 @@ Descripción: "${description}"
               disabled={!promoName || !promoAmount}
               className={promoName && promoAmount ? (isProductionChain ? styles.btnProd : styles.promoBtnActive) : styles.promoBtnDisabled}
             >
-              {isProductionChain ? '🏛️ Proponer Presupuesto Promocional en Governor (72h)' : '🚀 Crear y Activar Campaña Promocional On-Chain'}
+              {isProductionChain ? UI_STRINGS.GOVERNANCE.BTN_PROPOSE_PROMO : UI_STRINGS.GOVERNANCE.BTN_ACTIVATE_PROMO}
             </button>
           </div>
         </div>
@@ -425,12 +417,12 @@ Descripción: "${description}"
       {/* TAB 5: SEGURIDAD & CIRCUIT BREAKER */}
       {activeSubTab === 'security' && (
         <div>
-          <h3 className={styles.sectionTitle}>🛡️ Consola de Seguridad de Emergencia & Circuit Breaker</h3>
+          <h3 className={styles.sectionTitle}>{UI_STRINGS.GOVERNANCE.SECTION_SECURITY_TITLE}</h3>
           <div className="admin-grid-2col">
             <div className={styles.secCard}>
-              <h4 className={styles.secBreakerH4}>⚡ Descongelar Circuit Breaker</h4>
+              <h4 className={styles.secBreakerH4}>{UI_STRINGS.GOVERNANCE.SUBTITLE_RESET_BREAKER}</h4>
               <p className={styles.metricSubtext}>
-                Restablece la operatividad del contrato tras una parada de seguridad provocada por alta volatilidad o congelamiento de oráculo.
+                {UI_STRINGS.GOVERNANCE.DESC_RESET_BREAKER}
               </p>
               <button
                 onClick={async () => {
@@ -447,14 +439,14 @@ Descripción: "${description}"
                 }}
                 className={isProductionChain ? styles.btnProd : styles.secBtnRed}
               >
-                {isProductionChain ? '🛡️ Proponer Reset Breaker / Security Council Multisig (72h)' : '🔓 Reiniciar Circuit Breaker (Devnet)'}
+                {isProductionChain ? UI_STRINGS.GOVERNANCE.BTN_PROPOSE_RESET_BREAKER : UI_STRINGS.GOVERNANCE.BTN_RESET_BREAKER_DEV}
               </button>
             </div>
 
             <div className={styles.secCard}>
-              <h4 className={styles.secOracleH4}>🔮 Oráculo de Precios Chainlink</h4>
+              <h4 className={styles.secOracleH4}>🔮 {UI_STRINGS.ADMIN.CARD_ORACLE_TITLE}</h4>
               <p className={styles.metricSubtext}>
-                {isProductionChain ? 'En Mainnet Live, los precios son provistos automáticamente por los agregadores de nodos descentralizados de Chainlink.' : 'Actualiza el valor del feed de prueba de USDC en la sandbox para simular fluctuaciones de mercado.'}
+                {isProductionChain ? UI_STRINGS.GOVERNANCE.DESC_ORACLE_PROD : UI_STRINGS.GOVERNANCE.DESC_ORACLE_DEV}
               </p>
               <div className="acp-flex-row-gap5">
                 <input
@@ -478,7 +470,7 @@ Descripción: "${description}"
                   }}
                   className={isProductionChain ? styles.btnProd : styles.secBtnBlue}
                 >
-                  {isProductionChain ? '🏛️ Proponer Feed en Governor (72h)' : 'Actualizar'}
+                  {isProductionChain ? UI_STRINGS.GOVERNANCE.BTN_PROPOSE_FEED : UI_STRINGS.GOVERNANCE.BTN_UPDATE_FEED}
                 </button>
               </div>
             </div>

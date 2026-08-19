@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./ProtocolRoles.sol";
 import "./lib/security/ReentrancyGuard.sol";
+import "./interfaces/IProtocolErrors.sol";
 
 /**
  * @title ProtocolOpExVault
@@ -20,7 +21,7 @@ contract ProtocolOpExVault is AccessControl, ReentrancyGuard {
     event OpExWithdrawn(address indexed recipient, uint256 amount, string purpose);
 
     constructor(address _stablecoin, address _initialOwner) {
-        require(_stablecoin != address(0), "ProtocolOpExVault: Zero stablecoin");
+        if (_stablecoin == address(0)) revert IProtocolErrors.ZeroAddress();
         stablecoin = IERC20(_stablecoin);
 
         address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
@@ -32,7 +33,7 @@ contract ProtocolOpExVault is AccessControl, ReentrancyGuard {
      * @notice Receives liquid USDC fee distributions from RealYieldRouter.
      */
     function depositOpEx(uint256 amount) external nonReentrant {
-        require(amount > 0, "ProtocolOpExVault: Amount 0");
+        if (amount == 0) revert IProtocolErrors.ZeroAmount();
         stablecoin.safeTransferFrom(msg.sender, address(this), amount);
         emit OpExDeposited(msg.sender, amount);
     }
@@ -40,10 +41,14 @@ contract ProtocolOpExVault is AccessControl, ReentrancyGuard {
     /**
      * @notice Withdraws liquid USDC for operational expenses (audits, infrastructure, RPCs, dev grants).
      */
-    function withdrawOpEx(address recipient, uint256 amount, string calldata purpose) external onlyRole(ProtocolRoles.ADMIN_ROLE) nonReentrant {
-        require(recipient != address(0), "ProtocolOpExVault: Zero recipient");
+    function withdrawOpEx(address recipient, uint256 amount, string calldata purpose)
+        external
+        onlyRole(ProtocolRoles.ADMIN_ROLE)
+        nonReentrant
+    {
+        if (recipient == address(0)) revert IProtocolErrors.ZeroAddress();
         uint256 currentBalance = stablecoin.balanceOf(address(this));
-        require(amount <= currentBalance, "ProtocolOpExVault: Insufficient balance");
+        if (amount > currentBalance) revert IProtocolErrors.InvalidAmount();
 
         stablecoin.safeTransfer(recipient, amount);
         emit OpExWithdrawn(recipient, amount, purpose);

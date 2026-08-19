@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./ProtocolRoles.sol";
+import "./interfaces/IProtocolErrors.sol";
 
 /**
  * @title ProtocolAddressProvider
@@ -20,9 +21,9 @@ contract ProtocolAddressProvider is AccessControl {
     bytes32 public constant ID_REAL_YIELD_ROUTER = keccak256("REAL_YIELD_ROUTER");
     bytes32 public constant ID_P2P_MARKET = keccak256("P2P_MARKET");
     bytes32 public constant ID_VESTED_VAULT = keccak256("VESTED_VAULT");
-    bytes32 public constant ID_PROTOCOL_OPEX_VAULT = keccak256("PROTOCOL_OPEX_VAULT");
     bytes32 public constant ID_COMMUNITY_YIELD_VAULT = keccak256("COMMUNITY_YIELD_VAULT");
     bytes32 public constant ID_MORPHO_ADAPTER = keccak256("MORPHO_ADAPTER");
+    bytes32 public constant ID_DISCOUNT_BUYBACK_ENGINE = keccak256("DISCOUNT_BUYBACK_ENGINE");
 
     mapping(bytes32 => address) private _addresses;
 
@@ -38,7 +39,7 @@ contract ProtocolAddressProvider is AccessControl {
      * @param newAddress The new address.
      */
     function setAddress(bytes32 id, address newAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(newAddress != address(0), "AddressProvider: Zero address");
+        if (newAddress == address(0)) revert IProtocolErrors.ZeroAddress();
         address oldAddress = _addresses[id];
         _addresses[id] = newAddress;
         emit AddressUpdated(id, oldAddress, newAddress);
@@ -54,14 +55,47 @@ contract ProtocolAddressProvider is AccessControl {
     }
 
     // Convenience Getters
-    function getTreasuryManager() external view returns (address) { return getAddress(ID_TREASURY_MANAGER); }
-    function getAlphaVault() external view returns (address) { return getAddress(ID_ALPHA_VAULT); }
-    function getAlphaToken() external view returns (address) { return getAddress(ID_ALPHA_TOKEN); }
-    function getOracleHub() external view returns (address) { return getAddress(ID_ORACLE_HUB); }
-    function getTokenomicsEngine() external view returns (address) { return getAddress(ID_TOKENOMICS_ENGINE); }
-    function getGovernanceStaking() external view returns (address) { return getAddress(ID_GOVERNANCE_STAKING); }
-    function getRealYieldRouter() external view returns (address) { return getAddress(ID_REAL_YIELD_ROUTER); }
-    function getP2PMarket() external view returns (address) { return getAddress(ID_P2P_MARKET); }
-    function getVestedVault() external view returns (address) { return getAddress(ID_VESTED_VAULT); }
-    function getMorphoAdapter() external view returns (address) { return getAddress(ID_MORPHO_ADAPTER); }
+    function getTreasuryManager() external view returns (address) {
+        return getAddress(ID_TREASURY_MANAGER);
+    }
+
+    function getAlphaVault() external view returns (address) {
+        return getAddress(ID_ALPHA_VAULT);
+    }
+
+    function getAlphaToken() external view returns (address) {
+        return getAddress(ID_ALPHA_TOKEN);
+    }
+
+    function getOracleHub() external view returns (address) {
+        return getAddress(ID_ORACLE_HUB);
+    }
+
+    function getTokenomicsEngine() external view returns (address) {
+        return getAddress(ID_TOKENOMICS_ENGINE);
+    }
+
+    function getGovernanceStaking() external view returns (address) {
+        return getAddress(ID_GOVERNANCE_STAKING);
+    }
+
+    function getRealYieldRouter() external view returns (address) {
+        return getAddress(ID_REAL_YIELD_ROUTER);
+    }
+
+    function getP2PMarket() external view returns (address) {
+        return getAddress(ID_P2P_MARKET);
+    }
+
+    function getVestedVault() external view returns (address) {
+        return getAddress(ID_VESTED_VAULT);
+    }
+
+    function getMorphoAdapter() external view returns (address) {
+        return getAddress(ID_MORPHO_ADAPTER);
+    }
+
+    function getDiscountBuybackEngine() external view returns (address) {
+        return getAddress(ID_DISCOUNT_BUYBACK_ENGINE);
+    }
 }

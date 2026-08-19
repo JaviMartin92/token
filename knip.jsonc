@@ -1,0 +1,34 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "workspaces": {
+    "frontend": {
+      "entry": ["src/main.tsx"],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "services": {
+      "entry": [
+        "core/src/deploy.ts",
+        "core/src/index.ts",
+        "core/src/frontend-alignment-test.ts",
+        "core/src/__tests__/**/*.ts"
+      ],
+      "project": ["core/src/**/*.ts"]
+    }
+  },
+  "ignoreDependencies": [
+    "@playwright/test",
+    "vitest",
+    "@prisma/client",
+    "ioredis",
+    "dotenv",
+    "ts-node",
+    "solhint"
+  ],
+  "ignoreBinaries": [
+    "docker-compose",
+    "certoraRun",
+    "medusa",
+    "echidna"
+  ],
+  "ignoreExportsUsedInFile": true
+}

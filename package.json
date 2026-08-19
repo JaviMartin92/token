@@ -4,16 +4,31 @@
   "private": true,
   "description": "Alpha Centauri Protocol Monorepo",
   "scripts": {
-    "test:contracts": "docker run --rm -v \"%cd%\\contracts:/app\" -w /app --entrypoint forge ghcr.io/foundry-rs/foundry:latest test --force",
-    "test:50": "cd services && npx ts-node --project tsconfig.json core/src/run_50_tests.ts",
+    "test:contracts": "docker run --rm -v \"%cd%\\contracts:/app\" -w /app --entrypoint forge ghcr.io/foundry-rs/foundry:latest test",
+    "test:contracts:fast": "docker run --rm -v \"%cd%\\contracts:/app\" -w /app --entrypoint forge ghcr.io/foundry-rs/foundry:latest test --no-match-test \"testFuzz|Invariant\"",
+    "test:contracts:ci": "docker run --rm -e FOUNDRY_PROFILE=ci -v \"%cd%\\contracts:/app\" -w /app --entrypoint forge ghcr.io/foundry-rs/foundry:latest test",
+    "test:contracts:heavy": "docker run --rm -e FOUNDRY_PROFILE=heavy -v \"%cd%\\contracts:/app\" -w /app --entrypoint forge ghcr.io/foundry-rs/foundry:latest test",
+    "test:contracts:deep": "docker run --rm -e FOUNDRY_PROFILE=deep_fuzz -v \"%cd%\\contracts:/app\" -w /app --entrypoint forge ghcr.io/foundry-rs/foundry:latest test",
+    "test:certora:treasury": "cd contracts && certoraRun certora/conf/TreasuryManager.conf",
+    "test:certora:tokenomics": "cd contracts && certoraRun certora/conf/ProtocolTokenomicsEngine.conf",
+    "test:medusa": "cd contracts && medusa fuzz",
+    "test:echidna": "cd contracts && echidna . --config echidna.yaml",
     "test:alignment": "npx tsx services/core/src/frontend-alignment-test.ts",
-    "test:frontend": "cd frontend && npm run build && npx tsc --noEmit",
-    "test": "npm run test:contracts && npm run test:alignment && npm run test:frontend",
+    "test:personas": "npx tsx services/core/src/__tests__/institutional-e2e-personas.test.ts",
+    "test:chaos": "npx tsx services/core/src/__tests__/chaos-stress-suite.test.ts",
+    "test:backend": "npx tsx services/core/src/__tests__/backend-improvements.test.ts",
+    "test:frontend:unit": "cd frontend && npm test -- --run",
+    "test:frontend:build": "cd frontend && npm run build",
+    "test:frontend:sandbox": "cd frontend && npm run build:sandbox",
+    "test:frontend": "npm run test:frontend:unit && npm run test:frontend:build",
+    "test": "npm run test:frontend && npm run test:backend && npm run test:contracts:fast && npm run test:alignment",
+    "quality": "node scripts/quality-gate.mjs",
+    "quality:contracts": "docker run --rm -v \"%cd%\\contracts:/app\" -w /app --entrypoint forge ghcr.io/foundry-rs/foundry:latest fmt --check",
     "start": "powershell -ExecutionPolicy Bypass -File ./start_app.ps1",
     "dev": "docker-compose up -d",
     "dev:down": "docker-compose down"
   },
-  "dependencies": {
-    "ethers": "^6.17.0"
+  "devDependencies": {
+    "solhint": "^5.0.3"
   }
 }

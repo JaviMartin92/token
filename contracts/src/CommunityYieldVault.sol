@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./ProtocolRoles.sol";
 import "./lib/security/ReentrancyGuard.sol";
+import "./interfaces/IProtocolErrors.sol";
 
 interface IGovernanceStakingYield {
     function notifyRewardAmount(uint256 amount) external;
@@ -25,7 +26,7 @@ contract CommunityYieldVault is AccessControl, ReentrancyGuard {
     event StakingPoolSet(address indexed stakingPool);
 
     constructor(address _stablecoin, address _initialOwner) {
-        require(_stablecoin != address(0), "CommunityYieldVault: Zero stablecoin");
+        if (_stablecoin == address(0)) revert IProtocolErrors.ZeroAddress();
         stablecoin = IERC20(_stablecoin);
 
         address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
@@ -42,12 +43,16 @@ contract CommunityYieldVault is AccessControl, ReentrancyGuard {
      * @notice Receives liquid USDC fees from RealYieldRouter and notifies GovernanceStaking for real-time dividend payouts.
      */
     function depositYield(uint256 amount) external nonReentrant {
-        require(amount > 0, "CommunityYieldVault: Amount 0");
+        if (amount == 0) revert IProtocolErrors.ZeroAmount();
         stablecoin.safeTransferFrom(msg.sender, address(this), amount);
 
         if (stakingPool != address(0)) {
             stablecoin.approve(stakingPool, amount);
-            try IGovernanceStakingYield(stakingPool).notifyRewardAmount(amount) {} catch {}
+            try IGovernanceStakingYield(stakingPool).notifyRewardAmount(amount) {
+                // Reward notified successfully
+            } catch {
+                // Ignore transient notification revert on yield deposit
+            }
         }
 
         emit YieldDeposited(msg.sender, amount);

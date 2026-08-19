@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styles from './ReferralModal.module.css';
+import { UI_STRINGS } from '../constants/strings.js';
 
 interface ReferralModalProps {
   isOpen: boolean;
@@ -20,7 +21,7 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({
 
   const referralLink = `${window.location.origin}/?ref=${userAddress || '0x0000000000000000000000000000000000000000'}`;
   
-  const shareText = `🚀 Unete a Alpha Centauri V6 y obtén hasta un 20% de descuento en Bonos Vestados respaldados por Proof of Reserves. ¡Invierte con auto-custodia on-chain!`;
+  const shareText = UI_STRINGS.MODALS.REFERRAL.SHARE_TEXT;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralLink);
@@ -65,29 +66,29 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({
         <div className={styles.header}>
           <div className={styles.icon}>🎁</div>
           <h2 className={styles.title}>
-            Programa de Referidos Autosostenible
+            {UI_STRINGS.MODALS.REFERRAL.TITLE}
           </h2>
           <p className={styles.subtitle}>
-            Invita a tus amigos a Alpha Centauri V6 y gana comisiones automáticas en USDC por cada transacción.
+            {UI_STRINGS.MODALS.REFERRAL.SUBTITLE}
           </p>
         </div>
 
         {/* Benefits Card */}
         <div className={styles.benefitsCard}>
           <h4 className={styles.benefitsH4}>
-            <span>💎</span> Beneficios Exclusivos del Programa:
+            <span>💎</span> {UI_STRINGS.MODALS.REFERRAL.BENEFITS_TITLE}
           </h4>
           <ul className={styles.benefitsUl}>
-            <li><strong className="text-green-bright">Comisión Directa en USDC</strong> transferidos a tu wallet por cada amigo que compre un Bono.</li>
-            <li><strong className="text-cyan">Descuento Progresivo</strong> para tus invitados en la compra de sus Bonos Vestados.</li>
-            <li><strong className="text-pink-light">Sin Límites de Ingresos</strong>: Gana comisiones recurrentes por cada referido activo.</li>
+            <li>{UI_STRINGS.MODALS.REFERRAL.BENEFIT_1_TEXT}</li>
+            <li>{UI_STRINGS.MODALS.REFERRAL.BENEFIT_2_TEXT}</li>
+            <li>{UI_STRINGS.MODALS.REFERRAL.BENEFIT_3_TEXT}</li>
           </ul>
         </div>
 
         {/* Link Input Section */}
         <div className="margin-bottom-lg">
           <label className="acp-label-sm font-semibold margin-bottom-xs">
-            TU ENLACE ÚNICO DE REFERIDO:
+            {UI_STRINGS.MODALS.REFERRAL.LINK_LABEL}
           </label>
           <div className="acp-flex-row-gap5">
             <input
@@ -102,7 +103,7 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({
               onClick={handleCopy}
               className={`${styles.copyBtn} ${copied ? styles.copyBtnCopied : styles.copyBtnNormal}`}
             >
-              {copied ? '✓ ¡Copiado!' : '📋 Copiar'}
+              {copied ? UI_STRINGS.MODALS.REFERRAL.BTN_COPIED : UI_STRINGS.MODALS.REFERRAL.BTN_COPY}
             </button>
           </div>
         </div>
@@ -110,35 +111,35 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({
         {/* Social Share Buttons */}
         <div>
           <label className="acp-label-sm font-semibold text-center margin-bottom-sm">
-            COMPARTIR DIRECTAMENTE EN REDES SOCIALES:
+            {UI_STRINGS.MODALS.REFERRAL.SOCIAL_SHARE_TITLE}
           </label>
           <div className={styles.socialGrid}>
             <button
               onClick={shareTwitter}
               className={`${styles.socialBtn} ${styles.socialTwitter}`}
             >
-              🐦 X / Twitter
+              {UI_STRINGS.MODALS.REFERRAL.BTN_TWITTER}
             </button>
 
             <button
               onClick={shareTelegram}
               className={`${styles.socialBtn} ${styles.socialTelegram}`}
             >
-              💬 Telegram
+              {UI_STRINGS.MODALS.REFERRAL.BTN_TELEGRAM}
             </button>
 
             <button
               onClick={shareWhatsapp}
               className={`${styles.socialBtn} ${styles.socialWhatsapp}`}
             >
-              📱 WhatsApp
+              {UI_STRINGS.MODALS.REFERRAL.BTN_WHATSAPP}
             </button>
 
             <button
               onClick={shareLinkedin}
               className={`${styles.socialBtn} ${styles.socialLinkedin}`}
             >
-              💼 LinkedIn
+              {UI_STRINGS.MODALS.REFERRAL.BTN_LINKEDIN}
             </button>
           </div>
         </div>

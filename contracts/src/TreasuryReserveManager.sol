@@ -11,6 +11,7 @@ import "./interfaces/I1inchAggregator.sol";
 import "./interfaces/ILidoWstETH.sol";
 import "./interfaces/ILombardLBTC.sol";
 import "./interfaces/IMorphoVault.sol";
+import "./interfaces/IProtocolErrors.sol";
 
 /**
  * @title TreasuryReserveManager
@@ -32,9 +33,9 @@ contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
 
     // Production Protocol Addresses (Arbitrum One / Mainnet)
     address public oneInchAggregator = 0x1111111254EEB25477B68fb85Ed929f73A960582;
-    address public lidoWstETH         = 0x5979D7b546E38E414F7E9822514be443A4800529; // wstETH Arbitrum
-    address public lombardLBTC        = 0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd; // LBTC Arbitrum
-    address public morphoUsdcVault   = 0x488102554708C23C0227d8D86f4A2fAffbb27357;
+    address public lidoWstETH = 0x5979D7b546E38E414F7E9822514be443A4800529; // wstETH Arbitrum
+    address public lombardLBTC = 0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd; // LBTC Arbitrum
+    address public morphoUsdcVault = 0x488102554708C23C0227d8D86f4A2fAffbb27357;
 
     function setOracleRouter(address _oracleRouter) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         oracleRouter = _oracleRouter;
@@ -44,19 +45,10 @@ contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
     uint256 public lastProductionRebalanceTimestamp;
 
     event ProductionRebalanceExecuted(
-        uint256 totalUsdcAllocated,
-        uint256 liquidLoansPool,
-        uint256 morphoVaultDeposit,
-        uint256 timestamp
+        uint256 totalUsdcAllocated, uint256 liquidLoansPool, uint256 morphoVaultDeposit, uint256 timestamp
     );
 
-    constructor(
-        address _treasury,
-        address _usdcToken,
-        address _wbtcToken,
-        address _wethToken,
-        address _initialOwner
-    ) {
+    constructor(address _treasury, address _usdcToken, address _wbtcToken, address _wethToken, address _initialOwner) {
         address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
@@ -67,12 +59,10 @@ contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
         lastProductionRebalanceTimestamp = block.timestamp;
     }
 
-    function setProductionAddresses(
-        address _oneInch,
-        address _lido,
-        address _lombard,
-        address _morpho
-    ) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+    function setProductionAddresses(address _oneInch, address _lido, address _lombard, address _morpho)
+        external
+        onlyRole(ProtocolRoles.ADMIN_ROLE)
+    {
         oneInchAggregator = _oneInch;
         lidoWstETH = _lido;
         lombardLBTC = _lombard;
@@ -83,11 +73,11 @@ contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
      * @notice Executes 1-click production rebalance allocating 20% to liquid P2P reserve line and 80% to Morpho Blue
      */
     function executeProductionRebalance(uint256 usdcAmount) external nonReentrant returns (bool) {
-        require(usdcAmount > 0, "ReserveManager: Amount must be > 0");
+        if (usdcAmount == 0) revert IProtocolErrors.ZeroAmount();
         IERC20(usdcToken).safeTransferFrom(msg.sender, address(this), usdcAmount);
 
         uint256 liquidReserve10 = (usdcAmount * 1000) / 10000; // 10%
-        uint256 morphoVault90  = usdcAmount - liquidReserve10; // 90%
+        uint256 morphoVault90 = usdcAmount - liquidReserve10; // 90%
 
         // Send 10% to Treasury for liquid buffer / P2P reserve line
         IERC20(usdcToken).safeTransfer(treasury, liquidReserve10);
@@ -95,7 +85,12 @@ contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
         // Deposit 90% to Morpho Blue Vault if configured
         if (morphoUsdcVault.code.length > 0) {
             IERC20(usdcToken).approve(morphoUsdcVault, morphoVault90);
-            try IMorphoVault(morphoUsdcVault).deposit(morphoVault90, treasury) {} catch {}
+            try IMorphoVault(morphoUsdcVault).deposit(morphoVault90, treasury) {
+                // Morpho deposit successful
+            } catch {
+                // Fallback: safe transfer to treasury on vault error
+                IERC20(usdcToken).safeTransfer(treasury, morphoVault90);
+            }
         } else {
             IERC20(usdcToken).safeTransfer(treasury, morphoVault90);
         }

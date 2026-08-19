@@ -5,13 +5,65 @@ libs = ["lib"]
 solc = "0.8.20"
 optimizer = true
 optimizer_runs = 200
+via_ir = false
+
+[profile.default.fuzz]
+runs = 256
+
+[profile.default.invariant]
+runs = 64
+depth = 15
+
+# Profile for standard CI pipeline
+[profile.ci]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc = "0.8.20"
+optimizer = true
+optimizer_runs = 200
+via_ir = false
+
+[profile.ci.fuzz]
+runs = 1000
+
+[profile.ci.invariant]
+runs = 200
+depth = 32
+
+# Profile for thorough overnight/audit fuzzing (10,000 runs)
+[profile.heavy]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc = "0.8.20"
+optimizer = true
+optimizer_runs = 200
 via_ir = true
 
-[fuzz]
+[profile.heavy.fuzz]
 runs = 10000
 
-[invariant]
+[profile.heavy.invariant]
 runs = 1000
+depth = 128
+
+# Profile for massive 24h continuous fuzzing (100,000+ runs)
+[profile.deep_fuzz]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc = "0.8.20"
+optimizer = true
+optimizer_runs = 200
+via_ir = true
+
+[profile.deep_fuzz.fuzz]
+runs = 100000
+
+[profile.deep_fuzz.invariant]
+runs = 5000
+depth = 500
 
 # Additional settings for deployment & forking
 [rpc_endpoints]

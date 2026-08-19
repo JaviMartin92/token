@@ -1,5 +1,6 @@
 import React from 'react';
 import styles from './ApyBreakdownModal.module.css';
+import { UI_STRINGS } from '../constants/strings.js';
 
 interface ApyBreakdownModalProps {
   isOpen: boolean;
@@ -187,9 +188,9 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
           <div className={styles.modalTitleBox}>
             <span className={styles.modalTitleIcon}>⚡</span>
             <div>
-              <h3 className={styles.modalTitleH3}>Desglose de Reservas y Rendimiento Anualizado en Tiempo Real</h3>
+              <h3 className={styles.modalTitleH3}>{UI_STRINGS.MODALS.APY_BREAKDOWN.TITLE}</h3>
               <div className={styles.modalSubtitle}>
-                Reservas Totales: ${numericAssetsUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD • Staking: {numericStakedAlpha.toLocaleString()} ALPHA
+                {UI_STRINGS.MODALS.APY_BREAKDOWN.SUBTITLE_PREFIX} ${numericAssetsUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })} {UI_STRINGS.COMMON.SYMBOL_USDC} • {UI_STRINGS.MODALS.APY_BREAKDOWN.SUBTITLE_STAKING_PREFIX} {numericStakedAlpha.toLocaleString()} {UI_STRINGS.COMMON.SYMBOL_ALPHA}
               </div>
             </div>
           </div>
@@ -205,51 +206,51 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
         {/* Big APY Highlight Banner */}
         <div className={styles.highlightBanner}>
           <div className={styles.highlightLabel}>
-            RENDIMIENTO ANUALIZADO TOTAL EN TIEMPO REAL
+            {UI_STRINGS.MODALS.APY_BREAKDOWN.HIGHLIGHT_LABEL}
           </div>
           <div data-testid="modal-apy-total-apr" className={styles.highlightApr}>
             {totalApyPct}% APR
           </div>
           <div data-testid="modal-apy-annual-yield-usd" className={styles.highlightUsd}>
-            +${totalAnnualYieldUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD / año generados por las Reservas
+            +${totalAnnualYieldUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {UI_STRINGS.MODALS.APY_BREAKDOWN.HIGHLIGHT_USD_SUFFIX}
           </div>
           <div className={styles.highlightFooter}>
-            <span>🏦 Base Reservas: <strong data-testid="modal-apy-base-apr">{realTimeBaseApyPct.toFixed(3)}%</strong> (+${totalAnnualYieldUSD.toFixed(2)} USD/año)</span>
+            <span>{UI_STRINGS.MODALS.APY_BREAKDOWN.HIGHLIGHT_BASE_LABEL} <strong data-testid="modal-apy-base-apr">{realTimeBaseApyPct.toFixed(3)}%</strong> (+${totalAnnualYieldUSD.toFixed(2)} USD/año)</span>
             <span>+</span>
-            <span>💸 Flywheel Recompensas: <strong data-testid="modal-apy-flywheel-apr">{flywheelApyPct.toFixed(3)}%</strong> (+${totalFlywheelFeesUSD.toFixed(2)} USDC/año)</span>
+            <span>{UI_STRINGS.MODALS.APY_BREAKDOWN.HIGHLIGHT_FLYWHEEL_LABEL} <strong data-testid="modal-apy-flywheel-apr">{flywheelApyPct.toFixed(3)}%</strong> (+${totalFlywheelFeesUSD.toFixed(2)} USDC/año)</span>
           </div>
         </div>
 
         {/* Section 1: Base Reserve Yield */}
         <div className="margin-bottom-lg">
           <div className={styles.sectionHeader}>
-            <span>1. DÓNDE ESTÁN LAS RESERVAS & RENDIMIENTO ANUALIZADO (ON-CHAIN)</span>
-            <span className="text-green-light">Tasa Base: {realTimeBaseApyPct.toFixed(3)}% APR</span>
+            <span>{UI_STRINGS.MODALS.APY_BREAKDOWN.SECTION_1_TITLE}</span>
+            <span className="text-green-light">{UI_STRINGS.MODALS.APY_BREAKDOWN.SECTION_1_BASE_RATE} {realTimeBaseApyPct.toFixed(3)}% APR</span>
           </div>
 
           <div className={styles.listStack}>
             {/* Morpho */}
             <div className={styles.rowCard}>
               <div>
-                <div className="font-semibold text-base">🏦 Morpho Blue MetaMorpho Vault ({wMorphoPct.toFixed(1)}% USDC Invertido)</div>
+                <div className="font-semibold text-base">{UI_STRINGS.MODALS.APY_BREAKDOWN.MORPHO_TITLE} ({wMorphoPct.toFixed(1)}% USDC Invertido)</div>
                 <div className="text-sm text-muted margin-top-xs">
-                  Ubicación: <strong>${morphoUSDPool.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> ({wMorphoPct.toFixed(1)}% de Reservas) • Tasa Vault On-Chain: <strong>{(assetRates.stablesApyPct * 100).toFixed(2)}% APY</strong>
+                  {UI_STRINGS.MODALS.APY_BREAKDOWN.MORPHO_LOCATION_PREFIX} <strong>${morphoUSDPool.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> ({wMorphoPct.toFixed(1)}% {UI_STRINGS.MODALS.APY_BREAKDOWN.MORPHO_OF_RESERVES}) • {UI_STRINGS.MODALS.APY_BREAKDOWN.MORPHO_VAULT_RATE} <strong>{(assetRates.stablesApyPct * 100).toFixed(2)}% APY</strong>
                 </div>
               </div>
               <div className="text-align-right">
                 <div className="font-bold text-green-bright text-md">
                   +${morphoUSDYield.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD / año
                 </div>
-                <div className="text-xs text-green-light">+{( (morphoUSDYield / (numericAssetsUSD || 1)) * 100 ).toFixed(3)}% APR al Total</div>
+                <div className="text-xs text-green-light">+{( (morphoUSDYield / (numericAssetsUSD || 1)) * 100 ).toFixed(3)}% {UI_STRINGS.MODALS.APY_BREAKDOWN.MORPHO_TOTAL_ADD}</div>
               </div>
             </div>
 
             {/* Búfer Líquido de Tesorería */}
             <div className={styles.rowCard}>
               <div>
-                <div className="font-semibold text-base">💧 Búfer Líquido de Tesorería ({wLiquidBufferPct.toFixed(1)}% USDC Libre)</div>
+                <div className="font-semibold text-base">{UI_STRINGS.MODALS.APY_BREAKDOWN.BUFFER_TITLE} ({wLiquidBufferPct.toFixed(1)}% USDC Libre)</div>
                 <div className="text-sm text-muted margin-top-xs">
-                  Ubicación: <strong>${liquidBufferUSDPool.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> ({wLiquidBufferPct.toFixed(1)}% de Reservas) • Liquidez Inmediata para Rescates
+                  {UI_STRINGS.MODALS.APY_BREAKDOWN.MORPHO_LOCATION_PREFIX} <strong>${liquidBufferUSDPool.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> ({wLiquidBufferPct.toFixed(1)}% {UI_STRINGS.MODALS.APY_BREAKDOWN.MORPHO_OF_RESERVES}) • {UI_STRINGS.MODALS.APY_BREAKDOWN.BUFFER_DESC}
                 </div>
               </div>
               <div className="text-align-right">
@@ -263,9 +264,9 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
             {/* Lombard LBTC */}
             <div className={styles.rowCard}>
               <div>
-                <div className="font-semibold text-base">₿ Lombard LBTC Bitcoin Liquid Staking</div>
+                <div className="font-semibold text-base">{UI_STRINGS.MODALS.APY_BREAKDOWN.LBTC_TITLE}</div>
                 <div className="text-sm text-muted margin-top-xs">
-                  Ubicación: <strong>${wbtcUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> ({wBtcPct.toFixed(1)}% de Reservas) • Rendimiento Variable
+                  {UI_STRINGS.MODALS.APY_BREAKDOWN.MORPHO_LOCATION_PREFIX} <strong>${wbtcUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> ({wBtcPct.toFixed(1)}% {UI_STRINGS.MODALS.APY_BREAKDOWN.MORPHO_OF_RESERVES}) • {UI_STRINGS.MODALS.APY_BREAKDOWN.LBTC_DESC}
                 </div>
               </div>
               <div className="text-align-right">
@@ -279,9 +280,9 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
             {/* Lido wstETH */}
             <div className={styles.rowCard}>
               <div>
-                <div className="font-semibold text-base">Ξ Lido wstETH Ethereum Liquid Staking</div>
+                <div className="font-semibold text-base">{UI_STRINGS.MODALS.APY_BREAKDOWN.WSTETH_TITLE}</div>
                 <div className="text-sm text-muted margin-top-xs">
-                  Ubicación: <strong>${wethUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> ({wEthPct.toFixed(1)}% de Reservas) • Rendimiento Variable
+                  {UI_STRINGS.MODALS.APY_BREAKDOWN.MORPHO_LOCATION_PREFIX} <strong>${wethUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> ({wEthPct.toFixed(1)}% {UI_STRINGS.MODALS.APY_BREAKDOWN.MORPHO_OF_RESERVES}) • {UI_STRINGS.MODALS.APY_BREAKDOWN.LBTC_DESC}
                 </div>
               </div>
               <div className="text-align-right">
@@ -295,9 +296,9 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
             {/* Treasury Loans Utilization Breakdown */}
             <div className={styles.rowCard}>
               <div>
-                <div className="font-semibold text-base">🏛️ Fondo de Préstamos Directos Tesorería (Línea de Crédito Máx. de Reservas)</div>
+                <div className="font-semibold text-base">{UI_STRINGS.MODALS.APY_BREAKDOWN.TREASURY_LOANS_TITLE}</div>
                 <div className="text-sm text-muted margin-top-xs">
-                  Fondo Total Máximo: <strong>${maxCreditLineUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> • Prestado: <strong>${realActiveLoansUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD ({loanUtilizationPct.toFixed(1)}% util.)</strong> (+${activeLoanInterestUSD.toFixed(2)}/año)
+                  {UI_STRINGS.MODALS.APY_BREAKDOWN.TREASURY_LOANS_MAX} <strong>${maxCreditLineUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> • {UI_STRINGS.MODALS.APY_BREAKDOWN.TREASURY_LOANS_LENT} <strong>${realActiveLoansUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD ({loanUtilizationPct.toFixed(1)}% util.)</strong> (+${activeLoanInterestUSD.toFixed(2)}/año)
                 </div>
               </div>
               <div className="text-align-right">
@@ -311,9 +312,9 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
             {/* ALPHA Token Staking & Treasury Backing */}
             <div className={styles.rowCardPurple}>
               <div>
-                <div className="font-semibold text-base text-purple-light">🥩 Staking de Tokens ALPHA & Gobernanza DAO</div>
+                <div className="font-semibold text-base text-purple-light">{UI_STRINGS.MODALS.APY_BREAKDOWN.ALPHA_STAKING_TITLE}</div>
                 <div className="text-sm margin-top-xs">
-                  Posición Activa: <strong>{numericStakedAlpha.toLocaleString()} ALPHA</strong> • Respaldo Directo NAV: <strong>${(numericStakedAlpha * (navPerShareNum || 1.0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong>
+                  {UI_STRINGS.MODALS.APY_BREAKDOWN.ALPHA_STAKING_ACTIVE} <strong>{numericStakedAlpha.toLocaleString()} {UI_STRINGS.COMMON.SYMBOL_ALPHA}</strong> • {UI_STRINGS.MODALS.APY_BREAKDOWN.ALPHA_STAKING_BACKING} <strong>${(numericStakedAlpha * (navPerShareNum || 1.0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong>
                 </div>
               </div>
               <div className="text-align-right">
@@ -328,17 +329,17 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
         {/* Section 2: Flywheel Fee Distribution */}
         <div className="margin-bottom-lg">
           <div className={styles.sectionHeaderBlue}>
-            <span>2. COMISIONES DE PROTOCOLO FLUIDAS (FLYWHEEL REAL YIELD)</span>
-            <span className="text-blue-light">Boost Staking: +{flywheelApyPct.toFixed(3)}% APR</span>
+            <span>{UI_STRINGS.MODALS.APY_BREAKDOWN.SECTION_2_TITLE}</span>
+            <span className="text-blue-light">{UI_STRINGS.MODALS.APY_BREAKDOWN.SECTION_2_BOOST} +{flywheelApyPct.toFixed(3)}% APR</span>
           </div>
 
           <div className={styles.listStack}>
             {/* Bond Fees */}
             <div className={styles.rowCard}>
               <div>
-                <div className="font-semibold text-base">🏷️ Comisiones por Emisión de Bonos Vestados (Mint Fee On-Chain)</div>
+                <div className="font-semibold text-base">{UI_STRINGS.MODALS.APY_BREAKDOWN.BOND_FEES_TITLE}</div>
                 <div className="text-xs text-muted margin-top-xs">
-                  Recaudación Anualizada de Comisiones: +${actualBondFeesUSD.toFixed(2)} USDC/año
+                  {UI_STRINGS.MODALS.APY_BREAKDOWN.BOND_FEES_DESC} +${actualBondFeesUSD.toFixed(2)} USDC/año
                 </div>
               </div>
               <div className="font-bold text-blue-bright text-md">
@@ -349,9 +350,9 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
             {/* P2P Fees */}
             <div className={styles.rowCard}>
               <div>
-                <div className="font-semibold text-base">🤝 Comisiones de Originación P2P (Origination Fee On-Chain)</div>
+                <div className="font-semibold text-base">{UI_STRINGS.MODALS.APY_BREAKDOWN.P2P_FEES_TITLE}</div>
                 <div className="text-xs text-muted margin-top-xs">
-                  Recaudación Anualizada sobre Préstamos: +${actualP2pFeesUSD.toFixed(2)} USDC/año
+                  {UI_STRINGS.MODALS.APY_BREAKDOWN.P2P_FEES_DESC} +${actualP2pFeesUSD.toFixed(2)} USDC/año
                 </div>
               </div>
               <div className="font-bold text-blue-bright text-md">
@@ -362,9 +363,9 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
             {/* Margin Spread */}
             <div className={styles.rowCard}>
               <div>
-                <div className="font-semibold text-base">💰 Spread de Margen de Interés (Interest Spread On-Chain)</div>
+                <div className="font-semibold text-base">{UI_STRINGS.MODALS.APY_BREAKDOWN.MARGIN_FEES_TITLE}</div>
                 <div className="text-xs text-muted margin-top-xs">
-                  Comisión del protocolo sobre los intereses generados on-chain
+                  {UI_STRINGS.MODALS.APY_BREAKDOWN.MARGIN_FEES_DESC}
                 </div>
               </div>
               <div className="font-bold text-blue-bright text-md">
@@ -376,8 +377,8 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
 
         {/* Verification Footnote */}
         <div className={styles.footnoteCard}>
-          <div className="font-semibold text-purple-light margin-bottom-sm">🔍 Fórmula Matématica Exacta On-Chain:</div>
-          <code>Rendimiento_Anual_USD = Σ (Ubicación_USD_i × Tasa_i) + Comisiones_Protocolo_USDC</code>
+          <div className="font-semibold text-purple-light margin-bottom-sm">{UI_STRINGS.MODALS.APY_BREAKDOWN.MATH_FORMULA_TITLE}</div>
+          <code>{UI_STRINGS.MODALS.APY_BREAKDOWN.MATH_FORMULA_CODE}</code>
           <div className="margin-top-md text-xs">
             Tasa APY Base = (Total_Generado_USD / Reservas_Totales_USD) = ({totalAnnualYieldUSD.toFixed(2)} / {numericAssetsUSD.toFixed(2)}) = <strong>{realTimeBaseApyPct.toFixed(3)}% APR</strong>
           </div>
@@ -389,7 +390,7 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
             className={`btn-primary ${styles.confirmBtn}`}
             onClick={onClose}
           >
-            ✅ Entendido y Verificado
+            {UI_STRINGS.MODALS.APY_BREAKDOWN.BTN_UNDERSTOOD}
           </button>
         </div>
       </div>

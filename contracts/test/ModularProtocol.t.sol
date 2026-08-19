@@ -13,24 +13,36 @@ import "../src/ProtocolRoles.sol";
 
 contract MockERC20 is ERC20 {
     uint8 private _dec;
+
     constructor(string memory name, string memory symbol, uint8 dec_) ERC20(name, symbol) {
         _dec = dec_;
     }
-    function decimals() public view override returns (uint8) { return _dec; }
-    function mint(address to, uint256 amount) external { _mint(to, amount); }
+
+    function decimals() public view override returns (uint8) {
+        return _dec;
+    }
+
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
+    }
 }
 
 contract MockChainlinkFeed {
     int256 private _price;
     uint8 private _decimals;
+
     constructor(int256 price, uint8 dec) {
         _price = price;
         _decimals = dec;
     }
+
     function latestRoundData() external view returns (uint80, int256, uint256, uint256, uint80) {
         return (1, _price, block.timestamp, block.timestamp, 1);
     }
-    function decimals() external view returns (uint8) { return _decimals; }
+
+    function decimals() external view returns (uint8) {
+        return _decimals;
+    }
 }
 
 contract ModularProtocolTest is Test {
@@ -50,7 +62,7 @@ contract ModularProtocolTest is Test {
 
     function setUp() public {
         vm.startPrank(admin);
-        
+
         // Mocks
         usdc = new MockERC20("USDC", "USDC", 6);
         wbtc = new MockERC20("WBTC", "WBTC", 8);
@@ -59,7 +71,7 @@ contract ModularProtocolTest is Test {
 
         // 1. Address Provider
         provider = new ProtocolAddressProvider(admin);
-        
+
         // 2. Token
         alphaToken = new AlphaToken(provider, admin);
         provider.setAddress(keccak256("ALPHA_TOKEN"), address(alphaToken));
@@ -87,7 +99,7 @@ contract ModularProtocolTest is Test {
         alphaToken.grantRole(ProtocolRoles.BURNER_ROLE, address(manager));
         vault.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(manager));
         manager.grantRole(ProtocolRoles.COMPLIANCE_ROLE, admin);
-        
+
         manager.setKYCStatus(user, true);
 
         vm.stopPrank();
@@ -95,56 +107,57 @@ contract ModularProtocolTest is Test {
 
     function test_DepositAndMint() public {
         // Setup user funds
-        usdc.mint(user, 1000 * 10**6); // 1000 USDC
-        
+        usdc.mint(user, 1000 * 10 ** 6); // 1000 USDC
+
         vm.startPrank(user);
-        usdc.approve(address(manager), 1000 * 10**6);
-        
+        usdc.approve(address(manager), 1000 * 10 ** 6);
+
         // Calculate expected: 1000 USDC -> 1000 ALPHA (minus 0.5% fee = 995 ALPHA)
-        uint256 expectedMint = manager.deposit(1000 * 10**6, 0);
-        
-        assertEq(expectedMint, 995 * 10**18);
-        assertEq(alphaToken.balanceOf(user), 995 * 10**18);
-        assertEq(usdc.balanceOf(address(vault)), 1000 * 10**6); // All USDC sits in the vault
+        uint256 expectedMint = manager.deposit(1000 * 10 ** 6, 0);
+
+        assertEq(expectedMint, 995 * 10 ** 18);
+        assertEq(alphaToken.balanceOf(user), 995 * 10 ** 18);
+        assertEq(usdc.balanceOf(address(vault)), 1000 * 10 ** 6); // All USDC sits in the vault
         vm.stopPrank();
     }
 
     function test_Redeem() public {
-        usdc.mint(user, 1000 * 10**6);
+        usdc.mint(user, 1000 * 10 ** 6);
         vm.startPrank(user);
-        usdc.approve(address(manager), 1000 * 10**6);
-        uint256 minted = manager.deposit(1000 * 10**6, 0); // 995 ALPHA
+        usdc.approve(address(manager), 1000 * 10 ** 6);
+        uint256 minted = manager.deposit(1000 * 10 ** 6, 0); // 995 ALPHA
+        assertEq(minted, 995 * 10 ** 18, "Expected 995 ALPHA minted");
 
         // Advance block height to pass Same-Block Deposit/Redeem Cooldown
         vm.roll(block.number + 1);
 
         // Now Redeem half (497.5 ALPHA)
-        uint256 redeemAmount = 4975 * 10**17;
+        uint256 redeemAmount = 4975 * 10 ** 17;
         alphaToken.approve(address(manager), redeemAmount);
-        
+
         // 497.5 ALPHA at $1 NAV -> 497.5 USDC (minus 0.5% exit fee -> 495.0125 USDC)
         manager.redeem(redeemAmount, 0);
-        
-        assertEq(alphaToken.balanceOf(user), 4975 * 10**17);
+
+        assertEq(alphaToken.balanceOf(user), 4975 * 10 ** 17);
         vm.stopPrank();
     }
 
     function test_Invariant_ProofOfReserves() public {
-        usdc.mint(user, 1000 * 10**6);
+        usdc.mint(user, 1000 * 10 ** 6);
         vm.startPrank(user);
-        usdc.approve(address(manager), 1000 * 10**6);
-        manager.deposit(1000 * 10**6, 0); // 995 ALPHA minted
+        usdc.approve(address(manager), 1000 * 10 ** 6);
+        manager.deposit(1000 * 10 ** 6, 0); // 995 ALPHA minted
 
         // Manually check PoR
         uint256 totalReservesUsd = manager.getTotalNavUSD();
         uint256 totalSupply = alphaToken.totalSupply();
-        uint256 nav = (totalReservesUsd * 10**18) / totalSupply;
+        uint256 nav = (totalReservesUsd * 10 ** 18) / totalSupply;
 
         // 1000 USDC = 1000 USD (scaled to 1e18)
-        assertEq(totalReservesUsd, 1000 * 10**18);
-        
+        assertEq(totalReservesUsd, 1000 * 10 ** 18);
+
         // NAV = 1000 / 990 = ~1.0101
-        assert(nav > 1 * 10**18); // NAV has increased due to the 1% entry fee!
+        assert(nav > 1 * 10 ** 18); // NAV has increased due to the 1% entry fee!
         vm.stopPrank();
     }
 

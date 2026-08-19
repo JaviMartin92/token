@@ -12,10 +12,8 @@ interface I1inchAggregator {
         uint256 flags;
     }
 
-    function swap(
-        address caller,
-        SwapDescription calldata desc,
-        bytes calldata permit,
-        bytes calldata data
-    ) external payable returns (uint256 returnAmount, uint256 spentAmount);
+    function swap(address caller, SwapDescription calldata desc, bytes calldata permit, bytes calldata data)
+        external
+        payable
+        returns (uint256 returnAmount, uint256 spentAmount);
 }

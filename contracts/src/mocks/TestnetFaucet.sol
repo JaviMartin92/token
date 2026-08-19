@@ -25,13 +25,17 @@ contract TestnetFaucet {
         treasury = TreasuryManager(payable(_treasury));
     }
 
+    error CooldownActive(uint256 nextAllowedTime);
+
     /**
      * @notice Allows users to request testnet USDC and automatically receive KYC status.
      * @dev The Faucet contract must have the COMPLIANCE_ROLE in the TreasuryManager.
      */
     function requestTokens() external {
-        require(block.timestamp >= lastRequestTime[msg.sender] + COOLDOWN, "TestnetFaucet: Please wait 24h between requests");
-        
+        if (block.timestamp < lastRequestTime[msg.sender] + COOLDOWN) {
+            revert CooldownActive(lastRequestTime[msg.sender] + COOLDOWN);
+        }
+
         // Update cooldown
         lastRequestTime[msg.sender] = block.timestamp;
 

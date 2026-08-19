@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./ProtocolRoles.sol";
 import "./lib/security/ReentrancyGuard.sol";
+import "./interfaces/IProtocolErrors.sol";
 
 /**
  * @title MorphoYieldVaultAdapter
@@ -23,8 +24,8 @@ contract MorphoYieldVaultAdapter is AccessControl, ReentrancyGuard {
 
     // Simulated APYs in BPS (e.g. 645 Bps = 6.45% APY)
     uint256 public morphoStablecoinApyBps = 645; // 6.45% APY
-    uint256 public lidoEthStakingApyBps = 420;   // 4.20% APY
-    uint256 public lombardBtcStakingApyBps = 380;// 3.80% APY
+    uint256 public lidoEthStakingApyBps = 420; // 4.20% APY
+    uint256 public lombardBtcStakingApyBps = 380; // 3.80% APY
 
     event DepositedToMorpho(uint256 amount);
     event YieldHarvested(uint256 yieldAmount, uint256 timestamp);
@@ -40,11 +41,14 @@ contract MorphoYieldVaultAdapter is AccessControl, ReentrancyGuard {
     }
 
     function setTreasury(address _treasury) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
-        require(_treasury != address(0), "MorphoAdapter: Zero address");
+        if (_treasury == address(0)) revert IProtocolErrors.ZeroAddress();
         treasury = _treasury;
     }
 
-    function setAPYs(uint256 _stablecoinApy, uint256 _ethApy, uint256 _btcApy) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+    function setAPYs(uint256 _stablecoinApy, uint256 _ethApy, uint256 _btcApy)
+        external
+        onlyRole(ProtocolRoles.ADMIN_ROLE)
+    {
         morphoStablecoinApyBps = _stablecoinApy;
         lidoEthStakingApyBps = _ethApy;
         lombardBtcStakingApyBps = _btcApy;
@@ -55,9 +59,9 @@ contract MorphoYieldVaultAdapter is AccessControl, ReentrancyGuard {
      * @notice Simulates depositing 80% stablecoins into Morpho Blue Vault
      */
     function depositStablecoins(uint256 amount) external nonReentrant returns (bool) {
-        require(amount > 0, "MorphoAdapter: Amount must be > 0");
+        if (amount == 0) revert IProtocolErrors.ZeroAmount();
         IERC20(stablecoin).safeTransferFrom(msg.sender, address(this), amount);
-        
+
         totalStablecoinInvested += amount;
         emit DepositedToMorpho(amount);
         return true;

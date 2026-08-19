@@ -1,4 +1,5 @@
 import React from 'react';
+import { UI_STRINGS } from '../constants/strings.js';
 
 interface ActivityLogProps {
   logs: string[];
@@ -8,11 +9,11 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ logs }) => {
   return (
     <div className="glass-panel activity-log-card">
       <h4 className="activity-log-header">
-        📋 Registro de Actividad On-Chain & Logs
+        {UI_STRINGS.MODALS.ACTIVITY_LOG.TITLE}
       </h4>
       <div data-testid="activity-log-container" className="activity-log-box">
         {logs.length === 0 ? (
-          <span className="activity-log-empty">No se registraron transacciones recientes.</span>
+          <span className="activity-log-empty">{UI_STRINGS.MODALS.ACTIVITY_LOG.EMPTY}</span>
         ) : (
           logs.map((log, idx) => {
             const isError = log.includes('[Error]');

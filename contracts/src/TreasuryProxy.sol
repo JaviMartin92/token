@@ -1,10 +1,14 @@
+/* solhint-disable no-inline-assembly */
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
+
+import "./interfaces/IProtocolErrors.sol";
 
 /**
  * @title TreasuryProxy
  * @notice ERC-1967 upgradeable proxy delegating calls to an implementation address.
  *         Uses standard EIP-1967 slots for implementation and admin to prevent storage collisions.
+ *         Inline assembly is required by EIP-1967 specification for slot reading and delegatecall.
  */
 contract TreasuryProxy {
     // Standard ERC-1967 implementation slot: keccak-256("eip1967.proxy.implementation") - 1
@@ -16,13 +20,13 @@ contract TreasuryProxy {
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
 
     constructor(address _implementation) {
-        require(_implementation != address(0), "TreasuryProxy: Zero implementation");
+        if (_implementation == address(0)) revert IProtocolErrors.ZeroAddress();
         _setAdmin(msg.sender);
         _setImplementation(_implementation);
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner(), "TreasuryProxy: caller is not the owner");
+        if (msg.sender != owner()) revert IProtocolErrors.Unauthorized();
         _;
     }
 
@@ -39,14 +43,14 @@ contract TreasuryProxy {
     }
 
     function changeAdmin(address newAdmin) external onlyOwner {
-        require(newAdmin != address(0), "TreasuryProxy: Zero address admin");
+        if (newAdmin == address(0)) revert IProtocolErrors.ZeroAddress();
         address oldAdmin = owner();
         _setAdmin(newAdmin);
         emit AdminChanged(oldAdmin, newAdmin);
     }
 
     function upgradeTo(address newImplementation) external onlyOwner {
-        require(newImplementation != address(0), "TreasuryProxy: Zero address implementation");
+        if (newImplementation == address(0)) revert IProtocolErrors.ZeroAddress();
         _setImplementation(newImplementation);
         emit Upgraded(newImplementation);
     }

@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "./interfaces/ICircuitBreaker.sol";
 import "./interfaces/IAggregatorV3.sol";
+import "./interfaces/IProtocolErrors.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./ProtocolRoles.sol";
 
@@ -28,6 +29,12 @@ contract CircuitBreaker is ICircuitBreaker, AccessControl {
     // Default 365 days for Sandbox; set to 1 hour for production
     uint256 public oracleStalenessLimit = 86400;
 
+    // Configurable Circuit Breaker trigger parameters
+    uint256 public dropThresholdPct = 15; // 15% default price drop
+    uint256 public dropWindow = 6 hours; // 6 hours lookback window default
+
+    event DropThresholdsUpdated(uint256 oldDropPct, uint256 newDropPct, uint256 oldWindow, uint256 newWindow);
+
     constructor(address _initialOwner) {
         address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
@@ -38,9 +45,19 @@ contract CircuitBreaker is ICircuitBreaker, AccessControl {
         oracleStalenessLimit = limit;
     }
 
+    function setDropThresholds(uint256 _dropPct, uint256 _window) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (_dropPct < 1 || _dropPct > 50 || _window < 15 minutes || _window > 48 hours) {
+            revert IProtocolErrors.InvalidParameters();
+        }
+        uint256 oldDrop = dropThresholdPct;
+        uint256 oldWin = dropWindow;
+        dropThresholdPct = _dropPct;
+        dropWindow = _window;
+        emit DropThresholdsUpdated(oldDrop, _dropPct, oldWin, _window);
+    }
+
     function setPriceFeed(address asset, address feed) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
-        require(asset != address(0), "CircuitBreaker: Zero address asset");
-        require(feed != address(0), "CircuitBreaker: Zero address feed");
+        if (asset == address(0) || feed == address(0)) revert IProtocolErrors.ZeroAddress();
         priceFeeds[asset] = feed;
     }
 
@@ -50,40 +67,47 @@ contract CircuitBreaker is ICircuitBreaker, AccessControl {
         uint256 head = priceHistoryHead[asset];
         uint256 tail = (head + count) % MAX_PRICE_HISTORY;
 
-        bool shouldAdd = (count == 0) ||
-            (updatedAt >= priceHistoryBuffer[asset][(tail + MAX_PRICE_HISTORY - 1) % MAX_PRICE_HISTORY].timestamp + 15 minutes);
+        bool shouldAdd = (count == 0)
+            || (updatedAt
+                    >= priceHistoryBuffer[asset][(tail + MAX_PRICE_HISTORY - 1) % MAX_PRICE_HISTORY].timestamp
+                        + 15 minutes);
 
         if (shouldAdd) {
             if (count < MAX_PRICE_HISTORY) {
-                priceHistoryBuffer[asset][tail] = PricePoint({ price: currentPrice, timestamp: updatedAt });
-                priceHistoryCount[asset]++;
+                priceHistoryBuffer[asset][tail] = PricePoint({price: currentPrice, timestamp: updatedAt});
+                unchecked {
+                    ++priceHistoryCount[asset];
+                }
             } else {
-                priceHistoryBuffer[asset][head] = PricePoint({ price: currentPrice, timestamp: updatedAt });
+                priceHistoryBuffer[asset][head] = PricePoint({price: currentPrice, timestamp: updatedAt});
                 priceHistoryHead[asset] = (head + 1) % MAX_PRICE_HISTORY;
             }
             count = priceHistoryCount[asset];
         }
     }
 
-    /// @dev Internal: scan buffer backwards for a 6h-old price and check for >=15% drop.
+    /// @dev Internal: scan buffer backwards for a dropWindow-old price and check for >= dropThresholdPct drop.
     function _detectDrop(address asset, uint256 currentPrice, uint256 updatedAt) internal returns (bool) {
         uint256 count = priceHistoryCount[asset];
         uint256 head = priceHistoryHead[asset];
 
-        for (uint256 i = 1; i < count; i++) {
+        for (uint256 i = 1; i < count;) {
             uint256 idx = (head + count - 1 - i) % MAX_PRICE_HISTORY;
             PricePoint memory p = priceHistoryBuffer[asset][idx];
 
-            if (updatedAt >= p.timestamp && updatedAt - p.timestamp >= 6 hours) {
+            if (updatedAt >= p.timestamp && updatedAt - p.timestamp >= dropWindow) {
                 if (p.price > currentPrice) {
                     uint256 dropPct = ((p.price - currentPrice) * 100) / p.price;
-                    if (dropPct >= 15) {
+                    if (dropPct >= dropThresholdPct) {
                         frozenAssets[asset] = true;
                         emit CircuitTriggered(asset, dropPct, updatedAt);
                         return true;
                     }
                 }
                 break;
+            }
+            unchecked {
+                ++i;
             }
         }
         return false;
@@ -92,11 +116,13 @@ contract CircuitBreaker is ICircuitBreaker, AccessControl {
     /// @inheritdoc ICircuitBreaker
     function checkAssetDeviation(address asset) external override returns (bool) {
         address feed = priceFeeds[asset];
-        require(feed != address(0), "CircuitBreaker: Price feed not set");
+        if (feed == address(0)) revert IProtocolErrors.PriceFeedNotSet();
 
-        (, int256 price, , uint256 updatedAt, ) = IAggregatorV3(feed).latestRoundData();
-        require(price > 0, "CircuitBreaker: Price must be positive");
-        require(block.timestamp - updatedAt <= oracleStalenessLimit, "CircuitBreaker: Stale price feed");
+        (, int256 price,, uint256 updatedAt,) = IAggregatorV3(feed).latestRoundData();
+        if (price <= 0) revert IProtocolErrors.InvalidPrice();
+        if (block.timestamp - updatedAt > oracleStalenessLimit) {
+            revert IProtocolErrors.StalePriceFeed(updatedAt, oracleStalenessLimit);
+        }
 
         // casting to 'uint256' is safe because we already require(price > 0) above
         // forge-lint: disable-next-line(unsafe-typecast)
@@ -117,5 +143,11 @@ contract CircuitBreaker is ICircuitBreaker, AccessControl {
     function resetBreaker(address asset) external override onlyRole(ProtocolRoles.ADMIN_ROLE) {
         frozenAssets[asset] = false;
         emit CircuitReset(asset, block.timestamp);
+    }
+
+    /// @notice Emergency manual freeze by authorized admin
+    function triggerFreeze(address asset) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        frozenAssets[asset] = true;
+        emit CircuitTriggered(asset, 100, block.timestamp);
     }
 }

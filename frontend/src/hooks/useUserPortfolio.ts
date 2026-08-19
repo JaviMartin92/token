@@ -60,7 +60,17 @@ export function useUserPortfolio(userAddress: string | undefined, refetchInterva
         const currentBlock = await publicClient.getBlock();
         const currentSec = Number(currentBlock.timestamp);
 
-        for (let i = 1; i <= 20; i++) {
+        let maxTokens = 50;
+        try {
+          const nextTokenId = await publicClient.readContract({
+            address: CONTRACT_ADDRESSES.POSITION_NFT,
+            abi: ABIS.POSITION_NFT,
+            functionName: 'nextTokenId'
+          }) as bigint;
+          maxTokens = Number(nextTokenId);
+        } catch (e) {}
+
+        for (let i = 1; i < maxTokens; i++) {
           try {
             const nftOwner = await publicClient.readContract({
               address: CONTRACT_ADDRESSES.POSITION_NFT,
@@ -77,22 +87,28 @@ export function useUserPortfolio(userAddress: string | undefined, refetchInterva
                 args: [BigInt(i)]
               }) as any;
 
-              const expSec = Number(pos[5]);
+              const principalWei = pos.principalAmount ?? (Array.isArray(pos) ? pos[7] : 0n);
+              const paidWei = pos.discountedPricePaid ?? (Array.isArray(pos) ? pos[8] : 0n);
+              const expSec = Number(pos.expirationTimestamp ?? (Array.isArray(pos) ? pos[4] : 0));
+              const lockYearsVal = (pos.lockYears ?? (Array.isArray(pos) ? pos[3] : 1)).toString();
+              const isRagequitted = Boolean(pos.isRagequitted ?? (Array.isArray(pos) ? pos[5] : false));
+              const isMaturedClaimed = Boolean(pos.isMaturedClaimed ?? (Array.isArray(pos) ? pos[6] : false));
+
               const isExpired = currentSec >= expSec;
               userPositions.push({
                 id: i,
-                principal: parseFloat(formatUnits(pos[2], 6)).toLocaleString('en-US', { maximumFractionDigits: 2 }),
-                paid: parseFloat(formatUnits(pos[3], 6)).toLocaleString('en-US', { maximumFractionDigits: 2 }),
+                principal: parseFloat(formatUnits(BigInt(principalWei), 6)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                paid: parseFloat(formatUnits(BigInt(paidWei), 6)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                 expirationTimestamp: expSec,
                 expDateStr: new Date(expSec * 1000).toLocaleDateString('es-ES'),
-                lockYears: pos[6].toString(),
-                isRagequitted: pos[7],
-                isMaturedClaimed: pos[8],
-                canClaim: isExpired && !pos[7] && !pos[8]
+                lockYears: lockYearsVal,
+                isRagequitted,
+                isMaturedClaimed,
+                canClaim: isExpired && !isRagequitted && !isMaturedClaimed
               });
             }
           } catch (e) {
-            if (i > 1) break;
+            // Token may have been burned or does not exist
           }
         }
       } catch (e) {}

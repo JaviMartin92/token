@@ -6,12 +6,16 @@ export function useTreasuryMetrics(refetchInterval = 3000) {
   const { data: totalBurnedTokens = '0.00' } = useQuery({
     queryKey: ['totalBurnedTokens'],
     queryFn: async () => {
-      const rawBurned = await publicClient.readContract({
-        address: CONTRACT_ADDRESSES.TREASURY,
-        abi: [{ name: 'totalBurnedTokens', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] }] as const,
-        functionName: 'totalBurnedTokens'
-      }) as bigint;
-      return parseFloat(formatEther(rawBurned)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+      try {
+        const rawBurned = await publicClient.readContract({
+          address: CONTRACT_ADDRESSES.TREASURY,
+          abi: [{ name: 'totalBurnedTokens', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] }] as const,
+          functionName: 'totalBurnedTokens'
+        }) as bigint;
+        return parseFloat(formatEther(rawBurned)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+      } catch (e) {
+        return '0.00';
+      }
     },
     refetchInterval
   });
@@ -19,20 +23,24 @@ export function useTreasuryMetrics(refetchInterval = 3000) {
   const { data: protocolOverview = { navValue: '1.00', navPerShareUSD: '$1.0000 USDC', navPerShareNum: 1.0 } } = useQuery({
     queryKey: ['protocolOverview'],
     queryFn: async () => {
-      const overview = await publicClient.readContract({
-        address: CONTRACT_ADDRESSES.TREASURY,
-        abi: ABIS.TREASURY,
-        functionName: 'getProtocolOverview'
-      }) as any;
+      try {
+        const overview = await publicClient.readContract({
+          address: CONTRACT_ADDRESSES.TREASURY,
+          abi: ABIS.TREASURY,
+          functionName: 'getProtocolOverview'
+        }) as any;
 
-      const navAssetsNum = parseFloat(formatEther(overview.totalAssetsUSD));
-      const navPerShareNumVal = parseFloat(formatEther(overview.navPerShareUSD));
+        const navAssetsNum = parseFloat(formatEther(overview.totalAssetsUSD));
+        const navPerShareNumVal = parseFloat(formatEther(overview.navPerShareUSD));
 
-      return {
-        navValue: navAssetsNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-        navPerShareUSD: navPerShareNumVal > 0 ? `$${navPerShareNumVal.toFixed(4)} USDC` : '$1.0000 USDC',
-        navPerShareNum: navPerShareNumVal > 0 ? navPerShareNumVal : 1.0
-      };
+        return {
+          navValue: navAssetsNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+          navPerShareUSD: navPerShareNumVal > 0 ? `$${navPerShareNumVal.toFixed(4)} USDC` : '$1.0000 USDC',
+          navPerShareNum: navPerShareNumVal > 0 ? navPerShareNumVal : 1.0
+        };
+      } catch (e) {
+        return { navValue: '1.00', navPerShareUSD: '$1.0000 USDC', navPerShareNum: 1.0 };
+      }
     },
     refetchInterval
   });
@@ -40,17 +48,21 @@ export function useTreasuryMetrics(refetchInterval = 3000) {
   const { data: targetWeights = { stables: 50, wbtc: 25, weth: 12.5, alts: 12.5 } } = useQuery({
     queryKey: ['targetWeights'],
     queryFn: async () => {
-      const weights = await publicClient.readContract({
-        address: CONTRACT_ADDRESSES.TREASURY,
-        abi: ABIS.TREASURY,
-        functionName: 'currentWeights'
-      }) as readonly [bigint, bigint, bigint, bigint];
-      return {
-        stables: Number(weights[0]) / 100,
-        wbtc: Number(weights[1]) / 100,
-        weth: Number(weights[2]) / 100,
-        alts: Number(weights[3]) / 100
-      };
+      try {
+        const weights = await publicClient.readContract({
+          address: CONTRACT_ADDRESSES.TREASURY,
+          abi: ABIS.TREASURY,
+          functionName: 'currentWeights'
+        }) as readonly [bigint, bigint, bigint, bigint];
+        return {
+          stables: Number(weights[0]) / 100,
+          wbtc: Number(weights[1]) / 100,
+          weth: Number(weights[2]) / 100,
+          alts: Number(weights[3]) / 100
+        };
+      } catch (e) {
+        return { stables: 50, wbtc: 25, weth: 12.5, alts: 12.5 };
+      }
     },
     refetchInterval
   });
@@ -58,12 +70,16 @@ export function useTreasuryMetrics(refetchInterval = 3000) {
   const { data: circuitBreakerFrozen = false } = useQuery({
     queryKey: ['circuitBreakerFrozen'],
     queryFn: async () => {
-      return await publicClient.readContract({
-        address: CONTRACT_ADDRESSES.CIRCUIT_BREAKER,
-        abi: ABIS.CIRCUIT_BREAKER,
-        functionName: 'isFrozen',
-        args: [CONTRACT_ADDRESSES.USDC]
-      }) as boolean;
+      try {
+        return await publicClient.readContract({
+          address: CONTRACT_ADDRESSES.CIRCUIT_BREAKER,
+          abi: ABIS.CIRCUIT_BREAKER,
+          functionName: 'isFrozen',
+          args: [CONTRACT_ADDRESSES.USDC]
+        }) as boolean;
+      } catch (e) {
+        return false;
+      }
     },
     refetchInterval
   });

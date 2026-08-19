@@ -79,7 +79,15 @@ abstract contract ERC721 is IERC721 {
         _safeTransfer(from, to, tokenId, data);
     }
 
-    function _safeTransfer(address from, address to, uint256 tokenId, bytes memory /* data */) internal virtual {
+    function _safeTransfer(
+        address from,
+        address to,
+        uint256 tokenId,
+        bytes memory /* data */
+    )
+        internal
+        virtual
+    {
         _transfer(from, to, tokenId);
     }
 

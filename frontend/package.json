@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "node scripts/assert-production-safe.mjs && tsc -b && vite build",
+    "build:sandbox": "tsc -b && vite build --mode sandbox",
     "lint": "oxlint",
     "preview": "vite preview",
+    "package:ipfs": "node scripts/ipfs-package.mjs",
     "test": "vitest",
     "test:ci": "vitest run"
   },
@@ -16,7 +18,8 @@
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "viem": "^2.54.6",
-    "wagmi": "^3.7.6"
+    "wagmi": "^3.7.6",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",

@@ -1,5 +1,7 @@
 import React from 'react';
 import styles from './TreasuryDashboard.module.css';
+import { UI_STRINGS } from '../constants/strings.js';
+import { TokenAmountInput } from './common/TokenAmountInput.js';
 
 interface TreasuryDashboardProps {
   porAssets?: string;
@@ -22,7 +24,10 @@ interface TreasuryDashboardProps {
 }
 
 export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
-  porBreakdown = { stables: 0, wbtc: 0, weth: 0, alphaStaking: 0 },
+  porAssets: _porAssets = '100,000.00',
+  porLiabilities: _porLiabilities = '100,000.00',
+  porRatio: _porRatio = '100.00%',
+  porBreakdown = { stables: 50000, wbtc: 25000, weth: 15000, alphaStaking: 10000 },
   usdcBalance,
   sharesBalance,
   depositAmount,
@@ -36,79 +41,80 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
   isAdmin = false,
   loansList = []
 }) => {
-  const totalLentUsd = porBreakdown.alphaStaking || (loansList.length ? 0 : 0);
+  const totalLentUsd = loansList.filter((l: any) => l.active).reduce((acc: number, curr: any) => acc + (parseFloat(curr.amount) || 0), 0);
 
   return (
-    <div className={`treasury-main-container ${styles.container}`}>
-      <div className="glass-panel treasury-shares-panel acp-flex-1">
-        <div>
-          <div className="acp-banner-flex margin-bottom-lg gcc-tr-border text-muted">
-            <div>
-              <h3 className={styles.headerH3}>🏛️ Emisión y Rescate de ALPHA Shares (NAV)</h3>
-              <p className={styles.headerSub}>
-                Opera directamente contra las reservas del protocolo a NAV (Net Asset Value).
-              </p>
-            </div>
-            <div className="acp-flex-row-gap5">
-              <button data-testid="por-audit-btn" className={`btn-secondary ${styles.btnAudit}`} onClick={onAuditPoR}>
-                🔄 Auditar PoR
-              </button>
-              <button data-testid="treasury-faucet-btn" className={`btn-secondary ${styles.btnFaucet}`} onClick={onFaucetUSDC}>
-                🚰 Faucet 10k USDC
-              </button>
-            </div>
-          </div>
+    <div className="tab-content-container">
+      {/* Top Banner Hero */}
+      <div className="glass-panel text-center hero-banner-pad margin-bottom-lg">
+        <h2 className={styles.heroH2}>
+          {UI_STRINGS.TREASURY.TITLE}
+        </h2>
+        <p className={styles.heroP}>
+          {UI_STRINGS.TREASURY.SUBTITLE}
+        </p>
+      </div>
 
-          {/* User Balances */}
-          <div className="treasury-shares-grid margin-bottom-lg">
-            <div className={`treasury-shares-card-usdc ${styles.cardUsdc}`}>
-              <div className={styles.cardTitle}>SALDO USDC DISPONIBLE</div>
-              <div data-testid="treasury-usdc-balance" className={styles.cardValGreen}>{usdcBalance} USDC</div>
+      {/* Main Operations Card */}
+      <div className="glass-panel padding-lg margin-bottom-lg">
+        <div className="acp-banner-flex margin-bottom-md">
+          <h3 className={styles.vaultH3}>
+            {UI_STRINGS.TREASURY.CARD_DEPOSIT_TITLE}
+          </h3>
+          <button
+            data-testid="treasury-faucet-btn"
+            onClick={onFaucetUSDC}
+            className={`btn-primary ${styles.faucetBtn}`}
+          >
+            {UI_STRINGS.TREASURY.BTN_FAUCET}
+          </button>
+        </div>
+
+        <div>
+          {/* User Balances Summary Cards */}
+          <div className="admin-grid-2col margin-bottom-md">
+            <div className={styles.cardBox}>
+              <div className={styles.cardTitle}>MI BALANCE DISPONIBLE</div>
+              <div data-testid="treasury-usdc-balance" className={styles.cardValGreen}>{usdcBalance} {UI_STRINGS.COMMON.SYMBOL_USDC}</div>
             </div>
-            <div className={`treasury-shares-card-shares ${styles.cardShares}`}>
-              <div className={styles.cardTitle}>MIS ALPHA SHARES</div>
-              <div data-testid="treasury-shares-balance" className={styles.cardValPurple}>{sharesBalance} ALPHA</div>
+            <div className={styles.cardBox}>
+              <div className={styles.cardTitle}>MIS {UI_STRINGS.COMMON.SYMBOL_ALPHA} SHARES</div>
+              <div data-testid="treasury-shares-balance" className={styles.cardValPurple}>{sharesBalance} {UI_STRINGS.COMMON.SYMBOL_ALPHA}</div>
             </div>
           </div>
 
           {/* Actions Forms */}
           <div className="admin-grid-2col">
             <div className={styles.actionBox}>
-              <label className={styles.actionLabel}>
-                💳 Depositar USDC para Acuñar Shares:
-              </label>
-              <div className="acp-flex-row-gap5">
-                <input
-                  data-testid="treasury-deposit-input"
-                  type="number"
-                  placeholder="Monto USDC (ej. 1000)"
-                  value={depositAmount}
-                  onChange={(e) => setDepositAmount(e.target.value)}
-                  className={`treasury-input-flex ${styles.actionInput}`}
-                />
-                <button data-testid="treasury-deposit-btn" className={`btn-primary ${styles.depositBtn}`} onClick={onDeposit}>
-                  Depositar
-                </button>
-              </div>
+              <TokenAmountInput
+                label={`💳 ${UI_STRINGS.TREASURY.INPUT_DEPOSIT_LABEL}`}
+                testId="treasury-deposit-input"
+                placeholder={UI_STRINGS.TREASURY.INPUT_DEPOSIT_PLACEHOLDER}
+                value={depositAmount}
+                onChange={setDepositAmount}
+                tokenSymbol={UI_STRINGS.COMMON.SYMBOL_USDC}
+                tokenDecimals={6}
+                maxBalance={usdcBalance}
+              />
+              <button data-testid="treasury-deposit-btn" className={`btn-primary ${styles.depositBtn} margin-top-xs`} onClick={onDeposit}>
+                {UI_STRINGS.COMMON.BTN_CONFIRM}
+              </button>
             </div>
 
             <div className={styles.actionBox}>
-              <label className={styles.actionLabel}>
-                🔥 Rescatar ALPHA Shares a NAV:
-              </label>
-              <div className="acp-flex-row-gap5">
-                <input
-                  data-testid="treasury-redeem-input"
-                  type="number"
-                  placeholder="Monto ALPHA (ej. 500)"
-                  value={redeemAmount}
-                  onChange={(e) => setRedeemAmount(e.target.value)}
-                  className={`treasury-input-flex ${styles.actionInput}`}
-                />
-                <button data-testid="treasury-redeem-btn" className={`btn-primary ${styles.redeemBtn}`} onClick={onRedeem}>
-                  Rescatar
-                </button>
-              </div>
+              <TokenAmountInput
+                label={`🔥 ${UI_STRINGS.TREASURY.INPUT_REDEEM_LABEL}`}
+                testId="treasury-redeem-input"
+                placeholder={UI_STRINGS.TREASURY.INPUT_REDEEM_PLACEHOLDER}
+                value={redeemAmount}
+                onChange={setRedeemAmount}
+                tokenSymbol={UI_STRINGS.COMMON.SYMBOL_ALPHA}
+                tokenDecimals={18}
+                maxBalance={sharesBalance}
+              />
+              <button data-testid="treasury-redeem-btn" className={`btn-primary ${styles.redeemBtn} margin-top-xs`} onClick={onRedeem}>
+                {UI_STRINGS.COMMON.BTN_CONFIRM}
+              </button>
             </div>
           </div>
         </div>
@@ -126,7 +132,7 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
           <div className="acp-banner-flex margin-bottom-lg">
             <div>
               <h3 className={styles.adminH3}>
-                🏛️ Estrategia e Inversión Institucional de Reservas Exógenas
+                {UI_STRINGS.METRICS.TABLE_ASSETS_TITLE}
               </h3>
             </div>
             <button

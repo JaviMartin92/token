@@ -1,7 +1,8 @@
 import React from 'react';
 import styles from './TransactionConfirmModal.module.css';
+import { UI_STRINGS } from '../constants/strings.js';
 
-export interface TxDetailItem {
+interface TxDetailItem {
   label: string;
   value: string;
   badge?: string;
@@ -21,7 +22,7 @@ export interface TxConfirmDetails {
   details: TxDetailItem[];
   warningNote?: string;
   confirmButtonText?: string;
-  confirmButtonColor?: string;
+  confirmButtonVariant?: 'emerald' | 'purple' | 'danger' | 'blue' | 'amber' | 'pink' | 'indigo';
 }
 
 interface TransactionConfirmModalProps {
@@ -31,6 +32,20 @@ interface TransactionConfirmModalProps {
   txDetails: TxConfirmDetails | null;
   isSubmitting?: boolean;
 }
+
+const getVariantClass = (variant?: 'emerald' | 'purple' | 'danger' | 'blue' | 'amber' | 'pink' | 'indigo') => {
+  switch (variant) {
+    case 'purple': return styles.btnVariantPurple;
+    case 'danger': return styles.btnVariantDanger;
+    case 'blue': return styles.btnVariantBlue;
+    case 'amber': return styles.btnVariantAmber;
+    case 'pink': return styles.btnVariantPink;
+    case 'indigo': return styles.btnVariantIndigo;
+    case 'emerald':
+    default:
+      return styles.btnVariantEmerald;
+  }
+};
 
 export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = ({
   isOpen,
@@ -71,7 +86,7 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
         {/* Input vs Output Flow Card */}
         <div className={styles.flowCard}>
           <div>
-            <div className={styles.flowLabel}>ENVIAS / ENTRADA</div>
+            <div className={styles.flowLabel}>{UI_STRINGS.MODALS.TRANSACTION_CONFIRM.FLOW_IN_LABEL}</div>
             <div data-testid="modal-input-amount" className={styles.flowValInput}>
               {txDetails.inputAmount} <span className={styles.flowSymbol}>{txDetails.inputSymbol}</span>
             </div>
@@ -80,7 +95,7 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
           <div className={styles.flowArrow}>➔</div>
 
           <div className="text-right">
-            <div className={styles.flowLabel}>RECIBES / ESTIMADO</div>
+            <div className={styles.flowLabel}>{UI_STRINGS.MODALS.TRANSACTION_CONFIRM.FLOW_OUT_LABEL}</div>
             <div data-testid="modal-expected-output" className={styles.flowValOutput}>
               {txDetails.expectedOutput} <span className={styles.flowSymbol}>{txDetails.expectedOutputSymbol}</span>
             </div>
@@ -90,7 +105,7 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
         {/* Detailed Breakdown Table */}
         <div className={styles.detailsStack}>
           <div className={styles.detailsTitle}>
-            Resumen Operativo & Parámetros
+            {UI_STRINGS.MODALS.TRANSACTION_CONFIRM.SUMMARY_SECTION_TITLE}
           </div>
 
           {txDetails.details.map((item, idx) => (
@@ -112,7 +127,7 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
 
           {/* Contract Target Address */}
           <div className={styles.targetRow}>
-            <span className="opacity-60">Contrato Objetivo:</span>
+            <span className="opacity-60">{UI_STRINGS.MODALS.TRANSACTION_CONFIRM.TARGET_CONTRACT_LABEL}</span>
             <span data-testid="modal-contract-target" className={styles.targetAddr}>
               {txDetails.targetContractName} ({txDetails.targetContractAddress?.slice(0, 6)}...{txDetails.targetContractAddress?.slice(-4)})
             </span>
@@ -135,17 +150,16 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
             disabled={isSubmitting}
             className={styles.cancelBtn}
           >
-            Cancelar
+            {UI_STRINGS.MODALS.TRANSACTION_CONFIRM.BTN_CANCEL}
           </button>
 
           <button
             data-testid="modal-confirm-btn"
             onClick={onConfirm}
             disabled={isSubmitting}
-            className={styles.confirmBtn}
-            style={txDetails.confirmButtonColor ? { background: txDetails.confirmButtonColor } : undefined}
+            className={`${styles.confirmBtn} ${getVariantClass(txDetails.confirmButtonVariant)}`}
           >
-            {isSubmitting ? '⏳ Firmando...' : (txDetails.confirmButtonText || '✍️ Confirmar y Firmar')}
+            {isSubmitting ? UI_STRINGS.MODALS.TRANSACTION_CONFIRM.BTN_SIGNING : (txDetails.confirmButtonText || UI_STRINGS.MODALS.TRANSACTION_CONFIRM.BTN_CONFIRM_DEFAULT)}
           </button>
         </div>
       </div>

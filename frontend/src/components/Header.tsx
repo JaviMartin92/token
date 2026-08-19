@@ -1,6 +1,7 @@
 import React from 'react';
 import { useConnect, useDisconnect } from 'wagmi';
 import { injected } from 'wagmi/connectors';
+import { UI_STRINGS } from '../constants/strings.js';
 
 interface HeaderProps {
   navValue: string;
@@ -29,8 +30,16 @@ export const Header: React.FC<HeaderProps> = ({
   walletConnected,
   userAddress
 }) => {
-  const { connect } = useConnect();
+  const { connectAsync } = useConnect();
   const { disconnect } = useDisconnect();
+
+  const handleConnectWallet = async () => {
+    try {
+      await connectAsync({ connector: injected() });
+    } catch (e: any) {
+      console.warn('[Wallet] Conexión cancelada o cartera sin cuentas desbloqueadas:', e?.message || e);
+    }
+  };
 
   return (
     <header className="glass-panel header-container">
@@ -38,14 +47,14 @@ export const Header: React.FC<HeaderProps> = ({
         <div>
           <div className="header-brand">
             <h1 className="header-title-text">
-              ALPHA CENTAURI <span className="header-title-badge">V6 MAINNET-READY</span>
+              {UI_STRINGS.HEADER.TITLE} <span className="header-title-badge">{UI_STRINGS.HEADER.BADGE_ENV_PROD}</span>
             </h1>
             {circuitBreakerFrozen && (
-              <span className="badge badge-danger">⚡ CIRCUIT BREAKER ACTIVE</span>
+              <span className="badge badge-danger">⚡ {UI_STRINGS.ADMIN.BREAKER_STATUS_FROZEN}</span>
             )}
           </div>
           <p className="header-subtitle">
-            Reserva On-Chain Transparente • Bonos Vestados • Préstamos P2P Colateralizados
+            {UI_STRINGS.TREASURY.SUBTITLE}
           </p>
         </div>
 
@@ -54,51 +63,49 @@ export const Header: React.FC<HeaderProps> = ({
           <div
             onClick={onOpenApyModal}
             className="header-apy-badge"
-            title="Haz clic para ver el desglose al milímetro de dónde viene el APY de ALPHA"
+            title={UI_STRINGS.MODALS.APY_BREAKDOWN.TITLE}
           >
-            <div className="header-info-label">⚡ APY ALPHA (DESGLOSE 🔍)</div>
+            <div className="header-info-label">{UI_STRINGS.HEADER.LABEL_APY_BREAKDOWN_TOOLTIP}</div>
             <div className="header-info-val-purple">{alphaApy} APR ℹ️</div>
           </div>
 
           {/* PoR Badge */}
           <div className="header-info-box">
-            <div className="header-info-label">RATIO COLATERAL PoR</div>
+            <div className="header-info-label">{UI_STRINGS.HEADER.LABEL_POR_RATIO}</div>
             <div data-testid="header-por-ratio" className="header-info-val-green">{porRatio}</div>
           </div>
 
           {/* NAV Pill */}
           <div className="header-info-box">
-            <div className="header-info-label">VALOR NAV / SHARE</div>
+            <div className="header-info-label">{UI_STRINGS.HEADER.LABEL_NAV}</div>
             <div data-testid="header-nav-value" className="header-info-val-cyan">{navValue}</div>
           </div>
 
           {/* Wallet Status Badge */}
           <div className="header-info-box">
-            <div className="header-info-label">ESTADO WALLET</div>
+            <div className="header-info-label">{UI_STRINGS.HEADER.LABEL_WALLET_STATUS}</div>
             <div data-testid="header-wallet-status" className={walletConnected ? 'header-info-val-green' : 'header-info-label'}>
-              {walletConnected ? `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}` : 'Desconectado'}
+              {walletConnected ? `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}` : UI_STRINGS.COMMON.STATUS_DISCONNECTED}
             </div>
           </div>
 
           {/* Wallet Actions */}
           <div className="header-role-wrapper">
-            <div className="header-info-label">CONEXIÓN WEB3:</div>
+            <div className="header-info-label">{UI_STRINGS.HEADER.LABEL_WEB3_CONNECTION}</div>
             <div className="header-role-box">
               {walletConnected ? (
                 <button
-                  className="btn-danger"
-                  style={{ padding: '0.25rem 0.75rem', fontSize: '0.85rem' }}
+                  className="btn-danger btn-wallet-action"
                   onClick={() => disconnect()}
                 >
-                  Desconectar
+                  {UI_STRINGS.HEADER.BTN_DISCONNECT}
                 </button>
               ) : (
                 <button
-                  className="btn-primary"
-                  style={{ padding: '0.25rem 0.75rem', fontSize: '0.85rem' }}
-                  onClick={() => connect({ connector: injected() })}
+                  className="btn-primary btn-wallet-action"
+                  onClick={handleConnectWallet}
                 >
-                  Conectar Wallet
+                  {UI_STRINGS.HEADER.BTN_CONNECT}
                 </button>
               )}
             </div>
@@ -113,33 +120,33 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={() => setActiveTab('client')}
           className={`header-nav-btn ${activeTab === 'client' ? 'header-nav-btn-active' : 'header-nav-btn-inactive'}`}
         >
-          💎 Portal Cliente & Bonos
+          {UI_STRINGS.COMMON.TAB_PORTAL_CLIENT}
         </button>
         <button
           data-testid="header-tab-metrics"
           onClick={() => setActiveTab('metrics')}
           className={`header-nav-btn ${activeTab === 'metrics' ? 'header-nav-btn-active' : 'header-nav-btn-inactive'}`}
         >
-          📊 Métricas & Analítica
+          {UI_STRINGS.COMMON.TAB_METRICS_ANALYTICS}
         </button>
         <button
           data-testid="header-tab-governance"
           onClick={() => setActiveTab('governance')}
           className={`header-nav-btn ${activeTab === 'governance' ? 'header-nav-btn-active' : 'header-nav-btn-inactive'}`}
         >
-          🏛️ Operaciones Protocolo & Gobernanza DAO
+          {UI_STRINGS.COMMON.TAB_GOVERNANCE_OPERATIONS}
         </button>
 
         <button
           onClick={onOpenReferral}
           className="header-referral-btn"
         >
-          🎁 Invitar Amigos
+          {UI_STRINGS.COMMON.BTN_INVITE_FRIENDS}
         </button>
 
         {blockDateStr && (
           <div className="header-date-badge">
-            🕒 Bloque EVM: {blockDateStr}
+            {UI_STRINGS.COMMON.EVM_BLOCK_LABEL} {blockDateStr}
           </div>
         )}
       </div>

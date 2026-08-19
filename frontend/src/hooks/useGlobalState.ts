@@ -36,6 +36,7 @@ export function useGlobalState() {
   }, []);
 
   useEffect(() => {
+    let unwatch: (() => void) | undefined;
     const fetchBlock = async () => {
       try {
         const currentBlock = await publicClient.getBlock();
@@ -44,26 +45,31 @@ export function useGlobalState() {
       } catch (e) {}
     };
     fetchBlock();
-    const interval = setInterval(fetchBlock, 10000); // Only update block time every 10s
-    return () => clearInterval(interval);
+
+    try {
+      if (typeof publicClient.watchBlockNumber === 'function') {
+        unwatch = publicClient.watchBlockNumber({
+          onBlockNumber: () => {
+            fetchBlock();
+          },
+          onError: () => {}
+        });
+      }
+    } catch (e) {}
+
+    const interval = setInterval(fetchBlock, 15000);
+    return () => {
+      if (unwatch) unwatch();
+      clearInterval(interval);
+    };
   }, []);
 
-  const ADMIN_KEY = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
-  const [activeKey, setActiveKey] = useState<string>(ADMIN_KEY);
-  
-  useEffect(() => {
-      if (walletConnected && userAddress) {
-          setActiveKey(ADMIN_KEY); // Simplified for local dev
-      } else {
-          setActiveKey(ADMIN_KEY); // Default to local dev admin key
-      }
-  }, [walletConnected, userAddress]);
-
-  const DEFAULT_DEV_ADDRESS = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
-  const effectiveUserAddress = userAddress || DEFAULT_DEV_ADDRESS;
+  // Browser wallets sign every transaction. Private keys are never bundled into the UI.
+  const activeKey = userAddress || '';
+  const effectiveUserAddress = userAddress || '';
 
   return {
-    walletConnected: true,
+    walletConnected,
     userAddress: effectiveUserAddress,
     account: { address: effectiveUserAddress },
     snapshotId,
@@ -71,6 +77,6 @@ export function useGlobalState() {
     chainId,
     blockDateStr,
     activeKey,
-    ADMIN_KEY
+    isSandbox: chainId === 31337
   };
 }

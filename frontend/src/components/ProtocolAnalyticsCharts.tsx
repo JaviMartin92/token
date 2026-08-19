@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styles from './ProtocolAnalyticsCharts.module.css';
 import type { UserPosition } from './VestedVaults.js';
 import type { MarketplaceLoan } from './P2PMarketplace.js';
+import { UI_STRINGS } from '../constants/strings.js';
 
 interface ProtocolAnalyticsChartsProps {
   porAssets?: string;
@@ -259,14 +260,14 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
             </div>
             <div>
               <h3 className="analytics-main-title">
-                Analíticas On-Chain & Reservas Exógenas
+                {UI_STRINGS.ANALYTICS_CHARTS.MAIN_TITLE}
               </h3>
               <p className="analytics-subtitle">
-                Métricas leídas en vivo ({realStakedAlpha.toLocaleString('en-US', { maximumFractionDigits: 0 })} ALPHA Staked en Gobernanza)
+                {UI_STRINGS.ANALYTICS_CHARTS.SUBTITLE_PREFIX} ({realStakedAlpha.toLocaleString('en-US', { maximumFractionDigits: 0 })} {UI_STRINGS.ANALYTICS_CHARTS.SUBTITLE_SUFFIX})
               </p>
             </div>
             <span data-testid="analytics-por-badge" className="analytics-por-badge-box">
-              🛡️ PoR Activo: {porRatio}
+              {UI_STRINGS.ANALYTICS_CHARTS.BADGE_POR_ACTIVE} {porRatio}
             </span>
           </div>
         </div>
@@ -293,13 +294,13 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
           onClick={() => setActiveChart('reserves')}
           className={`analytics-tab-card ${activeChart === 'reserves' ? 'analytics-tab-card-reserves' : ''}`}
         >
-          <div className="analytics-tab-header-label">💎 RESERVAS EXÓGENAS</div>
+          <div className="analytics-tab-header-label">{UI_STRINGS.ANALYTICS_CHARTS.TAB_CARD_RESERVES}</div>
           <div data-testid="analytics-reserves-usd" className="analytics-tab-val-green">
             ${activeHoverData.reservesUsd.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} USD
           </div>
           <div className={`${styles.tabSub} ${styles.tabSubGreen}`}>
-            <span data-testid="analytics-liabilities-usd">Pasivo: ${realLiabilitiesUsd.toLocaleString()} USD</span>
-            <span data-testid="analytics-reserves-por">PoR: {activeHoverData.porRatioVal}%</span>
+            <span data-testid="analytics-liabilities-usd">{UI_STRINGS.ANALYTICS_CHARTS.LABEL_LIABILITIES_PREFIX} ${realLiabilitiesUsd.toLocaleString()} USD</span>
+            <span data-testid="analytics-reserves-por">{UI_STRINGS.ANALYTICS_CHARTS.LABEL_POR_PREFIX} {activeHoverData.porRatioVal}%</span>
           </div>
         </div>
 
@@ -308,13 +309,13 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
           onClick={() => setActiveChart('cashflow')}
           className={`analytics-tab-card ${activeChart === 'cashflow' ? 'analytics-tab-card-cashflow' : ''}`}
         >
-          <div className="analytics-tab-header-label">💸 FLUJO DE CAJA BRUTO REAL</div>
+          <div className="analytics-tab-header-label">{UI_STRINGS.ANALYTICS_CHARTS.TAB_CARD_CASHFLOW}</div>
           <div data-testid="analytics-gross-cashflow" className="analytics-tab-val-blue">
             ${activeHoverData.grossCashflowUsd.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} USDC
           </div>
           <div className={`${styles.tabSub} ${styles.tabSubBlue}`}>
-            <span>Bonos + Préstamos P2P</span>
-            <span>Yield: ${activeHoverData.realYieldPayoutUsd.toLocaleString()}</span>
+            <span>{UI_STRINGS.ANALYTICS_CHARTS.LABEL_CASHFLOW_SUBTEXT}</span>
+            <span>{UI_STRINGS.ANALYTICS_CHARTS.LABEL_YIELD_PREFIX} ${activeHoverData.realYieldPayoutUsd.toLocaleString()}</span>
           </div>
         </div>
 
@@ -323,13 +324,13 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
           onClick={() => setActiveChart('apy')}
           className={`analytics-tab-card ${activeChart === 'apy' ? 'analytics-tab-card-apy' : ''}`}
         >
-          <div className="analytics-tab-header-label">⚡ APY PONDERADO CONTRACTUAL</div>
+          <div className="analytics-tab-header-label">{UI_STRINGS.ANALYTICS_CHARTS.TAB_CARD_APY}</div>
           <div data-testid="analytics-apy-weighted" className="analytics-tab-val-purple">
             {activeHoverData.apy}% APR
           </div>
           <div className={`${styles.tabSub} ${styles.tabSubPurple}`}>
-            <span>Rendimiento On-Chain</span>
-            <span>+ Flywheel Boost</span>
+            <span>{UI_STRINGS.ANALYTICS_CHARTS.LABEL_ON_CHAIN_YIELD}</span>
+            <span>{UI_STRINGS.ANALYTICS_CHARTS.LABEL_FLYWHEEL_BOOST}</span>
           </div>
         </div>
       </div>
@@ -451,40 +452,35 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
 
         {/* Tooltip Glassmorphism Ultra-Profesional */}
         {hoveredPointIndex !== null && points[hoveredPointIndex] && (
-          <div
-            className="analytics-glass-tooltip"
-            style={{
-              left: `${Math.min(Math.max(points[hoveredPointIndex].x - 115, 70), svgWidth - 280)}px`
-            }}
-          >
+          <div className="analytics-glass-tooltip">
             <div className={styles.tooltipHeader}>
-              <span>📅 {chartData[hoveredPointIndex].date}</span>
-              <span className={styles.tooltipBadge}>On-Chain</span>
+              <span>{UI_STRINGS.ANALYTICS_CHARTS.TOOLTIP_DATE_PREFIX} {chartData[hoveredPointIndex].date}</span>
+              <span className={styles.tooltipBadge}>{UI_STRINGS.COMMON.STATUS_ON_CHAIN}</span>
             </div>
             {activeChart === 'reserves' && (
               <>
                 <div className={styles.tooltipTitle}>
-                  Total Reservas: ${chartData[hoveredPointIndex].reservesUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                  {UI_STRINGS.ANALYTICS_CHARTS.TOOLTIP_TOTAL_RESERVES} ${chartData[hoveredPointIndex].reservesUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
                 </div>
                 <div className={styles.tooltipStack}>
                   <div className="acp-banner-flex">
                     <span className="acp-flex-row-gap5">
                       <span className={styles.dotGreen}></span>
-                      Stablecoins (USDC):
+                      {UI_STRINGS.ANALYTICS_CHARTS.TOOLTIP_STABLES}
                     </span>
                     <strong>${chartData[hoveredPointIndex].stablecoinsUsd.toLocaleString()} USD</strong>
                   </div>
                   <div className="acp-banner-flex">
                     <span className="acp-flex-row-gap5">
                       <span className={styles.dotAmber}></span>
-                      Bitcoin (WBTC):
+                      {UI_STRINGS.ANALYTICS_CHARTS.TOOLTIP_BTC}
                     </span>
                     <strong>${chartData[hoveredPointIndex].btcUsd.toLocaleString()} USD</strong>
                   </div>
                   <div className="acp-banner-flex">
                     <span className="acp-flex-row-gap5">
                       <span className={styles.dotBlue}></span>
-                      Ethereum (WETH):
+                      {UI_STRINGS.ANALYTICS_CHARTS.TOOLTIP_ETH}
                     </span>
                     <strong>${chartData[hoveredPointIndex].ethUsd.toLocaleString()} USD</strong>
                   </div>
@@ -494,14 +490,14 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
             {activeChart === 'cashflow' && (
               <>
                 <div className={styles.tooltipValBlue}>
-                  Flujo de Caja Real: ${chartData[hoveredPointIndex].grossCashflowUsd.toLocaleString()} USDC
+                  {UI_STRINGS.ANALYTICS_CHARTS.TOOLTIP_CASHFLOW} ${chartData[hoveredPointIndex].grossCashflowUsd.toLocaleString()} USDC
                 </div>
               </>
             )}
             {activeChart === 'apy' && (
               <>
                 <div className={styles.tooltipValPurple}>
-                  APY PONDERADO REAL: {chartData[hoveredPointIndex].apy}% APR
+                  {UI_STRINGS.ANALYTICS_CHARTS.TOOLTIP_APY} {chartData[hoveredPointIndex].apy}% APR
                 </div>
               </>
             )}
@@ -515,22 +511,22 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
           <>
             <div className="analytics-legend-pill">
               <span className={styles.dotLgGreen}></span>
-              <span className="text-slate-100 font-semibold">🟢 Stablecoins (Morpho + P2P - {(targetWeights?.stables || 60).toFixed(2)}%)</span>
+              <span className="text-slate-100 font-semibold">{UI_STRINGS.ANALYTICS_CHARTS.LEGEND_STABLES}{(targetWeights?.stables || 60).toFixed(2)}%)</span>
             </div>
             <div className="analytics-legend-pill">
               <span className={styles.dotLgAmber}></span>
-              <span className="text-slate-100 font-semibold">🟠 Bitcoin (Lombard - {(targetWeights?.wbtc || 26.67).toFixed(2)}%)</span>
+              <span className="text-slate-100 font-semibold">{UI_STRINGS.ANALYTICS_CHARTS.LEGEND_BTC}{(targetWeights?.wbtc || 26.67).toFixed(2)}%)</span>
             </div>
             <div className="analytics-legend-pill">
               <span className={styles.dotLgBlue}></span>
-              <span className="text-slate-100 font-semibold">🔵 Ethereum (Lido - {(targetWeights?.weth || 13.33).toFixed(2)}%)</span>
+              <span className="text-slate-100 font-semibold">{UI_STRINGS.ANALYTICS_CHARTS.LEGEND_ETH}{(targetWeights?.weth || 13.33).toFixed(2)}%)</span>
             </div>
           </>
         ) : (
           <>
             <div className="analytics-legend-pill">
               <span className={activeChart === 'cashflow' ? styles.lineBlue : styles.linePurple}></span>
-              <span className="text-slate-100 font-semibold">{activeChart === 'cashflow' ? 'Flujo de Caja Bruto' : 'APY Ponderado On-Chain'}</span>
+              <span className="text-slate-100 font-semibold">{activeChart === 'cashflow' ? UI_STRINGS.ANALYTICS_CHARTS.LEGEND_CASHFLOW : UI_STRINGS.ANALYTICS_CHARTS.LEGEND_APY}</span>
             </div>
           </>
         )}

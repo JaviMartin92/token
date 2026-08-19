@@ -26,16 +26,35 @@ import { TransactionConfirmModal } from './components/TransactionConfirmModal.js
 import { ApyBreakdownModal } from './components/ApyBreakdownModal.js';
 import { CONTRACT_ADDRESSES } from './utils/web3.js';
 import { NetworkGuard } from './components/NetworkGuard.js';
+import { LegalDisclaimerFooter } from './components/common/LegalDisclaimerFooter.js';
+
+// Auto-recovering lazy import helper for seamless SPA chunk cache invalidation
+const lazyWithRetry = (componentImport: () => Promise<any>) =>
+  lazy(async () => {
+    try {
+      return await componentImport();
+    } catch (error) {
+      // Chunk hash changed due to fresh deploy; force reload once to fetch latest bundles
+      const reloaded = sessionStorage.getItem('chunk_reload');
+      if (!reloaded) {
+        sessionStorage.setItem('chunk_reload', 'true');
+        window.location.reload();
+        return { default: () => null };
+      }
+      sessionStorage.removeItem('chunk_reload');
+      throw error;
+    }
+  });
 
 // Lazy-loaded routes / views
-const TreasuryDashboard = lazy(() => import('./components/TreasuryDashboard.js').then(m => ({ default: m.TreasuryDashboard })));
-const VestedVaults = lazy(() => import('./components/VestedVaults.js').then(m => ({ default: m.VestedVaults })));
-const P2PMarketplace = lazy(() => import('./components/P2PMarketplace.js').then(m => ({ default: m.P2PMarketplace })));
-const GovernanceStakingUI = lazy(() => import('./components/GovernanceStakingUI.js').then(m => ({ default: m.GovernanceStakingUI })));
-const MetricsDashboard = lazy(() => import('./components/MetricsDashboard.js').then(m => ({ default: m.MetricsDashboard })));
-const AdminControlPanel = lazy(() => import('./components/AdminControlPanel.js').then(m => ({ default: m.AdminControlPanel })));
-const GovernanceCommandCenter = lazy(() => import('./components/GovernanceCommandCenter.js').then(m => ({ default: m.GovernanceCommandCenter })));
-const ActivityLog = lazy(() => import('./components/ActivityLog.js').then(m => ({ default: m.ActivityLog })));
+const TreasuryDashboard = lazyWithRetry(() => import('./components/TreasuryDashboard.js').then(m => ({ default: m.TreasuryDashboard })));
+const VestedVaults = lazyWithRetry(() => import('./components/VestedVaults.js').then(m => ({ default: m.VestedVaults })));
+const P2PMarketplace = lazyWithRetry(() => import('./components/P2PMarketplace.js').then(m => ({ default: m.P2PMarketplace })));
+const GovernanceStakingUI = lazyWithRetry(() => import('./components/GovernanceStakingUI.js').then(m => ({ default: m.GovernanceStakingUI })));
+const MetricsDashboard = lazyWithRetry(() => import('./components/MetricsDashboard.js').then(m => ({ default: m.MetricsDashboard })));
+const AdminControlPanel = lazyWithRetry(() => import('./components/AdminControlPanel.js').then(m => ({ default: m.AdminControlPanel })));
+const GovernanceCommandCenter = lazyWithRetry(() => import('./components/GovernanceCommandCenter.js').then(m => ({ default: m.GovernanceCommandCenter })));
+const ActivityLog = lazyWithRetry(() => import('./components/ActivityLog.js').then(m => ({ default: m.ActivityLog })));
 
 // Loading Fallback Component
 import { Skeleton } from './components/Skeleton.js';
@@ -108,7 +127,8 @@ export default function App() {
 
   const p2p = useP2PLendingActions({
     activeKey: global.activeKey,
-    adminKey: global.ADMIN_KEY,
+    adminKey: global.activeKey,
+    userAddress: global.userAddress || '',
     addLog,
     addToast,
     fetchData: handleFetchData,
@@ -231,7 +251,7 @@ export default function App() {
               onRedeem={treasury.handleRedeem}
               onFaucetUSDC={treasury.handleFaucetUSDC}
               onAuditPoR={treasury.handleAuditPoR}
-              isAdmin={global.activeKey === global.ADMIN_KEY}
+              isAdmin={global.isSandbox && global.walletConnected}
               loansList={p2pMarket.loansList}
             />
 
@@ -247,6 +267,7 @@ export default function App() {
               onClaimMatured={vestedVault.handleClaimMatured}
               onRagequit={vestedVault.handleRagequit}
               userAddress={global.userAddress || ''}
+              usdcBalance={portfolio.usdcBalance}
             />
 
             <P2PMarketplace
@@ -283,6 +304,7 @@ export default function App() {
               circulatingSupply={stakingMetrics.circulatingSupply}
               stakingRatioPct={stakingMetrics.stakingRatioPct}
               totalBurnedTokens={treasuryMetrics.totalBurnedTokens}
+              sharesBalance={portfolio.sharesBalance}
               stakedBalance={portfolio.stakedBalance}
               claimableYield={portfolio.claimableYield}
               stakeAmount={staking.stakeAmount}
@@ -309,7 +331,7 @@ export default function App() {
             circulatingSupply={stakingMetrics.circulatingSupply}
             totalStakedSupply={stakingMetrics.totalStakedSupply}
             communityStakedSupply={stakingMetrics.communityStakedSupply}
-            corporateStakedSupply={stakingMetrics.corporateStakedSupply}
+            communityVaultStakedSupply={stakingMetrics.communityVaultStakedSupply}
             treasuryStakedSupply={stakingMetrics.treasuryStakedSupply}
             stakingRatioPct={stakingMetrics.stakingRatioPct}
             totalBurnedTokens={treasuryMetrics.totalBurnedTokens}
@@ -339,22 +361,21 @@ export default function App() {
               circuitBreakerFrozen={treasuryMetrics.circuitBreakerFrozen}
               onSimulateDrop={admin.handleSimulateDrop}
               onResetBreaker={admin.handleResetBreaker}
-              injectionAmount={admin.injectionAmount}
-              setInjectionAmount={admin.setInjectionAmount}
-              onExecuteTWAP={admin.handleExecuteTWAP}
               onResetBlockchain={admin.handleResetBlockchain}
             />
 
             <GovernanceCommandCenter
               web3Data={web3DataDummy}
               adminActions={admin}
-              isAdmin={global.activeKey === global.ADMIN_KEY}
+              isAdmin={global.isSandbox && global.walletConnected}
             />
 
             <ActivityLog logs={logs} />
           </>
         )}
       </Suspense>
+
+      <LegalDisclaimerFooter chainId={global.chainId} />
 
       {/* Hidden Telemetry Container for E2E Auditing */}
       <div className="telemetry-hidden-container" aria-hidden="true">
@@ -366,8 +387,8 @@ export default function App() {
         <span data-testid="por-row-weth-val">${universalYield.porBreakdown.weth.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</span>
         <span data-testid="staking-circulating-supply">{stakingMetrics.circulatingSupply} ALPHA</span>
         <span data-testid="staking-community-staked">{stakingMetrics.communityStakedSupply} stALPHA</span>
-        <span data-testid="staking-corporate-staked">{stakingMetrics.corporateStakedSupply} stALPHA</span>
-        <span data-testid="staking-vaults-staked">{stakingMetrics.corporateStakedSupply} stALPHA</span>
+        <span data-testid="staking-community-vault-staked">{stakingMetrics.communityVaultStakedSupply} stALPHA</span>
+        <span data-testid="staking-vaults-staked">{stakingMetrics.communityVaultStakedSupply} stALPHA</span>
         <span data-testid="staking-reserves-staked">{stakingMetrics.treasuryStakedSupply} stALPHA</span>
         <span data-testid="staking-total-staked">{stakingMetrics.totalStakedSupply} ALPHA ({stakingMetrics.stakingRatioPct})</span>
         <span data-testid="staking-global-staked">{stakingMetrics.totalStakedSupply} ALPHA ({stakingMetrics.stakingRatioPct})</span>

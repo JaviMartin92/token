@@ -38,7 +38,7 @@ Remove-Item -Recurse -Force "${ROOT_DIR}\frontend\dist" 2>$null | Out-Null
 Remove-Item -Recurse -Force "${ROOT_DIR}\frontend\node_modules\.vite" 2>$null | Out-Null
 
 docker run --rm -v "${ROOT_DIR}:/app" -w /app/frontend node:20-alpine npm install
-docker run --rm -v "${ROOT_DIR}:/app" -w /app/frontend node:20-alpine npx vite build
+docker run --rm -v "${ROOT_DIR}:/app" -w /app/frontend node:20-alpine npm run build:sandbox
 docker run -d --name alpha-frontend -p 5173:5173 --add-host=host.docker.internal:host-gateway -v "${ROOT_DIR}:/app" -w /app/frontend node:20-alpine node server.cjs | Out-Null
 
 Write-Host "=======================================================" -ForegroundColor Green

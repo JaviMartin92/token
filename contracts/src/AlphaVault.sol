@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./ProtocolRoles.sol";
 import "./ProtocolAddressProvider.sol";
+import "./interfaces/IProtocolErrors.sol";
 
 /**
  * @title AlphaVault
@@ -21,7 +22,7 @@ contract AlphaVault is AccessControl {
     event FundsApproved(address indexed token, address indexed spender, uint256 amount);
 
     constructor(ProtocolAddressProvider _addressProvider, address initialAdmin) {
-        require(address(_addressProvider) != address(0), "AlphaVault: Zero address provider");
+        if (address(_addressProvider) == address(0)) revert IProtocolErrors.ZeroAddressProvider();
         addressProvider = _addressProvider;
         _grantRole(DEFAULT_ADMIN_ROLE, initialAdmin);
     }
@@ -29,9 +30,12 @@ contract AlphaVault is AccessControl {
     /**
      * @notice Safely transfers funds out of the vault.
      */
-    function transferFunds(address token, address to, uint256 amount) external onlyRole(ProtocolRoles.VAULT_MANAGER_ROLE) {
-        require(to != address(0), "AlphaVault: Transfer to zero address");
-        require(amount > 0, "AlphaVault: Amount must be > 0");
+    function transferFunds(address token, address to, uint256 amount)
+        external
+        onlyRole(ProtocolRoles.VAULT_MANAGER_ROLE)
+    {
+        if (to == address(0)) revert IProtocolErrors.ZeroAddress();
+        if (amount == 0) revert IProtocolErrors.ZeroAmount();
         IERC20(token).safeTransfer(to, amount);
         emit FundsTransferred(token, to, amount);
     }
@@ -39,9 +43,12 @@ contract AlphaVault is AccessControl {
     /**
      * @notice Approves a third party to spend funds from the vault (e.g., Morpho, SwapRouter).
      */
-    function approveFunds(address token, address spender, uint256 amount) external onlyRole(ProtocolRoles.VAULT_MANAGER_ROLE) {
-        require(spender != address(0), "AlphaVault: Approve to zero address");
-        require(IERC20(token).approve(spender, amount), "AlphaVault: Approve failed");
+    function approveFunds(address token, address spender, uint256 amount)
+        external
+        onlyRole(ProtocolRoles.VAULT_MANAGER_ROLE)
+    {
+        if (spender == address(0)) revert IProtocolErrors.ZeroAddress();
+        if (!IERC20(token).approve(spender, amount)) revert IProtocolErrors.ApproveFailed();
         emit FundsApproved(token, spender, amount);
     }
 

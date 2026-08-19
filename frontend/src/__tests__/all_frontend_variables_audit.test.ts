@@ -81,7 +81,7 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
   // SECCIÓN 4: GOBERNANZA, STAKING & DEFLACIÓN (GovernanceStakingUI.tsx)
   // ---------------------------------------------------------------------------
   describe('4. Gobernanza, Staking & Deflación (GovernanceStakingUI.tsx)', () => {
-    it('debe calcular la distribución 50/25/25 de bóvedas y la quema deflacionaria de staking', () => {
+    it('debe calcular la distribución 50/50 de bóvedas y la quema deflacionaria de staking', () => {
       const totalStakedSupply = 10000.00; // GovernanceStaking.totalStakedSupply()
       const totalSupply = 100000.00;      // AlphaToken.totalSupply()
       const navPerShareUSD = 1.0050;
@@ -95,16 +95,15 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
       const burnedAmount = feeAmount * 0.50; // 15 ALPHA quemados
       const stAlphaReceived = stakeAmount - feeAmount; // 2970 stALPHA
 
-      // Bóvedas Corporativas GovernanceStaking: 50% Treasury, 25% OpEx, 25% Community
+      // Bóvedas Canónicas Pure DeFi: 50% Treasury Reserves, 50% Community Yield Vault
       const treasuryBunkerStaked = totalStakedSupply * 0.50; // 5000 stALPHA
-      const opexVaultStaked = totalStakedSupply * 0.25;       // 2500 stALPHA
-      const communityYieldStaked = totalStakedSupply * 0.25;  // 2500 stALPHA
+      const communityYieldStaked = totalStakedSupply * 0.50;  // 5000 stALPHA
 
       expect(stakingRatioPct).toBe(10.00);
       expect(stakingBackingNav).toBeCloseTo(10050.00, 2);
       expect(burnedAmount).toBe(15.00);
       expect(stAlphaReceived).toBe(2970.00);
-      expect(treasuryBunkerStaked + opexVaultStaked + communityYieldStaked).toBe(totalStakedSupply);
+      expect(treasuryBunkerStaked + communityYieldStaked).toBe(totalStakedSupply);
     });
   });
 

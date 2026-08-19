@@ -22,10 +22,7 @@ interface IYieldStreamingVault {
      * @param request The detailed claim parameters.
      * @param signature The EIP-712 signature proving user authentication.
      */
-    function claimYieldGasless(
-        ClaimRequest calldata request,
-        bytes calldata signature
-    ) external;
+    function claimYieldGasless(ClaimRequest calldata request, bytes calldata signature) external;
 
     /**
      * @notice View the pending yield ready to be claimed by a user.
