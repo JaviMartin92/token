@@ -137,6 +137,8 @@ contract FullSystemCoverageTest is Test {
 
         p2pMarket = new P2PLendingMarket(address(usdc), address(nft), address(router), address(usdcFeed), admin);
         p2pMarket.setTreasury(address(manager));
+        p2pMarket.setAlphaToken(address(alphaToken));
+        p2pMarket.setWbtcToken(address(wbtc));
         provider.setAddress(keccak256("P2P_MARKET"), address(p2pMarket));
 
         circuitBreaker = new CircuitBreaker(admin);
@@ -236,6 +238,50 @@ contract FullSystemCoverageTest is Test {
         vm.stopPrank();
 
         assertEq(nft.ownerOf(tokenId), user);
+    }
+
+    function test_P2PLendingMarket_BorrowWithAlpha_AndRepay() public {
+        alphaToken.mint(user, 1000 * 10 ** 18);
+        usdc.mint(address(vault), 10000 * 10 ** 6);
+
+        vm.startPrank(user);
+        alphaToken.approve(address(p2pMarket), 1000 * 10 ** 18);
+        uint256 loanId = p2pMarket.borrowFromTreasuryWithAlpha(500 * 10 ** 18, 250 * 10 ** 6, 30);
+        assertEq(alphaToken.balanceOf(user), 500 * 10 ** 18);
+        assertEq(usdc.balanceOf(user), (250 * 10 ** 6 * 9950) / 10000); // Net of 0.5% origination fee
+
+        // Repay loan
+        usdc.mint(user, 300 * 10 ** 6);
+        usdc.approve(address(p2pMarket), 300 * 10 ** 6);
+        p2pMarket.repayLoan(loanId);
+        vm.stopPrank();
+
+        // Check user recovered 100% of ALPHA collateral
+        assertEq(alphaToken.balanceOf(user), 1000 * 10 ** 18);
+    }
+
+    function test_P2PLendingMarket_BorrowWithCollateral_AndRepay() public {
+        usdc.mint(user, 2000 * 10 ** 6);
+
+        vm.startPrank(user);
+        usdc.approve(address(p2pMarket), 2000 * 10 ** 6);
+        uint256 loanId = p2pMarket.createLoanOfferWithCollateral(500 * 10 ** 6, 700 * 10 ** 6, 1000, 30);
+        vm.stopPrank();
+
+        usdc.mint(lender, 500 * 10 ** 6);
+        vm.startPrank(lender);
+        usdc.approve(address(p2pMarket), 500 * 10 ** 6);
+        p2pMarket.acceptLoanAndDepositCollateral(loanId, 0);
+        vm.stopPrank();
+
+        vm.startPrank(user);
+        usdc.mint(user, 600 * 10 ** 6);
+        usdc.approve(address(p2pMarket), 600 * 10 ** 6);
+        p2pMarket.repayLoan(loanId);
+        vm.stopPrank();
+
+        // Check user recovered their collateral
+        assertGt(usdc.balanceOf(user), 1000 * 10 ** 6);
     }
 
     function test_AuxiliaryVaults_BasicOps() public {

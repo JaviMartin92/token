@@ -288,6 +288,25 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         totalOwedWei = parseUnits((_totalToPay * 1.005).toFixed(6), 6);
       }
 
+      // Check user's USDC balance first
+      const userUsdcBal = await publicClient.readContract({
+        address: CONTRACT_ADDRESSES.USDC,
+        abi: ABIS.ERC20,
+        functionName: 'balanceOf',
+        args: [client.account.address]
+      }) as bigint;
+
+      if (userUsdcBal < totalOwedWei) {
+        const neededStr = formatUnits(totalOwedWei, 6);
+        const userBalStr = formatUnits(userUsdcBal, 6);
+        addToast('error', 'Saldo USDC Insuficiente', `Necesitas $${neededStr} USDC para saldar la deuda total (tienes $${userBalStr} USDC).`);
+        addLog(`[Error] Saldo insuficiente para amortizar: tienes $${userBalStr} USDC, se requieren $${neededStr} USDC.`);
+        return;
+      }
+
+      // Safe approval amount: totalOwedWei + 5% buffer + 10 USDC buffer to prevent time-drift revert
+      const safeApprovalWei = totalOwedWei * 105n / 100n + parseUnits('10', 6);
+
       // Check current allowance first to avoid redundant signatures
       let currentAllowance = 0n;
       try {
@@ -299,15 +318,15 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         }) as bigint;
       } catch (e) {}
 
-      // 1. Approve exact USDC repayment amount only if needed
+      // 1. Approve USDC repayment amount with buffer only if needed
       if (currentAllowance < totalOwedWei) {
-        const exactUsdcStr = formatUnits(totalOwedWei, 6);
-        addToast('info', 'Paso 1/2: Aprobación', `Aprobando pago exacto de $${exactUsdcStr} USDC...`);
+        const exactUsdcStr = formatUnits(safeApprovalWei, 6);
+        addToast('info', 'Paso 1/2: Aprobación', `Aprobando pago de $${exactUsdcStr} USDC...`);
         const appHash = await client.writeContract({
           address: CONTRACT_ADDRESSES.USDC,
           abi: ABIS.ERC20,
           functionName: 'approve',
-          args: [CONTRACT_ADDRESSES.P2P_MARKET, totalOwedWei]
+          args: [CONTRACT_ADDRESSES.P2P_MARKET, safeApprovalWei]
         });
         await publicClient.waitForTransactionReceipt({ hash: appHash });
         addToast('info', 'Paso 2/2: Reembolso', 'Aprobación completada. Amortizando deuda...');
@@ -465,6 +484,7 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
       } catch (e) {}
 
       if (totalOwedWei > 0n) {
+        const safeApprovalWei = totalOwedWei * 105n / 100n + parseUnits('10', 6);
         let currentAllowance = 0n;
         try {
           currentAllowance = await publicClient.readContract({
@@ -476,12 +496,12 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         } catch (e) {}
 
         if (currentAllowance < totalOwedWei) {
-          addToast('info', 'Aprobación Liquidación', `Aprobando pago de $${formatUnits(totalOwedWei, 6)} USDC para saldar la deuda impagada...`);
+          addToast('info', 'Aprobación Liquidación', `Aprobando pago de $${formatUnits(safeApprovalWei, 6)} USDC para saldar la deuda impagada...`);
           const appHash = await client.writeContract({
             address: CONTRACT_ADDRESSES.USDC,
             abi: ABIS.ERC20,
             functionName: 'approve',
-            args: [CONTRACT_ADDRESSES.P2P_MARKET, totalOwedWei]
+            args: [CONTRACT_ADDRESSES.P2P_MARKET, safeApprovalWei]
           });
           await publicClient.waitForTransactionReceipt({ hash: appHash });
           await new Promise((res) => setTimeout(res, 500));
