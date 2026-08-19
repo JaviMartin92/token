@@ -15,18 +15,20 @@
 2. [Arquitectura de Seguridad & Auditoría Institucional](#-arquitectura-de-seguridad--auditoría-institucional)
 3. [Despliegue Rápido (Un Solo Clic)](#-despliegue-rápido-un-solo-clic)
 4. [Estructura del Proyecto & Clean Architecture](#-estructura-del-proyecto--clean-architecture)
-5. [Estrategia de Ramas Git & Flujo de Desarrollo](#-estrategia-de-ramas-git--flujo-de-desarrollo)
-6. [Proof of Reserves (PoR) & Sistema NPV](#-proof-of-reserves-por--sistema-npv)
-7. [Documentación Adicional](#-documentación-adicional)
+5. [Los 7 Pilares Centrales Auditados](#-los-7-pilares-centrales-auditados-100-mainnet-ready)
+6. [Institutional Quality Gate](#-institutional-quality-gate-1212-comprobaciones-en-verde)
+7. [Estrategia de Ramas Git & Flujo de Desarrollo](#-estrategia-de-ramas-git--flujo-de-desarrollo)
+8. [Documentación Adicional](#-documentación-adicional)
 
 ---
 
 ## 🏛️ Visión General & Modelo de Reservas Exógenas Puras
 
-El **Protocolo Alpha Centauri** es una infraestructura financiera descentralizada construida sobre Ethereum/EVM que opera bajo un **Modelo de Reservas Exógenas Puras (100% Exógeno)**:
-- **60.00% Stablecoins (USDC)**: Destinados a Bóvedas Morpho Blue y Préstamos P2P sobrecolateralizados.
-- **26.67% Bitcoin (WBTC)**: Colateralizado en Staking Lombard (LBTC) y Morpho.
-- **13.33% Ethereum (WETH)**: Colateralizado en Liquid Staking Lido (stETH) y Aave.
+El **Protocolo Alpha Centauri** es una infraestructura financiera descentralizada construida sobre Ethereum/EVM que opera bajo un **Modelo de Reservas Exógenas Puras (100% Exógeno)** con Proof of Reserves (PoR) en tiempo real:
+- **50.00% Stablecoins (USDC)**: Destinados a Bóvedas Morpho Blue y Préstamos P2P sobrecolateralizados.
+- **25.00% Bitcoin (WBTC)**: Colateral exógeno de máxima solidez y reserva de valor.
+- **12.50% Ethereum (WETH)**: Colateral exógeno de alta liquidez e infraestructura base DeFi.
+- **12.50% Sub-Reserva POL (stALPHA)**: Liquidez propiedad del protocolo auto-bloqueada en staking de gobernanza.
 
 > [!IMPORTANT]
 > El token nativo del protocolo ($ALPHA$) es de tipo endógeno de gobernanza/staking y se encuentra **estrictamente excluido** del cálculo de reservas exógenas en la tabla PoR, garantizando colateralización sólida basada únicamente en activos externos líquidos.
