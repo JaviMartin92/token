@@ -68,7 +68,10 @@ export function useP2PMarketplace(refetchInterval = 3000) {
                   functionName: 'loanCollateralAsset',
                   args: [BigInt(i)]
                 }) as string;
-                if (assetAddr && assetAddr.toLowerCase() === CONTRACT_ADDRESSES.WBTC.toLowerCase()) {
+                if (assetAddr && assetAddr.toLowerCase() === CONTRACT_ADDRESSES.USDC.toLowerCase()) {
+                  colSymbol = 'USDC';
+                  dec = 6;
+                } else if (assetAddr && assetAddr.toLowerCase() === CONTRACT_ADDRESSES.WBTC.toLowerCase()) {
                   colSymbol = 'WBTC';
                   dec = 8;
                 } else if (assetAddr && assetAddr.toLowerCase() === CONTRACT_ADDRESSES.WETH.toLowerCase()) {

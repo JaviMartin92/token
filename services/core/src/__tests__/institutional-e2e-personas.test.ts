@@ -108,6 +108,14 @@ async function runInstitutionalPersonasE2E() {
     }
   }
 
+  const snapId = await (publicClient.request as any)({ method: 'evm_snapshot', params: [] });
+
+  // Ensure Treasury liquid buffer is fully funded
+  try {
+    await adminClient.writeContract({ address: contracts.USDC, abi: ERC20_ABI, functionName: 'mint', args: [contracts.ALPHA_VAULT, parseUnits('100000', 6)] });
+  } catch {}
+
+  try {
   // --- PERSONA 1: INVERSOR DE RENTA FIJA (vPOS DISCOUNT BONDS) ---
   console.log('[PERSONA 1] Inversor Institucional de Renta Fija (vPOS Bonds)...');
   try {
@@ -299,6 +307,11 @@ async function runInstitutionalPersonasE2E() {
     assert(!isFrozenFinal, 'P5: Protocolo verificado en operatividad normal');
   } catch (e: any) {
     assert(false, 'P5: Flujo de Circuit Breaker', e.message);
+  }
+  } finally {
+    try {
+      await (publicClient.request as any)({ method: 'evm_revert', params: [snapId] });
+    } catch {}
   }
 
   console.log('\n============================================================');

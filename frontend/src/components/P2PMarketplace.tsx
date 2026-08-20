@@ -505,6 +505,10 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                           <span className="gcc-badge-indigo">
                             NFT #{loan.positionTokenId}
                           </span>
+                        ) : loan.collateralSymbol === 'USDC' ? (
+                          <span className="gcc-badge-cyan">
+                            💵 ${loan.collateralAmount} USDC
+                          </span>
                         ) : loan.collateralSymbol === 'WBTC' ? (
                           <span className="gcc-badge-amber">
                             ₿ {loan.collateralAmount} WBTC
@@ -583,9 +587,9 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                             </button>
                           ) : (
                             <button
-                              className={`btn-primary opacity-60 cursor-not-allowed ${styles.actionBtnSm}`}
-                              title="Préstamo solvente (HF ≥ 115%). Solo liquidable si cae por debajo del 115% o si vence el plazo."
-                              onClick={() => onLiquidateLoanById(loan.id, loan)}
+                              disabled
+                              className={`btn-primary opacity-50 cursor-not-allowed ${styles.actionBtnSm}`}
+                              title="Préstamo 100% solvente (Factor de Salud ≥ 115%). Solo es liquidable si el HF cae por debajo del 115% o si expira el plazo acordado."
                             >
                               🛡️ Solvente
                             </button>

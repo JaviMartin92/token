@@ -84,6 +84,14 @@ async function runOmniTransactionMatrix() {
   const communityArt = loadArtifact('CommunityYieldVault', 'CommunityYieldVault.sol');
   const promoArt = loadArtifact('PromotionalIncentiveVault', 'PromotionalIncentiveVault.sol');
 
+  const snapId = await (publicClient.request as any)({ method: 'evm_snapshot', params: [] });
+
+  // Ensure Treasury liquid buffer is fully funded
+  try {
+    await adminClient.writeContract({ address: contracts.USDC, abi: ERC20_ABI, functionName: 'mint', args: [contracts.ALPHA_VAULT, parseUnits('100000', 6)] });
+  } catch {}
+
+  try {
   // =========================================================================
   // SUBSYSTEM 1: TESORERÍA & MERCADO PRIMARIO (Tx 01 - 11)
   // =========================================================================
@@ -759,11 +767,16 @@ async function runOmniTransactionMatrix() {
       args: ['OMNI_MATRIX_REWARD', parseUnits('50', 18)]
     });
     await publicClient.waitForTransactionReceipt({ hash: txCampaign });
+    const cid = await publicClient.readContract({
+      address: contracts.PROMO_VAULT,
+      abi: promoArt.abi,
+      functionName: 'campaignCount'
+    }) as bigint;
     const txDist = await adminClient.writeContract({
       address: contracts.PROMO_VAULT,
       abi: promoArt.abi,
       functionName: 'distributeReward',
-      args: [1n, user1Acc.address, parseUnits('10', 18)]
+      args: [cid, user1Acc.address, parseUnits('10', 18)]
     });
     await publicClient.waitForTransactionReceipt({ hash: txDist });
     assert(true, 51, 'Promotional Vault: Creación de campaña y distribución de recompensas');
@@ -776,6 +789,11 @@ async function runOmniTransactionMatrix() {
     assert(typeof contracts.PROTOCOL_ADDRESS_PROVIDER === 'string' && contracts.PROTOCOL_ADDRESS_PROVIDER.startsWith('0x'), 52, 'Protocol Architecture Registry: Integridad de 52/52 vectores confirmada');
   } catch (e: any) {
     assert(false, 52, 'Protocol Contribution', e.message);
+  }
+  } finally {
+    try {
+      await (publicClient.request as any)({ method: 'evm_revert', params: [snapId] });
+    } catch {}
   }
 
   console.log('\n============================================================');
