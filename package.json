@@ -27,6 +27,7 @@
     "quality": "node scripts/quality-gate.mjs",
     "quality:contracts": "docker run --rm -v \"%cd%\\contracts:/app\" -w /app --entrypoint forge ghcr.io/foundry-rs/foundry:latest fmt --check",
     "start": "powershell -ExecutionPolicy Bypass -File ./start_app.ps1",
+    "prepare": "node scripts/install-hooks.mjs",
     "dev": "docker-compose up -d",
     "dev:down": "docker-compose down"
   },
