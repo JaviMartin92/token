@@ -410,10 +410,10 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
     });
 
     // -------------------------------------------------------------------------
-    // PASO 3: DEPÓSITO DE $10,000 USDC (-10,000 USDC -> +9,950 ALPHA con 0.50% Mint Fee)
+    // PASO 3: DEPÓSITO DE $5,000 USDC (-5,000 USDC -> +4,975 ALPHA con 0.50% Mint Fee)
     // -------------------------------------------------------------------------
     const depositInput = page.locator('[data-testid="treasury-deposit-input"]');
-    await depositInput.fill('10000');
+    await depositInput.fill('5000');
     await page.locator('[data-testid="treasury-deposit-btn"]').click();
 
     const depositModal = page.locator('text=Depósito de USDC en Tesorería').first();
@@ -425,7 +425,7 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
     await expect(depositModal).toBeHidden({ timeout: 15000 });
     
     const statePostDeposit = await auditUiDeltas(page, 3, 'PASO 3 (Post-Depósito)', statePostFaucet, {
-      usdcDelta: -10000.00,
+      usdcDelta: -5000.00,
       minPor: 99.9
     });
 
@@ -465,12 +465,6 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
       await optABtn.click();
     }
     await generateAndPrintStepReport(page, 5, 'Paso 5 (Preferencia de Cobro Opción A)');
-
-    // Refill USDC for bond operations
-    const faucetBtnRefill = page.locator('[data-testid="treasury-faucet-btn"]').first();
-    await faucetBtnRefill.scrollIntoViewIfNeeded();
-    await faucetBtnRefill.click();
-    await page.waitForTimeout(1000);
 
     // -------------------------------------------------------------------------
     // PASO 6: COMPRA BONO A (3 AÑOS LOCKUP - $1,000 PRINCIPAL - DEVENGADO LINEAL t_0)
