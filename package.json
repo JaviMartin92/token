@@ -14,6 +14,7 @@
     "test:medusa": "cd contracts && medusa fuzz",
     "test:echidna": "cd contracts && echidna . --config echidna.yaml",
     "test:alignment": "npx tsx services/core/src/frontend-alignment-test.ts",
+    "test:matrix": "npx tsx services/core/src/__tests__/all-transactions-matrix.test.ts",
     "test:personas": "npx tsx services/core/src/__tests__/institutional-e2e-personas.test.ts",
     "test:chaos": "npx tsx services/core/src/__tests__/chaos-stress-suite.test.ts",
     "test:backend": "npx tsx services/core/src/__tests__/backend-improvements.test.ts",

@@ -43,27 +43,32 @@ const checks = [
     category: 'Alignment'
   },
   {
-    name: '8. Institutional E2E Multi-Persona Suite (5 Personas)',
+    name: '8. Omni-Transaction Integration Matrix (52/52 Vectors)',
+    command: 'npm run test:matrix',
+    category: 'Full-Spectrum E2E'
+  },
+  {
+    name: '9. Institutional E2E Multi-Persona Suite (5 Personas)',
     command: 'npm run test:personas',
     category: 'E2E Simulation'
   },
   {
-    name: '9. Chaos & Market Shock Stress Suite',
+    name: '10. Chaos & Market Shock Stress Suite',
     command: 'npm run test:chaos',
     category: 'Stress & Chaos'
   },
   {
-    name: '10. Dependencies Security Audit (npm audit)',
+    name: '11. Dependencies Security Audit (npm audit)',
     command: 'npm audit --audit-level=high',
     category: 'Security'
   },
   {
-    name: '11. Smart Contracts Security Linter (Solhint)',
+    name: '12. Smart Contracts Security Linter (Solhint)',
     command: 'npx solhint "contracts/src/**/*.sol"',
     category: 'Solidity Security'
   },
   {
-    name: '12. Dead Code & Orphaned Exports Scanner (Knip)',
+    name: '13. Dead Code & Orphaned Exports Scanner (Knip)',
     command: 'npx knip',
     category: 'Code Cleanliness'
   }
