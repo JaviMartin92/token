@@ -30,14 +30,21 @@ export const Header: React.FC<HeaderProps> = ({
   walletConnected,
   userAddress
 }) => {
-  const { connectAsync } = useConnect();
+  const { connectAsync, connectors } = useConnect();
   const { disconnect } = useDisconnect();
 
   const handleConnectWallet = async () => {
     try {
-      await connectAsync({ connector: injected() });
+      if (typeof window !== 'undefined' && (window as any).ethereum) {
+        await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
+      }
+      const targetConnector = connectors.find(c => c.type === 'injected') || connectors[0] || injected();
+      await connectAsync({ connector: targetConnector });
     } catch (e: any) {
-      console.warn('[Wallet] Conexión cancelada o cartera sin cuentas desbloqueadas:', e?.message || e);
+      console.warn('[Wallet] Conexión:', e?.message || e);
+      if (typeof window !== 'undefined' && !(window as any).ethereum) {
+        alert('No se detectó ninguna extensión de billetera Web3 (ej. MetaMask / Rabby / Coinbase Wallet). Instala una extensión para conectar tu billetera.');
+      }
     }
   };
 
