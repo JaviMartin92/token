@@ -71,6 +71,11 @@ const checks = [
     name: '13. Dead Code & Orphaned Exports Scanner (Knip)',
     command: 'npx knip',
     category: 'Code Cleanliness'
+  },
+  {
+    name: '14. Browser-Based E2E Transaction Matrix (Playwright Chromium 6/6)',
+    command: 'npm run test:e2e:browser',
+    category: 'Real Browser Simulation'
   }
 ];
 

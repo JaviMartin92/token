@@ -17,6 +17,7 @@
     "test:matrix": "npx tsx services/core/src/__tests__/all-transactions-matrix.test.ts",
     "test:personas": "npx tsx services/core/src/__tests__/institutional-e2e-personas.test.ts",
     "test:chaos": "npx tsx services/core/src/__tests__/chaos-stress-suite.test.ts",
+    "test:e2e:browser": "cd frontend && npx playwright test",
     "test:backend": "npx tsx services/core/src/__tests__/backend-improvements.test.ts",
     "test:frontend:unit": "cd frontend && npm test -- --run",
     "test:frontend:build": "cd frontend && npm run build",

@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { injectEip1193Provider } from './helpers/eip1193.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -378,7 +379,12 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
     // -------------------------------------------------------------------------
     // PASO 0: CONEXIÓN & LECTURA DE BASELINE DE LA BILLETERA POST-RELOAD
     // -------------------------------------------------------------------------
-    await page.goto('http://127.0.0.1:5173', { waitUntil: 'domcontentloaded' });
+    await injectEip1193Provider(page, '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    const connectBtn = page.locator('button:has-text("Conectar Wallet")');
+    if (await connectBtn.isVisible()) {
+      await connectBtn.click();
+    }
 
     await expect(page.locator('[data-testid="header-nav-value"]')).toContainText('USDC', { timeout: 15000 });
     await expect(page.locator('[data-testid="treasury-usdc-balance"]')).toContainText('USDC', { timeout: 15000 });
@@ -438,7 +444,7 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
     await stakeBtn.scrollIntoViewIfNeeded();
     await stakeBtn.click();
 
-    const stakeModal = page.locator('text=Staking de ALPHA en Gobernanza DAO').first();
+    const stakeModal = page.locator('text=Bloquear Tokens ALPHA en Staking de Gobernanza').first();
     await expect(stakeModal).toBeVisible({ timeout: 10000 });
     const confirmStakeBtn = page.locator('[data-testid="modal-confirm-btn"]').first();
     await confirmStakeBtn.click({ force: true });
@@ -459,6 +465,12 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
       await optABtn.click();
     }
     await generateAndPrintStepReport(page, 5, 'Paso 5 (Preferencia de Cobro Opción A)');
+
+    // Refill USDC for bond operations
+    const faucetBtnRefill = page.locator('[data-testid="treasury-faucet-btn"]').first();
+    await faucetBtnRefill.scrollIntoViewIfNeeded();
+    await faucetBtnRefill.click();
+    await page.waitForTimeout(1000);
 
     // -------------------------------------------------------------------------
     // PASO 6: COMPRA BONO A (3 AÑOS LOCKUP - $1,000 PRINCIPAL - DEVENGADO LINEAL t_0)
