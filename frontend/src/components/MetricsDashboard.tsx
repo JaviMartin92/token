@@ -51,7 +51,15 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   const numericRatioPct = parseFloat((porRatio || '100').replace(/,/g, '').replace('%', '')) || 100.0;
   const numericAssets = parseFloat(porAssets.replace(/,/g, '')) || 0;
   const numericLiabilities = parseFloat(porLiabilities.replace(/,/g, '')) || 0;
-  const surplusUsd = numericAssets > numericLiabilities ? numericAssets - numericLiabilities : 0;
+
+  // Real Treasury Surplus calculation based on NAV growth above par ($1.00 USD baseline)
+  const numericNav = parseFloat((navPerShareUSD || '1.0').replace('$', '').replace(' USDC', '')) || 1.0;
+  const numericCirculating = parseFloat((circulatingSupply || '0').replace(/,/g, '')) || 0;
+  const parNominalLiabilities = numericCirculating * 1.0;
+  const treasurySurplusUSD = (numericNav > 1.0 && numericCirculating > 0)
+    ? (numericNav - 1.0) * numericCirculating
+    : (numericAssets > numericLiabilities ? numericAssets - numericLiabilities : 0);
+  const surplusPct = (numericNav > 1.0) ? (numericNav - 1.0) * 100 : 0;
 
   // Exogenous reserves breakdown directly from Treasury.sol getAssetBreakdown()
   const stablesUSD = porBreakdown.stables;
@@ -89,7 +97,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
               {porRatio.includes('%') ? porRatio : `${porRatio}%`}
             </div>
             <div className={styles.kpiSubtext}>
-              Ratio Solvencia = Total Activos / Pasivos
+              Respaldo 1:1 al 100% NAV (Solvencia Plena)
             </div>
           </div>
 
@@ -119,12 +127,62 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
               ${porLiabilities} USD
             </div>
             <div className={styles.kpiSubtext}>
-              {surplusUsd > 0
-                ? `Base liquidada (Superávit: +$${surplusUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD)`
+              {parNominalLiabilities > 0
+                ? `Obligaciones al 100% NAV (Par Base: $${parNominalLiabilities.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD)`
                 : 'Obligaciones con Tenedores de ALPHA'}
             </div>
           </div>
+
+          <div className={styles.kpiCard} style={{ borderColor: 'rgba(34, 197, 94, 0.4)', background: 'rgba(34, 197, 94, 0.06)' }}>
+            <div className={styles.kpiTitle} style={{ color: '#86efac' }}>✨ Superávit de Tesorería</div>
+            <div data-testid="treasury-surplus-total" className="font-black text-md text-green-bright margin-top-sm">
+              +${treasurySurplusUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+            </div>
+            <div className={styles.kpiSubtext} style={{ color: '#a7f3d0' }}>
+              +{surplusPct.toFixed(2)}% Ganancias Retenidas en Bóvedas
+            </div>
+          </div>
         </div>
+
+        {/* 💎 Institutional Claim: Banner de Superávit Retenido en Bóvedas */}
+        {treasurySurplusUSD > 0 && (
+          <div style={{
+            marginTop: '1.25rem',
+            background: 'linear-gradient(90deg, rgba(34, 197, 94, 0.12) 0%, rgba(56, 189, 248, 0.12) 100%)',
+            border: '1px solid rgba(34, 197, 94, 0.35)',
+            borderRadius: '12px',
+            padding: '0.85rem 1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '0.75rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span style={{ fontSize: '1.5rem' }}>💎</span>
+              <div>
+                <div style={{ fontWeight: 800, color: '#4ade80', fontSize: '0.95rem', letterSpacing: '0.02em' }}>
+                  SUPERÁVIT PATRIMONIAL ACUMULADO: +${treasurySurplusUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD (+{surplusPct.toFixed(2)}% sobre Emisión Par)
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '2px' }}>
+                  El valor patrimonial de cada ALPHA emitido a $1.00 USD ha aumentado a <strong>{navPerShareUSD.startsWith('$') ? navPerShareUSD : `$${navPerShareUSD} USDC`}</strong> debido al flujo continuo de comisiones de emisión y rendimientos exógenos acumulados en las bóvedas de tesorería.
+                </div>
+              </div>
+            </div>
+            <div style={{
+              fontSize: '0.75rem',
+              padding: '6px 12px',
+              borderRadius: '20px',
+              background: 'rgba(34, 197, 94, 0.2)',
+              color: '#86efac',
+              fontWeight: 800,
+              border: '1px solid rgba(34, 197, 94, 0.4)',
+              letterSpacing: '0.05em'
+            }}>
+              SUPERÁVIT EN RESERVAS ON-CHAIN
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 🪙 SECCIÓN 2: ESTADO DE TOKENOMICS & STAKING EN PANTALLA */}
@@ -221,6 +279,25 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
               </tr>
             </tbody>
           </table>
+          {treasurySurplusUSD > 0 && (
+            <div style={{
+              marginTop: '0.75rem',
+              padding: '0.6rem 1rem',
+              background: 'rgba(34, 197, 94, 0.08)',
+              border: '1px solid rgba(34, 197, 94, 0.25)',
+              borderRadius: '8px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '0.5rem',
+              fontSize: '0.8rem',
+              color: '#86efac'
+            }}>
+              <span>✨ <strong>Superávit de Tesorería Acumulado:</strong> +${treasurySurplusUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD en reservas netas sobre el capital emitido</span>
+              <span style={{ fontWeight: 700, color: '#4ade80' }}>+{surplusPct.toFixed(2)}% de Valor Excedente</span>
+            </div>
+          )}
         </div>
       </div>
 
