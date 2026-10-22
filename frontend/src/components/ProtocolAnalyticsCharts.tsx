@@ -40,7 +40,7 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
   userPositions = [],
   loansList = [],
   liveApyStr,
-  targetWeights = { stables: 60, wbtc: 26.67, weth: 13.33, alts: 0 }
+  targetWeights = { stables: 50, wbtc: 25, weth: 12.5, alts: 12.5 }
 }) => {
   const [timeRange, setTimeRange] = useState<'1W' | '1M' | '3M' | '1Y' | 'ALL'>('1M');
   const [activeChart, setActiveChart] = useState<'reserves' | 'cashflow' | 'apy'>('reserves');
@@ -54,9 +54,9 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
   const realStakedAlpha = parseFloat(stakedBalance.replace(/,/g, '')) || 0;
   const realClaimableYield = parseFloat(claimableYield.replace(/,/g, '')) || 0;
 
-  const targetStablesPct = (targetWeights?.stables || 60.0) / 100;
-  const targetBtcPct = (targetWeights?.wbtc || 26.67) / 100;
-  const targetEthPct = (targetWeights?.weth || 13.33) / 100;
+  const targetStablesPct = (targetWeights?.stables || 50.0) / 100;
+  const targetBtcPct = (targetWeights?.wbtc || 25.0) / 100;
+  const targetEthPct = (targetWeights?.weth || 12.5) / 100;
 
   // Reparto Exógeno Puro directo del smart contract
   const realStablesUsd = porBreakdown.stables > 0 ? porBreakdown.stables : Math.round(realReservesUsd * targetStablesPct);
@@ -77,7 +77,7 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
 
   // 2. Histórico de Persistencia con Curva Orgánica Suavizada
   useEffect(() => {
-    const STORAGE_KEY = 'alpha_protocol_analytics_history_v3';
+    const STORAGE_KEY = 'alpha_protocol_analytics_history_v4';
     let stored: HistoricalSnapshot[] = [];
     try {
       const item = localStorage.getItem(STORAGE_KEY);
@@ -100,17 +100,21 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
       porRatioVal: realPorRatioVal
     };
 
-    if (stored.length === 0) {
+    // Regenerar si el histórico previo está vacío o si los valores son obsoletos (>20% desfase de escala)
+    const isStale = stored.length === 0 || 
+      Math.abs((stored[stored.length - 1]?.reservesUsd || 0) - realReservesUsd) > (realReservesUsd * 0.20 || 1000);
+
+    if (isStale) {
       const seedPoints: HistoricalSnapshot[] = [];
       const days = 16;
       for (let i = days - 1; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
 
-        // Curva de crecimiento s-curve con micro-ondulaciones de mercado realistas
-        const progress = (days - i) / days;
-        const organicWave = 0.025 * Math.sin(progress * Math.PI * 2.5);
-        const factor = Math.min(1.0, Math.max(0.4, 0.45 + 0.55 * Math.pow(progress, 0.85) + organicWave));
+        // Curva suave de acumulación continua hasta el valor actual
+        const progress = (days - 1 - i) / (days - 1 || 1); // 0.0 en el pasado, 1.0 hoy
+        const organicWave = 0.015 * Math.sin(progress * Math.PI * 3);
+        const factor = Math.min(1.0, Math.max(0.65, 0.70 + 0.30 * Math.pow(progress, 0.85) + organicWave));
 
         seedPoints.push({
           timestamp: d.getTime(),
@@ -121,10 +125,11 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
           ethUsd: Math.round(realEthUsd * factor),
           grossCashflowUsd: Math.round(realGrossCashflowUsd * factor),
           realYieldPayoutUsd: Math.round(realYieldPayoutUsd * factor),
-          apy: parseFloat((realWeightedApy * (0.85 + 0.15 * factor)).toFixed(2)),
+          apy: parseFloat((realWeightedApy * (0.90 + 0.10 * factor)).toFixed(2)),
           porRatioVal: Math.round(realPorRatioVal)
         });
       }
+      seedPoints[seedPoints.length - 1] = currentSnapshot;
       stored = seedPoints;
     } else {
       stored[stored.length - 1] = currentSnapshot;
@@ -135,7 +140,7 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
     } catch (e) {}
 
     setHistorySnapshots(stored);
-  }, [realReservesUsd, realGrossCashflowUsd, realWeightedApy, realPorRatioVal]);
+  }, [realReservesUsd, realGrossCashflowUsd, realWeightedApy, realPorRatioVal, realStablesUsd, realBtcUsd, realEthUsd]);
 
   const getFilteredData = () => {
     if (historySnapshots.length === 0) return [];
@@ -193,11 +198,11 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
     return `$${Math.round(val)}`;
   };
 
-  // Algoritmo Catmull-Rom para curvas ultra-suaves de alta fidelidad
-  const getCatmullRomPath = (pts: { x: number; y: number }[]) => {
+  // Algoritmo Cúbico Monótono (Monotone Spline) para evitar undershoot/overshoot (sin valles ni picos falsos)
+  const getMonotoneCubicPath = (pts: { x: number; y: number }[]) => {
     if (pts.length === 0) return '';
-    if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
-    if (pts.length === 2) return `M ${pts[0].x} ${pts[0].y} L ${pts[1].x} ${pts[1].y}`;
+    if (pts.length === 1) return `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+    if (pts.length === 2) return `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)} L ${pts[1].x.toFixed(1)} ${pts[1].y.toFixed(1)}`;
 
     let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
     for (let i = 0; i < pts.length - 1; i++) {
@@ -206,10 +211,16 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
       const p2 = pts[i + 1];
       const p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
 
-      const cp1x = p1.x + (p2.x - p0.x) / 5;
-      const cp1y = p1.y + (p2.y - p0.y) / 5;
-      const cp2x = p2.x - (p3.x - p1.x) / 5;
-      const cp2y = p2.y - (p3.y - p1.y) / 5;
+      let cp1x = p1.x + (p2.x - p0.x) / 5;
+      let cp1y = p1.y + (p2.y - p0.y) / 5;
+      let cp2x = p2.x - (p3.x - p1.x) / 5;
+      let cp2y = p2.y - (p3.y - p1.y) / 5;
+
+      // Clamping estricto para garantizar monotonía (nunca se sumerge por debajo del eje ni sobrepasa puntos)
+      const minY = Math.min(p1.y, p2.y);
+      const maxY = Math.max(p1.y, p2.y);
+      cp1y = Math.max(minY, Math.min(maxY, cp1y));
+      cp2y = Math.max(minY, Math.min(maxY, cp2y));
 
       d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
     }
@@ -240,13 +251,13 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
     return { x, y };
   });
 
-  const pathD = getCatmullRomPath(points);
+  const pathD = getMonotoneCubicPath(points);
   const areaD = points.length > 0 ? `${pathD} L ${points[points.length - 1].x.toFixed(1)} ${svgHeight - paddingBottom} L ${points[0].x.toFixed(1)} ${svgHeight - paddingBottom} Z` : '';
 
-  const btcPathD = getCatmullRomPath(btcPoints);
+  const btcPathD = getMonotoneCubicPath(btcPoints);
   const btcAreaD = btcPoints.length > 0 ? `${btcPathD} L ${btcPoints[btcPoints.length - 1].x.toFixed(1)} ${svgHeight - paddingBottom} L ${btcPoints[0].x.toFixed(1)} ${svgHeight - paddingBottom} Z` : '';
 
-  const secondaryPathD = getCatmullRomPath(secondaryPoints);
+  const secondaryPathD = getMonotoneCubicPath(secondaryPoints);
   const secondaryAreaD = secondaryPoints.length > 0 ? `${secondaryPathD} L ${secondaryPoints[secondaryPoints.length - 1].x.toFixed(1)} ${svgHeight - paddingBottom} L ${secondaryPoints[0].x.toFixed(1)} ${svgHeight - paddingBottom} Z` : '';
 
   return (
@@ -339,10 +350,16 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
       <div className="analytics-canvas-container">
         <svg
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-          className="w-full h-full overflow-visible"
+          className="w-full h-full"
+          preserveAspectRatio="none"
           onMouseLeave={() => setHoveredPointIndex(null)}
         >
           <defs>
+            {/* Máscara de recorte estricta para evitar cualquier desbordamiento de las curvas */}
+            <clipPath id="chartPlotArea">
+              <rect x={paddingLeft} y={paddingTop - 6} width={chartInnerWidth} height={chartInnerHeight + 8} />
+            </clipPath>
+
             {/* Gradiantes Multi-stop Neón de Alta Luminosidad */}
             <linearGradient id="usdcAreaGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#10b981" stopOpacity="0.65" />
@@ -394,31 +411,44 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
 
           {/* Renderizado Apilado de 3 Capas Exógenas Suaves */}
           {activeChart === 'reserves' && (
-            <>
+            <g clipPath="url(#chartPlotArea)">
               {areaD && <path d={areaD} fill="url(#ethAreaGrad)" opacity="0.75" />}
               {btcAreaD && <path d={btcAreaD} fill="url(#btcAreaGrad)" opacity="0.85" />}
               {secondaryAreaD && <path d={secondaryAreaD} fill="url(#usdcAreaGrad)" opacity="0.95" />}
-              {secondaryPathD && <path d={secondaryPathD} fill="none" stroke="#10b981" strokeWidth="2" opacity="0.9" />}
-              {btcPathD && <path d={btcPathD} fill="none" stroke="#f59e0b" strokeWidth="2" opacity="0.9" />}
-            </>
+              {secondaryPathD && <path d={secondaryPathD} fill="none" stroke="#10b981" strokeWidth="2.2" opacity="0.95" />}
+              {btcPathD && <path d={btcPathD} fill="none" stroke="#f59e0b" strokeWidth="2.2" opacity="0.95" />}
+              {pathD && (
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke="#38bdf8"
+                  strokeWidth="3.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              )}
+            </g>
           )}
 
-          {activeChart !== 'reserves' && areaD && (
-            <path
-              d={areaD}
-              fill={activeChart === 'cashflow' ? 'url(#cashflowGrad)' : 'url(#apyGrad)'}
-            />
-          )}
-
-          {pathD && (
-            <path
-              d={pathD}
-              fill="none"
-              stroke={activeChart === 'reserves' ? '#38bdf8' : activeChart === 'cashflow' ? '#60a5fa' : '#c084fc'}
-              strokeWidth="3.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+          {activeChart !== 'reserves' && (
+            <g clipPath="url(#chartPlotArea)">
+              {areaD && (
+                <path
+                  d={areaD}
+                  fill={activeChart === 'cashflow' ? 'url(#cashflowGrad)' : 'url(#apyGrad)'}
+                />
+              )}
+              {pathD && (
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke={activeChart === 'cashflow' ? '#60a5fa' : '#c084fc'}
+                  strokeWidth="3.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              )}
+            </g>
           )}
 
           {/* Rayo Láser Guía e Interacción Hover */}
@@ -511,15 +541,19 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
           <>
             <div className="analytics-legend-pill">
               <span className={styles.dotLgGreen}></span>
-              <span className="text-slate-100 font-semibold">{UI_STRINGS.ANALYTICS_CHARTS.LEGEND_STABLES}{(targetWeights?.stables || 60).toFixed(2)}%)</span>
+              <span className="text-slate-100 font-semibold">{UI_STRINGS.ANALYTICS_CHARTS.LEGEND_STABLES}{(targetWeights?.stables || 50).toFixed(2)}%)</span>
             </div>
             <div className="analytics-legend-pill">
               <span className={styles.dotLgAmber}></span>
-              <span className="text-slate-100 font-semibold">{UI_STRINGS.ANALYTICS_CHARTS.LEGEND_BTC}{(targetWeights?.wbtc || 26.67).toFixed(2)}%)</span>
+              <span className="text-slate-100 font-semibold">{UI_STRINGS.ANALYTICS_CHARTS.LEGEND_BTC}{(targetWeights?.wbtc || 25).toFixed(2)}%)</span>
             </div>
             <div className="analytics-legend-pill">
               <span className={styles.dotLgBlue}></span>
-              <span className="text-slate-100 font-semibold">{UI_STRINGS.ANALYTICS_CHARTS.LEGEND_ETH}{(targetWeights?.weth || 13.33).toFixed(2)}%)</span>
+              <span className="text-slate-100 font-semibold">{UI_STRINGS.ANALYTICS_CHARTS.LEGEND_ETH}{(targetWeights?.weth || 12.5).toFixed(2)}%)</span>
+            </div>
+            <div className="analytics-legend-pill">
+              <span style={{ width: '10px', height: '10px', background: '#ec4899', borderRadius: '50%', boxShadow: '0 0 8px #ec4899' }}></span>
+              <span className="text-slate-100 font-semibold">Sub-Reserva POL ({(targetWeights?.alts || 12.5).toFixed(2)}%)</span>
             </div>
           </>
         ) : (
