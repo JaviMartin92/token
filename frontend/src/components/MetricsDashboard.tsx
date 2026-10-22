@@ -128,23 +128,23 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
             </div>
             <div className={styles.kpiSubtext}>
               {parNominalLiabilities > 0
-                ? `Obligaciones al 100% NAV (Par Base: $${parNominalLiabilities.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD)`
+                ? `100% Cobertura de Reembolso Inmediato a Valor Liquidativo (NAV)`
                 : 'Obligaciones con Tenedores de ALPHA'}
             </div>
           </div>
 
           <div className={styles.kpiCard} style={{ borderColor: 'rgba(34, 197, 94, 0.4)', background: 'rgba(34, 197, 94, 0.06)' }}>
-            <div className={styles.kpiTitle} style={{ color: '#86efac' }}>✨ Superávit de Tesorería</div>
+            <div className={styles.kpiTitle} style={{ color: '#86efac' }}>✨ Crecimiento de Reservas</div>
             <div data-testid="treasury-surplus-total" className="font-black text-md text-green-bright margin-top-sm">
               +${treasurySurplusUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
             </div>
             <div className={styles.kpiSubtext} style={{ color: '#a7f3d0' }}>
-              +{surplusPct.toFixed(2)}% Ganancias Retenidas en Bóvedas
+              +{surplusPct.toFixed(2)}% Crecimiento de NAV desde Génesis ($1.00)
             </div>
           </div>
         </div>
 
-        {/* 💎 Institutional Claim: Banner de Superávit Retenido en Bóvedas */}
+        {/* 💎 Institutional Claim: Banner de Acreción de NAV y No Dilución */}
         {treasurySurplusUSD > 0 && (
           <div style={{
             marginTop: '1.25rem',
@@ -162,10 +162,10 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
               <span style={{ fontSize: '1.5rem' }}>💎</span>
               <div>
                 <div style={{ fontWeight: 800, color: '#4ade80', fontSize: '0.95rem', letterSpacing: '0.02em' }}>
-                  SUPERÁVIT PATRIMONIAL ACUMULADO: +${treasurySurplusUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD (+{surplusPct.toFixed(2)}% sobre Emisión Par)
+                  CRECIMIENTO PATRIMONIAL DEL PROTOCOLO: +${treasurySurplusUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD (+{surplusPct.toFixed(2)}% sobre Base Génesis)
                 </div>
                 <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '2px' }}>
-                  El valor patrimonial de cada ALPHA emitido a $1.00 USD ha aumentado a <strong>{navPerShareUSD.startsWith('$') ? navPerShareUSD : `$${navPerShareUSD} USDC`}</strong> debido al flujo continuo de comisiones de emisión y rendimientos exógenos acumulados en las bóvedas de tesorería.
+                  Cada nueva cuota de ALPHA se emite estrictamente a valor liquidativo (NAV actual: <strong>{navPerShareUSD.startsWith('$') ? navPerShareUSD : `$${navPerShareUSD} USDC`}</strong>) protegiendo a los tenedores contra la dilución. El valor patrimonial por share se ha revalorizado un <strong>+{surplusPct.toFixed(2)}%</strong> sobre la base génesis ($1.00 USD) impulsado por las comisiones de emisión protocolarias y los rendimientos reales de las bóvedas institucionales.
                 </div>
               </div>
             </div>
@@ -179,7 +179,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
               border: '1px solid rgba(34, 197, 94, 0.4)',
               letterSpacing: '0.05em'
             }}>
-              SUPERÁVIT EN RESERVAS ON-CHAIN
+              ACRECIÓN DE VALOR ON-CHAIN
             </div>
           </div>
         )}
@@ -294,8 +294,8 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
               fontSize: '0.8rem',
               color: '#86efac'
             }}>
-              <span>✨ <strong>Superávit de Tesorería Acumulado:</strong> +${treasurySurplusUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD en reservas netas sobre el capital emitido</span>
-              <span style={{ fontWeight: 700, color: '#4ade80' }}>+{surplusPct.toFixed(2)}% de Valor Excedente</span>
+              <span>✨ <strong>Acreción Patrimonial de Tesorería:</strong> +${treasurySurplusUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD acumulados en reservas por encima de la base génesis</span>
+              <span style={{ fontWeight: 700, color: '#4ade80' }}>+{surplusPct.toFixed(2)}% Apreciación NAV</span>
             </div>
           )}
         </div>
