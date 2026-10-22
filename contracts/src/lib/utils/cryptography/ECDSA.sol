@@ -17,6 +17,10 @@ library ECDSA {
             v := byte(0, mload(add(signature, 0x60)))
         }
 
+        return recover(hash, v, r, s);
+    }
+
+    function recover(bytes32 hash, uint8 v, bytes32 r, bytes32 s) internal pure returns (address) {
         if (uint256(s) > 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0) {
             revert("ECDSA: invalid signature 's' value");
         }

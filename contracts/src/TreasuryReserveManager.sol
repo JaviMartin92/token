@@ -2,13 +2,16 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./ProtocolRoles.sol";
 import "./lib/security/ReentrancyGuard.sol";
 
 import "./interfaces/I1inchAggregator.sol";
 import "./interfaces/ILidoWstETH.sol";
 import "./interfaces/ILombardLBTC.sol";
 import "./interfaces/IMorphoVault.sol";
+import "./interfaces/IProtocolErrors.sol";
 
 /**
  * @title TreasuryReserveManager
@@ -19,7 +22,8 @@ import "./interfaces/IMorphoVault.sol";
  *         4. Morpho Blue MetaMorpho Vaults for 80% Stablecoin Yield (6.45% APY).
  *         5. P2P Lending Market for 20% Direct Treasury Credit Line (8.00% APR).
  */
-contract TreasuryReserveManager is Ownable, ReentrancyGuard {
+contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
+    using SafeERC20 for IERC20;
     address public treasury;
     address public usdcToken;
     address public wbtcToken;
@@ -29,11 +33,11 @@ contract TreasuryReserveManager is Ownable, ReentrancyGuard {
 
     // Production Protocol Addresses (Arbitrum One / Mainnet)
     address public oneInchAggregator = 0x1111111254EEB25477B68fb85Ed929f73A960582;
-    address public lidoWstETH         = 0x5979D7b546E38E414F7E9822514be443A4800529; // wstETH Arbitrum
-    address public lombardLBTC        = 0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd; // LBTC Arbitrum
-    address public morphoUsdcVault   = 0x488102554708C23C0227d8D86f4A2fAffbb27357;
+    address public lidoWstETH = 0x5979D7b546E38E414F7E9822514be443A4800529; // wstETH Arbitrum
+    address public lombardLBTC = 0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd; // LBTC Arbitrum
+    address public morphoUsdcVault = 0x488102554708C23C0227d8D86f4A2fAffbb27357;
 
-    function setOracleRouter(address _oracleRouter) external onlyOwner {
+    function setOracleRouter(address _oracleRouter) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         oracleRouter = _oracleRouter;
     }
 
@@ -41,36 +45,24 @@ contract TreasuryReserveManager is Ownable, ReentrancyGuard {
     uint256 public lastProductionRebalanceTimestamp;
 
     event ProductionRebalanceExecuted(
-        uint256 totalUsdcAllocated,
-        uint256 liquidLoansPool,
-        uint256 morphoVaultDeposit,
-        uint256 timestamp
+        uint256 totalUsdcAllocated, uint256 liquidLoansPool, uint256 morphoVaultDeposit, uint256 timestamp
     );
 
-    constructor(
-        address _treasury,
-        address _usdcToken,
-        address _wbtcToken,
-        address _wethToken,
-        address _initialOwner
-    ) Ownable() {
+    constructor(address _treasury, address _usdcToken, address _wbtcToken, address _wethToken, address _initialOwner) {
+        address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
         treasury = _treasury;
         usdcToken = _usdcToken;
         wbtcToken = _wbtcToken;
         wethToken = _wethToken;
         lastProductionRebalanceTimestamp = block.timestamp;
-
-        if (_initialOwner != msg.sender) {
-            transferOwnership(_initialOwner);
-        }
     }
 
-    function setProductionAddresses(
-        address _oneInch,
-        address _lido,
-        address _lombard,
-        address _morpho
-    ) external onlyOwner {
+    function setProductionAddresses(address _oneInch, address _lido, address _lombard, address _morpho)
+        external
+        onlyRole(ProtocolRoles.ADMIN_ROLE)
+    {
         oneInchAggregator = _oneInch;
         lidoWstETH = _lido;
         lombardLBTC = _lombard;
@@ -81,27 +73,32 @@ contract TreasuryReserveManager is Ownable, ReentrancyGuard {
      * @notice Executes 1-click production rebalance allocating 20% to liquid P2P reserve line and 80% to Morpho Blue
      */
     function executeProductionRebalance(uint256 usdcAmount) external nonReentrant returns (bool) {
-        require(usdcAmount > 0, "ReserveManager: Amount must be > 0");
-        require(IERC20(usdcToken).transferFrom(msg.sender, address(this), usdcAmount), "ReserveManager: Transfer failed");
+        if (usdcAmount == 0) revert IProtocolErrors.ZeroAmount();
+        IERC20(usdcToken).safeTransferFrom(msg.sender, address(this), usdcAmount);
 
-        uint256 liquidReserve20 = (usdcAmount * 2000) / 10000; // 20%
-        uint256 morphoVault80  = usdcAmount - liquidReserve20; // 80%
+        uint256 liquidReserve10 = (usdcAmount * 1000) / 10000; // 10%
+        uint256 morphoVault90 = usdcAmount - liquidReserve10; // 90%
 
-        // Send 20% to Treasury for P2P/Direct Loan reserves
-        require(IERC20(usdcToken).transfer(treasury, liquidReserve20), "ReserveManager: Liquid transfer failed");
+        // Send 10% to Treasury for liquid buffer / P2P reserve line
+        IERC20(usdcToken).safeTransfer(treasury, liquidReserve10);
 
-        // Deposit 80% to Morpho Blue Vault if configured
+        // Deposit 90% to Morpho Blue Vault if configured
         if (morphoUsdcVault.code.length > 0) {
-            IERC20(usdcToken).approve(morphoUsdcVault, morphoVault80);
-            try IMorphoVault(morphoUsdcVault).deposit(morphoVault80, treasury) {} catch {}
+            IERC20(usdcToken).approve(morphoUsdcVault, morphoVault90);
+            try IMorphoVault(morphoUsdcVault).deposit(morphoVault90, treasury) {
+                // Morpho deposit successful
+            } catch {
+                // Fallback: safe transfer to treasury on vault error
+                IERC20(usdcToken).safeTransfer(treasury, morphoVault90);
+            }
         } else {
-            require(IERC20(usdcToken).transfer(treasury, morphoVault80), "ReserveManager: Morpho transfer fallback failed");
+            IERC20(usdcToken).safeTransfer(treasury, morphoVault90);
         }
 
         totalRebalancedVolume += usdcAmount;
         lastProductionRebalanceTimestamp = block.timestamp;
 
-        emit ProductionRebalanceExecuted(usdcAmount, liquidReserve20, morphoVault80, block.timestamp);
+        emit ProductionRebalanceExecuted(usdcAmount, liquidReserve10, morphoVault90, block.timestamp);
         return true;
     }
 }

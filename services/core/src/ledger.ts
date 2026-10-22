@@ -58,7 +58,7 @@ export async function recordLedgerTransaction(
 /**
  * Validates and aggregates all trial balances to verify ledger integrity.
  */
-export async function getTrialBalance() {
+async function getTrialBalance() {
   const entries = await prisma.ledgerEntry.findMany();
   const balances: Record<string, { debits: number; credits: number; net: number }> = {};
 

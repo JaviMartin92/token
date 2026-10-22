@@ -1,0 +1,10 @@
+testMode: assertion
+testLimit: 500000
+timeout: 86400
+corpusDir: corpus
+deployer: "0x30000"
+sender: ["0x10000", "0x20000", "0x30000"]
+coverage: true
+shrinkLimit: 5000
+solcArgs: ["--via-ir", "--optimize", "--optimize-runs", "200"]
+prefix: "echidna_"

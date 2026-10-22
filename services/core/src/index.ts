@@ -3,13 +3,14 @@ import Redis from 'ioredis';
 import { connectDb, prisma } from './database.js';
 import { recordLedgerTransaction } from './ledger.js';
 import { ReferenceType } from '@prisma/client';
+import { BACKEND_STRINGS } from './constants/strings.js';
 
 dotenv.config();
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 
 async function main() {
-  console.log('[*] Starting Alpha Centauri Core Management Service...');
+  console.log(BACKEND_STRINGS.SERVICES.CORE_START);
   
   // 1. Database Connection
   await connectDb();
@@ -20,9 +21,9 @@ async function main() {
 
   redis.subscribe(channel, (err) => {
     if (err) {
-      console.error('[!] Failed to subscribe to Redis events channel:', err);
+      console.error(BACKEND_STRINGS.SERVICES.REDIS_SUB_ERROR, err);
     } else {
-      console.log(`[+] Subscribed to real-time events channel: "${channel}"`);
+      console.log(BACKEND_STRINGS.SERVICES.REDIS_SUB_SUCCESS(channel));
     }
   });
 
@@ -30,11 +31,11 @@ async function main() {
     if (chan === channel) {
       try {
         const event = JSON.parse(msg);
-        console.log(`[Event Received] ${event.type} - Tx: ${event.txHash}`);
+        console.log(BACKEND_STRINGS.SERVICES.EVENT_RECEIVED(event.type, event.txHash));
         
         await handleBlockchainEvent(event);
       } catch (error) {
-        console.error('[!] Error processing event message:', error);
+        console.error(BACKEND_STRINGS.SERVICES.EVENT_PROCESS_ERROR, error);
       }
     }
   });
@@ -60,7 +61,7 @@ async function handleBlockchainEvent(event: Web3Event) {
       const burnedVal = (parseFloat(assetAmountOut) + parseFloat(feeCharged)).toString();
 
       await recordLedgerTransaction(
-        `User ${user} redeemed shares at NAV`,
+        BACKEND_STRINGS.LEDGER.USER_REDEEM_DESC(user),
         ReferenceType.REDEMPTION,
         txHash,
         [
@@ -90,7 +91,7 @@ async function handleBlockchainEvent(event: Web3Event) {
     case 'CORPORATE_CONTRIBUTION_INJECTED': {
       const { amount, auditRef } = event.payload;
       await recordLedgerTransaction(
-        `Corporate contribution received: Ref ${auditRef}`,
+        BACKEND_STRINGS.LEDGER.CORP_INJECTION_DESC(auditRef),
         ReferenceType.CORP_INJECTION,
         txHash,
         [
@@ -119,7 +120,7 @@ async function handleBlockchainEvent(event: Web3Event) {
 
       // Double-entry record for the TWAP trade (representing assets movements)
       await recordLedgerTransaction(
-        `TWAP Buyback Step Executed for Order ${orderId}`,
+        BACKEND_STRINGS.LEDGER.TWAP_BUYBACK_DESC(orderId),
         ReferenceType.REBALANCE,
         txHash,
         [
@@ -148,16 +149,16 @@ async function handleBlockchainEvent(event: Web3Event) {
 
     case 'CIRCUIT_BREAKER_TRIGGERED': {
       const { asset, dropPercentage } = event.payload;
-      console.warn(`[WARNING] Circuit breaker triggered for asset ${asset} due to ${dropPercentage}% drop!`);
+      console.warn(BACKEND_STRINGS.SERVICES.CIRCUIT_BREAKER_TRIGGERED(asset, dropPercentage));
       // Update internal status...
       break;
     }
 
     default:
-      console.log(`[Info] Unhandled event category: ${event.type}`);
+      console.log(BACKEND_STRINGS.SERVICES.EVENT_UNHANDLED(event.type));
   }
 }
 
 main().catch((error) => {
-  console.error('[!] Core runtime crash:', error);
+  console.error(BACKEND_STRINGS.SERVICES.CORE_CRASH, error);
 });

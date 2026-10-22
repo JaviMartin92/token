@@ -1,0 +1,26 @@
+.container { max-width: 900px; margin: 0 auto; }
+.headerH3 { margin: 0; font-size: 1.25rem; font-weight: 800; }
+.headerSub { margin: 0.2rem 0 0 0; font-size: 0.8rem; color: #94a3b8; }
+.btnAudit { padding: 0.35rem 0.7rem; font-size: 0.75rem; }
+.btnFaucet { padding: 0.35rem 0.7rem; font-size: 0.75rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+
+.cardUsdc { background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.2); padding: 1rem; border-radius: 12px; }
+.cardShares { background: rgba(192, 132, 252, 0.08); border: 1px solid rgba(192, 132, 252, 0.2); padding: 1rem; border-radius: 12px; }
+.cardTitle { font-size: 0.75rem; opacity: 0.7; font-weight: 600; }
+.cardValGreen { font-weight: 800; font-size: 1.4rem; color: #4ade80; margin-top: 0.2rem; }
+.cardValPurple { font-weight: 800; font-size: 1.4rem; color: #c084fc; margin-top: 0.2rem; }
+
+.actionBox { background: rgba(15, 23, 42, 0.4); padding: 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+.actionLabel { font-size: 0.85rem; font-weight: 600; color: #f8fafc; display: block; margin-bottom: 0.5rem; }
+.actionInput { width: 100%; background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0.6rem; border-radius: 8px; }
+.depositBtn { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); white-space: nowrap; padding: 0.6rem 1.2rem; font-weight: 700; }
+.redeemBtn { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); white-space: nowrap; padding: 0.6rem 1.2rem; font-weight: 700; }
+
+.adminH3 { margin: 0; font-size: 1.15rem; color: #38bdf8; display: flex; align-items: center; gap: 0.5rem; }
+.harvestBtn { padding: 0.5rem 1rem; font-size: 0.8rem; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); font-weight: 600; }
+
+.tagGreen { font-size: 0.75rem; background: rgba(74, 222, 128, 0.2); color: #4ade80; padding: 0.15rem 0.4rem; border-radius: 6px; font-weight: 600; }
+.tagAmber { font-size: 0.75rem; background: rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 0.15rem 0.4rem; border-radius: 6px; font-weight: 600; }
+.tagPurple { font-size: 0.75rem; background: rgba(168, 85, 247, 0.2); color: #c084fc; padding: 0.15rem 0.4rem; border-radius: 6px; font-weight: 600; }
+
+.stratList { display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.78rem; opacity: 0.9; }

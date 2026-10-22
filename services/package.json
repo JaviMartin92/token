@@ -14,6 +14,9 @@
     "build": "npm run build --workspaces",
     "test": "npm test --workspaces"
   },
+  "dependencies": {
+    "viem": "^2.54.6"
+  },
   "devDependencies": {
     "typescript": "^5.3.3",
     "@types/node": "^20.11.24",

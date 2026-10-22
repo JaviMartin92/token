@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { CONTRACT_ADDRESSES } from '../utils/web3.js';
+import styles from './GovernanceCommandCenter.module.css';
+import { CONTRACT_ADDRESSES, publicClient, getWalletClient } from '../utils/web3.js';
+import { encodeFunctionData, parseEther } from 'viem';
+import { UI_STRINGS } from '../constants/strings.js';
 
 interface GovernanceCommandCenterProps {
   web3Data: any;
@@ -10,7 +13,7 @@ interface GovernanceCommandCenterProps {
 export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = ({
   web3Data,
   adminActions,
-  isAdmin
+  isAdmin: _isAdmin
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'metrics' | 'parameters' | 'wallets' | 'promotions' | 'security'>('metrics');
 
@@ -27,8 +30,25 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
     navPerShareNum,
     proofOfReserves,
     totalBurnedTokens,
-    reserveBreakdown
+    porBreakdown,
+    targetWeights
   } = web3Data;
+
+  const twStables = targetWeights?.stables ?? 60.00;
+  const twWbtc = targetWeights?.wbtc ?? 26.67;
+  const twWeth = targetWeights?.weth ?? 13.33;
+  const twAlts = targetWeights?.alts ?? 0.00;
+
+  // Map porBreakdown (from useUniversalYield) to the reserveBreakdown shape used in this component
+  const reserveBreakdown = porBreakdown ? {
+    usdcUsd: String(porBreakdown.stables ?? 0),
+    wbtcUsd: String(porBreakdown.wbtc ?? 0),
+    wethUsd: String(porBreakdown.weth ?? 0),
+    stakedAlphaUsd: String(porBreakdown.alphaStaking ?? 0)
+  } : { usdcUsd: '0', wbtcUsd: '0', wethUsd: '0', stakedAlphaUsd: '0' };
+
+  const isProductionChain = web3Data.chainId !== 31337 && web3Data.chainId !== undefined;
+  const currentChainId = web3Data.chainId ?? 31337;
 
   const totalAssetsVal = parseFloat(proofOfReserves?.totalAssetsUSD || '0');
   const totalLiabVal = parseFloat(proofOfReserves?.totalLiabilitiesUSD || '0');
@@ -36,70 +56,93 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
   const navValueNum = navPerShareNum !== undefined ? navPerShareNum : 1.0;
   const burnedTokensStr = totalBurnedTokens || '0.00';
 
+  const submitGovernanceProposal = async (target: `0x${string}`, data: `0x${string}`, description: string) => {
+    try {
+      const client = getWalletClient(web3Data.activeKey);
+      const governorAddress = CONTRACT_ADDRESSES.GOVERNOR;
+      if (!governorAddress) throw new Error('Dirección de Governor no configurada');
+      const tx = await client.writeContract({
+        address: governorAddress as `0x${string}`,
+        abi: [
+          {
+            name: 'propose',
+            type: 'function',
+            stateMutability: 'nonpayable',
+            inputs: [
+              { name: 'target', type: 'address' },
+              { name: 'value', type: 'uint256' },
+              { name: 'data', type: 'bytes' }
+            ],
+            outputs: [{ name: 'proposalId', type: 'uint256' }]
+          }
+        ] as const,
+        functionName: 'propose',
+        args: [target, 0n, data]
+      });
+      await publicClient.waitForTransactionReceipt({ hash: tx });
+      alert(`🏛️ PROPUESTA DE GOBERNANZA ENVIADA ON-CHAIN:
+      
+Hash Transacción: ${tx}
+Objetivo: ${target}
+Descripción: "${description}"
+
+✅ Transacción enviada exitosamente a GovernorAlphaCentauri.propose()
+⏱️ Período de Votación Abierto -> Retraso Timelock Mandatory: 72 Horas`);
+      if (web3Data.fetchData) await web3Data.fetchData();
+    } catch (err: any) {
+      console.error('Error enviando propuesta DAO:', err);
+      alert(`⚠️ Transacción enviada a GovernorAlphaCentauri.propose(): ${err.message || err}`);
+    }
+  };
+
   return (
-    <div style={{
-      background: 'rgba(15, 23, 42, 0.75)',
-      backdropFilter: 'blur(16px)',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
-      borderRadius: '24px',
-      padding: '28px',
-      color: '#f8fafc',
-      marginTop: '24px',
-      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.35)'
-    }}>
+    <div className="gcc-container">
       {/* Header Banner */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+      <div className="gcc-header">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '2rem' }}>🏛️</span>
+          <div className={styles.headerFlex}>
+            <span className={styles.headerIcon}>🏛️</span>
             <div>
-              <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                Centro de Comando de Gobernanza & DAO
+              <h2 className="gcc-header-title">
+                {UI_STRINGS.GOVERNANCE.TITLE}
               </h2>
-              <p style={{ margin: '4px 0 0 0', color: '#94a3b8', fontSize: '0.9rem' }}>
-                Auditoría Exhaustiva en Tiempo Real, Control de Parámetros On-Chain y Gestor Promocional Empresarial
+              <p className="gcc-header-subtitle">
+                {UI_STRINGS.GOVERNANCE.SUBTITLE}
               </p>
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <div style={{ background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)', padding: '8px 16px', borderRadius: '12px', textAlign: 'right' }}>
-            <div style={{ fontSize: '0.75rem', color: '#86efac', fontWeight: 700 }}>RATIO SOLVENCIA PoR</div>
-            <div data-testid="admin-por-solvency-ratio" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#4ade80' }}>{solvencyRatio}%</div>
+        <div className={styles.headerRight}>
+          <div className="gcc-badge-indigo">
+            <div className={styles.badgeTitleIndigo}>{UI_STRINGS.GOVERNANCE.BANNER_EVM_CHAIN}</div>
+            <div className={styles.badgeValIndigo}>Chain ID: {currentChainId}</div>
           </div>
-          <div style={{ background: 'rgba(168, 85, 247, 0.15)', border: '1px solid rgba(168, 85, 247, 0.3)', padding: '8px 16px', borderRadius: '12px', textAlign: 'right' }}>
-            <div style={{ fontSize: '0.75rem', color: '#d8b4fe', fontWeight: 700 }}>NAV / TOKEN ALPHA</div>
-            <div data-testid="admin-nav-per-share" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#c084fc' }}>${navValueNum.toFixed(4)}</div>
+          <div className="gcc-badge-green">
+            <div className={styles.badgeTitleGreen}>{UI_STRINGS.GOVERNANCE.BANNER_POR_RATIO}</div>
+            <div data-testid="admin-por-solvency-ratio" className={styles.badgeValGreen}>{solvencyRatio}%</div>
+          </div>
+          <div className="gcc-badge-purple">
+            <div className={styles.badgeTitlePurple}>{UI_STRINGS.GOVERNANCE.BANNER_NAV_TOKEN} {UI_STRINGS.COMMON.SYMBOL_ALPHA}</div>
+            <div data-testid="admin-nav-per-share" className={styles.badgeValPurple}>${navValueNum.toFixed(4)}</div>
           </div>
         </div>
       </div>
 
       {/* Sub-Tabs Navigation */}
-      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+      <div className="gcc-subtabs-row">
         {[
-          { key: 'metrics', label: '📊 Auditoría & Métricas', icon: '📊' },
-          { key: 'parameters', label: '⚙️ Control Parámetros', icon: '⚙️' },
-          { key: 'wallets', label: '💼 Billeteras Corporativas', icon: '💼' },
-          { key: 'promotions', label: '🎁 Eventos & Promociones', icon: '🎁' },
-          { key: 'security', label: '🛡️ Consola Seguridad', icon: '🛡️' }
+          { key: 'metrics', label: UI_STRINGS.GOVERNANCE.TAB_AUDIT_METRICS, icon: '📊' },
+          { key: 'parameters', label: UI_STRINGS.GOVERNANCE.TAB_PARAM_CONTROL, icon: '⚙️' },
+          { key: 'wallets', label: UI_STRINGS.GOVERNANCE.TAB_PROTOCOL_VAULTS, icon: '💼' },
+          { key: 'promotions', label: UI_STRINGS.GOVERNANCE.TAB_PROMOTIONS, icon: '🎁' },
+          { key: 'security', label: UI_STRINGS.GOVERNANCE.TAB_SECURITY, icon: '🛡️' }
         ].map(tab => (
           <button
             key={tab.key}
             data-testid={`admin-subtab-${tab.key}`}
             onClick={() => setActiveSubTab(tab.key as any)}
-            style={{
-              background: activeSubTab === tab.key ? 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)' : 'rgba(30, 41, 59, 0.6)',
-              border: activeSubTab === tab.key ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
-              color: '#ffffff',
-              padding: '10px 18px',
-              borderRadius: '12px',
-              fontWeight: 700,
-              fontSize: '0.88rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              boxShadow: activeSubTab === tab.key ? '0 4px 12px rgba(168, 85, 247, 0.4)' : 'none'
-            }}
+            className={activeSubTab === tab.key ? 'gcc-tab-btn-active' : 'gcc-tab-btn-inactive'}
           >
             {tab.label}
           </button>
@@ -109,67 +152,67 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
       {/* TAB 1: METRICAS EXHAUSTIVAS */}
       {activeSubTab === 'metrics' && (
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-            <div style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '16px' }}>
-              <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>ACTIVOS TOTALES (PoR)</div>
-              <div data-testid="admin-total-assets-por" style={{ fontSize: '1.5rem', fontWeight: 800, color: '#38bdf8', marginTop: '4px' }}>
+          <div className={styles.metricsGrid}>
+            <div className={styles.metricCard}>
+              <div className={styles.metricLabel}>{UI_STRINGS.METRICS.TOTAL_ASSETS_LABEL}</div>
+              <div data-testid="admin-total-assets-por" className={styles.metricValCyan}>
                 ${totalAssetsVal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>Cobertura On-Chain 100% Verificada</div>
+              <div className={styles.metricSubtext}>{UI_STRINGS.GOVERNANCE.COVERAGE_VERIFIED}</div>
             </div>
 
-            <div style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '16px' }}>
-              <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>DEFLACIÓN ACUMULADA</div>
-              <div data-testid="admin-deflation-accumulated" style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ef4444', marginTop: '4px' }}>
-                🔥 {burnedTokensStr} ALPHA
+            <div className={styles.metricCard}>
+              <div className={styles.metricLabel}>{UI_STRINGS.STAKING.METRIC_TOTAL_BURNED}</div>
+              <div data-testid="admin-deflation-accumulated" className={styles.metricValRed}>
+                🔥 {burnedTokensStr} {UI_STRINGS.COMMON.SYMBOL_ALPHA}
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>Tokens Destruidos por Fees Staking</div>
+              <div className={styles.metricSubtext}>{UI_STRINGS.GOVERNANCE.BURNED_BY_FEES}</div>
             </div>
 
-            <div style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '16px' }}>
-              <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>MODELO DE INGRESOS (50/25/25)</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#e2e8f0', marginTop: '6px' }}>
-                🏛️ 50% Res | 💼 25% OpEx | 🏦 25% Prof
+            <div className={styles.metricCard}>
+              <div className={styles.metricLabel}>{UI_STRINGS.GOVERNANCE.INCOME_MODEL_TITLE}</div>
+              <div className={styles.modelText}>
+                {UI_STRINGS.GOVERNANCE.INCOME_MODEL_DESC}
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#86efac', marginTop: '4px' }}>Reparto Automático On-Chain</div>
+              <div className={styles.metricSubtextGreen}>{UI_STRINGS.GOVERNANCE.INCOME_MODEL_AUTODISTRIB}</div>
             </div>
           </div>
 
-          <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', color: '#cbd5e1' }}>📌 Distribución Target de Activos de Reserva (50/25/12.5/12.5)</h3>
-          <div style={{ background: 'rgba(15, 23, 42, 0.6)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+          <h3 className={styles.sectionTitle}>{UI_STRINGS.GOVERNANCE.SECTION_TARGET_DISTRIB} ({twStables.toFixed(1)} / {twWbtc.toFixed(1)} / {twWeth.toFixed(1)} / {twAlts.toFixed(1)})</h3>
+          <div className={styles.tableContainer}>
+            <table className={styles.table}>
               <thead>
-                <tr style={{ background: 'rgba(30, 41, 59, 0.9)', color: '#94a3b8' }}>
-                  <th style={{ padding: '12px 16px' }}>Activo de Reserva</th>
-                  <th style={{ padding: '12px 16px' }}>Valor USD Real</th>
-                  <th style={{ padding: '12px 16px' }}>Ponderación Target</th>
-                  <th style={{ padding: '12px 16px' }}>Función en Tesorería</th>
+                <tr className={styles.thRow}>
+                  <th className={styles.thCell}>{UI_STRINGS.METRICS.TH_ASSET}</th>
+                  <th className={styles.thCell}>{UI_STRINGS.GOVERNANCE.TH_REAL_USD_VAL}</th>
+                  <th className={styles.thCell}>{UI_STRINGS.METRICS.TH_TARGET_WEIGHT}</th>
+                  <th className={styles.thCell}>{UI_STRINGS.GOVERNANCE.TH_TREASURY_ROLE}</th>
                 </tr>
               </thead>
               <tbody>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 700, color: '#60a5fa' }}>💵 USDC (Sub-Reserva 80/20)</td>
-                  <td style={{ padding: '12px 16px' }}>${parseFloat(reserveBreakdown?.usdcUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                  <td style={{ padding: '12px 16px', color: '#4ade80', fontWeight: 700 }}>50.00%</td>
-                  <td style={{ padding: '12px 16px', color: '#94a3b8' }}>Morpho Yield (80%) + Líquido (20%)</td>
+                <tr className={styles.trBorder}>
+                  <td className={styles.tdBlue}>💵 {UI_STRINGS.COMMON.SYMBOL_USDC} (Sub-Reserva Exógena)</td>
+                  <td className={styles.tdCell}>${parseFloat(reserveBreakdown?.usdcUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                  <td className={styles.tdGreen}>{twStables.toFixed(2)}%</td>
+                  <td className={styles.tdMuted}>{UI_STRINGS.GOVERNANCE.ROLE_MORPHO_P2P}</td>
                 </tr>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 700, color: '#f59e0b' }}>₿ Wrapped Bitcoin (WBTC)</td>
-                  <td style={{ padding: '12px 16px' }}>${parseFloat(reserveBreakdown?.wbtcUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                  <td style={{ padding: '12px 16px', color: '#4ade80', fontWeight: 700 }}>25.00%</td>
-                  <td style={{ padding: '12px 16px', color: '#94a3b8' }}>Compras DEX en Mercado Secundario</td>
+                <tr className={styles.trBorder}>
+                  <td className={styles.tdAmber}>₿ Wrapped Bitcoin ({UI_STRINGS.COMMON.SYMBOL_WBTC})</td>
+                  <td className={styles.tdCell}>${parseFloat(reserveBreakdown?.wbtcUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                  <td className={styles.tdGreen}>{twWbtc.toFixed(2)}%</td>
+                  <td className={styles.tdMuted}>{UI_STRINGS.GOVERNANCE.ROLE_DEX_BUYS}</td>
                 </tr>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 700, color: '#a855f7' }}>Ξ Wrapped Ethereum (WETH)</td>
-                  <td style={{ padding: '12px 16px' }}>${parseFloat(reserveBreakdown?.wethUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                  <td style={{ padding: '12px 16px', color: '#4ade80', fontWeight: 700 }}>12.50%</td>
-                  <td style={{ padding: '12px 16px', color: '#94a3b8' }}>Compras DEX en Mercado Secundario</td>
+                <tr className={styles.trBorder}>
+                  <td className={styles.tdPurple}>Ξ Wrapped Ethereum ({UI_STRINGS.COMMON.SYMBOL_WETH})</td>
+                  <td className={styles.tdCell}>${parseFloat(reserveBreakdown?.wethUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                  <td className={styles.tdGreen}>{twWeth.toFixed(2)}%</td>
+                  <td className={styles.tdMuted}>{UI_STRINGS.GOVERNANCE.ROLE_DEX_BUYS}</td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '12px 16px', fontWeight: 700, color: '#ec4899' }}>🥩 Native ALPHA Staked</td>
-                  <td style={{ padding: '12px 16px' }}>${parseFloat(reserveBreakdown?.stakedAlphaUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                  <td style={{ padding: '12px 16px', color: '#4ade80', fontWeight: 700 }}>12.50%</td>
-                  <td style={{ padding: '12px 16px', color: '#94a3b8' }}>Auto-stake Institucional Governance</td>
+                  <td className={styles.tdPink}>🥩 Native {UI_STRINGS.COMMON.SYMBOL_ALPHA} Staked</td>
+                  <td className={styles.tdCell}>${parseFloat(reserveBreakdown?.stakedAlphaUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                  <td className={styles.tdGreen}>{twAlts.toFixed(2)}%</td>
+                  <td className={styles.tdMuted}>{UI_STRINGS.GOVERNANCE.ROLE_AUTO_STAKE}</td>
                 </tr>
               </tbody>
             </table>
@@ -180,107 +223,137 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
       {/* TAB 2: CONTROL DE PARAMETROS */}
       {activeSubTab === 'parameters' && (
         <div>
-          <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', color: '#cbd5e1' }}>⚙️ Configuración Global de Parámetros y Comisiones</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-            <div style={{ background: 'rgba(30, 41, 59, 0.6)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>COMISIÓN DE DEPÓSITO TESORERÍA (%)</label>
-              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+          <h3 className={styles.sectionTitle}>{UI_STRINGS.GOVERNANCE.SECTION_GLOBAL_CONFIG}</h3>
+          
+          {isProductionChain && (
+            <div className={styles.pureBanner}>
+              🏛️ <strong>Pure DeFi Governance Active (Mainnet Live - Chain ID {currentChainId})</strong>: Ajusta los parámetros en las casillas inferiores y pulsa <strong>"{UI_STRINGS.GOVERNANCE.BTN_PROPOSE_DAO}"</strong> para firmar y enviar la propuesta on-chain a <code>GovernorAlphaCentauri.sol</code>.
+            </div>
+          )}
+
+          <div className={styles.paramGrid}>
+            <div className={styles.paramCard}>
+              <label className="acp-label-sm">{UI_STRINGS.GOVERNANCE.LABEL_DEPOSIT_FEE_PCT}</label>
+              <div className="acp-flex-row-gap5">
                 <input
                   type="number"
                   step="0.1"
                   value={depositFeeInput}
                   onChange={(e) => setDepositFeeInput(e.target.value)}
-                  disabled={!isAdmin}
-                  style={{ flex: 1, background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '10px 14px' }}
+                  className={styles.inputDark}
                 />
                 <button
-                  disabled={!isAdmin}
-                  style={{ background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: isAdmin ? 'pointer' : 'not-allowed' }}
+                  onClick={async () => {
+                    if (isProductionChain) {
+                      const bps = BigInt(Math.round(parseFloat(depositFeeInput || '0') * 100));
+                      const calldata = encodeFunctionData({
+                        abi: [{ name: 'setDepositFee', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'feeBps', type: 'uint256' }], outputs: [] }] as const,
+                        functionName: 'setDepositFee',
+                        args: [bps]
+                      });
+                      await submitGovernanceProposal(CONTRACT_ADDRESSES.TREASURY, calldata, `Ajustar Comisión de Depósito Tesorería a ${depositFeeInput}% (${bps} Bps)`);
+                    } else {
+                      alert(`🧪 [Sandbox - Chain 31337] Comisión de depósito simulada a ${depositFeeInput}%`);
+                    }
+                  }}
+                  className={isProductionChain ? styles.btnProd : styles.btnSandbox}
                 >
-                  Guardar
+                  {isProductionChain ? UI_STRINGS.GOVERNANCE.BTN_PROPOSE_DAO : UI_STRINGS.GOVERNANCE.BTN_SAVE_SANDBOX}
                 </button>
               </div>
-              <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', display: 'block' }}>Actual: 0.50% (50 Bps)</span>
+              <span className={styles.metricSubtext}>Actual: {depositFeeInput}% ({Math.round(parseFloat(depositFeeInput || '0') * 100)} Bps)</span>
             </div>
 
-            <div style={{ background: 'rgba(30, 41, 59, 0.6)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>COMISIÓN DE CANJE DIRECTO / REDEEM (%)</label>
-              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+            <div className={styles.paramCard}>
+              <label className="acp-label-sm">{UI_STRINGS.GOVERNANCE.LABEL_REDEEM_FEE_PCT}</label>
+              <div className="acp-flex-row-gap5">
                 <input
                   type="number"
                   step="0.1"
                   value={redeemFeeInput}
                   onChange={(e) => setRedeemFeeInput(e.target.value)}
-                  disabled={!isAdmin}
-                  style={{ flex: 1, background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '10px 14px' }}
+                  className={styles.inputDark}
                 />
                 <button
-                  disabled={!isAdmin}
-                  style={{ background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: isAdmin ? 'pointer' : 'not-allowed' }}
+                  onClick={async () => {
+                    if (isProductionChain) {
+                      const bps = BigInt(Math.round(parseFloat(redeemFeeInput || '0') * 100));
+                      const calldata = encodeFunctionData({
+                        abi: [{ name: 'setRedeemFee', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'feeBps', type: 'uint256' }], outputs: [] }] as const,
+                        functionName: 'setRedeemFee',
+                        args: [bps]
+                      });
+                      await submitGovernanceProposal(CONTRACT_ADDRESSES.TREASURY, calldata, `Ajustar Comisión de Canje Directo / Redeem a ${redeemFeeInput}% (${bps} Bps)`);
+                    } else {
+                      alert(`🧪 [Sandbox - Chain 31337] Comisión de canje simulada a ${redeemFeeInput}%`);
+                    }
+                  }}
+                  className={isProductionChain ? styles.btnProd : styles.btnSandbox}
                 >
-                  Guardar
+                  {isProductionChain ? UI_STRINGS.GOVERNANCE.BTN_PROPOSE_DAO : UI_STRINGS.GOVERNANCE.BTN_SAVE_SANDBOX}
                 </button>
               </div>
-              <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', display: 'block' }}>Actual: 1.00% (100 Bps)</span>
+              <span className={styles.metricSubtext}>Actual: {redeemFeeInput}% ({Math.round(parseFloat(redeemFeeInput || '0') * 100)} Bps)</span>
             </div>
 
-            <div style={{ background: 'rgba(30, 41, 59, 0.6)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>FEE ORIGINACIÓN PRÉSTAMOS P2P (%)</label>
-              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+            <div className={styles.paramCard}>
+              <label className="acp-label-sm">{UI_STRINGS.GOVERNANCE.LABEL_P2P_FEE_PCT}</label>
+              <div className="acp-flex-row-gap5">
                 <input
                   type="number"
                   step="0.1"
                   value={p2pFeeInput}
                   onChange={(e) => setP2pFeeInput(e.target.value)}
-                  disabled={!isAdmin}
-                  style={{ flex: 1, background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '10px 14px' }}
+                  className={styles.inputDark}
                 />
                 <button
-                  disabled={!isAdmin}
-                  style={{ background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0 16px', fontWeight: 700, cursor: isAdmin ? 'pointer' : 'not-allowed' }}
+                  onClick={async () => {
+                    if (isProductionChain) {
+                      const bps = BigInt(Math.round(parseFloat(p2pFeeInput || '0') * 100));
+                      const calldata = encodeFunctionData({
+                        abi: [{ name: 'setFeeBps', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'feeBps', type: 'uint256' }], outputs: [] }] as const,
+                        functionName: 'setFeeBps',
+                        args: [bps]
+                      });
+                      await submitGovernanceProposal(CONTRACT_ADDRESSES.P2P_MARKET, calldata, `Ajustar Fee de Originación Préstamos P2P a ${p2pFeeInput}% (${bps} Bps)`);
+                    } else {
+                      alert(`🧪 [Sandbox - Chain 31337] Fee de originación simulado a ${p2pFeeInput}%`);
+                    }
+                  }}
+                  className={isProductionChain ? styles.btnProd : styles.btnSandbox}
                 >
-                  Guardar
+                  {isProductionChain ? UI_STRINGS.GOVERNANCE.BTN_PROPOSE_DAO : UI_STRINGS.GOVERNANCE.BTN_SAVE_SANDBOX}
                 </button>
               </div>
-              <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', display: 'block' }}>Actual: 0.50% (50 Bps)</span>
+              <span className={styles.metricSubtext}>Actual: {p2pFeeInput}% ({Math.round(parseFloat(p2pFeeInput || '0') * 100)} Bps)</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* TAB 3: BILLETERAS CORPORATIVAS */}
+      {/* TAB 3: BÓVEDAS DEL PROTOCOLO */}
       {activeSubTab === 'wallets' && (
         <div>
-          <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', color: '#cbd5e1' }}>💼 Control y Direccionamiento de Billeteras Corporativas</h3>
-          <div style={{ background: 'rgba(30, 41, 59, 0.6)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <h3 className={styles.sectionTitle}>{UI_STRINGS.GOVERNANCE.SECTION_VAULT_ADDRESSES}</h3>
+          <div className={styles.promoCard}>
+            <div className="acp-control-stack">
               <div>
-                <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>🏛️ BILLETERA BUNKER TESORERÍA (50% RESERVAS)</label>
+                <label className="acp-label-sm">{UI_STRINGS.GOVERNANCE.LABEL_BUNKER_WALLET}</label>
                 <input
                   type="text"
                   readOnly
                   value={web3Data.contractAddresses?.TREASURY || '0x...'}
-                  style={{ width: '100%', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#38bdf8', padding: '10px 14px', fontFamily: 'monospace', marginTop: '4px' }}
+                  className={styles.walletInputBlue}
                 />
               </div>
 
               <div>
-                <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>💼 VAULT CORPORATIVO OPEX (25% GASTOS OPERATIVOS)</label>
+                <label className="acp-label-sm">{UI_STRINGS.GOVERNANCE.LABEL_COMMUNITY_YIELD_VAULT}</label>
                 <input
                   type="text"
                   readOnly
-                  value={CONTRACT_ADDRESSES.CORPORATE_OPEX || '0x...'}
-                  style={{ width: '100%', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#a855f7', padding: '10px 14px', fontFamily: 'monospace', marginTop: '4px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>🏦 VAULT CORPORATIVO BENEFICIOS (25% PROFIT EMPRESA)</label>
-                <input
-                  type="text"
-                  readOnly
-                  value={CONTRACT_ADDRESSES.CORPORATE_PROFIT || '0x...'}
-                  style={{ width: '100%', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#4ade80', padding: '10px 14px', fontFamily: 'monospace', marginTop: '4px' }}
+                  value={CONTRACT_ADDRESSES.COMMUNITY_YIELD_VAULT || '0x...'}
+                  className={styles.walletInputGreen}
                 />
               </div>
             </div>
@@ -291,49 +364,51 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
       {/* TAB 4: PROMOCIONES Y EVENTOS ESPECIALES */}
       {activeSubTab === 'promotions' && (
         <div>
-          <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', color: '#cbd5e1' }}>🎁 Gestor de Promociones, Incentivos & Eventos Especiales</h3>
-          <div style={{ background: 'rgba(30, 41, 59, 0.6)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', marginBottom: '24px' }}>
-            <h4 style={{ margin: '0 0 16px 0', fontSize: '1rem', color: '#f472b6' }}>✨ Lanzar Nueva Campaña Promocional On-Chain</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+          <h3 className={styles.sectionTitle}>{UI_STRINGS.GOVERNANCE.SECTION_PROMOS_TITLE}</h3>
+          <div className={styles.promoCard}>
+            <h4 className={styles.promoH4}>{UI_STRINGS.GOVERNANCE.LABEL_LAUNCH_PROMO}</h4>
+            <div className="admin-grid-2col">
               <div>
-                <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>NOMBRE DE LA CAMPAÑA / EVENTO</label>
+                <label className="acp-label-sm">{UI_STRINGS.ADMIN.LABEL_CAMPAIGN_NAME}</label>
                 <input
                   type="text"
                   placeholder="Ej. Summer APY Boost 2026"
                   value={promoName}
                   onChange={(e) => setPromoName(e.target.value)}
-                  disabled={!isAdmin}
-                  style={{ width: '100%', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '10px 14px', marginTop: '4px' }}
+                  className={styles.inputDark}
                 />
               </div>
               <div>
-                <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>PRESUPUESTO DE INCENTIVOS (ALPHA)</label>
+                <label className="acp-label-sm">{UI_STRINGS.ADMIN.LABEL_CAMPAIGN_AMOUNT}</label>
                 <input
                   type="number"
                   placeholder="1000"
                   value={promoAmount}
                   onChange={(e) => setPromoAmount(e.target.value)}
-                  disabled={!isAdmin}
-                  style={{ width: '100%', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '10px 14px', marginTop: '4px' }}
+                  className={styles.inputDark}
                 />
               </div>
             </div>
 
             <button
-              onClick={() => adminActions.handleCreateCampaign(promoName, promoAmount)}
-              disabled={!isAdmin || !promoName || !promoAmount}
-              style={{
-                background: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
-                border: 'none',
-                color: '#fff',
-                padding: '12px 24px',
-                borderRadius: '12px',
-                fontWeight: 700,
-                cursor: isAdmin ? 'pointer' : 'not-allowed',
-                width: '100%'
+              onClick={async () => {
+                if (!promoName || !promoAmount) return;
+                if (isProductionChain) {
+                  const amountWei = parseEther(promoAmount);
+                  const calldata = encodeFunctionData({
+                    abi: [{ name: 'createCampaign', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'name', type: 'string' }, { name: 'rewardAmount', type: 'uint256' }], outputs: [{ name: 'campaignId', type: 'uint256' }] }] as const,
+                    functionName: 'createCampaign',
+                    args: [promoName, amountWei]
+                  });
+                  await submitGovernanceProposal(CONTRACT_ADDRESSES.PROMOTIONAL_VAULT, calldata, `Aprobación de Presupuesto de Incentivos para "${promoName}" por ${promoAmount} ALPHA`);
+                } else {
+                  adminActions.handleCreateCampaign(promoName, promoAmount);
+                }
               }}
+              disabled={!promoName || !promoAmount}
+              className={promoName && promoAmount ? (isProductionChain ? styles.btnProd : styles.promoBtnActive) : styles.promoBtnDisabled}
             >
-              🚀 Crear y Activar Campaña Promocional On-Chain
+              {isProductionChain ? UI_STRINGS.GOVERNANCE.BTN_PROPOSE_PROMO : UI_STRINGS.GOVERNANCE.BTN_ACTIVATE_PROMO}
             </button>
           </div>
         </div>
@@ -342,41 +417,60 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
       {/* TAB 5: SEGURIDAD & CIRCUIT BREAKER */}
       {activeSubTab === 'security' && (
         <div>
-          <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', color: '#cbd5e1' }}>🛡️ Consola de Seguridad de Emergencia & Circuit Breaker</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-            <div style={{ background: 'rgba(30, 41, 59, 0.6)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <h4 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#f87171' }}>⚡ Descongelar Circuit Breaker</h4>
-              <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '0 0 16px 0' }}>
-                Restablece la operatividad del contrato tras una parada de seguridad provocada por alta volatilidad o congelamiento de oráculo.
+          <h3 className={styles.sectionTitle}>{UI_STRINGS.GOVERNANCE.SECTION_SECURITY_TITLE}</h3>
+          <div className="admin-grid-2col">
+            <div className={styles.secCard}>
+              <h4 className={styles.secBreakerH4}>{UI_STRINGS.GOVERNANCE.SUBTITLE_RESET_BREAKER}</h4>
+              <p className={styles.metricSubtext}>
+                {UI_STRINGS.GOVERNANCE.DESC_RESET_BREAKER}
               </p>
               <button
-                onClick={adminActions.handleResetBreaker}
-                disabled={!isAdmin}
-                style={{ background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)', border: 'none', color: '#fff', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, cursor: isAdmin ? 'pointer' : 'not-allowed', width: '100%' }}
+                onClick={async () => {
+                  if (isProductionChain) {
+                    const calldata = encodeFunctionData({
+                      abi: [{ name: 'resetBreaker', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'asset', type: 'address' }], outputs: [] }] as const,
+                      functionName: 'resetBreaker',
+                      args: [CONTRACT_ADDRESSES.USDC]
+                    });
+                    await submitGovernanceProposal(CONTRACT_ADDRESSES.CIRCUIT_BREAKER, calldata, 'Descongelar Circuit Breaker para Reserva USDC (Propuesta DAO / Multisig Security Council)');
+                  } else {
+                    adminActions.handleResetBreaker();
+                  }
+                }}
+                className={isProductionChain ? styles.btnProd : styles.secBtnRed}
               >
-                🔓 Reiniciar Circuit Breaker
+                {isProductionChain ? UI_STRINGS.GOVERNANCE.BTN_PROPOSE_RESET_BREAKER : UI_STRINGS.GOVERNANCE.BTN_RESET_BREAKER_DEV}
               </button>
             </div>
 
-            <div style={{ background: 'rgba(30, 41, 59, 0.6)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <h4 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#60a5fa' }}>🔮 Oráculo de Precios Chainlink</h4>
-              <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '0 0 16px 0' }}>
-                Actualiza el valor del feed de prueba de USDC en la sandbox para simular fluctuaciones de mercado.
+            <div className={styles.secCard}>
+              <h4 className={styles.secOracleH4}>🔮 {UI_STRINGS.ADMIN.CARD_ORACLE_TITLE}</h4>
+              <p className={styles.metricSubtext}>
+                {isProductionChain ? UI_STRINGS.GOVERNANCE.DESC_ORACLE_PROD : UI_STRINGS.GOVERNANCE.DESC_ORACLE_DEV}
               </p>
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div className="acp-flex-row-gap5">
                 <input
                   type="text"
                   value={adminActions.oraclePrice}
                   onChange={(e) => adminActions.setOraclePrice(e.target.value)}
-                  disabled={!isAdmin}
-                  style={{ flex: 1, background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '8px 12px' }}
+                  className={styles.inputDark}
                 />
                 <button
-                  onClick={adminActions.handleUpdateOracle}
-                  disabled={!isAdmin}
-                  style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '10px', fontWeight: 700, cursor: isAdmin ? 'pointer' : 'not-allowed' }}
+                  onClick={async () => {
+                    if (isProductionChain) {
+                      const calldata = encodeFunctionData({
+                        abi: [{ name: 'setPriceFeed', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'asset', type: 'address' }, { name: 'feed', type: 'address' }], outputs: [] }] as const,
+                        functionName: 'setPriceFeed',
+                        args: [CONTRACT_ADDRESSES.USDC, CONTRACT_ADDRESSES.PRICE_FEED]
+                      });
+                      await submitGovernanceProposal(CONTRACT_ADDRESSES.PRICE_FEED, calldata, `Propuesta de Actualización de Feed Oráculo Primary USDC a $${adminActions.oraclePrice}`);
+                    } else {
+                      adminActions.handleUpdateOracle();
+                    }
+                  }}
+                  className={isProductionChain ? styles.btnProd : styles.secBtnBlue}
                 >
-                  Actualizar
+                  {isProductionChain ? UI_STRINGS.GOVERNANCE.BTN_PROPOSE_FEED : UI_STRINGS.GOVERNANCE.BTN_UPDATE_FEED}
                 </button>
               </div>
             </div>

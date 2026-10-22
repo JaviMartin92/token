@@ -1,0 +1,19 @@
+.icon { font-size: 1.35rem; color: #fff; }
+.tabSub { font-size: 0.74rem; margin-top: 0.4rem; display: flex; justify-content: space-between; font-weight: 600; }
+.tabSubGreen { color: #6ee7b7; }
+.tabSubBlue { color: #93c5fd; }
+.tabSubPurple { color: #e9d5ff; }
+.tooltipHeader { font-size: 0.74rem; color: #94a3b8; margin-bottom: 0.4rem; font-weight: 700; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.tooltipBadge { font-size: 0.65rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 0.15rem 0.5rem; border-radius: 6px; font-weight: 700; border: 1px solid rgba(56, 189, 248, 0.3); }
+.tooltipTitle { font-size: 1.05rem; font-weight: 800; color: #38bdf8; margin-bottom: 0.45rem; letter-spacing: -0.01em; }
+.tooltipStack { font-size: 0.78rem; color: #e2e8f0; display: flex; flex-direction: column; gap: 0.3rem; }
+.dotGreen { width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 6px #10b981; }
+.dotAmber { width: 8px; height: 8px; background: #f59e0b; border-radius: 50%; box-shadow: 0 0 6px #f59e0b; }
+.dotBlue { width: 8px; height: 8px; background: #3b82f6; border-radius: 50%; box-shadow: 0 0 6px #3b82f6; }
+.tooltipValBlue { font-size: 1rem; font-weight: 800; color: #60a5fa; }
+.tooltipValPurple { font-size: 1rem; font-weight: 800; color: #c084fc; }
+.dotLgGreen { width: 10px; height: 10px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; }
+.dotLgAmber { width: 10px; height: 10px; background: #f59e0b; border-radius: 50%; box-shadow: 0 0 8px #f59e0b; }
+.dotLgBlue { width: 10px; height: 10px; background: #3b82f6; border-radius: 50%; box-shadow: 0 0 8px #3b82f6; }
+.lineBlue { width: 14px; height: 3.5px; background: #3b82f6; border-radius: 2px; box-shadow: 0 0 10px #3b82f6; }
+.linePurple { width: 14px; height: 3.5px; background: #a855f7; border-radius: 2px; box-shadow: 0 0 10px #a855f7; }

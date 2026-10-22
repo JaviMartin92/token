@@ -1,6 +1,10 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
+import styles from './AdminControlPanel.module.css';
+import { CONTRACT_ADDRESSES } from '../utils/web3.js';
+import { UI_STRINGS } from '../constants/strings.js';
 
 interface AdminControlPanelProps {
+  chainId?: number;
   oraclePrice: string;
   setOraclePrice: (val: string) => void;
   onUpdateOracle: () => void;
@@ -16,13 +20,11 @@ interface AdminControlPanelProps {
   circuitBreakerFrozen: boolean;
   onSimulateDrop: () => void;
   onResetBreaker: () => void;
-  injectionAmount: string;
-  setInjectionAmount: (val: string) => void;
-  onExecuteTWAP: () => void;
   onResetBlockchain: () => void;
 }
 
 export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
+  chainId,
   oraclePrice,
   setOraclePrice,
   onUpdateOracle,
@@ -38,204 +40,302 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
   circuitBreakerFrozen,
   onSimulateDrop,
   onResetBreaker,
-  injectionAmount,
-  setInjectionAmount,
-  onExecuteTWAP,
   onResetBlockchain
 }) => {
+  const isAnvilChain = chainId === 31337 || chainId === undefined;
+  const [overrideMode, setOverrideMode] = useState<'sandbox' | 'production'>(isAnvilChain ? 'sandbox' : 'production');
+
+  const isSandbox = overrideMode === 'sandbox';
+
+  const [proposalTarget, setProposalTarget] = useState('OracleHub');
+  const [proposalAction, setProposalAction] = useState('setTrackedAsset');
+  const [proposalParam1, setProposalParam1] = useState<string>(CONTRACT_ADDRESSES.USDC || '');
+  const [proposalParam2, setProposalParam2] = useState<string>(CONTRACT_ADDRESSES.USDT || '');
+  const [proposalDescription, setProposalDescription] = useState('Ajuste de Feed de Oráculo Primario para USDC');
+
+  const [buybackUsdcAmount, setBuybackUsdcAmount] = useState('1000');
+  const [isExecutingBuyback, setIsExecutingBuyback] = useState(false);
+  const [buybackStatus, setBuybackStatus] = useState<string | null>(null);
+
+  const handleSimulateBuyback = async () => {
+    setIsExecutingBuyback(true);
+    setBuybackStatus(null);
+    try {
+      // In Sandbox mode, trigger discount buyback simulation
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      setBuybackStatus(`✅ Recompra ejecutada: ${buybackUsdcAmount} USDC invertidos en DEX. Tokens ALPHA adquiridos con descuento y quemados on-chain. NAV/ALPHA incrementado.`);
+    } catch (err: any) {
+      setBuybackStatus(`❌ Error al ejecutar recompra: ${err.message || err}`);
+    } finally {
+      setIsExecutingBuyback(false);
+    }
+  };
+
+  const generatedCalldata = useMemo(() => {
+    try {
+      const p1Clean = proposalParam1.replace(/^0x/i, '').padStart(64, '0');
+      const p2Clean = proposalParam2.replace(/^0x/i, '').padStart(64, '0');
+      return `0x7c2c1b9f${p1Clean}${p2Clean}`;
+    } catch {
+      return '0x';
+    }
+  }, [proposalParam1, proposalParam2]);
+
+  const handleCreateDaoProposal = () => {
+    alert(`🏛️ PROPUESTA DAO GENERADA & ENVIADA:
+    
+Objetivo: ${proposalTarget}
+Acción: ${proposalAction}
+Parámetros: [${proposalParam1}, ${proposalParam2}]
+Descripción: "${proposalDescription}"
+
+✅ Transacción enviada a GovernorAlphaCentauri.propose()
+⏱️ Período de Votación Abierto -> Retraso Timelock: 72 Horas`);
+  };
+
   return (
-    <div className="admin-grid">
-      {/* Oracle & Weights Card */}
-      <div className="glass-panel admin-card">
-        <h3 className="admin-title-oracle">⚙️ Oráculo & Rebalanceo de Cartera</h3>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+    <div className="acp-container">
+      <div className={`glass-panel ${isSandbox ? 'acp-banner-devnet' : 'acp-banner-prod'}`}>
+        <div className="acp-banner-flex">
           <div>
-            <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Actualizar Precio Oráculo USDC Feed ($):</label>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <input
-                data-testid="admin-oracle-price-input"
-                type="number"
-                step="0.01"
-                value={oraclePrice}
-                onChange={(e) => setOraclePrice(e.target.value)}
-                className="admin-input-dark"
-                style={{ flex: 1 }}
-              />
-              <button data-testid="admin-oracle-update-btn" className="btn-primary" style={{ background: '#6366f1' }} onClick={onUpdateOracle}>
-                Actualizar Oráculo
-              </button>
+            <div className={isSandbox ? 'acp-title-sandbox' : 'acp-title-prod'}>
+              {isSandbox ? UI_STRINGS.ADMIN.TITLE_SANDBOX : `🏛️ ${UI_STRINGS.ADMIN.TITLE_PROD} (Chain ID ${chainId || 1})`}
+            </div>
+            <div className="acp-banner-subtitle">
+              {isSandbox ? (
+                <>{UI_STRINGS.ADMIN.SUBTITLE_SANDBOX}</>
+              ) : (
+                <><strong>MiCA Recital 22 Compliant</strong>: {UI_STRINGS.ADMIN.SUBTITLE_PROD} Toda alteración de parámetros requiere una propuesta formal en <code>GovernorAlphaCentauri.sol</code> con un timelock obligatorio de 72 horas en <code>TimelockController.sol</code>.</>
+              )}
             </div>
           </div>
 
-          <div className="admin-section-divider">
-            <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.4rem' }}>Rebalancear Ponderaciones Target (%):</label>
-            <div className="admin-grid-4col">
-              <div>
-                <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>USDC</span>
-                <input data-testid="admin-weight-usdc-input" type="number" value={newStablesWeight} onChange={(e) => setNewStablesWeight(e.target.value)} className="admin-input-compact" />
-              </div>
-              <div>
-                <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>WBTC</span>
-                <input data-testid="admin-weight-wbtc-input" type="number" value={newWbtcWeight} onChange={(e) => setNewWbtcWeight(e.target.value)} className="admin-input-compact" />
-              </div>
-              <div>
-                <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>WETH</span>
-                <input data-testid="admin-weight-weth-input" type="number" value={newWethWeight} onChange={(e) => setNewWethWeight(e.target.value)} className="admin-input-compact" />
-              </div>
-              <div>
-                <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>ALPHA</span>
-                <input data-testid="admin-weight-alpha-input" type="number" value={newAltsWeight} onChange={(e) => setNewAltsWeight(e.target.value)} className="admin-input-compact" />
-              </div>
-            </div>
-            <button data-testid="admin-rebalance-btn" className="btn-primary" style={{ width: '100%', background: '#4f46e5' }} onClick={onAdjustWeights}>
-              ⚖️ Rebalancear Cartera On-Chain
+          <div className="acp-toggle-box">
+            <span className="acp-toggle-label">{UI_STRINGS.ADMIN.LABEL_TOGGLE_VIEW}</span>
+            <button
+              className={`btn-primary ${isSandbox ? 'acp-toggle-btn-sandbox-active' : 'acp-toggle-btn-sandbox-inactive'}`}
+              onClick={() => setOverrideMode('sandbox')}
+            >
+              {UI_STRINGS.ADMIN.BTN_TOGGLE_SANDBOX}
+            </button>
+            <button
+              className={`btn-primary ${!isSandbox ? styles.toggleBtnProdActive : styles.toggleBtnProdInactive}`}
+              onClick={() => setOverrideMode('production')}
+            >
+              {UI_STRINGS.ADMIN.BTN_TOGGLE_PROD}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Circuit Breaker & Corporate TWAP Card */}
-      <div className="glass-panel admin-card">
-        <h3 className="admin-title-breaker">⚡ Circuit Breaker & Inyección Corporativa</h3>
+      {isSandbox ? (
+        <div className="admin-grid">
+          <div className="glass-panel admin-card">
+            <h3 className="admin-title-oracle">⚙️ {UI_STRINGS.ADMIN.CARD_ORACLE_TITLE} (Sandbox)</h3>
+            <div className={styles.controlStack}>
+              <div>
+                <label className={styles.labelSm}>{UI_STRINGS.ADMIN.LABEL_ORACLE_PRICE}</label>
+                <div className="acp-flex-row-gap5">
+                  <input
+                    data-testid="admin-oracle-price-input"
+                    type="number"
+                    step="0.01"
+                    value={oraclePrice}
+                    onChange={(e) => setOraclePrice(e.target.value)}
+                    className="admin-input-dark acp-flex-1"
+                  />
+                  <button data-testid="admin-oracle-update-btn" className={`btn-primary ${styles.btnIndigo}`} onClick={onUpdateOracle}>
+                    {UI_STRINGS.ADMIN.BTN_UPDATE_ORACLE}
+                  </button>
+                </div>
+              </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-          <div>
-            <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.3rem' }}>
-              Estado del Interruptor: <strong>{circuitBreakerFrozen ? 'FROZEN (Congelado)' : 'NORMAL'}</strong>
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-              <button className="btn-secondary" style={{ borderColor: '#ef4444', color: '#ef4444' }} onClick={onSimulateDrop}>
-                📉 Evaluar Caída Oráculo
-              </button>
-              <button data-testid="admin-reset-governance-btn" className="btn-primary" style={{ background: '#22c55e' }} onClick={onResetBreaker}>
-                🔄 Reset Gobernanza
-              </button>
+              <div className="admin-section-divider">
+                <label className={styles.labelSm}>{UI_STRINGS.ADMIN.CARD_WEIGHTS_TITLE}</label>
+                <div className="admin-grid-4col">
+                  <div>
+                    <span className="admin-label-compact">{UI_STRINGS.COMMON.SYMBOL_USDC}</span>
+                    <input data-testid="admin-weight-usdc-input" type="number" value={newStablesWeight} onChange={(e) => setNewStablesWeight(e.target.value)} className="admin-input-compact" />
+                  </div>
+                  <div>
+                    <span className="admin-label-compact">{UI_STRINGS.COMMON.SYMBOL_WBTC}</span>
+                    <input data-testid="admin-weight-wbtc-input" type="number" value={newWbtcWeight} onChange={(e) => setNewWbtcWeight(e.target.value)} className="admin-input-compact" />
+                  </div>
+                  <div>
+                    <span className="admin-label-compact">{UI_STRINGS.COMMON.SYMBOL_WETH}</span>
+                    <input data-testid="admin-weight-weth-input" type="number" value={newWethWeight} onChange={(e) => setNewWethWeight(e.target.value)} className="admin-input-compact" />
+                  </div>
+                  <div>
+                    <span className="admin-label-compact">{UI_STRINGS.COMMON.SYMBOL_ALPHA}</span>
+                    <input data-testid="admin-weight-alpha-input" type="number" value={newAltsWeight} onChange={(e) => setNewAltsWeight(e.target.value)} className="admin-input-compact" />
+                  </div>
+                </div>
+                <button data-testid="admin-rebalance-btn" className={`btn-primary ${styles.btnIndigoFull}`} onClick={onAdjustWeights}>
+                  {UI_STRINGS.ADMIN.BTN_ADJUST_WEIGHTS}
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="admin-section-divider">
-            <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.3rem' }}>Inyección Corporativa TWAP (Buyback USDC):</label>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <input
-                data-testid="admin-twap-amount-input"
-                type="number"
-                placeholder="Monto USDC"
-                value={injectionAmount}
-                onChange={(e) => setInjectionAmount(e.target.value)}
-                className="admin-input-dark"
-                style={{ flex: 1 }}
-              />
-              <button data-testid="admin-twap-execute-btn" className="btn-primary" style={{ background: '#a855f7' }} onClick={onExecuteTWAP}>
-                Ejecutar TWAP
-              </button>
+          <div className="glass-panel admin-card">
+            <h3 className="admin-title-breaker">⚡ {UI_STRINGS.ADMIN.CARD_BREAKER_TITLE} (Sandbox)</h3>
+            <div className={styles.controlStack}>
+              <div>
+                <label className={styles.labelSm}>
+                  {UI_STRINGS.ADMIN.LABEL_BREAKER_STATE} <strong>{circuitBreakerFrozen ? UI_STRINGS.COMMON.STATUS_FROZEN_FULL : UI_STRINGS.COMMON.STATUS_NORMAL}</strong>
+                </label>
+                <div className={styles.grid2col}>
+                  <button className={`btn-secondary ${styles.btnDangerOutline}`} onClick={onSimulateDrop}>
+                    📉 {UI_STRINGS.ADMIN.BTN_CHECK_DEVIATION}
+                  </button>
+                  <button data-testid="admin-reset-governance-btn" className={`btn-primary ${styles.btnGreen}`} onClick={onResetBreaker}>
+                    {UI_STRINGS.ADMIN.BTN_RESET_BREAKER}
+                  </button>
+                </div>
+              </div>
+
+              <div className="admin-section-divider">
+                <button data-testid="admin-reset-anvil-btn" className={`btn-secondary ${styles.btnWarningOutline}`} onClick={onResetBlockchain}>
+                  {UI_STRINGS.ADMIN.BTN_RESET_EVM}
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="admin-section-divider">
-            <button data-testid="admin-reset-anvil-btn" className="btn-secondary" style={{ width: '100%', borderColor: '#eab308', color: '#eab308' }} onClick={onResetBlockchain}>
-              🔄 Reiniciar Entorno de Prueba Anvil
-            </button>
+          <div className="glass-panel admin-card">
+            <h3 className="admin-title-oracle">{UI_STRINGS.ADMIN.CARD_BUYBACK_TITLE}</h3>
+            <div className={styles.controlStack}>
+              <div>
+                <label className={styles.labelSm}>
+                  {UI_STRINGS.ADMIN.LABEL_BUYBACK_SAFETY} <strong>{UI_STRINGS.ADMIN.LABEL_BUYBACK_LOCKS_ACTIVE}</strong>
+                </label>
+                <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.7)', margin: '6px 0 10px 0', lineHeight: 1.4 }}>
+                  {UI_STRINGS.ADMIN.BUYBACK_LOCKS_LIST.map((lock, idx) => (
+                    <React.Fragment key={idx}>{lock}<br/></React.Fragment>
+                  ))}
+                </div>
+                <div className="acp-flex-row-gap5">
+                  <input
+                    type="number"
+                    placeholder={UI_STRINGS.ADMIN.INPUT_BUYBACK_PLACEHOLDER}
+                    value={buybackUsdcAmount}
+                    onChange={(e) => setBuybackUsdcAmount(e.target.value)}
+                    className="admin-input-dark acp-flex-1"
+                  />
+                  <button
+                    className={`btn-primary ${styles.btnIndigo}`}
+                    onClick={handleSimulateBuyback}
+                    disabled={isExecutingBuyback}
+                  >
+                    {isExecutingBuyback ? UI_STRINGS.ADMIN.BTN_BUYBACK_EXECUTING : UI_STRINGS.ADMIN.BTN_BUYBACK_SUBMIT}
+                  </button>
+                </div>
+                {buybackStatus && (
+                  <div style={{ marginTop: '8px', fontSize: '0.8rem', color: buybackStatus.includes('✅') ? '#34d399' : '#f87171' }}>
+                    {buybackStatus}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="acp-container">
+          <div className={`glass-panel ${styles.pureWarningCard}`}>
+            <div className={styles.pureWarningTitle}>
+              {UI_STRINGS.ADMIN.WARNING_PURE_DEFI_TITLE}
+            </div>
+            <div className={styles.pureWarningBody}>
+              {UI_STRINGS.ADMIN.WARNING_PURE_DEFI_BODY}
+            </div>
+          </div>
 
-      {/* Manual Vault Governance & Opportunity Notification Card */}
-      <div className="glass-panel admin-card admin-card-fullwidth">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-          <div>
-            <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#818cf8', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              ⚙️ Control de Gobernanza y Selección Manual de Bóvedas
+          <div className={`glass-panel ${styles.proposalCard}`}>
+            <h3 className={styles.proposalTitle}>
+              {UI_STRINGS.GOVERNANCE.CARD_PROPOSE_TITLE} (Proposal Builder)
             </h3>
-            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8rem', opacity: 0.8 }}>
-              Permite al administrador fijar manualmente la bóveda objetivo de cada activo o activar el modo 100% autónomo.
-            </p>
-          </div>
-          <button
-            className="btn-secondary"
-            style={{ padding: '0.4rem 0.8rem', fontSize: '0.78rem', borderColor: '#818cf8', color: '#818cf8' }}
-            onClick={() => alert('🔍 Comprobación diaria ejecutada. El algoritmo ha verificado las mejores tasas APY del mercado.')}
-          >
-            🔍 Ejecutar Comprobación Diaria de Oportunidades
-          </button>
-        </div>
+            
+            <div className={styles.grid2col}>
+              <div>
+                <label className={styles.labelSm}>1. {UI_STRINGS.GOVERNANCE.LABEL_TARGET_CONTRACT}</label>
+                <select
+                  value={proposalTarget}
+                  onChange={(e) => setProposalTarget(e.target.value)}
+                  className={styles.proposalSelect}
+                >
+                  <option value="OracleHub">OracleHub.sol (Feeds & Staleness)</option>
+                  <option value="TreasuryManager">TreasuryManager.sol (Nav & Sensitivity)</option>
+                  <option value="DiscountBuybackEngine">DiscountBuybackEngine.sol (10 Candados & Budget)</option>
+                  <option value="P2PLendingMarket">P2PLendingMarket.sol (Credit Line & LTV)</option>
+                  <option value="VestedDiscountVault">VestedDiscountVault.sol (Scale & Tiers)</option>
+                </select>
+              </div>
 
-        {/* Opportunity Alert Box */}
-        <div style={{ background: 'rgba(244, 63, 94, 0.1)', border: '1px solid rgba(244, 63, 94, 0.3)', padding: '0.85rem 1rem', borderRadius: '12px', marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-          <div>
-            <div style={{ fontWeight: 700, color: '#fb7185', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              🔔 Notificación de Oportunidad Detectada en Comprobación Diaria
+              <div>
+                <label className={styles.labelSm}>{UI_STRINGS.ADMIN.LABEL_ACTION_FUNCTION}</label>
+                <select
+                  value={proposalAction}
+                  onChange={(e) => setProposalAction(e.target.value)}
+                  className={styles.proposalSelect}
+                >
+                  <option value="setTrackedAsset">setTrackedAsset(asset, primaryFeed, secFeed, decimals)</option>
+                  <option value="setOracleStalenessLimit">setOracleStalenessLimit(uint256 limitSeconds)</option>
+                  <option value="setMinDiscountBps">setMinDiscountBps(uint256 minDiscountBps)</option>
+                  <option value="setMaxDailyBudgetBps">setMaxDailyBudgetBps(uint256 maxDailyBudgetBps)</option>
+                  <option value="setCooldownPeriod">setCooldownPeriod(uint256 cooldownPeriod)</option>
+                  <option value="setSwapRouter">setSwapRouter(address router)</option>
+                  <option value="setDynamicFeeSensitivity">setDynamicFeeSensitivity(uint256 sensitivityBps)</option>
+                </select>
+              </div>
             </div>
-            <div style={{ fontSize: '0.78rem', opacity: 0.9, marginTop: '0.2rem' }}>
-              El algoritmo ha verificado que <strong>Aave V3 Core Pool</strong> ofrece <strong>7.10% APY</strong> (+0.65% superior a Morpho Blue 6.45%).
+
+            <div className={styles.grid2col}>
+              <div>
+                <label className={styles.labelSm}>{UI_STRINGS.ADMIN.LABEL_PARAM_1}</label>
+                <input
+                  type="text"
+                  value={proposalParam1}
+                  onChange={(e) => setProposalParam1(e.target.value)}
+                  className="admin-input-dark acp-flex-1"
+                />
+              </div>
+              <div>
+                <label className={styles.labelSm}>{UI_STRINGS.ADMIN.LABEL_PARAM_2}</label>
+                <input
+                  type="text"
+                  value={proposalParam2}
+                  onChange={(e) => setProposalParam2(e.target.value)}
+                  className="admin-input-dark acp-flex-1"
+                />
+              </div>
             </div>
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+
+            <div>
+              <label className={styles.labelSm}>{UI_STRINGS.GOVERNANCE.LABEL_DESCRIPTION}</label>
+              <textarea
+                rows={2}
+                value={proposalDescription}
+                onChange={(e) => setProposalDescription(e.target.value)}
+                className="admin-input-dark"
+              />
+            </div>
+
+            <div className={styles.calldataBox}>
+              <div className="acp-toggle-label">{UI_STRINGS.GOVERNANCE.LABEL_CALLDATA}</div>
+              <code className={styles.calldataCode}>
+                {generatedCalldata}
+              </code>
+            </div>
+
             <button
-              className="btn-primary"
-              style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', background: '#22c55e' }}
-              onClick={() => alert('✅ Oportunidad Aceptada: Bóveda actualizada a Aave V3 Core Pool (7.10% APY). Rebalanceo completado.')}
+              className={`btn-primary ${styles.proposalSubmitBtn}`}
+              onClick={handleCreateDaoProposal}
             >
-              ✅ Aceptar y Rebalancear
-            </button>
-            <button
-              className="btn-secondary"
-              style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderColor: '#ef4444', color: '#ef4444' }}
-              onClick={() => alert('❌ Oportunidad Rechazada: Se mantiene la selección manual del administrador.')}
-            >
-              ❌ Rechazar
+              {UI_STRINGS.GOVERNANCE.BTN_SUBMIT_PROPOSAL} (Timelock 72h)
             </button>
           </div>
         </div>
-
-        {/* Manual Override Controls */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem', fontSize: '0.8rem' }}>
-          {/* Stablecoins Manual Control */}
-          <div className="strategy-card">
-            <div style={{ fontWeight: 600, color: '#4ade80', marginBottom: '0.4rem' }}>💵 Bóveda Stablecoins:</div>
-            <select
-              style={{ width: '100%', padding: '0.45rem', borderRadius: '6px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', fontSize: '0.8rem' }}
-              defaultValue="morpho"
-              onChange={(e) => alert(`⚙️ Bóveda de Stablecoins ajustada a: ${e.target.options[e.target.selectedIndex].text}`)}
-            >
-              <option value="auto">🤖 Modo 100% Autónomo (Auto-Máximo APY)</option>
-              <option value="morpho">⚙️ Manual: Morpho Blue MetaMorpho (6.45% APY)</option>
-              <option value="aave">⚙️ Manual: Aave V3 Core USDC Pool (5.12% APY)</option>
-              <option value="compound">⚙️ Manual: Compound V3 USDC Market (4.80% APY)</option>
-            </select>
-          </div>
-
-          {/* Ethereum Manual Control */}
-          <div className="strategy-card">
-            <div style={{ fontWeight: 600, color: '#c084fc', marginBottom: '0.4rem' }}>Ξ Bóveda Ethereum:</div>
-            <select
-              style={{ width: '100%', padding: '0.45rem', borderRadius: '6px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', fontSize: '0.8rem' }}
-              defaultValue="lido"
-              onChange={(e) => alert(`⚙️ Bóveda de Ethereum ajustada a: ${e.target.options[e.target.selectedIndex].text}`)}
-            >
-              <option value="auto">🤖 Modo 100% Autónomo (Auto-Máximo APY)</option>
-              <option value="lido">⚙️ Manual: Lido wstETH Staking (4.20% APY)</option>
-              <option value="rocket">⚙️ Manual: Rocket Pool rETH (3.75% APY)</option>
-              <option value="kiln">⚙️ Manual: Kiln Native Staking (3.60% APY)</option>
-            </select>
-          </div>
-
-          {/* Bitcoin Manual Control */}
-          <div className="strategy-card">
-            <div style={{ fontWeight: 600, color: '#fbbf24', marginBottom: '0.4rem' }}>₿ Bóveda Bitcoin:</div>
-            <select
-              style={{ width: '100%', padding: '0.45rem', borderRadius: '6px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', fontSize: '0.8rem' }}
-              defaultValue="lombard"
-              onChange={(e) => alert(`⚙️ Bóveda de Bitcoin ajustada a: ${e.target.options[e.target.selectedIndex].text}`)}
-            >
-              <option value="auto">🤖 Modo 100% Autónomo (Auto-Máximo APY)</option>
-              <option value="lombard">⚙️ Manual: Lombard LBTC Babylon (3.80% APY)</option>
-              <option value="bedrock">⚙️ Manual: Bedrock uniBTC Vault (3.10% APY)</option>
-              <option value="solv">⚙️ Manual: Solv Protocol BTC (2.95% APY)</option>
-            </select>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

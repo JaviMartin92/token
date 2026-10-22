@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import styles from './ReferralModal.module.css';
+import { UI_STRINGS } from '../constants/strings.js';
 
 interface ReferralModalProps {
   isOpen: boolean;
@@ -19,7 +21,7 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({
 
   const referralLink = `${window.location.origin}/?ref=${userAddress || '0x0000000000000000000000000000000000000000'}`;
   
-  const shareText = `🚀 Unete a Alpha Centauri V6 y obtén hasta un 20% de descuento en Bonos Vestados respaldados por Proof of Reserves. ¡Invierte con auto-custodia on-chain!`;
+  const shareText = UI_STRINGS.MODALS.REFERRAL.SHARE_TEXT;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralLink);
@@ -49,217 +51,95 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.75)',
-      backdropFilter: 'blur(8px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-      padding: '1rem'
-    }}>
-      <div className="glass-panel" style={{
-        maxWidth: '540px',
-        width: '100%',
-        borderRadius: '20px',
-        border: '1px solid rgba(168, 85, 247, 0.4)',
-        boxShadow: '0 20px 50px rgba(0,0,0,0.5), 0 0 30px rgba(168, 85, 247, 0.2)',
-        padding: '2rem',
-        position: 'relative',
-        animation: 'fadeIn 0.2s ease-out'
-      }}>
+    <div className="modal-overlay">
+      <div className="glass-panel modal-container">
         {/* Close Button */}
         <button
           data-testid="referral-modal-close-btn"
           onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: '1.25rem',
-            right: '1.25rem',
-            background: 'rgba(255,255,255,0.08)',
-            border: 'none',
-            color: '#fff',
-            width: '32px',
-            height: '32px',
-            borderRadius: '50%',
-            cursor: 'pointer',
-            fontSize: '1rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
+          className={styles.closeBtn}
         >
           ✕
         </button>
 
         {/* Modal Header */}
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🎁</div>
-          <h2 style={{
-            margin: 0,
-            fontSize: '1.6rem',
-            fontWeight: 800,
-            background: 'linear-gradient(135deg, #a855f7 0%, #38bdf8 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
-          }}>
-            Programa de Referidos Autosostenible
+        <div className={styles.header}>
+          <div className={styles.icon}>🎁</div>
+          <h2 className={styles.title}>
+            {UI_STRINGS.MODALS.REFERRAL.TITLE}
           </h2>
-          <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.88rem', opacity: 0.75 }}>
-            Invita a tus amigos a Alpha Centauri V6 y gana comisiones automáticas en USDC por cada transacción.
+          <p className={styles.subtitle}>
+            {UI_STRINGS.MODALS.REFERRAL.SUBTITLE}
           </p>
         </div>
 
         {/* Benefits Card */}
-        <div style={{
-          background: 'rgba(168, 85, 247, 0.08)',
-          border: '1px solid rgba(168, 85, 247, 0.25)',
-          borderRadius: '14px',
-          padding: '1.2rem',
-          marginBottom: '1.5rem'
-        }}>
-          <h4 style={{ margin: '0 0 0.8rem 0', color: '#c084fc', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span>💎</span> Beneficios Exclusivos del Programa:
+        <div className={styles.benefitsCard}>
+          <h4 className={styles.benefitsH4}>
+            <span>💎</span> {UI_STRINGS.MODALS.REFERRAL.BENEFITS_TITLE}
           </h4>
-          <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.85rem', lineHeight: '1.6', opacity: 0.9 }}>
-            <li><strong style={{ color: '#4ade80' }}>1.5% de Comisión Directa en USDC</strong> transferidos a tu wallet por cada amigo que compre un Bono.</li>
-            <li><strong style={{ color: '#38bdf8' }}>Hasta 20% de Descuento</strong> para tus invitados en la compra de sus Bonos Vestados.</li>
-            <li><strong style={{ color: '#f0abfc' }}>Sin Límites de Ingresos</strong>: Gana comisiones recurrentes por cada referido activo.</li>
+          <ul className={styles.benefitsUl}>
+            <li>{UI_STRINGS.MODALS.REFERRAL.BENEFIT_1_TEXT}</li>
+            <li>{UI_STRINGS.MODALS.REFERRAL.BENEFIT_2_TEXT}</li>
+            <li>{UI_STRINGS.MODALS.REFERRAL.BENEFIT_3_TEXT}</li>
           </ul>
         </div>
 
         {/* Link Input Section */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', fontSize: '0.8rem', opacity: 0.7, marginBottom: '0.4rem', fontWeight: 600 }}>
-            TU ENLACE ÚNICO DE REFERIDO:
+        <div className="margin-bottom-lg">
+          <label className="acp-label-sm font-semibold margin-bottom-xs">
+            {UI_STRINGS.MODALS.REFERRAL.LINK_LABEL}
           </label>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="acp-flex-row-gap5">
             <input
               data-testid="referral-link-input"
               type="text"
               readOnly
               value={referralLink}
-              style={{
-                flex: 1,
-                background: 'rgba(0,0,0,0.4)',
-                border: '1px solid rgba(255,255,255,0.15)',
-                color: '#38bdf8',
-                padding: '0.7rem 0.9rem',
-                borderRadius: '10px',
-                fontSize: '0.82rem',
-                fontFamily: 'monospace'
-              }}
+              className={styles.linkInput}
             />
             <button
               data-testid="referral-copy-btn"
               onClick={handleCopy}
-              style={{
-                background: copied ? '#22c55e' : 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
-                color: '#fff',
-                border: 'none',
-                padding: '0.7rem 1.2rem',
-                borderRadius: '10px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontSize: '0.85rem',
-                transition: 'all 0.2s',
-                whiteSpace: 'nowrap'
-              }}
+              className={`${styles.copyBtn} ${copied ? styles.copyBtnCopied : styles.copyBtnNormal}`}
             >
-              {copied ? '✓ ¡Copiado!' : '📋 Copiar'}
+              {copied ? UI_STRINGS.MODALS.REFERRAL.BTN_COPIED : UI_STRINGS.MODALS.REFERRAL.BTN_COPY}
             </button>
           </div>
         </div>
 
         {/* Social Share Buttons */}
         <div>
-          <label style={{ display: 'block', fontSize: '0.8rem', opacity: 0.7, marginBottom: '0.6rem', fontWeight: 600, textAlign: 'center' }}>
-            COMPARTIR DIRECTAMENTE EN REDES SOCIALES:
+          <label className="acp-label-sm font-semibold text-center margin-bottom-sm">
+            {UI_STRINGS.MODALS.REFERRAL.SOCIAL_SHARE_TITLE}
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.6rem' }}>
+          <div className={styles.socialGrid}>
             <button
               onClick={shareTwitter}
-              style={{
-                background: 'rgba(29, 161, 242, 0.15)',
-                border: '1px solid rgba(29, 161, 242, 0.4)',
-                color: '#1da1f2',
-                padding: '0.6rem',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '0.8rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.3rem'
-              }}
+              className={`${styles.socialBtn} ${styles.socialTwitter}`}
             >
-              🐦 X / Twitter
+              {UI_STRINGS.MODALS.REFERRAL.BTN_TWITTER}
             </button>
 
             <button
               onClick={shareTelegram}
-              style={{
-                background: 'rgba(0, 136, 204, 0.15)',
-                border: '1px solid rgba(0, 136, 204, 0.4)',
-                color: '#0088cc',
-                padding: '0.6rem',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '0.8rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.3rem'
-              }}
+              className={`${styles.socialBtn} ${styles.socialTelegram}`}
             >
-              💬 Telegram
+              {UI_STRINGS.MODALS.REFERRAL.BTN_TELEGRAM}
             </button>
 
             <button
               onClick={shareWhatsapp}
-              style={{
-                background: 'rgba(37, 211, 102, 0.15)',
-                border: '1px solid rgba(37, 211, 102, 0.4)',
-                color: '#25d366',
-                padding: '0.6rem',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '0.8rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.3rem'
-              }}
+              className={`${styles.socialBtn} ${styles.socialWhatsapp}`}
             >
-              📱 WhatsApp
+              {UI_STRINGS.MODALS.REFERRAL.BTN_WHATSAPP}
             </button>
 
             <button
               onClick={shareLinkedin}
-              style={{
-                background: 'rgba(10, 102, 194, 0.15)',
-                border: '1px solid rgba(10, 102, 194, 0.4)',
-                color: '#0a66c2',
-                padding: '0.6rem',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '0.8rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.3rem'
-              }}
+              className={`${styles.socialBtn} ${styles.socialLinkedin}`}
             >
-              💼 LinkedIn
+              {UI_STRINGS.MODALS.REFERRAL.BTN_LINKEDIN}
             </button>
           </div>
         </div>

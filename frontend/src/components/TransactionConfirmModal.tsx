@@ -1,6 +1,8 @@
 import React from 'react';
+import styles from './TransactionConfirmModal.module.css';
+import { UI_STRINGS } from '../constants/strings.js';
 
-export interface TxDetailItem {
+interface TxDetailItem {
   label: string;
   value: string;
   badge?: string;
@@ -20,7 +22,7 @@ export interface TxConfirmDetails {
   details: TxDetailItem[];
   warningNote?: string;
   confirmButtonText?: string;
-  confirmButtonColor?: string;
+  confirmButtonVariant?: 'emerald' | 'purple' | 'danger' | 'blue' | 'amber' | 'pink' | 'indigo';
 }
 
 interface TransactionConfirmModalProps {
@@ -30,6 +32,20 @@ interface TransactionConfirmModalProps {
   txDetails: TxConfirmDetails | null;
   isSubmitting?: boolean;
 }
+
+const getVariantClass = (variant?: 'emerald' | 'purple' | 'danger' | 'blue' | 'amber' | 'pink' | 'indigo') => {
+  switch (variant) {
+    case 'purple': return styles.btnVariantPurple;
+    case 'danger': return styles.btnVariantDanger;
+    case 'blue': return styles.btnVariantBlue;
+    case 'amber': return styles.btnVariantAmber;
+    case 'pink': return styles.btnVariantPink;
+    case 'indigo': return styles.btnVariantIndigo;
+    case 'emerald':
+    default:
+      return styles.btnVariantEmerald;
+  }
+};
 
 export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = ({
   isOpen,
@@ -41,56 +57,18 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
   if (!isOpen || !txDetails) return null;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.75)',
-        backdropFilter: 'blur(8px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 9999,
-        padding: '1rem'
-      }}
-    >
-      <div
-        className="glass-panel"
-        style={{
-          width: '100%',
-          maxWidth: '520px',
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          borderRadius: '20px',
-          padding: '1.75rem',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
-          boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
-          background: 'linear-gradient(145deg, rgba(15,23,42,0.95) 0%, rgba(30,41,59,0.95) 100%)',
-          color: '#fff',
-          animation: 'fadeIn 0.2s ease-out'
-        }}
-      >
+    <div className="modal-overlay">
+      <div className="glass-panel modal-container">
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
+        <div className={styles.headerRow}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-              <span style={{ fontSize: '1.5rem' }}>{txDetails.actionIcon}</span>
-              <h3 data-testid="modal-title" style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>{txDetails.title}</h3>
+            <div className={styles.headerLeft}>
+              <span className={styles.actionIcon}>{txDetails.actionIcon}</span>
+              <h3 data-testid="modal-title" className={styles.titleH3}>{txDetails.title}</h3>
             </div>
             <span
               data-testid="modal-type-badge"
-              style={{
-                fontSize: '0.75rem',
-                padding: '0.2rem 0.6rem',
-                borderRadius: '6px',
-                background: 'rgba(99, 102, 241, 0.2)',
-                color: '#818cf8',
-                border: '1px solid rgba(99, 102, 241, 0.3)',
-                fontWeight: 600
-              }}
+              className={styles.typeBadge}
             >
               {txDetails.typeBadge}
             </span>
@@ -99,78 +77,47 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
             data-testid="modal-close-btn"
             onClick={onClose}
             disabled={isSubmitting}
-            style={{
-              background: 'rgba(255,255,255,0.08)',
-              border: 'none',
-              color: '#aaa',
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
-              fontSize: '1.1rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
+            className={styles.closeBtn}
           >
             ✕
           </button>
         </div>
 
         {/* Input vs Output Flow Card */}
-        <div
-          style={{
-            background: 'rgba(0,0,0,0.3)',
-            borderRadius: '14px',
-            padding: '1.1rem 1.25rem',
-            marginBottom: '1.25rem',
-            border: '1px solid rgba(255,255,255,0.08)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}
-        >
+        <div className={styles.flowCard}>
           <div>
-            <div style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: '0.15rem' }}>ENVIAS / ENTRADA</div>
-            <div data-testid="modal-input-amount" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#38bdf8' }}>
-              {txDetails.inputAmount} <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff' }}>{txDetails.inputSymbol}</span>
+            <div className={styles.flowLabel}>{UI_STRINGS.MODALS.TRANSACTION_CONFIRM.FLOW_IN_LABEL}</div>
+            <div data-testid="modal-input-amount" className={styles.flowValInput}>
+              {txDetails.inputAmount} <span className={styles.flowSymbol}>{txDetails.inputSymbol}</span>
             </div>
           </div>
 
-          <div style={{ fontSize: '1.4rem', opacity: 0.5 }}>➔</div>
+          <div className={styles.flowArrow}>➔</div>
 
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: '0.15rem' }}>RECIBES / ESTIMADO</div>
-            <div data-testid="modal-expected-output" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#4ade80' }}>
-              {txDetails.expectedOutput} <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff' }}>{txDetails.expectedOutputSymbol}</span>
+          <div className="text-right">
+            <div className={styles.flowLabel}>{UI_STRINGS.MODALS.TRANSACTION_CONFIRM.FLOW_OUT_LABEL}</div>
+            <div data-testid="modal-expected-output" className={styles.flowValOutput}>
+              {txDetails.expectedOutput} <span className={styles.flowSymbol}>{txDetails.expectedOutputSymbol}</span>
             </div>
           </div>
         </div>
 
         {/* Detailed Breakdown Table */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1.25rem', fontSize: '0.83rem' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.5, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '0.1rem' }}>
-            Resumen Operativo & Parámetros
+        <div className={styles.detailsStack}>
+          <div className={styles.detailsTitle}>
+            {UI_STRINGS.MODALS.TRANSACTION_CONFIRM.SUMMARY_SECTION_TITLE}
           </div>
 
           {txDetails.details.map((item, idx) => (
             <div
               key={idx}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '0.45rem 0.6rem',
-                borderRadius: '8px',
-                background: item.isHighlight ? 'rgba(99, 102, 241, 0.1)' : 'rgba(255,255,255,0.02)',
-                border: item.isHighlight ? '1px solid rgba(99, 102, 241, 0.2)' : 'none'
-              }}
+              className={`${styles.itemRow} ${item.isHighlight ? styles.itemHighlight : styles.itemNormal}`}
             >
-              <span style={{ opacity: 0.7 }}>{item.label}:</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <span style={{ fontWeight: item.isHighlight ? 700 : 600, color: item.isHighlight ? '#a855f7' : '#fff' }}>{item.value}</span>
+              <span className="opacity-70">{item.label}:</span>
+              <div className="acp-flex-row-gap5">
+                <span className={item.isHighlight ? styles.itemValHighlight : styles.itemValNormal}>{item.value}</span>
                 {item.badge && (
-                  <span style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '4px', background: 'rgba(34, 197, 94, 0.2)', color: '#4ade80' }}>
+                  <span className={styles.itemBadge}>
                     {item.badge}
                   </span>
                 )}
@@ -179,19 +126,9 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
           ))}
 
           {/* Contract Target Address */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '0.45rem 0.6rem',
-              borderRadius: '8px',
-              background: 'rgba(0,0,0,0.25)',
-              fontSize: '0.78rem'
-            }}
-          >
-            <span style={{ opacity: 0.6 }}>Contrato Objetivo:</span>
-            <span data-testid="modal-contract-target" style={{ fontFamily: 'monospace', opacity: 0.85, color: '#38bdf8' }}>
+          <div className={styles.targetRow}>
+            <span className="opacity-60">{UI_STRINGS.MODALS.TRANSACTION_CONFIRM.TARGET_CONTRACT_LABEL}</span>
+            <span data-testid="modal-contract-target" className={styles.targetAddr}>
               {txDetails.targetContractName} ({txDetails.targetContractAddress?.slice(0, 6)}...{txDetails.targetContractAddress?.slice(-4)})
             </span>
           </div>
@@ -199,67 +136,30 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
 
         {/* Warning Note if present */}
         {txDetails.warningNote && (
-          <div
-            style={{
-              background: 'rgba(234, 179, 8, 0.1)',
-              border: '1px solid rgba(234, 179, 8, 0.3)',
-              borderRadius: '10px',
-              padding: '0.75rem',
-              marginBottom: '1.25rem',
-              fontSize: '0.78rem',
-              color: '#fde047',
-              lineHeight: 1.4,
-              display: 'flex',
-              gap: '0.5rem',
-              alignItems: 'flex-start'
-            }}
-          >
+          <div className={styles.warningBox}>
             <span>⚠️</span>
             <span>{txDetails.warningNote}</span>
           </div>
         )}
 
         {/* Action Buttons */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+        <div className="admin-grid-2col">
           <button
             data-testid="modal-cancel-btn"
             onClick={onClose}
             disabled={isSubmitting}
-            style={{
-              padding: '0.75rem',
-              borderRadius: '10px',
-              background: 'rgba(255, 255, 255, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              color: '#fff',
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              cursor: isSubmitting ? 'not-allowed' : 'pointer'
-            }}
+            className={styles.cancelBtn}
           >
-            Cancelar
+            {UI_STRINGS.MODALS.TRANSACTION_CONFIRM.BTN_CANCEL}
           </button>
 
           <button
             data-testid="modal-confirm-btn"
             onClick={onConfirm}
             disabled={isSubmitting}
-            style={{
-              padding: '0.75rem',
-              borderRadius: '10px',
-              background: txDetails.confirmButtonColor || 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-              border: 'none',
-              color: '#fff',
-              fontSize: '0.9rem',
-              fontWeight: 700,
-              cursor: isSubmitting ? 'not-allowed' : 'pointer',
-              boxShadow: '0 4px 15px rgba(34, 197, 94, 0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem'
-            }}
+            className={`${styles.confirmBtn} ${getVariantClass(txDetails.confirmButtonVariant)}`}
           >
-            {isSubmitting ? '⏳ Firmando...' : (txDetails.confirmButtonText || '✍️ Confirmar y Firmar')}
+            {isSubmitting ? UI_STRINGS.MODALS.TRANSACTION_CONFIRM.BTN_SIGNING : (txDetails.confirmButtonText || UI_STRINGS.MODALS.TRANSACTION_CONFIRM.BTN_CONFIRM_DEFAULT)}
           </button>
         </div>
       </div>

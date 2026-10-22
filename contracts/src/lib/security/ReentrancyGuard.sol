@@ -15,6 +15,12 @@ abstract contract ReentrancyGuard {
         _status = _NOT_ENTERED;
     }
 
+    function _ReentrancyGuard_init() internal {
+        if (_status == 0) {
+            _status = _NOT_ENTERED;
+        }
+    }
+
     modifier nonReentrant() {
         require(_status != _ENTERED, "ReentrancyGuard: reentrant call");
         _status = _ENTERED;

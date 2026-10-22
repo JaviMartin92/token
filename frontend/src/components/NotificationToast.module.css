@@ -1,0 +1,4 @@
+.toastIcon { font-size: 1.25rem; flex-shrink: 0; }
+.toastContentBox { flex: 1; }
+.toastTitleText { font-weight: 700; font-size: 0.88rem; color: #fff; margin-bottom: 0.15rem; }
+.toastMsgText { font-size: 0.78rem; color: rgba(255, 255, 255, 0.85); line-height: 1.35; }

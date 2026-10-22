@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import styles from './ProtocolAnalyticsCharts.module.css';
 import type { UserPosition } from './VestedVaults.js';
 import type { MarketplaceLoan } from './P2PMarketplace.js';
+import { UI_STRINGS } from '../constants/strings.js';
 
 interface ProtocolAnalyticsChartsProps {
   porAssets?: string;
@@ -11,6 +13,8 @@ interface ProtocolAnalyticsChartsProps {
   claimableYield?: string;
   userPositions?: UserPosition[];
   loansList?: MarketplaceLoan[];
+  liveApyStr?: string;
+  targetWeights?: { stables: number; wbtc: number; weth: number; alts: number };
 }
 
 interface HistoricalSnapshot {
@@ -34,7 +38,9 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
   stakedBalance = '0',
   claimableYield = '0',
   userPositions = [],
-  loansList = []
+  loansList = [],
+  liveApyStr,
+  targetWeights = { stables: 60, wbtc: 26.67, weth: 13.33, alts: 0 }
 }) => {
   const [timeRange, setTimeRange] = useState<'1W' | '1M' | '3M' | '1Y' | 'ALL'>('1M');
   const [activeChart, setActiveChart] = useState<'reserves' | 'cashflow' | 'apy'>('reserves');
@@ -48,10 +54,14 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
   const realStakedAlpha = parseFloat(stakedBalance.replace(/,/g, '')) || 0;
   const realClaimableYield = parseFloat(claimableYield.replace(/,/g, '')) || 0;
 
+  const targetStablesPct = (targetWeights?.stables || 60.0) / 100;
+  const targetBtcPct = (targetWeights?.wbtc || 26.67) / 100;
+  const targetEthPct = (targetWeights?.weth || 13.33) / 100;
+
   // Reparto Exógeno Puro directo del smart contract
-  const realStablesUsd = porBreakdown.stables > 0 ? porBreakdown.stables : Math.round(realReservesUsd * 0.60);
-  const realBtcUsd = porBreakdown.wbtc > 0 ? porBreakdown.wbtc : Math.round(realReservesUsd * 0.2667);
-  const realEthUsd = porBreakdown.weth > 0 ? porBreakdown.weth : Math.round(realReservesUsd * 0.1333);
+  const realStablesUsd = porBreakdown.stables > 0 ? porBreakdown.stables : Math.round(realReservesUsd * targetStablesPct);
+  const realBtcUsd = porBreakdown.wbtc > 0 ? porBreakdown.wbtc : Math.round(realReservesUsd * targetBtcPct);
+  const realEthUsd = porBreakdown.weth > 0 ? porBreakdown.weth : Math.round(realReservesUsd * targetEthPct);
 
   // Flujo de Caja Real
   const realBondCashflow = userPositions.reduce((sum, pos) => sum + (pos.isRagequitted ? 0 : parseFloat(pos.principal || '0')), 0);
@@ -60,9 +70,10 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
   const realLoanInterest = loansList.reduce((sum, loan) => sum + (loan.state === 1 ? (parseFloat(loan.borrowAmount || "0") * (loan.interestRateBps / 10000)) : 0), 0);
   const realYieldPayoutUsd = Math.round(realClaimableYield + realLoanInterest);
 
+  const onChainApyNum = parseFloat((liveApyStr || '0').replace('%', '')) || 0;
   const baseYieldComponent = realReservesUsd > 0 ? (realLoanInterest / realReservesUsd) * 100 : 0;
   const flywheelBoost = realReservesUsd > 0 ? Math.min((realGrossCashflowUsd / realReservesUsd) * 15, 12.0) : 0;
-  const realWeightedApy = parseFloat((baseYieldComponent + flywheelBoost).toFixed(2));
+  const realWeightedApy = onChainApyNum > 0 ? onChainApyNum : parseFloat((baseYieldComponent + flywheelBoost).toFixed(2));
 
   // 2. Histórico de Persistencia con Curva Orgánica Suavizada
   useEffect(() => {
@@ -240,24 +251,23 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
 
   return (
     <div className="glass-panel analytics-panel">
-      
       {/* Header Con Diagnóstico Institucional */}
       <div className="analytics-header-container">
         <div>
           <div className="analytics-title-group">
             <div className="analytics-icon-badge">
-              <span style={{ fontSize: '1.35rem', color: '#fff' }}>📊</span>
+              <span className={styles.icon}>📊</span>
             </div>
             <div>
               <h3 className="analytics-main-title">
-                Analíticas On-Chain & Reservas Exógenas
+                {UI_STRINGS.ANALYTICS_CHARTS.MAIN_TITLE}
               </h3>
               <p className="analytics-subtitle">
-                Métricas leídas en vivo ({realStakedAlpha.toLocaleString('en-US', { maximumFractionDigits: 0 })} ALPHA Staked en Gobernanza)
+                {UI_STRINGS.ANALYTICS_CHARTS.SUBTITLE_PREFIX} ({realStakedAlpha.toLocaleString('en-US', { maximumFractionDigits: 0 })} {UI_STRINGS.ANALYTICS_CHARTS.SUBTITLE_SUFFIX})
               </p>
             </div>
             <span data-testid="analytics-por-badge" className="analytics-por-badge-box">
-              🛡️ PoR Activo: {porRatio}
+              {UI_STRINGS.ANALYTICS_CHARTS.BADGE_POR_ACTIVE} {porRatio}
             </span>
           </div>
         </div>
@@ -284,13 +294,13 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
           onClick={() => setActiveChart('reserves')}
           className={`analytics-tab-card ${activeChart === 'reserves' ? 'analytics-tab-card-reserves' : ''}`}
         >
-          <div className="analytics-tab-header-label">💎 RESERVAS EXÓGENAS</div>
+          <div className="analytics-tab-header-label">{UI_STRINGS.ANALYTICS_CHARTS.TAB_CARD_RESERVES}</div>
           <div data-testid="analytics-reserves-usd" className="analytics-tab-val-green">
             ${activeHoverData.reservesUsd.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} USD
           </div>
-          <div style={{ fontSize: '0.74rem', color: '#6ee7b7', marginTop: '0.4rem', display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
-            <span data-testid="analytics-liabilities-usd">Pasivo: ${realLiabilitiesUsd.toLocaleString()} USD</span>
-            <span data-testid="analytics-reserves-por">PoR: {activeHoverData.porRatioVal}%</span>
+          <div className={`${styles.tabSub} ${styles.tabSubGreen}`}>
+            <span data-testid="analytics-liabilities-usd">{UI_STRINGS.ANALYTICS_CHARTS.LABEL_LIABILITIES_PREFIX} ${realLiabilitiesUsd.toLocaleString()} USD</span>
+            <span data-testid="analytics-reserves-por">{UI_STRINGS.ANALYTICS_CHARTS.LABEL_POR_PREFIX} {activeHoverData.porRatioVal}%</span>
           </div>
         </div>
 
@@ -299,13 +309,13 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
           onClick={() => setActiveChart('cashflow')}
           className={`analytics-tab-card ${activeChart === 'cashflow' ? 'analytics-tab-card-cashflow' : ''}`}
         >
-          <div className="analytics-tab-header-label">💸 FLUJO DE CAJA BRUTO REAL</div>
+          <div className="analytics-tab-header-label">{UI_STRINGS.ANALYTICS_CHARTS.TAB_CARD_CASHFLOW}</div>
           <div data-testid="analytics-gross-cashflow" className="analytics-tab-val-blue">
             ${activeHoverData.grossCashflowUsd.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} USDC
           </div>
-          <div style={{ fontSize: '0.74rem', color: '#93c5fd', marginTop: '0.4rem', display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
-            <span>Bonos + Préstamos P2P</span>
-            <span>Yield: ${activeHoverData.realYieldPayoutUsd.toLocaleString()}</span>
+          <div className={`${styles.tabSub} ${styles.tabSubBlue}`}>
+            <span>{UI_STRINGS.ANALYTICS_CHARTS.LABEL_CASHFLOW_SUBTEXT}</span>
+            <span>{UI_STRINGS.ANALYTICS_CHARTS.LABEL_YIELD_PREFIX} ${activeHoverData.realYieldPayoutUsd.toLocaleString()}</span>
           </div>
         </div>
 
@@ -314,13 +324,13 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
           onClick={() => setActiveChart('apy')}
           className={`analytics-tab-card ${activeChart === 'apy' ? 'analytics-tab-card-apy' : ''}`}
         >
-          <div className="analytics-tab-header-label">⚡ APY PONDERADO CONTRACTUAL</div>
+          <div className="analytics-tab-header-label">{UI_STRINGS.ANALYTICS_CHARTS.TAB_CARD_APY}</div>
           <div data-testid="analytics-apy-weighted" className="analytics-tab-val-purple">
             {activeHoverData.apy}% APR
           </div>
-          <div style={{ fontSize: '0.74rem', color: '#e9d5ff', marginTop: '0.4rem', display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
-            <span>Rendimiento On-Chain</span>
-            <span>+ Flywheel Boost</span>
+          <div className={`${styles.tabSub} ${styles.tabSubPurple}`}>
+            <span>{UI_STRINGS.ANALYTICS_CHARTS.LABEL_ON_CHAIN_YIELD}</span>
+            <span>{UI_STRINGS.ANALYTICS_CHARTS.LABEL_FLYWHEEL_BOOST}</span>
           </div>
         </div>
       </div>
@@ -329,7 +339,7 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
       <div className="analytics-canvas-container">
         <svg
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-          style={{ width: '100%', height: '100%', overflow: 'visible' }}
+          className="w-full h-full overflow-visible"
           onMouseLeave={() => setHoveredPointIndex(null)}
         >
           <defs>
@@ -348,31 +358,24 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
 
             <linearGradient id="ethAreaGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.55" />
-              <stop offset="50%" stopColor="#06b6d4" stopOpacity="0.2" />
+              <stop offset="50%" stopColor="#1d4ed8" stopOpacity="0.2" />
+              <stop offset="100%" stopColor="#1e40af" stopOpacity="0.0" />
+            </linearGradient>
+
+            <linearGradient id="cashflowGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.7" />
               <stop offset="100%" stopColor="#1d4ed8" stopOpacity="0.0" />
             </linearGradient>
 
-            <linearGradient id="cashflowAreaGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.65" />
-              <stop offset="100%" stopColor="#1d4ed8" stopOpacity="0.0" />
+            <linearGradient id="apyGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#a855f7" stopOpacity="0.7" />
+              <stop offset="100%" stopColor="#7e22ce" stopOpacity="0.0" />
             </linearGradient>
 
-            <linearGradient id="apyAreaGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#a855f7" stopOpacity="0.65" />
-              <stop offset="100%" stopColor="#6b21a8" stopOpacity="0.0" />
-            </linearGradient>
-
-            {/* Rayo Láser Guía Vertical */}
             <linearGradient id="laserBeamGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.9" />
-              <stop offset="50%" stopColor="#a855f7" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.05" />
+              <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.0" />
             </linearGradient>
-
-            {/* Filtro Drop Shadow Neón para Trazado de Líneas */}
-            <filter id="neonGlowLine" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="3" stdDeviation="4" floodColor="#38bdf8" floodOpacity="0.5" />
-            </filter>
           </defs>
 
           {/* Grid Tecnológico Con Valores Y Formateados ($50k, $75k, $100k) */}
@@ -392,16 +395,9 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
           {/* Renderizado Apilado de 3 Capas Exógenas Suaves */}
           {activeChart === 'reserves' && (
             <>
-              {/* Capa 3: WETH + WBTC + USDC (Cúspide Total Exógeno) */}
               {areaD && <path d={areaD} fill="url(#ethAreaGrad)" opacity="0.75" />}
-              
-              {/* Capa 2: WBTC + USDC */}
               {btcAreaD && <path d={btcAreaD} fill="url(#btcAreaGrad)" opacity="0.85" />}
-              
-              {/* Capa 1: USDC (Morpho + P2P) */}
               {secondaryAreaD && <path d={secondaryAreaD} fill="url(#usdcAreaGrad)" opacity="0.95" />}
-              
-              {/* Trazados de Línea de Frontera Entre Capas Con Colores Vibrantes */}
               {secondaryPathD && <path d={secondaryPathD} fill="none" stroke="#10b981" strokeWidth="2" opacity="0.9" />}
               {btcPathD && <path d={btcPathD} fill="none" stroke="#f59e0b" strokeWidth="2" opacity="0.9" />}
             </>
@@ -410,11 +406,10 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
           {activeChart !== 'reserves' && areaD && (
             <path
               d={areaD}
-              fill={activeChart === 'cashflow' ? 'url(#cashflowAreaGrad)' : 'url(#apyAreaGrad)'}
+              fill={activeChart === 'cashflow' ? 'url(#cashflowGrad)' : 'url(#apyGrad)'}
             />
           )}
 
-          {/* Línea Principal de Tendencia Neon Superior */}
           {pathD && (
             <path
               d={pathD}
@@ -423,13 +418,12 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
               strokeWidth="3.2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              filter="url(#neonGlowLine)"
             />
           )}
 
           {/* Rayo Láser Guía e Interacción Hover */}
           {points.map((pt, idx) => (
-            <g key={idx} onMouseEnter={() => setHoveredPointIndex(idx)} style={{ cursor: 'pointer' }}>
+            <g key={idx} onMouseEnter={() => setHoveredPointIndex(idx)} className="cursor-pointer">
               <rect
                 x={pt.x - chartInnerWidth / Math.max(chartData.length, 1) / 2}
                 y={paddingTop}
@@ -458,40 +452,35 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
 
         {/* Tooltip Glassmorphism Ultra-Profesional */}
         {hoveredPointIndex !== null && points[hoveredPointIndex] && (
-          <div
-            className="analytics-glass-tooltip"
-            style={{
-              left: `${Math.min(Math.max(points[hoveredPointIndex].x - 115, 70), svgWidth - 280)}px`
-            }}
-          >
-            <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginBottom: '0.4rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-              <span>📅 {chartData[hoveredPointIndex].date}</span>
-              <span style={{ fontSize: '0.65rem', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '0.15rem 0.5rem', borderRadius: '6px', fontWeight: 700, border: '1px solid rgba(56, 189, 248, 0.3)' }}>On-Chain</span>
+          <div className="analytics-glass-tooltip">
+            <div className={styles.tooltipHeader}>
+              <span>{UI_STRINGS.ANALYTICS_CHARTS.TOOLTIP_DATE_PREFIX} {chartData[hoveredPointIndex].date}</span>
+              <span className={styles.tooltipBadge}>{UI_STRINGS.COMMON.STATUS_ON_CHAIN}</span>
             </div>
             {activeChart === 'reserves' && (
               <>
-                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#38bdf8', marginBottom: '0.45rem', letterSpacing: '-0.01em' }}>
-                  Total Reservas: ${chartData[hoveredPointIndex].reservesUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                <div className={styles.tooltipTitle}>
+                  {UI_STRINGS.ANALYTICS_CHARTS.TOOLTIP_TOTAL_RESERVES} ${chartData[hoveredPointIndex].reservesUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
                 </div>
-                <div style={{ fontSize: '0.78rem', color: '#e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1.2rem' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <span style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%', boxShadow: '0 0 6px #10b981' }}></span>
-                      Stablecoins (USDC):
+                <div className={styles.tooltipStack}>
+                  <div className="acp-banner-flex">
+                    <span className="acp-flex-row-gap5">
+                      <span className={styles.dotGreen}></span>
+                      {UI_STRINGS.ANALYTICS_CHARTS.TOOLTIP_STABLES}
                     </span>
                     <strong>${chartData[hoveredPointIndex].stablecoinsUsd.toLocaleString()} USD</strong>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1.2rem' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <span style={{ width: '8px', height: '8px', background: '#f59e0b', borderRadius: '50%', boxShadow: '0 0 6px #f59e0b' }}></span>
-                      Bitcoin (WBTC):
+                  <div className="acp-banner-flex">
+                    <span className="acp-flex-row-gap5">
+                      <span className={styles.dotAmber}></span>
+                      {UI_STRINGS.ANALYTICS_CHARTS.TOOLTIP_BTC}
                     </span>
                     <strong>${chartData[hoveredPointIndex].btcUsd.toLocaleString()} USD</strong>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1.2rem' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <span style={{ width: '8px', height: '8px', background: '#3b82f6', borderRadius: '50%', boxShadow: '0 0 6px #3b82f6' }}></span>
-                      Ethereum (WETH):
+                  <div className="acp-banner-flex">
+                    <span className="acp-flex-row-gap5">
+                      <span className={styles.dotBlue}></span>
+                      {UI_STRINGS.ANALYTICS_CHARTS.TOOLTIP_ETH}
                     </span>
                     <strong>${chartData[hoveredPointIndex].ethUsd.toLocaleString()} USD</strong>
                   </div>
@@ -500,15 +489,15 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
             )}
             {activeChart === 'cashflow' && (
               <>
-                <div style={{ fontSize: '1rem', fontWeight: 800, color: '#60a5fa' }}>
-                  Flujo de Caja Real: ${chartData[hoveredPointIndex].grossCashflowUsd.toLocaleString()} USDC
+                <div className={styles.tooltipValBlue}>
+                  {UI_STRINGS.ANALYTICS_CHARTS.TOOLTIP_CASHFLOW} ${chartData[hoveredPointIndex].grossCashflowUsd.toLocaleString()} USDC
                 </div>
               </>
             )}
             {activeChart === 'apy' && (
               <>
-                <div style={{ fontSize: '1rem', fontWeight: 800, color: '#c084fc' }}>
-                  APY PONDERADO REAL: {chartData[hoveredPointIndex].apy}% APR
+                <div className={styles.tooltipValPurple}>
+                  {UI_STRINGS.ANALYTICS_CHARTS.TOOLTIP_APY} {chartData[hoveredPointIndex].apy}% APR
                 </div>
               </>
             )}
@@ -521,23 +510,23 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
         {activeChart === 'reserves' ? (
           <>
             <div className="analytics-legend-pill">
-              <span style={{ width: '10px', height: '10px', background: '#10b981', borderRadius: '50%', boxShadow: '0 0 8px #10b981' }}></span>
-              <span style={{ color: '#e2e8f0', fontWeight: 600 }}>🟢 Stablecoins (Morpho + P2P - 60.00%)</span>
+              <span className={styles.dotLgGreen}></span>
+              <span className="text-slate-100 font-semibold">{UI_STRINGS.ANALYTICS_CHARTS.LEGEND_STABLES}{(targetWeights?.stables || 60).toFixed(2)}%)</span>
             </div>
             <div className="analytics-legend-pill">
-              <span style={{ width: '10px', height: '10px', background: '#f59e0b', borderRadius: '50%', boxShadow: '0 0 8px #f59e0b' }}></span>
-              <span style={{ color: '#e2e8f0', fontWeight: 600 }}>🟠 Bitcoin (Lombard - 26.67%)</span>
+              <span className={styles.dotLgAmber}></span>
+              <span className="text-slate-100 font-semibold">{UI_STRINGS.ANALYTICS_CHARTS.LEGEND_BTC}{(targetWeights?.wbtc || 26.67).toFixed(2)}%)</span>
             </div>
             <div className="analytics-legend-pill">
-              <span style={{ width: '10px', height: '10px', background: '#3b82f6', borderRadius: '50%', boxShadow: '0 0 8px #3b82f6' }}></span>
-              <span style={{ color: '#e2e8f0', fontWeight: 600 }}>🔵 Ethereum (Lido - 13.33%)</span>
+              <span className={styles.dotLgBlue}></span>
+              <span className="text-slate-100 font-semibold">{UI_STRINGS.ANALYTICS_CHARTS.LEGEND_ETH}{(targetWeights?.weth || 13.33).toFixed(2)}%)</span>
             </div>
           </>
         ) : (
           <>
             <div className="analytics-legend-pill">
-              <span style={{ width: '14px', height: '3.5px', background: activeChart === 'cashflow' ? '#3b82f6' : '#a855f7', borderRadius: '2px', boxShadow: activeChart === 'cashflow' ? '0 0 10px #3b82f6' : '0 0 10px #a855f7' }}></span>
-              <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{activeChart === 'cashflow' ? 'Flujo de Caja Bruto' : 'APY Ponderado On-Chain'}</span>
+              <span className={activeChart === 'cashflow' ? styles.lineBlue : styles.linePurple}></span>
+              <span className="text-slate-100 font-semibold">{activeChart === 'cashflow' ? UI_STRINGS.ANALYTICS_CHARTS.LEGEND_CASHFLOW : UI_STRINGS.ANALYTICS_CHARTS.LEGEND_APY}</span>
             </div>
           </>
         )}

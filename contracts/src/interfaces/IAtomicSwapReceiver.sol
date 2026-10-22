@@ -2,12 +2,7 @@
 pragma solidity ^0.8.20;
 
 interface IAtomicSwapReceiver {
-    event AtomicSwapExecuted(
-        address indexed user,
-        uint256 usdtDeposited,
-        uint256 usdcReceived,
-        uint256 feePaid
-    );
+    event AtomicSwapExecuted(address indexed user, uint256 usdtDeposited, uint256 usdcReceived, uint256 feePaid);
 
     /**
      * @notice Receives USDT from a user and atomically swaps it internally to USDC.

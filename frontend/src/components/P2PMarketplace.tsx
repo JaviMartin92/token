@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import styles from './P2PMarketplace.module.css';
+import { UI_STRINGS } from '../constants/strings.js';
+import { TokenAmountInput } from './common/TokenAmountInput.js';
 
 import type { UserPosition } from './VestedVaults.js';
 
@@ -9,6 +12,7 @@ export interface MarketplaceLoan {
   positionTokenId: number;
   borrowAmount: string;
   collateralAmount: string;
+  collateralSymbol?: string;
   interestRateBps: number;
   interestRateApr: string;
   durationDays: number;
@@ -38,10 +42,11 @@ interface P2PMarketplaceProps {
   userPositions?: UserPosition[];
   userAddress?: string;
   navPerShareNum?: number;
+  assetPrices?: { wbtc: number; weth: number };
   onAcceptLoanById?: (loanId: number, borrowAmount: string) => void;
   onCancelLoanOffer?: (loanId: number) => void;
   onRepayLoanById?: (loanId: number, loanObj?: any) => void;
-  onLiquidateLoanById?: (loanId: number) => void;
+  onLiquidateLoanById?: (loanId: number, loanObj?: any) => void;
   onBorrowFromTreasury?: (collateralType: string, tokenIdOrAmt: string, amount: string, days: string) => void;
 }
 
@@ -65,14 +70,15 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
   loansList = [],
   userPositions = [],
   userAddress = '',
-  navPerShareNum = 1.0098,
+  navPerShareNum = 1.0,
+  assetPrices = { wbtc: 60000.0, weth: 3000.0 },
   onAcceptLoanById,
   onCancelLoanOffer,
   onRepayLoanById,
   onLiquidateLoanById,
   onBorrowFromTreasury
 }) => {
-  const [filterTab, setFilterTab] = useState<'all' | 'created' | 'active' | 'my'>('all');
+  const [filterTab, setFilterTab] = useState<'all' | 'created' | 'active' | 'my' | 'history'>('all');
   const [treasuryColType, setTreasuryColType] = useState<string>('nft');
 
   const MAX_LTV_MAP: Record<string, number> = {
@@ -82,9 +88,9 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
   };
 
   const ASSET_PRICE_MAP: Record<string, number> = {
-    alpha: navPerShareNum && navPerShareNum > 0 ? navPerShareNum : 1.0098,
-    wbtc: 60000.0,
-    weth: 3000.0
+    alpha: navPerShareNum && navPerShareNum > 0 ? navPerShareNum : 1.0,
+    wbtc: assetPrices?.wbtc && assetPrices.wbtc > 0 ? assetPrices.wbtc : 60000.0,
+    weth: assetPrices?.weth && assetPrices.weth > 0 ? assetPrices.weth : 3000.0
   };
 
   const borrowAmtNum = parseFloat(p2pBorrowAmount || '0') || 0;
@@ -99,52 +105,51 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
     if (filterTab === 'created') return loan.state === 0;
     if (filterTab === 'active') return loan.state === 1;
     if (filterTab === 'my') {
-      return (
-        loan.lender.toLowerCase() === userAddress.toLowerCase() ||
-        loan.borrower.toLowerCase() === userAddress.toLowerCase()
-      );
+      const isMine = (loan.lender || '').toLowerCase() === (userAddress || '').toLowerCase() ||
+                     (loan.borrower || '').toLowerCase() === (userAddress || '').toLowerCase();
+      return isMine && (loan.state === 0 || loan.state === 1);
     }
+    if (filterTab === 'history') return loan.state === 2 || loan.state === 3 || loan.state === 4;
     return true;
   });
 
   const getStatusBadge = (state: number) => {
     switch (state) {
       case 0:
-        return <span style={{ background: 'rgba(234, 179, 8, 0.2)', color: '#facc15', border: '1px solid rgba(234, 179, 8, 0.4)', padding: '0.2rem 0.55rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>🟡 Disponible (Oferta)</span>;
+        return <span className={styles.badgeAvailable}>🟡 {UI_STRINGS.COMMON.STATUS_AVAILABLE} (Oferta)</span>;
       case 1:
-        return <span style={{ background: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', border: '1px solid rgba(34, 197, 94, 0.4)', padding: '0.2rem 0.55rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>🟢 Activo (Financiado)</span>;
+        return <span className={styles.badgeActive}>🟢 {UI_STRINGS.COMMON.STATUS_ACTIVE} ({UI_STRINGS.COMMON.STATUS_FUNDED})</span>;
       case 2:
-        return <span style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.4)', padding: '0.2rem 0.55rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>🔵 Reembolsado</span>;
+        return <span className={styles.badgeRepaid}>🔵 {UI_STRINGS.COMMON.STATUS_REPAID}</span>;
       case 3:
-        return <span style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.4)', padding: '0.2rem 0.55rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>🔴 Liquidado</span>;
+        return <span className={styles.badgeLiquidated}>🔴 {UI_STRINGS.COMMON.STATUS_LIQUIDATED}</span>;
       case 4:
-        return <span style={{ background: 'rgba(156, 163, 175, 0.2)', color: '#9ca3af', border: '1px solid rgba(156, 163, 175, 0.4)', padding: '0.2rem 0.55rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>⚪ Cancelado</span>;
+        return <span className={styles.badgeCancelled}>⚪ {UI_STRINGS.COMMON.STATUS_CANCELLED}</span>;
       default:
         return null;
     }
   };
 
   return (
-    <div className="p2p-container">
+    <div className="acp-container">
       
       {/* Treasury Reserve APY Booster Banner */}
-      <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', borderRadius: '16px', borderLeft: '4px solid #10b981', background: 'linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(15,23,42,0.4) 100%)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+      <div className={`glass-panel ${styles.boosterBanner}`}>
+        <div className="acp-banner-flex">
           <div>
-            <h4 style={{ margin: 0, color: '#34d399', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              🏛️ Respaldo Institucional: Préstamos con Reservas de Tesorería (Treasury APY Booster)
+            <h4 className={styles.boosterTitle}>
+              {UI_STRINGS.P2P_MARKETPLACE.CARD_TREASURY_TITLE}
             </h4>
-            <p style={{ margin: '0.35rem 0 0 0', fontSize: '0.82rem', opacity: 0.85, lineHeight: 1.45 }}>
-              Las reservas de la tesorería despliegan hasta un <strong>20% máximo de su pool de stablecoins</strong> en préstamos sobre-colateralizados.
-              Puedes solicitar financiación directa a la Tesorería al <strong>8.00% APR fijo</strong>. Los rendimientos generados retornan <strong>100% a la Tesorería</strong> aumentando el NAV del token ALPHA.
+            <p className={styles.boosterDesc}>
+              {UI_STRINGS.P2P_MARKETPLACE.CARD_TREASURY_DESC}
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <span style={{ padding: '0.4rem 0.8rem', background: 'rgba(16,185,129,0.2)', border: '1px solid rgba(16,185,129,0.4)', borderRadius: '8px', color: '#6ee7b7', fontSize: '0.8rem', fontWeight: 600 }}>
-              🛡️ Fondo de Reserva Activo
+          <div className="acp-flex-row-gap5">
+            <span className={styles.tagGreen}>
+              {UI_STRINGS.P2P_MARKETPLACE.TAG_RESERVE_ACTIVE}
             </span>
-            <span style={{ padding: '0.4rem 0.8rem', background: 'rgba(59,130,246,0.2)', border: '1px solid rgba(59,130,246,0.4)', borderRadius: '8px', color: '#93c5fd', fontSize: '0.8rem', fontWeight: 600 }}>
-              ⚡ Tasa Promocional 8.00% APR
+            <span className={styles.tagBlue}>
+              {UI_STRINGS.P2P_MARKETPLACE.TAG_FIXED_RATE}
             </span>
           </div>
         </div>
@@ -152,48 +157,46 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
 
       {/* ACTIVE LOANS QUICK REPAYMENT PANEL - show user's created and active loans */}
       {loansList.filter(l => (l.borrower.toLowerCase() === userAddress.toLowerCase() || l.lender.toLowerCase() === userAddress.toLowerCase()) && (l.state === 0 || l.state === 1)).length > 0 && (
-        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', borderRadius: '16px', border: '1px solid rgba(59, 130, 246, 0.4)', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(15, 23, 42, 0.6) 100%)' }}>
-          <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            💳 Mis Préstamos Solicitados & Activos ({loansList.filter(l => (l.borrower.toLowerCase() === userAddress.toLowerCase() || l.lender.toLowerCase() === userAddress.toLowerCase()) && (l.state === 0 || l.state === 1)).length})
+        <div className={`glass-panel ${styles.activePanel}`}>
+          <h3 className={styles.activeTitle}>
+            {UI_STRINGS.P2P_MARKETPLACE.CARD_ACTIVE_LOANS_TITLE} ({loansList.filter(l => (l.borrower.toLowerCase() === userAddress.toLowerCase() || l.lender.toLowerCase() === userAddress.toLowerCase()) && (l.state === 0 || l.state === 1)).length})
           </h3>
-          <p style={{ margin: '0 0 1rem 0', fontSize: '0.8rem', opacity: 0.85 }}>
-            Aquí puedes ver claramente todos los préstamos solicitados u ofertas activas y <strong>reembolsarlos o cancelarlos en 1-clic</strong> para gestionar tu custodia.
+          <p className="acp-label-sm margin-bottom-lg">
+            {UI_STRINGS.P2P_MARKETPLACE.CARD_ACTIVE_LOANS_DESC}
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+          <div className="met-grid-subtle">
             {loansList.filter(l => (l.borrower.toLowerCase() === userAddress.toLowerCase() || l.lender.toLowerCase() === userAddress.toLowerCase()) && (l.state === 0 || l.state === 1)).map((loan) => (
-              <div key={loan.id} style={{ background: 'rgba(0,0,0,0.3)', border: loan.state === 1 ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid rgba(234, 179, 8, 0.4)', borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.75rem' }}>
+              <div key={loan.id} className={loan.state === 1 ? styles.activeCardActive : styles.activeCardOffer}>
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                    <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#fff' }}>Préstamo #{loan.id}</span>
+                  <div className="acp-banner-flex margin-bottom-xs">
+                    <span className="font-bold text-slate-100 text-sm">Préstamo #{loan.id}</span>
                     {getStatusBadge(loan.state)}
                   </div>
-                  <div style={{ fontSize: '0.82rem', color: '#38bdf8', fontWeight: 600 }}>
-                    Monto: <strong>${loan.borrowAmount} USDC</strong> @ {loan.interestRateApr}% APR
+                  <div className="text-cyan font-semibold text-xs">
+                    Monto: <strong>${loan.borrowAmount} {UI_STRINGS.COMMON.SYMBOL_USDC}</strong> @ {loan.interestRateApr}% APR
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.2rem' }}>
-                    Garantía Garantizada: <strong style={{ color: '#f0abfc' }}>NFT #{loan.positionTokenId} en Custodia</strong>
+                  <div className="text-muted text-xs margin-top-xs">
+                    Garantía Custodiada: <strong className="text-pink-light">{loan.positionTokenId > 0 ? `NFT #${loan.positionTokenId}` : `${loan.collateralAmount} ${loan.collateralSymbol || 'ALPHA'}`}</strong>
                   </div>
-                  <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '0.1rem' }}>
-                    Plazo: {loan.durationDays} días • Factor Salud: <strong style={{ color: '#4ade80' }}>{loan.healthFactor || '140% (Seguro)'}</strong>
+                  <div className="text-muted-dark text-xs margin-top-xs">
+                    Plazo: {loan.durationDays} días • {loan.state === 1 ? (loan.lender.toLowerCase() === loan.borrower.toLowerCase() ? 'Financiado' : '🏛️ Fondeado por Tesorería') : '🟡 Oferta Disponible'}
                   </div>
                 </div>
 
                 {loan.state === 1 && loan.borrower.toLowerCase() === userAddress.toLowerCase() && onRepayLoanById ? (
                   <button
-                    className="btn-primary"
-                    style={{ background: '#3b82f6', width: '100%', marginTop: '0.4rem', fontSize: '0.78rem', padding: '0.4rem' }}
+                    className={`btn-primary ${styles.btnBlueGrad}`}
                     onClick={() => onRepayLoanById(loan.id, loan)}
                   >
-                    💳 Reembolsar Deuda (+$ Interest)
+                    💳 {UI_STRINGS.P2P_MARKETPLACE.BTN_REPAY_LOAN}
                   </button>
                 ) : loan.state === 0 && loan.borrower.toLowerCase() === userAddress.toLowerCase() && onCancelLoanOffer ? (
                   <button
-                    className="btn-primary"
-                    style={{ width: '100%', padding: '0.55rem', fontSize: '0.8rem', background: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', color: '#fca5a5' }}
+                    className="btn-primary acp-pure-warning-card text-red-light border-red-500"
                     onClick={() => onCancelLoanOffer(loan.id)}
                   >
-                    ❌ Cancelar Solicitud #{loan.id}
+                    ❌ {UI_STRINGS.P2P_MARKETPLACE.BTN_CANCEL_OFFER} #{loan.id}
                   </button>
                 ) : null}
               </div>
@@ -203,95 +206,92 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
       )}
 
       {/* Grid: Create Loan & Treasury Borrow & Quick Action Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+      <div className="met-grid-subtle">
         
         {/* Treasury Direct Reserve Loan Card */}
-        <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(16, 185, 129, 0.4)', background: 'linear-gradient(145deg, rgba(16,185,129,0.06) 0%, rgba(15,23,42,0.8) 100%)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '1.3rem' }}>🏛️</span>
-            <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#34d399' }}>Pedir Préstamo a la Tesorería</h3>
+        <div className={`glass-panel ${styles.treasuryCard}`}>
+          <div className="acp-flex-row-gap5 margin-bottom-sm">
+            <span className="text-md">🏛️</span>
+            <h3 className="gcc-metric-subtext-green font-bold text-sm margin-none">{UI_STRINGS.P2P_MARKETPLACE.CARD_TREASURY_TITLE}</h3>
           </div>
-          <p style={{ fontSize: '0.8rem', opacity: 0.8, marginBottom: '1rem', lineHeight: 1.45 }}>
-            Accede al <strong>20% de Reserva Líquida de la Tesorería</strong>. Desembolso instantáneo en USDC usando tu NFT como garantía a una <strong>tasa fija del 8.00% APR</strong>.
+          <p className="acp-label-sm margin-bottom-lg line-height-normal">
+            {UI_STRINGS.P2P_MARKETPLACE.CARD_TREASURY_DESC}
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+          <div className="acp-control-stack">
             <div>
-              <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Selecciona Tipo de Garantía Colateral:</label>
+              <label className="acp-label-sm">{UI_STRINGS.P2P_MARKETPLACE.LABEL_COL_TYPE}</label>
               <select
                 value={treasuryColType}
                 onChange={(e) => setTreasuryColType(e.target.value)}
-                style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: '8px', background: '#0f172a', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#fff', marginBottom: '0.6rem', fontSize: '0.85rem', fontWeight: 600 }}
+                className={styles.selectGreen}
               >
-                <option value="nft">🖼️ NFT de Posición Bonos ERC-721 (70.00% Max LTV)</option>
-                <option value="alpha">🥩 Token ALPHA Staked (50.00% Max LTV)</option>
-                <option value="wbtc">₿ Wrapped Bitcoin - WBTC (70.00% Max LTV)</option>
-                <option value="weth">Ξ Wrapped Ethereum - WETH (75.00% Max LTV)</option>
+                <option value="nft">🖼️ {UI_STRINGS.P2P_MARKETPLACE.COL_NFT}</option>
+                <option value="alpha">🥩 {UI_STRINGS.P2P_MARKETPLACE.COL_ALPHA}</option>
+                <option value="wbtc">₿ {UI_STRINGS.P2P_MARKETPLACE.COL_WBTC}</option>
+                <option value="weth">Ξ {UI_STRINGS.P2P_MARKETPLACE.COL_WETH}</option>
               </select>
 
               {treasuryColType === 'nft' ? (
                 <>
-                  <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>NFT Token ID como Garantía:</label>
-                  {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).length > 0 ? (
-                    <select
-                      data-testid="p2p-treasury-nft-id-input"
-                      value={p2pTokenId}
-                      onChange={(e) => setP2pTokenId(e.target.value)}
-                      style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: '8px', background: '#0f172a', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#fff' }}
-                    >
-                      <option value="">-- Selecciona un NFT de tu Billetera --</option>
-                      {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).map((pos) => (
-                        <option key={pos.id} value={pos.id.toString()}>
-                          NFT #{pos.id} (Principal: ${pos.principal} USDC)
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <div style={{ background: 'rgba(234, 179, 8, 0.12)', border: '1px solid rgba(234, 179, 8, 0.3)', borderRadius: '8px', padding: '0.65rem 0.75rem', fontSize: '0.78rem', color: '#fde047' }}>
-                      ⚠️ No tienes NFTs de Posición activos en tu billetera. Selecciona colateral <strong>ALPHA / WBTC / WETH</strong> arriba o adquiere un Bono con Descuento.
-                    </div>
-                  )}
+                  <label className="acp-label-sm">{UI_STRINGS.P2P_MARKETPLACE.LABEL_NFT_SELECT}</label>
+                  <select
+                    data-testid="p2p-treasury-nft-id-input"
+                    value={p2pTokenId}
+                    onChange={(e) => setP2pTokenId(e.target.value)}
+                    className="gcc-input-dark"
+                  >
+                    <option value="">{UI_STRINGS.COMMON.SELECT_OPTION_DEFAULT}</option>
+                    {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).map((pos) => (
+                      <option key={pos.id} value={pos.id.toString()}>
+                        NFT #{pos.id} (Principal: ${pos.principal} {UI_STRINGS.COMMON.SYMBOL_USDC})
+                      </option>
+                    ))}
+                    {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).length === 0 && (
+                      <option value="" disabled>{UI_STRINGS.COMMON.NO_POSITIONS_AVAILABLE}</option>
+                    )}
+                  </select>
                 </>
               ) : (
                 <div>
-                  <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>
-                    Garantía Requerida en {treasuryColType.toUpperCase()} (Calculada Automáticamente):
+                  <label className="acp-label-sm">
+                    {UI_STRINGS.P2P_MARKETPLACE.LABEL_REQ_COL_AMOUNT} ({treasuryColType.toUpperCase()}):
                   </label>
-                  <div style={{ padding: '0.65rem 0.85rem', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#34d399', fontWeight: 700, fontSize: '0.85rem' }}>
+                  <div className={styles.colCalcBox}>
                     ⚡ {autoCalculatedColAmount} {treasuryColType.toUpperCase()} (${requiredUsdBacking.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD Respaldo @ {(currentLtv * 100).toFixed(0)}% LTV)
                   </div>
                 </div>
               )}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+            <div className="admin-grid-2col">
               <div>
-                <label style={{ fontSize: '0.75rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Monto USDC a Solicitar:</label>
-                <input
-                  data-testid="p2p-treasury-amount-input"
-                  type="number"
+                <TokenAmountInput
+                  label={UI_STRINGS.P2P_MARKETPLACE.LABEL_BORROW_AMOUNT}
+                  testId="p2p-treasury-amount-input"
                   placeholder="ej. 500"
                   value={p2pBorrowAmount}
-                  onChange={(e) => setP2pBorrowAmount(e.target.value)}
-                  style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#fff' }}
+                  onChange={setP2pBorrowAmount}
+                  tokenSymbol={UI_STRINGS.COMMON.SYMBOL_USDC}
+                  tokenDecimals={6}
+                  showMaxButton={false}
                 />
               </div>
               <div>
-                <label style={{ fontSize: '0.75rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Duración (Días):</label>
+                <label className="acp-label-xs">{UI_STRINGS.P2P_MARKETPLACE.LABEL_DURATION_DAYS}</label>
                 <input
                   data-testid="p2p-treasury-duration-input"
                   type="number"
                   value={p2pDays}
                   onChange={(e) => setP2pDays(e.target.value)}
-                  style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#fff' }}
+                  className={styles.inputGreen}
                 />
               </div>
             </div>
 
             <button
               data-testid="p2p-treasury-request-btn"
-              className="btn-primary"
-              style={{ width: '100%', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', marginTop: '0.2rem', padding: '0.7rem', fontWeight: 700, boxShadow: '0 4px 12px rgba(16,185,129,0.3)' }}
+              className={`btn-primary ${styles.btnEmerald}`}
               onClick={() => onBorrowFromTreasury && onBorrowFromTreasury(
                 treasuryColType,
                 treasuryColType === 'nft'
@@ -301,196 +301,194 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                 p2pDays
               )}
             >
-              🏛️ Solicitar Crédito a la Tesorería ({treasuryColType.toUpperCase()})
+              {UI_STRINGS.P2P_MARKETPLACE.BTN_BORROW_TREASURY} ({treasuryColType.toUpperCase()})
             </button>
           </div>
         </div>
         
         {/* Create Loan Offer Card */}
-        <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '16px' }}>
-          <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.15rem' }}>🤝 Publicar Oferta de Préstamo P2P</h3>
-          <p style={{ fontSize: '0.8rem', opacity: 0.7, marginBottom: '1rem' }}>
-            Deposita un NFT de Posición como colateral en escrow para solicitar un préstamo. Tu oferta se publicará inmediatamente en el Marketplace.
+        <div className="glass-panel acp-proposal-card">
+          <h3 className="margin-bottom-xs font-bold text-sm">{UI_STRINGS.P2P_MARKETPLACE.CARD_OFFER_TITLE}</h3>
+          <p className="acp-label-sm margin-bottom-lg">
+            {UI_STRINGS.P2P_MARKETPLACE.CARD_OFFER_DESC}
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+          <div className="acp-control-stack">
             <div>
-              <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>NFT Token ID a Colateralizar:</label>
-              {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).length > 0 ? (
-                <select
-                  data-testid="p2p-offer-nft-id-input"
-                  value={p2pTokenId}
-                  onChange={(e) => setP2pTokenId(e.target.value)}
-                  style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: '8px', background: '#0f172a', border: '1px solid rgba(255,255,255,0.2)', color: '#fff' }}
-                >
-                  <option value="">-- Selecciona un NFT de tu Billetera --</option>
-                  {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).map((pos) => (
-                    <option key={pos.id} value={pos.id.toString()}>
-                      NFT #{pos.id} (Principal: ${pos.principal} USDC — Bloqueo: {pos.lockYears} Años)
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  data-testid="p2p-offer-nft-id-input"
-                  type="number"
-                  placeholder="ej. 1"
-                  value={p2pTokenId}
-                  onChange={(e) => setP2pTokenId(e.target.value)}
-                  style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff' }}
-                />
-              )}
+              <label className="acp-label-sm">{UI_STRINGS.P2P_MARKETPLACE.LABEL_OFFER_NFT}</label>
+              <select
+                data-testid="p2p-offer-nft-id-input"
+                value={p2pTokenId}
+                onChange={(e) => setP2pTokenId(e.target.value)}
+                className="gcc-input-dark"
+              >
+                <option value="">{UI_STRINGS.COMMON.SELECT_OPTION_DEFAULT}</option>
+                {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).map((pos) => (
+                  <option key={pos.id} value={pos.id.toString()}>
+                    NFT #{pos.id} (Principal: ${pos.principal} {UI_STRINGS.COMMON.SYMBOL_USDC} — Bloqueo: {pos.lockYears} Años)
+                  </option>
+                ))}
+                {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).length === 0 && (
+                  <option value="" disabled>{UI_STRINGS.COMMON.NO_POSITIONS_AVAILABLE}</option>
+                )}
+              </select>
             </div>
 
             <div>
-              <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Monto a Pedir Prestado (USDC):</label>
-              <input
-                data-testid="p2p-offer-amount-input"
-                type="number"
+              <TokenAmountInput
+                label={UI_STRINGS.P2P_MARKETPLACE.LABEL_OFFER_AMOUNT}
+                testId="p2p-offer-amount-input"
                 placeholder="ej. 500"
                 value={p2pBorrowAmount}
-                onChange={(e) => setP2pBorrowAmount(e.target.value)}
-                style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff' }}
+                onChange={setP2pBorrowAmount}
+                tokenSymbol={UI_STRINGS.COMMON.SYMBOL_USDC}
+                tokenDecimals={6}
+                showMaxButton={false}
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+            <div className="admin-grid-2col">
               <div>
-                <label style={{ fontSize: '0.75rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Interés (BPS - 1000 = 10%):</label>
+                <label className="acp-label-xs">{UI_STRINGS.P2P_MARKETPLACE.LABEL_OFFER_INTEREST}</label>
                 <input
                   data-testid="p2p-offer-interest-input"
                   type="number"
                   value={p2pInterestBps}
                   onChange={(e) => setP2pInterestBps(e.target.value)}
-                  style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff' }}
+                  className="gcc-input-dark"
                 />
               </div>
               <div>
-                <label style={{ fontSize: '0.75rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Duración (Días):</label>
+                <label className="acp-label-xs">{UI_STRINGS.P2P_MARKETPLACE.LABEL_OFFER_DURATION}</label>
                 <input
                   data-testid="p2p-offer-duration-input"
                   type="number"
                   value={p2pDays}
                   onChange={(e) => setP2pDays(e.target.value)}
-                  style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff' }}
+                  className="gcc-input-dark"
                 />
               </div>
             </div>
 
-            <button data-testid="p2p-offer-create-btn" className="btn-primary" style={{ width: '100%', background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', marginTop: '0.2rem', padding: '0.7rem' }} onClick={onCreateLoanOffer}>
-              🚀 Crear y Publicar Oferta de Préstamo
+            <button data-testid="p2p-offer-create-btn" className={`btn-primary ${styles.btnBlueGrad}`} onClick={onCreateLoanOffer}>
+              {UI_STRINGS.P2P_MARKETPLACE.BTN_CREATE_OFFER}
             </button>
           </div>
         </div>
 
         {/* Manual Operation Card */}
-        <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '16px' }}>
-          <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.15rem' }}>⚖️ Gestor Manual por ID</h3>
-          <p style={{ fontSize: '0.8rem', opacity: 0.7, marginBottom: '1rem' }}>
-            Financia, reembolsa o liquida préstamos ingresando directamente el ID correspondiente.
+        <div className="glass-panel acp-proposal-card">
+          <h3 className="margin-bottom-xs font-bold text-sm">{UI_STRINGS.P2P_MARKETPLACE.LABEL_MANUAL_MANAGER}</h3>
+          <p className="acp-label-sm margin-bottom-lg">
+            {UI_STRINGS.P2P_MARKETPLACE.DESC_MANUAL_MANAGER}
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+          <div className="acp-control-stack">
             <div>
-              <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>ID Préstamo Objetivo:</label>
+              <label className="acp-label-sm">{UI_STRINGS.P2P_MARKETPLACE.LABEL_TARGET_LOAN_ID}</label>
               <input
                 data-testid="p2p-manual-loan-id-input"
                 type="number"
                 placeholder="ej. 1"
                 value={targetLoanId}
                 onChange={(e) => setTargetLoanId(e.target.value)}
-                style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff' }}
+                className="gcc-input-dark"
               />
             </div>
 
             <div>
-              <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Colateral USDC Requerido (130%-150%):</label>
+              <label className="acp-label-sm">{UI_STRINGS.P2P_MARKETPLACE.LABEL_REQ_COL_PERCENT}</label>
               <input
                 type="number"
                 placeholder="ej. 700"
                 value={loanCollateral}
                 onChange={(e) => setLoanCollateral(e.target.value)}
-                style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff' }}
+                className="gcc-input-dark"
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.2rem' }}>
-              <button data-testid="p2p-manual-fund-btn" className="btn-primary" style={{ background: '#22c55e' }} onClick={onAcceptLoan}>
-                ✅ Financiar
+            <div className="admin-grid-2col margin-top-xs">
+              <button data-testid="p2p-manual-fund-btn" className="btn-primary stk-btn-green-grad" onClick={onAcceptLoan}>
+                {UI_STRINGS.P2P_MARKETPLACE.BTN_FUND_LOAN}
               </button>
-              <button data-testid="p2p-manual-repay-btn" className="btn-primary" style={{ background: '#3b82f6' }} onClick={onRepayLoan}>
-                💰 Reembolsar
+              <button data-testid="p2p-manual-repay-btn" className="btn-primary stk-btn-indigo-outline" onClick={onRepayLoan}>
+                {UI_STRINGS.P2P_MARKETPLACE.BTN_REPAY_LOAN}
               </button>
             </div>
 
-            <button data-testid="p2p-autoliquidate-btn" className="btn-primary" style={{ width: '100%', background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)', marginTop: '0.2rem', padding: '0.6rem' }} onClick={onLiquidateLoan}>
-              ⚡ Auto-Liquidar si HF &lt; 115%
+            <button data-testid="p2p-autoliquidate-btn" className={`btn-primary ${styles.btnDangerGrad}`} onClick={onLiquidateLoan}>
+              {UI_STRINGS.P2P_MARKETPLACE.BTN_LIQUIDATE_LOAN} (HF &lt; 115%)
             </button>
           </div>
         </div>
       </div>
 
       {/* Main P2P Loan Marketplace Table / Cards */}
-      <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div className="glass-panel acp-proposal-card">
+        <div className="acp-banner-flex margin-bottom-lg">
           <div>
-            <h3 style={{ margin: 0, fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              📊 Explorador & Marketplace de Préstamos P2P ({filteredLoans.length})
+            <h3 className="margin-none text-sm font-bold acp-flex-row-gap5">
+              {UI_STRINGS.P2P_MARKETPLACE.TABLE_MARKET_TITLE} ({filteredLoans.length})
             </h3>
-            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8rem', opacity: 0.7 }}>
-              Todas las ofertas creadas on-chain visibles en tiempo real. Financia préstamos para obtener rendimiento o gestiona tus posiciones.
+            <p className="acp-label-sm margin-top-xs">
+              {UI_STRINGS.P2P_MARKETPLACE.SUBTITLE}
             </p>
           </div>
 
           {/* Filter Tabs */}
-          <div style={{ display: 'flex', gap: '0.35rem', background: 'rgba(0,0,0,0.4)', padding: '0.3rem', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className={styles.filterBox}>
             <button
               onClick={() => setFilterTab('all')}
-              style={{ padding: '0.35rem 0.85rem', borderRadius: '8px', border: 'none', background: filterTab === 'all' ? 'rgba(255,255,255,0.15)' : 'transparent', color: '#fff', fontSize: '0.8rem', cursor: 'pointer', fontWeight: filterTab === 'all' ? 600 : 400 }}
+              className={`${styles.filterBtn} ${filterTab === 'all' ? styles.filterBtnActiveAll : ''}`}
             >
-              Todos ({loansList.length})
+              {UI_STRINGS.P2P_MARKETPLACE.TAB_ALL_OFFERS} ({loansList.length})
             </button>
             <button
               onClick={() => setFilterTab('created')}
-              style={{ padding: '0.35rem 0.85rem', borderRadius: '8px', border: 'none', background: filterTab === 'created' ? 'rgba(234, 179, 8, 0.25)' : 'transparent', color: filterTab === 'created' ? '#facc15' : '#fff', fontSize: '0.8rem', cursor: 'pointer', fontWeight: filterTab === 'created' ? 600 : 400 }}
+              className={`${styles.filterBtn} ${filterTab === 'created' ? styles.filterBtnActiveCreated : ''}`}
             >
-              Disponibles ({loansList.filter((l) => l.state === 0).length})
+              {UI_STRINGS.P2P_MARKETPLACE.TAB_AVAILABLE} ({loansList.filter((l) => l.state === 0).length})
             </button>
             <button
               onClick={() => setFilterTab('active')}
-              style={{ padding: '0.35rem 0.85rem', borderRadius: '8px', border: 'none', background: filterTab === 'active' ? 'rgba(34, 197, 94, 0.25)' : 'transparent', color: filterTab === 'active' ? '#4ade80' : '#fff', fontSize: '0.8rem', cursor: 'pointer', fontWeight: filterTab === 'active' ? 600 : 400 }}
+              className={`${styles.filterBtn} ${filterTab === 'active' ? styles.filterBtnActiveActive : ''}`}
             >
-              Financiados ({loansList.filter((l) => l.state === 1).length})
+              {UI_STRINGS.P2P_MARKETPLACE.TAB_FUNDED} ({loansList.filter((l) => l.state === 1).length})
             </button>
             <button
               onClick={() => setFilterTab('my')}
-              style={{ padding: '0.35rem 0.85rem', borderRadius: '8px', border: 'none', background: filterTab === 'my' ? 'rgba(59, 130, 246, 0.25)' : 'transparent', color: filterTab === 'my' ? '#60a5fa' : '#fff', fontSize: '0.8rem', cursor: 'pointer', fontWeight: filterTab === 'my' ? 600 : 400 }}
+              className={`${styles.filterBtn} ${filterTab === 'my' ? styles.filterBtnActiveMy : ''}`}
             >
-              Mis Préstamos
+              {UI_STRINGS.P2P_MARKETPLACE.TAB_MY_LOANS} ({loansList.filter((l) => ((l.lender || '').toLowerCase() === (userAddress || '').toLowerCase() || (l.borrower || '').toLowerCase() === (userAddress || '').toLowerCase()) && (l.state === 0 || l.state === 1)).length})
+            </button>
+            <button
+              onClick={() => setFilterTab('history')}
+              className={`${styles.filterBtn} ${filterTab === 'history' ? styles.filterBtnActiveMy : ''}`}
+            >
+              📜 Historial ({loansList.filter((l) => l.state === 2 || l.state === 3 || l.state === 4).length})
             </button>
           </div>
         </div>
 
         {/* Loan Table */}
         {filteredLoans.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.15)' }}>
-            <p style={{ margin: 0, fontSize: '1rem', opacity: 0.6 }}>No hay préstamos P2P disponibles en esta categoría.</p>
-            <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', opacity: 0.4 }}>¡Crea una nueva oferta utilizando el formulario superior!</p>
+          <div className={styles.emptyBox}>
+            <p className="margin-none text-sm opacity-60">{UI_STRINGS.P2P_MARKETPLACE.TABLE_MARKET_EMPTY}</p>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+          <div className="table-responsive">
+            <table className="gcc-table">
               <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.03)' }}>
-                  <th style={{ padding: '0.75rem 1rem' }}>ID</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Estado</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>NFT Colateral</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Monto Solicitado</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Tasa APR</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Plazo</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Creador / Ofertante</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Salud / HF</th>
-                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Acción Directa</th>
+                <tr className="gcc-tr-border text-muted">
+                  <th className="met-table-th">{UI_STRINGS.P2P_MARKETPLACE.TH_LOAN_ID}</th>
+                  <th className="met-table-th">Estado</th>
+                  <th className="met-table-th">{UI_STRINGS.P2P_MARKETPLACE.TH_COLLATERAL}</th>
+                  <th className="met-table-th">{UI_STRINGS.P2P_MARKETPLACE.TH_AMOUNT}</th>
+                  <th className="met-table-th">{UI_STRINGS.P2P_MARKETPLACE.TH_APR}</th>
+                  <th className="met-table-th">{UI_STRINGS.P2P_MARKETPLACE.TH_DURATION}</th>
+                  <th className="met-table-th">{UI_STRINGS.P2P_MARKETPLACE.TH_BORROWER}</th>
+                  <th className="met-table-th">{UI_STRINGS.P2P_MARKETPLACE.TH_HEALTH}</th>
+                  <th className="met-table-th text-right">{UI_STRINGS.P2P_MARKETPLACE.TH_ACTIONS}</th>
                 </tr>
               </thead>
               <tbody>
@@ -499,83 +497,113 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                   const isLender = loan.lender.toLowerCase() === userAddress.toLowerCase();
 
                   return (
-                    <tr key={loan.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', transition: 'background 0.2s' }}>
-                      <td style={{ padding: '0.85rem 1rem', fontWeight: 700 }}>#{loan.id}</td>
-                      <td style={{ padding: '0.85rem 1rem' }}>{getStatusBadge(loan.state)}</td>
-                      <td style={{ padding: '0.85rem 1rem' }}>
-                        <span style={{ background: 'rgba(255,255,255,0.1)', padding: '0.2rem 0.5rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600 }}>
-                          NFT #{loan.positionTokenId}
-                        </span>
+                    <tr key={loan.id} className="gcc-tr-border">
+                      <td className="met-table-td-bold">#{loan.id}</td>
+                      <td className="met-table-td">{getStatusBadge(loan.state)}</td>
+                      <td className="met-table-td">
+                        {loan.positionTokenId > 0 ? (
+                          <span className="gcc-badge-indigo">
+                            NFT #{loan.positionTokenId}
+                          </span>
+                        ) : loan.collateralSymbol === 'USDC' ? (
+                          <span className="gcc-badge-cyan">
+                            💵 ${loan.collateralAmount} USDC
+                          </span>
+                        ) : loan.collateralSymbol === 'WBTC' ? (
+                          <span className="gcc-badge-amber">
+                            ₿ {loan.collateralAmount} WBTC
+                          </span>
+                        ) : loan.collateralSymbol === 'WETH' ? (
+                          <span className="gcc-badge-indigo">
+                            Ξ {loan.collateralAmount} WETH
+                          </span>
+                        ) : (
+                          <span className="gcc-badge-cyan">
+                            🥩 {loan.collateralAmount} ALPHA
+                          </span>
+                        )}
                       </td>
-                      <td style={{ padding: '0.85rem 1rem', fontWeight: 600, color: '#38bdf8' }}>
-                        ${loan.borrowAmount} USDC
+                      <td className="met-table-td-cyan">
+                        ${loan.borrowAmount} {UI_STRINGS.COMMON.SYMBOL_USDC}
                       </td>
-                      <td style={{ padding: '0.85rem 1rem', fontWeight: 600, color: '#4ade80' }}>
+                      <td className="stk-val-green met-table-td">
                         {loan.interestRateApr}% APR
                       </td>
-                      <td style={{ padding: '0.85rem 1rem' }}>{loan.durationDays} días</td>
-                      <td style={{ padding: '0.85rem 1rem', opacity: 0.8, fontSize: '0.78rem' }}>
+                      <td className="met-table-td">{loan.durationDays} días</td>
+                      <td className="met-table-td opacity-80 text-xs">
                         {isBorrower ? (
-                          <span style={{ color: '#facc15', fontWeight: 600 }}>Tú (Solicitante)</span>
+                          <span className="text-amber-bright font-semibold">Tú ({loan.state === 1 ? 'Prestatario' : 'Solicitante'})</span>
                         ) : isLender ? (
-                          <span style={{ color: '#38bdf8', fontWeight: 600 }}>Tú (Prestamista)</span>
+                          <span className="text-cyan font-semibold">Tú (Prestamista)</span>
                         ) : (
                           `${loan.borrower.slice(0, 6)}...${loan.borrower.slice(-4)}`
                         )}
                       </td>
-                      <td style={{ padding: '0.85rem 1rem' }}>
+                      <td className="met-table-td">
                         {loan.state === 1 ? (
-                          <span style={{ color: parseFloat(loan.healthFactor || '0') >= 130 ? '#4ade80' : '#f87171', fontWeight: 600 }}>
+                          <span className={`font-semibold ${parseFloat(loan.healthFactor || '0') >= 130 ? 'text-green-bright' : 'stk-burned-label'}`}>
                             {loan.healthFactor}
                           </span>
                         ) : (
-                          <span style={{ opacity: 0.4 }}>-</span>
+                          <span className="opacity-40">-</span>
                         )}
                       </td>
-                      <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
+                      <td className="met-table-td text-right">
                         {/* Action Buttons based on Loan State */}
                         {loan.state === 0 && !isBorrower && onAcceptLoanById && (
                           <button
-                            className="btn-primary"
-                            style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' }}
+                            className={`btn-primary stk-btn-green-grad ${styles.actionBtnSm}`}
                             onClick={() => onAcceptLoanById(loan.id, loan.borrowAmount)}
                           >
-                            ✅ Financiar Oferta
+                            {UI_STRINGS.P2P_MARKETPLACE.BTN_FUND_LOAN}
                           </button>
                         )}
 
                         {loan.state === 0 && isBorrower && onCancelLoanOffer && (
                           <button
-                            className="btn-primary"
-                            style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: 'rgba(239, 68, 68, 0.3)', border: '1px solid #ef4444', color: '#fca5a5' }}
+                            className={`btn-primary acp-pure-warning-card text-red-light border-red-500 ${styles.actionBtnSm}`}
                             onClick={() => onCancelLoanOffer(loan.id)}
                           >
-                            ❌ Cancelar Oferta
+                            {UI_STRINGS.P2P_MARKETPLACE.BTN_CANCEL_OFFER}
                           </button>
                         )}
 
                         {loan.state === 1 && isBorrower && onRepayLoanById && (
                           <button
-                            className="btn-primary"
-                            style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' }}
+                            className={`btn-primary ${styles.btnBlueGrad} ${styles.actionBtnSm}`}
                             onClick={() => onRepayLoanById(loan.id, loan)}
                           >
-                            💰 Reembolsar
+                            {UI_STRINGS.P2P_MARKETPLACE.BTN_REPAY_LOAN}
                           </button>
                         )}
 
                         {loan.state === 1 && onLiquidateLoanById && (
-                          <button
-                            className="btn-primary"
-                            style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.5)', color: '#f87171' }}
-                            onClick={() => onLiquidateLoanById(loan.id)}
-                          >
-                            ⚡ Auto-Liquidar
-                          </button>
+                          parseFloat(loan.healthFactor?.replace('%', '') || '1000') < 115 ? (
+                            <button
+                              className={`btn-primary acp-pure-warning-card text-red-light border-red-500 ${styles.actionBtnSm}`}
+                              onClick={() => onLiquidateLoanById(loan.id, loan)}
+                            >
+                              ⚡ {UI_STRINGS.P2P_MARKETPLACE.BTN_LIQUIDATE_LOAN}
+                            </button>
+                          ) : (
+                            <button
+                              disabled
+                              className={`btn-primary opacity-50 cursor-not-allowed ${styles.actionBtnSm}`}
+                              title="Préstamo 100% solvente (Factor de Salud ≥ 115%). Solo es liquidable si el HF cae por debajo del 115% o si expira el plazo acordado."
+                            >
+                              🛡️ Solvente
+                            </button>
+                          )
                         )}
 
-                        {(loan.state === 2 || loan.state === 3 || loan.state === 4) && (
-                          <span style={{ opacity: 0.4, fontSize: '0.75rem' }}>Completado</span>
+                        {loan.state === 2 && (
+                          <span className="text-cyan text-xs font-semibold">🔵 Reembolsado</span>
+                        )}
+                        {loan.state === 3 && (
+                          <span className="text-red-light text-xs font-semibold">🔴 Liquidado</span>
+                        )}
+                        {loan.state === 4 && (
+                          <span className="opacity-40 text-xs">⚪ Cancelado</span>
                         )}
                       </td>
                     </tr>

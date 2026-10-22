@@ -2,9 +2,12 @@
 pragma solidity ^0.8.20;
 
 import "./interfaces/IYieldStreamingVault.sol";
+import "./interfaces/IProtocolErrors.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./ProtocolRoles.sol";
 import "./lib/security/ReentrancyGuard.sol";
 
 /**
@@ -12,11 +15,19 @@ import "./lib/security/ReentrancyGuard.sol";
  * @notice Distributes yield accumulated from yield vaults and consensus staking.
  *         Supports gasless signature-based claims using EIP-712.
  */
-contract YieldStreamingVault is IYieldStreamingVault, Ownable, ReentrancyGuard {
-    bytes32 public constant CLAIM_TYPEHASH = keccak256(
-        "ClaimRequest(address user,uint256 amount,uint256 nonce,uint256 deadline)"
-    );
-    
+contract YieldStreamingVault is IYieldStreamingVault, AccessControl, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
+    // Domain Custom Errors
+    error SignatureExpired();
+    error InvalidNonce();
+    error InvalidSignature();
+    error InsufficientYieldBalance(uint256 requested, uint256 available);
+
+    /* solhint-disable gas-small-strings */
+    bytes32 public constant CLAIM_TYPEHASH =
+        keccak256("ClaimRequest(address user,uint256 amount,uint256 nonce,uint256 deadline)");
+
     bytes32 public immutable DOMAIN_SEPARATOR;
     address public immutable yieldToken; // Stablecoin token for yield payouts (e.g. USDC/EURC)
 
@@ -27,13 +38,14 @@ contract YieldStreamingVault is IYieldStreamingVault, Ownable, ReentrancyGuard {
 
     event CompoundingApyUpdated(uint256 newApyBps);
 
-    constructor(address _yieldToken, address _initialOwner) Ownable() {
+    constructor(address _yieldToken, address _initialOwner) {
         yieldToken = _yieldToken;
 
-        uint256 chainId;
-        assembly {
-            chainId := chainid()
-        }
+        address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
+
+        uint256 chainId = block.chainid;
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
                 keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
@@ -43,13 +55,10 @@ contract YieldStreamingVault is IYieldStreamingVault, Ownable, ReentrancyGuard {
                 address(this)
             )
         );
-
-        if (_initialOwner != msg.sender) {
-            transferOwnership(_initialOwner);
-        }
     }
+    /* solhint-enable gas-small-strings */
 
-    function setCompoundingApyBps(uint256 newApyBps) external onlyOwner {
+    function setCompoundingApyBps(uint256 newApyBps) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         compoundingApyBps = newApyBps;
         emit CompoundingApyUpdated(newApyBps);
     }
@@ -68,9 +77,9 @@ contract YieldStreamingVault is IYieldStreamingVault, Ownable, ReentrancyGuard {
     /**
      * @notice Allows governance/operator to add yield allocations to users.
      */
-    function allocateYield(address user, uint256 amount) external onlyOwner {
-        require(user != address(0), "YieldStreamingVault: Zero address");
-        require(amount > 0, "YieldStreamingVault: Amount must be > 0");
+    function allocateYield(address user, uint256 amount) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (user == address(0)) revert IProtocolErrors.ZeroAddress();
+        if (amount == 0) revert IProtocolErrors.ZeroAmount();
 
         pendingYields[user] = _calculateCompoundedYield(user) + amount;
         lastYieldUpdateTimestamp[user] = block.timestamp;
@@ -80,49 +89,43 @@ contract YieldStreamingVault is IYieldStreamingVault, Ownable, ReentrancyGuard {
      * @inheritdoc IYieldStreamingVault
      */
     function claimYield(uint256 amount) external override nonReentrant {
-        require(amount > 0, "YieldStreamingVault: Claim amount must be > 0");
+        if (amount == 0) revert IProtocolErrors.ZeroAmount();
         uint256 currentYield = _calculateCompoundedYield(msg.sender);
-        require(currentYield >= amount, "YieldStreamingVault: Insufficient yield balance");
+        if (currentYield < amount) revert InsufficientYieldBalance(amount, currentYield);
 
         pendingYields[msg.sender] = currentYield - amount;
         lastYieldUpdateTimestamp[msg.sender] = block.timestamp;
-        
+
         // Execute yield payout transfer
         uint256 bal = IERC20(yieldToken).balanceOf(address(this));
         uint256 payout = amount > bal ? bal : amount;
-        require(IERC20(yieldToken).transfer(msg.sender, payout), "YieldStreamingVault: yield transfer failed");
-        
+        IERC20(yieldToken).safeTransfer(msg.sender, payout);
+
         emit YieldClaimed(msg.sender, payout, false);
     }
 
     /**
      * @inheritdoc IYieldStreamingVault
      */
-    function claimYieldGasless(
-        ClaimRequest calldata request,
-        bytes calldata signature
-    ) external override nonReentrant {
-        require(request.deadline >= block.timestamp, "YieldStreamingVault: Signature expired");
-        require(request.nonce == nonces[request.user]++, "YieldStreamingVault: Invalid nonce");
-        
+    function claimYieldGasless(ClaimRequest calldata request, bytes calldata signature) external override nonReentrant {
+        if (request.deadline < block.timestamp) revert SignatureExpired();
+        uint256 currentNonce = nonces[request.user];
+        if (request.nonce != currentNonce) revert InvalidNonce();
+        unchecked {
+            ++nonces[request.user];
+        }
+
         uint256 currentYield = _calculateCompoundedYield(request.user);
-        require(currentYield >= request.amount, "YieldStreamingVault: Insufficient yield balance");
+        if (currentYield < request.amount) revert InsufficientYieldBalance(request.amount, currentYield);
 
         // Construct EIP-712 structural digest
-        bytes32 structHash = keccak256(
-            abi.encode(
-                CLAIM_TYPEHASH,
-                request.user,
-                request.amount,
-                request.nonce,
-                request.deadline
-            )
-        );
+        bytes32 structHash =
+            keccak256(abi.encode(CLAIM_TYPEHASH, request.user, request.amount, request.nonce, request.deadline));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash));
-        
+
         // Recover and verify signer
         address signer = ECDSA.recover(digest, signature);
-        require(signer == request.user, "YieldStreamingVault: Invalid signature");
+        if (signer != request.user) revert InvalidSignature();
 
         pendingYields[request.user] = currentYield - request.amount;
         lastYieldUpdateTimestamp[request.user] = block.timestamp;
@@ -130,8 +133,8 @@ contract YieldStreamingVault is IYieldStreamingVault, Ownable, ReentrancyGuard {
         // Execute yield payout transfer to user
         uint256 bal = IERC20(yieldToken).balanceOf(address(this));
         uint256 payout = request.amount > bal ? bal : request.amount;
-        require(IERC20(yieldToken).transfer(request.user, payout), "YieldStreamingVault: yield transfer failed");
-        
+        IERC20(yieldToken).safeTransfer(request.user, payout);
+
         emit YieldClaimed(request.user, payout, true);
     }
 

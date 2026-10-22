@@ -1,5 +1,7 @@
 import React from 'react';
+import styles from './MetricsDashboard.module.css';
 import { ProtocolAnalyticsCharts } from './ProtocolAnalyticsCharts.js';
+import { UI_STRINGS } from '../constants/strings.js';
 
 interface MetricsDashboardProps {
   porAssets: string;
@@ -14,7 +16,7 @@ interface MetricsDashboardProps {
   circulatingSupply: string;
   totalStakedSupply: string;
   communityStakedSupply: string;
-  corporateStakedSupply: string;
+  communityVaultStakedSupply: string;
   treasuryStakedSupply: string;
   stakingRatioPct: string;
   navPerShareUSD: string;
@@ -22,6 +24,7 @@ interface MetricsDashboardProps {
   loansList: any[];
   onOpenApyModal: () => void;
   liveApyStr: string;
+  targetWeights?: { stables: number; wbtc: number; weth: number; alts: number };
 }
 
 export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
@@ -35,14 +38,15 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   circulatingSupply,
   totalStakedSupply,
   communityStakedSupply,
-  corporateStakedSupply,
+  communityVaultStakedSupply,
   treasuryStakedSupply,
   stakingRatioPct,
   navPerShareUSD,
   userPositions,
   loansList,
   onOpenApyModal,
-  liveApyStr
+  liveApyStr,
+  targetWeights = { stables: 60, wbtc: 26.67, weth: 13.33, alts: 0 }
 }) => {
   const numericRatioPct = parseFloat((porRatio || '100').replace(/,/g, '').replace('%', '')) || 100.0;
 
@@ -52,76 +56,66 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   const ethUSD = porBreakdown.weth;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '1.5rem' }}>
+    <div className="acp-container">
       
       {/* 📊 SECCIÓN 1: PANEL SUPERIOR DE KPI METRICS */}
-      <div className="card" style={{ background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.9) 100%)', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '16px', padding: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '1rem' }}>
+      <div className={`card ${styles.topCard}`}>
+        <div className={styles.headerRow}>
           <div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, background: 'linear-gradient(135deg, #a855f7 0%, #38bdf8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>
-              📊 Panel Consolidado de Métricas & Contadores On-Chain
+            <h2 className={styles.headerH2}>
+              {UI_STRINGS.METRICS.TITLE}
             </h2>
-            <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>
-              Monitoreo en tiempo real respaldado 100% por Proof of Reserves (PoR) y oráculos auditados.
+            <p className={styles.headerSubtitle}>
+              {UI_STRINGS.METRICS.SUBTITLE}
             </p>
           </div>
 
           <button
             onClick={onOpenApyModal}
-            style={{
-              background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
-              color: '#fff',
-              border: 'none',
-              padding: '0.6rem 1.2rem',
-              borderRadius: '10px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(168, 85, 247, 0.4)',
-              fontSize: '0.9rem'
-            }}
+            className={styles.apyBtn}
           >
             ⚡ Desglose Matemático APY ({liveApyStr})
           </button>
         </div>
 
         {/* KPIs Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-          <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>🛡️ Solvencia Global PoR</div>
-            <div data-testid="por-collateral-ratio" style={{ fontSize: '1.6rem', fontWeight: 800, color: numericRatioPct >= 100 ? '#4ade80' : '#f87171', marginTop: '0.2rem' }}>
-              {porRatio}%
+        <div className={styles.kpiGrid}>
+          <div className={styles.kpiCard}>
+            <div className={styles.kpiTitle}>🛡️ {UI_STRINGS.METRICS.SOLVENCY_CARD_TITLE}</div>
+            <div data-testid="por-collateral-ratio" className={`font-black text-md margin-top-sm ${numericRatioPct >= 100 ? 'text-green-bright' : styles.valLgRed}`}>
+              {porRatio.includes('%') ? porRatio : `${porRatio}%`}
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
+            <div className={styles.kpiSubtext}>
               Ratio Solvencia = Total Activos / Pasivos
             </div>
           </div>
 
-          <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>💎 Respaldo (NAV / ALPHA)</div>
-            <div data-testid="header-nav-value" style={{ fontSize: '1.6rem', fontWeight: 800, color: '#38bdf8', marginTop: '0.2rem' }}>
-              ${navPerShareUSD} USDC
+          <div className={styles.kpiCard}>
+            <div className={styles.kpiTitle}>💎 Respaldo (NAV / ALPHA)</div>
+            <div data-testid="header-nav-value" className="font-black text-md text-cyan margin-top-sm">
+              {navPerShareUSD.startsWith('$') ? navPerShareUSD : `$${navPerShareUSD} USDC`}
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
+            <div className={styles.kpiSubtext}>
               Valor Patrimonial Neto On-Chain
             </div>
           </div>
 
-          <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>🏦 Activos Exógenos PoR</div>
-            <div data-testid="por-assets-total" style={{ fontSize: '1.6rem', fontWeight: 800, color: '#c084fc', marginTop: '0.2rem' }}>
+          <div className={styles.kpiCard}>
+            <div className={styles.kpiTitle}>🏦 {UI_STRINGS.METRICS.TOTAL_ASSETS_LABEL}</div>
+            <div data-testid="por-assets-total" className="font-black text-md text-purple-bright margin-top-sm">
               ${porAssets} USD
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
+            <div className={styles.kpiSubtext}>
               USDC + WBTC + WETH en Reservas
             </div>
           </div>
 
-          <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>📄 Pasivos Totales (Shares)</div>
-            <div data-testid="por-liabilities-total" style={{ fontSize: '1.6rem', fontWeight: 800, color: '#f59e0b', marginTop: '0.2rem' }}>
+          <div className={styles.kpiCard}>
+            <div className={styles.kpiTitle}>📄 {UI_STRINGS.METRICS.TOTAL_LIABILITIES_LABEL}</div>
+            <div data-testid="por-liabilities-total" className="font-black text-md margin-top-sm">
               ${porLiabilities} USD
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
+            <div className={styles.kpiSubtext}>
               Obligaciones con Tenedores de ALPHA
             </div>
           </div>
@@ -129,96 +123,96 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
       </div>
 
       {/* 🪙 SECCIÓN 2: ESTADO DE TOKENOMICS & STAKING EN PANTALLA */}
-      <div className="card" style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '16px', padding: '1.5rem' }}>
-        <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#f8fafc', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <div className={`card ${styles.sectionCard}`}>
+        <h3 className={styles.sectionH3}>
           <span>🥩</span> Tokenomics & Estado de Oferta Deflacionaria
         </h3>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-          <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>🪙 En Circulación</div>
-            <div data-testid="staking-circulating-supply" style={{ fontSize: '1.3rem', fontWeight: 700, color: '#38bdf8', marginTop: '0.3rem' }}>
-              {circulatingSupply} ALPHA
+        <div className={styles.gridSubtle}>
+          <div className={styles.boxSubtle}>
+            <div className={styles.boxTitle}>🪙 {UI_STRINGS.STAKING.METRIC_CIRCULATING}</div>
+            <div data-testid="staking-circulating-supply" className={styles.valLgCyan}>
+              {circulatingSupply} {UI_STRINGS.COMMON.SYMBOL_ALPHA}
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>Suministro Libre Flotante</div>
+            <div className={styles.kpiSubtext}>Suministro Libre Flotante</div>
           </div>
 
-          <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>👤 Stake Comunidad</div>
-            <div data-testid="staking-community-staked" style={{ fontSize: '1.3rem', fontWeight: 700, color: '#c084fc', marginTop: '0.3rem' }}>
-              {communityStakedSupply} stALPHA
+          <div className={styles.boxSubtle}>
+            <div className={styles.boxTitle}>👤 Stake Comunidad</div>
+            <div data-testid="staking-community-staked" className={styles.valLgPurple}>
+              {communityStakedSupply} {UI_STRINGS.COMMON.SYMBOL_STALPHA}
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>Bloqueado por Inversores</div>
+            <div className={styles.kpiSubtext}>Bloqueado por Inversores</div>
           </div>
 
-          <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>🏢 Stake Bóvedas</div>
-            <div data-testid="staking-corporate-staked" style={{ fontSize: '1.3rem', fontWeight: 700, color: '#f472b6', marginTop: '0.3rem' }}>
-              <span data-testid="staking-vaults-staked">{corporateStakedSupply}</span> stALPHA
+          <div className={styles.boxSubtle}>
+            <div className={styles.boxTitle}>💎 Stake Bóveda Comunitaria</div>
+            <div data-testid="staking-community-vault-staked" className={styles.valLgPink}>
+              <span data-testid="staking-vaults-staked">{communityVaultStakedSupply}</span> {UI_STRINGS.COMMON.SYMBOL_STALPHA}
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>OpEx & Profit Vaults</div>
+            <div className={styles.kpiSubtext}>Community Yield Vault</div>
           </div>
 
-          <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>🏛️ Stake Reservas</div>
-            <div data-testid="staking-reserves-staked" style={{ fontSize: '1.3rem', fontWeight: 700, color: '#4ade80', marginTop: '0.3rem' }}>
-              {treasuryStakedSupply} stALPHA
+          <div className={styles.boxSubtle}>
+            <div className={styles.boxTitle}>🏛️ Stake Reservas</div>
+            <div data-testid="staking-reserves-staked" className={styles.valLgGreen}>
+              {treasuryStakedSupply} {UI_STRINGS.COMMON.SYMBOL_STALPHA}
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>Sub-Reserva Tesorería</div>
+            <div className={styles.kpiSubtext}>Sub-Reserva Tesorería</div>
           </div>
 
-          <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>🥩 Total Global Staked</div>
-            <div data-testid="staking-total-staked" style={{ fontSize: '1.3rem', fontWeight: 700, color: '#a855f7', marginTop: '0.3rem' }}>
-              <span data-testid="staking-global-staked">{totalStakedSupply}</span> ALPHA ({stakingRatioPct}%)
+          <div className={styles.boxSubtle}>
+            <div className={styles.boxTitle}>🥩 {UI_STRINGS.STAKING.METRIC_TOTAL_STAKED}</div>
+            <div data-testid="staking-total-staked" className={styles.valLgViolet}>
+              <span data-testid="staking-global-staked">{totalStakedSupply}</span> {UI_STRINGS.COMMON.SYMBOL_ALPHA} ({stakingRatioPct.includes('%') ? stakingRatioPct : `${stakingRatioPct}%`})
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>Total stALPHA en Gobernanza</div>
+            <div className={styles.kpiSubtext}>Total stALPHA en Gobernanza</div>
           </div>
 
-          <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>🔥 Deflación Acumulada</div>
-            <div data-testid="staking-deflation-burned" style={{ fontSize: '1.3rem', fontWeight: 700, color: '#ef4444', marginTop: '0.3rem' }}>
-              <span data-testid="staking-deflation-destroyed">{totalBurnedTokens}</span> ALPHA Destruidos
+          <div className={styles.boxSubtle}>
+            <div className={styles.boxTitle}>🔥 {UI_STRINGS.STAKING.METRIC_TOTAL_BURNED}</div>
+            <div data-testid="staking-deflation-burned" className={styles.valLgRed}>
+              <span data-testid="staking-deflation-destroyed">{totalBurnedTokens}</span> {UI_STRINGS.COMMON.SYMBOL_ALPHA} Destruidos
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>Quema Definitiva Irreversible</div>
+            <div className={styles.kpiSubtext}>Quema Definitiva Irreversible</div>
           </div>
         </div>
       </div>
 
       {/* 📊 SECCIÓN 3: TABLA DE RESPALDO EXÓGENO DE RESERVAS */}
-      <div className="card" style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '16px', padding: '1.5rem' }}>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#f8fafc', marginBottom: '1rem' }}>
-          🛡️ Ponderaciones Exógenas de Reserva Pura (Proof of Reserves)
+      <div className={`card ${styles.sectionCard}`}>
+        <h3 className={styles.sectionH3}>
+          {UI_STRINGS.METRICS.TABLE_ASSETS_TITLE}
         </h3>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+        <div className="table-responsive">
+          <table className="gcc-table">
             <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}>
-                <th style={{ padding: '0.75rem' }}>Activo de Reserva</th>
-                <th style={{ padding: '0.75rem' }}>Objetivo Protocolo</th>
-                <th style={{ padding: '0.75rem' }}>Valor USD en Caja</th>
-                <th style={{ padding: '0.75rem' }}>Bóvedas Deployed</th>
+              <tr className="gcc-tr-border text-muted">
+                <th className={styles.tableTh}>{UI_STRINGS.METRICS.TH_ASSET}</th>
+                <th className={styles.tableTh}>{UI_STRINGS.METRICS.TH_TARGET_WEIGHT}</th>
+                <th className={styles.tableTh}>{UI_STRINGS.METRICS.TH_TOTAL_VALUE_USD}</th>
+                <th className={styles.tableTh}>{UI_STRINGS.METRICS.TH_YIELD_SOURCE}</th>
               </tr>
             </thead>
             <tbody>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <td style={{ padding: '0.75rem', fontWeight: 600, color: '#38bdf8' }}>💵 USDC / Stablecoins</td>
-                <td style={{ padding: '0.75rem' }}>60.00% Target</td>
-                <td data-testid="por-row-usdc-val" style={{ padding: '0.75rem', fontWeight: 700 }}>${stablesUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
-                <td style={{ padding: '0.75rem', color: '#94a3b8' }}>Morpho Blue (80% MetaMorpho Vault @ 6.45% APY)</td>
+              <tr className="gcc-tr-border">
+                <td className={styles.tableTdCyan}>💵 USDC / Stablecoins</td>
+                <td className={styles.tableTd}>{(targetWeights?.stables || 60).toFixed(2)}% Target</td>
+                <td data-testid="por-row-usdc-val" className={styles.tableTdBold}>${stablesUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
+                <td className={styles.tableTdMuted}>{UI_STRINGS.METRICS.MORPHO_USDC_SOURCE} / Créditos P2P</td>
               </tr>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <td style={{ padding: '0.75rem', fontWeight: 600, color: '#f59e0b' }}>🪙 Wrapped Bitcoin (WBTC)</td>
-                <td style={{ padding: '0.75rem' }}>26.67% Target</td>
-                <td data-testid="por-row-wbtc-val" style={{ padding: '0.75rem', fontWeight: 700 }}>${btcUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
-                <td style={{ padding: '0.75rem', color: '#94a3b8' }}>Staking Lombard LBTC / Chainlink Feed</td>
+              <tr className="gcc-tr-border">
+                <td className={styles.tableTdAmber}>🪙 Wrapped Bitcoin (WBTC)</td>
+                <td className={styles.tableTd}>{(targetWeights?.wbtc || 26.67).toFixed(2)}% Target</td>
+                <td data-testid="por-row-wbtc-val" className={styles.tableTdBold}>${btcUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
+                <td className={styles.tableTdMuted}>{UI_STRINGS.METRICS.LOMBARD_LBTC_SOURCE} / Oráculo Chainlink</td>
               </tr>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <td style={{ padding: '0.75rem', fontWeight: 600, color: '#6366f1' }}>🔷 Wrapped Ethereum (WETH)</td>
-                <td style={{ padding: '0.75rem' }}>13.33% Target</td>
-                <td data-testid="por-row-weth-val" style={{ padding: '0.75rem', fontWeight: 700 }}>${ethUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
-                <td style={{ padding: '0.75rem', color: '#94a3b8' }}>Lido Liquid Staking stETH / Chainlink Feed</td>
+              <tr className="gcc-tr-border">
+                <td className={styles.tableTdIndigo}>🔷 Wrapped Ethereum (WETH)</td>
+                <td className={styles.tableTd}>{(targetWeights?.weth || 13.33).toFixed(2)}% Target</td>
+                <td data-testid="por-row-weth-val" className={styles.tableTdBold}>${ethUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
+                <td className={styles.tableTdMuted}>{UI_STRINGS.METRICS.LIDO_WSTETH_SOURCE} / Oráculo Chainlink</td>
               </tr>
             </tbody>
           </table>
@@ -235,6 +229,8 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
         claimableYield={claimableYield}
         userPositions={userPositions}
         loansList={loansList}
+        liveApyStr={liveApyStr}
+        targetWeights={targetWeights}
       />
     </div>
   );

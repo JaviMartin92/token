@@ -1,4 +1,10 @@
 import React from 'react';
+import styles from './VestedVaults.module.css';
+import { useQuery } from '@tanstack/react-query';
+import { publicClient, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
+import { UI_STRINGS } from '../constants/strings.js';
+import { TokenAmountInput } from './common/TokenAmountInput.js';
+import { queryKeys } from '../constants/queryKeys.js';
 
 export interface UserPosition {
   id: number;
@@ -21,9 +27,11 @@ interface VestedVaultsProps {
   setBondReferrer: (val: string) => void;
   onBuyBond: () => void;
   userPositions: UserPosition[];
-  onClaimMatured: (tokenId: number) => void;
-  onRagequit: (tokenId: number) => void;
+  onClaimMatured: (id: number, pos?: UserPosition) => void;
+  onRagequit: (id: number, pos?: UserPosition) => void;
   onOpenReferral?: () => void;
+  userAddress?: string;
+  usdcBalance?: string;
 }
 
 export const VestedVaults: React.FC<VestedVaultsProps> = ({
@@ -37,140 +45,155 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
   userPositions,
   onClaimMatured,
   onRagequit,
-  onOpenReferral
+  onOpenReferral,
+  userAddress = '0x0000000000000000000000000000000000000000',
+  usdcBalance
 }) => {
   const principalNum = parseFloat(bondPrincipal) || 0;
   const yearsNum = parseInt(bondLockYears) || 1;
-  const baseDiscountBps = Math.min(yearsNum * 500, 2500); // 5% per year (1yr=5%, 3yr=15%, 5yr=25%)
-  const discountPct = (baseDiscountBps / 100).toFixed(1);
-  const discountedPrice = (principalNum * (1 - baseDiscountBps / 10000)).toFixed(2);
+
+  const { data: discountBps = yearsNum * 500 } = useQuery({
+    queryKey: queryKeys.vestedVault.discountBps(userAddress, yearsNum),
+    queryFn: async () => {
+      if (!CONTRACT_ADDRESSES.VESTED_VAULT) return yearsNum * 500;
+      try {
+        const bps = await publicClient.readContract({
+          address: CONTRACT_ADDRESSES.VESTED_VAULT,
+          abi: ABIS.VESTED_VAULT,
+          functionName: 'calculateDiscountBps',
+          args: [(userAddress || '0x0000000000000000000000000000000000000000') as `0x${string}`, BigInt(yearsNum)]
+        }) as bigint;
+        return Number(bps);
+      } catch (e) {
+        return yearsNum * 500;
+      }
+    },
+    refetchInterval: 5000
+  });
+
+  const discountPct = (discountBps / 100).toFixed(1);
+  const discountedPrice = (principalNum * (1 - discountBps / 10000)).toFixed(2);
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
+    <div className="met-grid-subtle margin-bottom-xl">
       {/* Buy Bond Card */}
-      <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '16px' }}>
-        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.15rem' }}>📜 Bóveda de Bonos Vestados con Descuento</h3>
-        <p style={{ fontSize: '0.8rem', opacity: 0.7, marginBottom: '1rem' }}>
-          Adquiere posición en el protocolo a un precio con descuento locking a 1-5 años. Recibes un NFT ERC-721 como colateral transferible.
+      <div className="glass-panel acp-proposal-card">
+        <h3 className={styles.cardH3}>{UI_STRINGS.VESTED_VAULTS.TITLE}</h3>
+        <p className={styles.cardP}>
+          {UI_STRINGS.VESTED_VAULTS.SUBTITLE}
         </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+        <div className="acp-control-stack">
           <div>
-            <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Valor Principal del Bono (USD):</label>
-            <input
-              data-testid="bonds-principal-input"
-              type="number"
+            <TokenAmountInput
+              label={UI_STRINGS.VESTED_VAULTS.LABEL_PRINCIPAL}
+              testId="bonds-principal-input"
               value={bondPrincipal}
-              onChange={(e) => setBondPrincipal(e.target.value)}
-              style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff' }}
+              onChange={setBondPrincipal}
+              tokenSymbol={UI_STRINGS.COMMON.SYMBOL_USDC}
+              tokenDecimals={6}
+              showMaxButton={true}
+              maxBalance={usdcBalance}
             />
           </div>
 
           <div>
-            <label style={{ fontSize: '0.8rem', opacity: 0.8, display: 'block', marginBottom: '0.2rem' }}>Años de Bloqueo (1 - 5 años):</label>
+            <label className={styles.label}>{UI_STRINGS.VESTED_VAULTS.LABEL_LOCK_YEARS}</label>
             <select
               data-testid="bonds-years-select"
               value={bondLockYears}
               onChange={(e) => setBondLockYears(e.target.value)}
-              style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff' }}
+              className={styles.inputDark}
             >
-              <option value="1">1 Año (Descuento ~10%)</option>
-              <option value="2">2 Años (Descuento ~18%)</option>
-              <option value="3">3 Años (Descuento ~26%)</option>
-              <option value="4">4 Años (Descuento ~34%)</option>
-              <option value="5">5 Años (Descuento Máximo 40%)</option>
+              <option value="1">{UI_STRINGS.VESTED_VAULTS.YEAR_1}</option>
+              <option value="2">{UI_STRINGS.VESTED_VAULTS.YEAR_2}</option>
+              <option value="3">{UI_STRINGS.VESTED_VAULTS.YEAR_3}</option>
+              <option value="4">{UI_STRINGS.VESTED_VAULTS.YEAR_4}</option>
+              <option value="5">{UI_STRINGS.VESTED_VAULTS.YEAR_5}</option>
             </select>
           </div>
 
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-              <label style={{ fontSize: '0.8rem', opacity: 0.8 }}>Dirección Referidor (Opcional - 1.5% Reward USDC):</label>
+            <div className="acp-banner-flex margin-bottom-xs">
+              <label className={`${styles.label} opacity-80`}>{UI_STRINGS.VESTED_VAULTS.LABEL_REFERRER}</label>
               {onOpenReferral && (
                 <button
                   type="button"
                   onClick={onOpenReferral}
-                  style={{ background: 'none', border: 'none', color: '#38bdf8', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
+                  className={styles.linkBtn}
                 >
-                  🎁 Mi Enlace de Referido
+                  {UI_STRINGS.VESTED_VAULTS.BTN_MY_REFERRAL_LINK}
                 </button>
               )}
             </div>
             <input
               data-testid="bonds-referrer-input"
               type="text"
-              placeholder="0x..."
+              placeholder={UI_STRINGS.VESTED_VAULTS.REFERRER_PLACEHOLDER}
               value={bondReferrer}
               onChange={(e) => setBondReferrer(e.target.value)}
-              style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff' }}
+              className={styles.inputDark}
             />
           </div>
 
           {/* Discount Summary Box */}
-          <div style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.25)', padding: '0.75rem', borderRadius: '10px', fontSize: '0.8rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-              <span>Descuento Calculado:</span>
-              <strong data-testid="bonds-discount-badge" style={{ color: '#c084fc' }}>{discountPct}% OFF</strong>
+          <div className={styles.discountBox}>
+            <div className="acp-banner-flex margin-bottom-xs">
+              <span>{UI_STRINGS.VESTED_VAULTS.DISCOUNT_SUMMARY_TITLE}</span>
+              <strong data-testid="bonds-discount-badge" className="stk-val-purple">{discountPct}% OFF</strong>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Precio a Pagar Hoy:</span>
-              <strong data-testid="bonds-price-today" style={{ color: '#4ade80' }}>${discountedPrice} USDC</strong>
+            <div className="acp-banner-flex">
+              <span>{UI_STRINGS.VESTED_VAULTS.LABEL_PRICE_TO_PAY}</span>
+              <strong data-testid="bonds-price-today" className="stk-val-green">${discountedPrice} {UI_STRINGS.COMMON.SYMBOL_USDC}</strong>
             </div>
           </div>
 
-          <button data-testid="bonds-buy-btn" className="btn-primary" style={{ width: '100%', background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)', marginTop: '0.2rem' }} onClick={onBuyBond}>
-            💳 Comprar Bono Vestado & Mint NFT
+          <button data-testid="bonds-buy-btn" className={`btn-primary ${styles.buyBtn}`} onClick={onBuyBond}>
+            {UI_STRINGS.VESTED_VAULTS.BTN_BUY_BOND}
           </button>
         </div>
       </div>
 
       {/* Position NFTs Gallery Card */}
-      <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '16px' }}>
-        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.15rem' }}>🎨 Mis Posiciones ERC-721 ({userPositions.length})</h3>
+      <div className="glass-panel acp-proposal-card">
+        <h3 className={styles.cardH3}>{UI_STRINGS.VESTED_VAULTS.TABLE_TITLE} ({userPositions.length})</h3>
 
         {userPositions.length === 0 ? (
-          <div style={{ opacity: 0.5, textAlign: 'center', padding: '3rem 1rem', fontSize: '0.85rem' }}>
-            No posees ninguna posición NFT de bono vestado activa.
+          <div className={styles.emptyGallery}>
+            {UI_STRINGS.VESTED_VAULTS.TABLE_EMPTY}
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxHeight: '420px', overflowY: 'auto' }}>
+          <div className={styles.galleryStack}>
             {userPositions.map((pos) => (
               <div
                 key={pos.id}
-                style={{
-                  background: pos.isRagequitted || pos.isMaturedClaimed ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.04)',
-                  border: pos.canClaim ? '1px solid rgba(74, 222, 128, 0.5)' : '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '12px',
-                  padding: '0.85rem',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
+                className={`${styles.posCard} ${pos.isRagequitted || pos.isMaturedClaimed ? styles.posCardClaimed : (pos.canClaim ? styles.posCardCanclaim : styles.posCardNormal)}`}
               >
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#c084fc', marginBottom: '0.2rem' }}>
+                  <div className={styles.posTitle}>
                     Bono NFT #{pos.id} • {pos.lockYears} Años
                   </div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                  <div className={styles.posSub}>
                     Principal: <strong>${pos.principal} USD</strong> | Pagado: ${pos.paid} USD
                   </div>
-                  <div style={{ fontSize: '0.7rem', opacity: 0.5, marginTop: '0.2rem' }}>
+                  <div className={styles.posDate}>
                     Vence: {pos.expDateStr}
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.4rem' }}>
-                  {pos.isRagequitted && <span style={{ fontSize: '0.7rem', color: '#ef4444' }}>Ragequitted</span>}
-                  {pos.isMaturedClaimed && <span style={{ fontSize: '0.7rem', color: '#38bdf8' }}>Reclamado</span>}
+                <div className="acp-flex-row-gap5">
+                  {pos.isRagequitted && <span className={styles.badgeRq}>{UI_STRINGS.VESTED_VAULTS.BADGE_RAGEQUITTED}</span>}
+                  {pos.isMaturedClaimed && <span className={styles.badgeCl}>{UI_STRINGS.VESTED_VAULTS.BADGE_CLAIMED}</span>}
 
                   {pos.canClaim && (
-                    <button className="btn-primary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: '#22c55e' }} onClick={() => onClaimMatured(pos.id)}>
-                      Reclamar
+                    <button className={`btn-primary ${styles.claimBtn}`} onClick={() => onClaimMatured(pos.id)}>
+                      {UI_STRINGS.VESTED_VAULTS.BTN_CLAIM_MATURED}
                     </button>
                   )}
 
                   {!pos.isRagequitted && !pos.isMaturedClaimed && (
-                    <button className="btn-secondary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', borderColor: '#ef4444', color: '#ef4444' }} onClick={() => onRagequit(pos.id)}>
-                      Ragequit (Penalización 15%)
+                    <button className={`btn-secondary ${styles.rqBtn}`} onClick={() => onRagequit(pos.id)}>
+                      {UI_STRINGS.VESTED_VAULTS.BTN_RAGEQUIT}
                     </button>
                   )}
                 </div>

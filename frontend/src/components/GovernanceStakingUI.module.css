@@ -1,0 +1,57 @@
+.deflationaryTag {
+  font-size: 0.75rem;
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.burnedBox {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.burnedLabel {
+  color: #f87171;
+}
+
+.burnedVal {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #f87171;
+}
+
+.valPurple {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #c084fc;
+}
+
+.valGreen {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #4ade80;
+}
+
+.btnPurple {
+  background: #a855f7;
+}
+
+.btnGreenGrad {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.btnIndigoOutline {
+  border-color: #6366f1;
+  color: #818cf8;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
