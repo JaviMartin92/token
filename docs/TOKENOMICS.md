@@ -211,3 +211,12 @@ Cuando el token $ALPHA$ cotiza en mercados secundarios (DEX) con un descuento si
 9. **Candado 9 (Ratio de Solvencia $PoR \ge 100.00\%$):** Verificación matemática previa y posterior a la transacción.
 10. **Candado 10 (Límite por Trade $\le 1.00\%$ de Liquidez):** Mitiga el impacto en el libro de órdenes / pool AMM.
 
+---
+
+## 8. Blindaje Post-Cuántico de la Tesorería y Reservas Institucionales
+
+Con el fin de garantizar que el valor patrimonial neto ($NAV$) y las reservas de activos exógenos permanezcan inmunes a vectores de ataque derivados de la computación cuántica (algoritmo de Shor contra claves secp256k1 de gobernantes o multisigs), el protocolo integra el módulo [`PostQuantumGuard.sol`](../contracts/src/PostQuantumGuard.sol):
+
+* **Preservación de Solvencia y Reservas**: Cualquier intervención crítica sobre los parámetros de emisión, rebalanceo de reservas o desbloqueo de bóvedas puede requerir una firma W-OTS+ generada mediante cadenas de hash irreversibles con seguridad Grover de 128 bits.
+* **Cero Impacto en el Suministro**: El esquema post-cuántico opera de forma criptográfica sobre la capa de autorización, sin requerir emisiones inflacionarias de tokens, tarifas adicionales en el NAV ni alterar la distribución matemática de comisiones 50/50.
+

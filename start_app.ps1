@@ -3,6 +3,13 @@ param (
   [switch]$Fast
 )
 
+# Garantizar deteccion de Node.js en Windows si la sesion no refresco PATH
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+  if (Test-Path "C:\Program Files\nodejs") {
+    $env:PATH = "C:\Program Files\nodejs;$env:PATH"
+  }
+}
+
 Write-Host "=======================================================" -ForegroundColor Cyan
 Write-Host " INICIANDO DESPLIEGUE ULTRARRAPIDO A ESTADO 0...       " -ForegroundColor Cyan
 Write-Host "=======================================================" -ForegroundColor Cyan
@@ -37,9 +44,9 @@ docker rm -f alpha-frontend 2>$null | Out-Null
 Remove-Item -Recurse -Force "${ROOT_DIR}\frontend\dist" 2>$null | Out-Null
 Remove-Item -Recurse -Force "${ROOT_DIR}\frontend\node_modules\.vite" 2>$null | Out-Null
 
-docker run --rm -v "${ROOT_DIR}:/app" -w /app/frontend node:20-alpine npm install
-docker run --rm -v "${ROOT_DIR}:/app" -w /app/frontend node:20-alpine npm run build:sandbox
-docker run -d --name alpha-frontend -p 5173:5173 --add-host=host.docker.internal:host-gateway -v "${ROOT_DIR}:/app" -w /app/frontend node:20-alpine node server.cjs | Out-Null
+docker run --rm -v "${ROOT_DIR}:/app" -w /app/frontend node:22-alpine npm install
+docker run --rm -v "${ROOT_DIR}:/app" -w /app/frontend node:22-alpine npm run build:sandbox
+docker run -d --name alpha-frontend -p 5173:5173 --add-host=host.docker.internal:host-gateway -v "${ROOT_DIR}:/app" -w /app/frontend node:22-alpine node server.cjs | Out-Null
 
 Write-Host "=======================================================" -ForegroundColor Green
 Write-Host " APLICACION REINICIADA Y LISTA EN ESTADO 0!            " -ForegroundColor Green

@@ -57,6 +57,12 @@ Ubicado en [`contracts/test/InstitutionalAuditInvariants.t.sol`](contracts/test/
 En [`master_tokenomics_simulation.spec.ts`](frontend/tests/master_tokenomics_simulation.spec.ts), cada uno de los 15 pasos de simulación valida que la suma de las filas de reservas coincida con el total en pantalla con un margen estricto $\le \$0.02\text{ USD}$:
 $$\text{expect}(\text{Math.abs}(\text{porAssetsTotal} - \text{sumRows})).\text{toBeLessThanOrEqual}(0.02)$$
 
+### 4. Blindaje Criptográfico Post-Cuántico (NIST SP 800-208 / W-OTS+)
+Ubicado en [`contracts/src/PostQuantumGuard.sol`](contracts/src/PostQuantumGuard.sol):
+- **Resistencia Algoritmo de Shor**: Implementación de firmas basadas en hash Winternitz OTS+ ($w=4$, 67 cadenas de hash Keccak-256) inmunes a ataques cuánticos sobre curvas elípticas ($secp256k1$).
+- **Seguridad Grover 128-bit**: Funciones hash simétricas unidireccionales evaluadas en gas nativo EVM sin requerir precompilados experimentales.
+- **Autorización Híbrida Dual**: Gobernanza y operaciones críticas de tesorería pueden exigir firma ECDSA estándar + certificación cuántica W-OTS+ con protección estricta anti-replay.
+
 ---
 
 ## ⚡ Despliegue Rápido (Un Solo Clic)
@@ -111,7 +117,7 @@ $$\text{expect}(\text{Math.abs}(\text{porAssetsTotal} - \text{sumRows})).\text{t
 
 ---
 
-## 🏛️ Los 8 Pilares Centrales Auditados (100% Mainnet-Ready)
+## 🏛️ Los 9 Pilares Centrales Auditados (100% Mainnet-Ready)
 
 | Módulo | Contrato Principal | Características Clave & Invariantes |
 | :--- | :--- | :--- |
@@ -123,6 +129,7 @@ $$\text{expect}(\text{Math.abs}(\text{porAssetsTotal} - \text{sumRows})).\text{t
 | **6. Circuit Breaker Automático** | [`CircuitBreaker.sol`](contracts/src/CircuitBreaker.sol) | Búfer circular gas $O(1)$, Umbrales configurables por DAO y blindaje en préstamos. |
 | **7. Gobernanza DAO & Timelock 72h** | [`GovernorAlphaCentauri.sol`](contracts/src/GovernorAlphaCentauri.sol) | Veto inmutable a bóvedas, Timelock 72h, Cancelación de propuestas y Votación de 3 Vías con Razón. |
 | **8. Vesting Fundador por Superávit** | [`FounderReserveVestingVault.sol`](contracts/src/FounderReserveVestingVault.sol) | 100k ALPHA bloqueados en génesis, Liberación dinámica condicionada a Solvencia $>100\%$, Cap del 10% del superávit, Cooldown 72h y Cero extracción de reservas. |
+| **9. Blindaje Post-Cuántico W-OTS+** | [`PostQuantumGuard.sol`](contracts/src/PostQuantumGuard.sol) | Firmas hash Winternitz OTS+ ($w=4$, 67 cadenas Keccak-256), Dual-Auth EVM, Forward Secrecy y resistencia matemática Shor/Grover. |
 
 ---
 

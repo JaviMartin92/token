@@ -31,7 +31,7 @@ export function useGovernanceStaking(refetchInterval = 3000) {
         const totalBurned = isObj ? (breakdown.totalBurned ?? breakdown[5] ?? 0n) : 0n;
 
         let stakingRatioPct = '0.00%';
-        const totalActiveTokens = netCirculating + globalLockedTotal;
+        const totalActiveTokens = netCirculating + treasuryTotal;
         if (totalActiveTokens > 0n) {
           const ratio = (Number(globalLockedTotal * 10000n / totalActiveTokens) / 100).toFixed(2);
           stakingRatioPct = `${ratio}%`;
@@ -53,7 +53,7 @@ export function useGovernanceStaking(refetchInterval = 3000) {
           communityStakedSupply: '0.00', 
           treasuryStakedSupply: '0.00', 
           totalStakedSupply: '0.00', 
-          totalBurnedTokens: '0.00',
+          totalBurnedTokens: '0.00', 
           stakingRatioPct: '0.00%' 
         };
       }

@@ -27,7 +27,8 @@ const contractsConfigSchema = z.object({
   DYNAMIC_YIELD_ORACLE: ethAddressSchema.optional().default('0x0000000000000000000000000000000000000000' as `0x${string}`),
   GOVERNOR: ethAddressSchema.optional().default('0x0000000000000000000000000000000000000000' as `0x${string}`),
   TIMELOCK: ethAddressSchema.optional().default('0x0000000000000000000000000000000000000000' as `0x${string}`),
-  DISCOUNT_BUYBACK_ENGINE: ethAddressSchema.optional().default('0x0000000000000000000000000000000000000000' as `0x${string}`)
+  DISCOUNT_BUYBACK_ENGINE: ethAddressSchema.optional().default('0x0000000000000000000000000000000000000000' as `0x${string}`),
+  POST_QUANTUM_GUARD: ethAddressSchema.optional().default('0x0000000000000000000000000000000000000000' as `0x${string}`)
 });
 
 export type ValidatedContractsConfig = z.infer<typeof contractsConfigSchema>;
@@ -54,7 +55,8 @@ function loadAndValidateContracts(): ValidatedContractsConfig {
     DYNAMIC_YIELD_ORACLE: (contractsJson as any).DYNAMIC_YIELD_ORACLE || '0x0000000000000000000000000000000000000000',
     GOVERNOR: (contractsJson as any).GOVERNOR || '0x0000000000000000000000000000000000000000',
     TIMELOCK: (contractsJson as any).TIMELOCK || '0x0000000000000000000000000000000000000000',
-    DISCOUNT_BUYBACK_ENGINE: (contractsJson as any).DISCOUNT_BUYBACK_ENGINE || import.meta.env.VITE_DISCOUNT_BUYBACK_ENGINE_ADDRESS || '0x0000000000000000000000000000000000000000'
+    DISCOUNT_BUYBACK_ENGINE: (contractsJson as any).DISCOUNT_BUYBACK_ENGINE || import.meta.env.VITE_DISCOUNT_BUYBACK_ENGINE_ADDRESS || '0x0000000000000000000000000000000000000000',
+    POST_QUANTUM_GUARD: (contractsJson as any).POST_QUANTUM_GUARD || import.meta.env.VITE_POST_QUANTUM_GUARD_ADDRESS || '0x0000000000000000000000000000000000000000'
   };
 
   const parsed = contractsConfigSchema.safeParse(rawAddresses);

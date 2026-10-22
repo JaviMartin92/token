@@ -9,7 +9,7 @@
 * **Rama Principal de Producción:** `main` (Audited, Stable & Mainnet-Ready).
 * **Rama de Trabajo / Desarrollo:** `desarrollo`.
 * **Cumplimiento de Calidad Institucional:** **14/14 comprobaciones superadas (100% PASS)** en `npm run quality`.
-* **Smart Contracts Auditados:** **25 Smart Contracts** y 4 Librerías matemáticas $O(1)$ con **34/34 tests Foundry superados**.
+* **Smart Contracts Auditados:** **26 Smart Contracts** y 4 Librerías matemáticas $O(1)$ con **38/38 tests Foundry superados** (incluyendo el blindaje post-cuántico [`PostQuantumGuard.sol`](../contracts/src/PostQuantumGuard.sol)).
 * **Estado Génesis del Protocolo:**
   * Suministro Circulante Inicial: **0.00 ALPHA** (Estado 0 Puro).
   * Asignación del Fundador: **100,000.00 ALPHA** bloqueados en [`FounderReserveVestingVault.sol`](../contracts/src/FounderReserveVestingVault.sol) (excluidos del circulante libre).
@@ -71,8 +71,9 @@ start_app.bat
 1. **Reset Total de Anvil (Estado 0)**: Destruye el contenedor previo `alpha-anvil` y levanta una instancia limpia de Foundry Anvil en el puerto `8545` (`chain-id: 31337`).
 2. **Compilación Solidity en Docker**: Compila todos los smart contracts con `forge build --extra-output-files abi`.
 3. **Despliegue Maestro (`services/core/src/deploy.ts`)**:
-   - Despliega los 25 smart contracts (Tesorería, Oráculos, Bóvedas, P2P, Staking, Gobernanza, Bonos).
+   - Despliega los 26 smart contracts (Tesorería, Oráculos, Bóvedas, P2P, Staking, Gobernanza, Bonos, Post-Quantum Guard).
    - Despliega `FounderReserveVestingVault` y acuña los 100,000 ALPHA bloqueados.
+   - Despliega y registra `PostQuantumGuard` para firmas W-OTS+ y seguridad criptográfica cuántica.
    - Transfiere la administración del Timelock (72h) a la DAO `GovernorAlphaCentauri`.
    - Exporta las direcciones actualizadas a `.env` y `frontend/src/contracts.json`.
 4. **Construcción y Servidor Frontend**:

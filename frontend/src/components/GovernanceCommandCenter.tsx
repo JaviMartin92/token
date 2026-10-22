@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import styles from './GovernanceCommandCenter.module.css';
 import { CONTRACT_ADDRESSES, publicClient, getWalletClient } from '../utils/web3.js';
-import { encodeFunctionData, parseEther } from 'viem';
+import { encodeFunctionData, parseEther, keccak256, toHex } from 'viem';
 import { UI_STRINGS } from '../constants/strings.js';
+import { generateQuantumKeyPair, signWinternitzMessage } from '../utils/pqc.js';
 
 interface GovernanceCommandCenterProps {
   web3Data: any;
@@ -25,6 +26,12 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
   const [depositFeeInput, setDepositFeeInput] = useState('0.50');
   const [redeemFeeInput, setRedeemFeeInput] = useState('1.00');
   const [p2pFeeInput, setP2pFeeInput] = useState('0.50');
+
+  // Post-Quantum Cryptography (PQC W-OTS+) state
+  const [pqcKeyPair, setPqcKeyPair] = useState<{ seeds: `0x${string}`[]; publicKeys: `0x${string}`[]; commitmentRoot: `0x${string}` } | null>(null);
+  const [pqcCommitment, setPqcCommitment] = useState<string>('');
+  const [pqcStatusMsg, setPqcStatusMsg] = useState<string>('');
+  const [isPqcProcessing, setIsPqcProcessing] = useState<boolean>(false);
 
   const {
     navPerShareNum,
@@ -92,6 +99,90 @@ Descripción: "${description}"
     } catch (err: any) {
       console.error('Error enviando propuesta DAO:', err);
       alert(`⚠️ Transacción enviada a GovernorAlphaCentauri.propose(): ${err.message || err}`);
+    }
+  };
+
+  const handleGeneratePqcKeys = () => {
+    try {
+      setIsPqcProcessing(true);
+      const kp = generateQuantumKeyPair();
+      setPqcKeyPair(kp);
+      setPqcStatusMsg(`⚡ Par de claves post-cuánticas generado (67 cadenas W-OTS+). Raíz: ${kp.commitmentRoot.slice(0, 18)}...`);
+    } catch (err: any) {
+      setPqcStatusMsg(`Error generando claves PQC: ${err.message || err}`);
+    } finally {
+      setIsPqcProcessing(false);
+    }
+  };
+
+  const handleRegisterCommitmentOnChain = async () => {
+    if (!pqcKeyPair) return;
+    try {
+      setIsPqcProcessing(true);
+      setPqcStatusMsg('Enviando raíz de compromiso a PostQuantumGuard.sol en blockchain...');
+      const client = getWalletClient(web3Data.activeKey);
+      const targetContract = (CONTRACT_ADDRESSES as any).POST_QUANTUM_GUARD;
+      if (!targetContract || targetContract === '0x0000000000000000000000000000000000000000') {
+        throw new Error('Contrato PostQuantumGuard no configurado o no desplegado');
+      }
+      const tx = await client.writeContract({
+        address: targetContract as `0x${string}`,
+        abi: [
+          {
+            name: 'registerQuantumCommitment',
+            type: 'function',
+            stateMutability: 'nonpayable',
+            inputs: [{ name: 'commitmentRoot', type: 'bytes32' }],
+            outputs: []
+          }
+        ] as const,
+        functionName: 'registerQuantumCommitment',
+        args: [pqcKeyPair.commitmentRoot]
+      });
+      await publicClient.waitForTransactionReceipt({ hash: tx });
+      setPqcCommitment(pqcKeyPair.commitmentRoot);
+      setPqcStatusMsg(`✅ Compromiso Post-Cuántica anclado con éxito. Tx: ${tx.slice(0, 16)}...`);
+    } catch (err: any) {
+      setPqcStatusMsg(`Error registrando compromiso cuántico: ${err.message || err}`);
+    } finally {
+      setIsPqcProcessing(false);
+    }
+  };
+
+  const handleTestQuantumVerification = async () => {
+    if (!pqcKeyPair || !pqcCommitment) return;
+    try {
+      setIsPqcProcessing(true);
+      setPqcStatusMsg('Firmando acción administrativa con W-OTS+ y verificando on-chain...');
+      const client = getWalletClient(web3Data.activeKey);
+      const targetContract = (CONTRACT_ADDRESSES as any).POST_QUANTUM_GUARD;
+      const actionId = keccak256(toHex(`PQC_ACTION_${Date.now()}`));
+      const signature = signWinternitzMessage(actionId, pqcKeyPair.seeds);
+
+      const tx = await client.writeContract({
+        address: targetContract as `0x${string}`,
+        abi: [
+          {
+            name: 'authorizeActionWithQuantumSignature',
+            type: 'function',
+            stateMutability: 'nonpayable',
+            inputs: [
+              { name: 'commitmentRoot', type: 'bytes32' },
+              { name: 'actionId', type: 'bytes32' },
+              { name: 'signature', type: 'bytes32[]' }
+            ],
+            outputs: []
+          }
+        ] as const,
+        functionName: 'authorizeActionWithQuantumSignature',
+        args: [pqcKeyPair.commitmentRoot as `0x${string}`, actionId, signature]
+      });
+      await publicClient.waitForTransactionReceipt({ hash: tx });
+      setPqcStatusMsg(`🛡️ ¡Acción certificada y ejecutada con Firma Cuántica W-OTS+! Tx: ${tx.slice(0, 16)}...`);
+    } catch (err: any) {
+      setPqcStatusMsg(`Error verificando firma cuántica: ${err.message || err}`);
+    } finally {
+      setIsPqcProcessing(false);
     }
   };
 
@@ -472,6 +563,76 @@ Descripción: "${description}"
                 >
                   {isProductionChain ? UI_STRINGS.GOVERNANCE.BTN_PROPOSE_FEED : UI_STRINGS.GOVERNANCE.BTN_UPDATE_FEED}
                 </button>
+              </div>
+            </div>
+
+            {/* PQC GUARD CARD */}
+            <div className={styles.secCard} style={{ gridColumn: '1 / -1', marginTop: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                <h4 style={{ margin: 0, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  🛡️ Blindaje Criptográfico Post-Cuántico (NIST SP 800-208 / W-OTS+)
+                </h4>
+                <span style={{ fontSize: '0.75rem', padding: '4px 10px', borderRadius: '12px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', fontWeight: 'bold', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
+                  EVM Native Grover-Resistant O(2^128)
+                </span>
+              </div>
+              <p className={styles.metricSubtext} style={{ marginBottom: '16px', lineHeight: '1.5' }}>
+                Módulo institucional de resistencia post-cuántica que protege las acciones críticas de gobernanza y tesorería frente a ataques de ordenadores cuánticos (algoritmos de Shor y Grover). Implementa esquemas de firma basados en hash de Winternitz (W-OTS+ w=4, 67 cadenas) verificados directamente por el contrato inteligente <code>PostQuantumGuard.sol</code>.
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>CONTRATO POST-CUÁNTICO:</div>
+                  <div style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#e2e8f0', wordBreak: 'break-all', marginTop: '4px' }}>
+                    {(CONTRACT_ADDRESSES as any).POST_QUANTUM_GUARD || '0x...'}
+                  </div>
+                </div>
+
+                <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>ESTADO DE COMPROMISO ACTIVO:</div>
+                  <div style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: pqcCommitment ? '#4ade80' : '#f59e0b', wordBreak: 'break-all', marginTop: '4px' }}>
+                    {pqcCommitment ? `Raíz On-Chain: ${pqcCommitment.slice(0, 10)}...${pqcCommitment.slice(-8)}` : 'Sin Compromiso Activo en Sesión'}
+                  </div>
+                </div>
+              </div>
+
+              {pqcStatusMsg && (
+                <div style={{ padding: '8px 12px', borderRadius: '6px', marginBottom: '12px', fontSize: '0.8rem', background: pqcStatusMsg.includes('Error') ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)', color: pqcStatusMsg.includes('Error') ? '#ef4444' : '#4ade80', border: `1px solid ${pqcStatusMsg.includes('Error') ? 'rgba(239, 68, 68, 0.3)' : 'rgba(34, 197, 94, 0.3)'}` }}>
+                  {pqcStatusMsg}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={handleGeneratePqcKeys}
+                  disabled={isPqcProcessing}
+                  className={styles.secBtnBlue}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  ⚡ Generar Par de Claves Cuánticas W-OTS+
+                </button>
+
+                {pqcKeyPair && (
+                  <button
+                    onClick={handleRegisterCommitmentOnChain}
+                    disabled={isPqcProcessing}
+                    className={styles.promoBtnActive}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    📝 Registrar Raíz de Compromiso On-Chain
+                  </button>
+                )}
+
+                {pqcKeyPair && pqcCommitment && (
+                  <button
+                    onClick={handleTestQuantumVerification}
+                    disabled={isPqcProcessing}
+                    className={styles.secBtnRed}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #6366f1, #a855f7)', borderColor: '#818cf8' }}
+                  >
+                    🛡️ Certificar Acción con Firma Cuántica
+                  </button>
+                )}
               </div>
             </div>
           </div>

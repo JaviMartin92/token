@@ -49,6 +49,9 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   targetWeights = { stables: 60, wbtc: 26.67, weth: 13.33, alts: 0 }
 }) => {
   const numericRatioPct = parseFloat((porRatio || '100').replace(/,/g, '').replace('%', '')) || 100.0;
+  const numericAssets = parseFloat(porAssets.replace(/,/g, '')) || 0;
+  const numericLiabilities = parseFloat(porLiabilities.replace(/,/g, '')) || 0;
+  const surplusUsd = numericAssets > numericLiabilities ? numericAssets - numericLiabilities : 0;
 
   // Exogenous reserves breakdown directly from Treasury.sol getAssetBreakdown()
   const stablesUSD = porBreakdown.stables;
@@ -116,7 +119,9 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
               ${porLiabilities} USD
             </div>
             <div className={styles.kpiSubtext}>
-              Obligaciones con Tenedores de ALPHA
+              {surplusUsd > 0
+                ? `Base liquidada (Superávit: +$${surplusUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD)`
+                : 'Obligaciones con Tenedores de ALPHA'}
             </div>
           </div>
         </div>
@@ -134,7 +139,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
             <div data-testid="staking-circulating-supply" className={styles.valLgCyan}>
               {circulatingSupply} {UI_STRINGS.COMMON.SYMBOL_ALPHA}
             </div>
-            <div className={styles.kpiSubtext}>Suministro Libre Flotante</div>
+            <div className={styles.kpiSubtext}>Suministro Circulante Total</div>
           </div>
 
           <div className={styles.boxSubtle}>

@@ -868,6 +868,32 @@ async function main() {
   });
   await publicClient.waitForTransactionReceipt({ hash: hMintFounder });
   console.log('[+] Acuñados 100,000 ALPHA bloqueados en FounderReserveVestingVault (Estado Génesis Limpio).');
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // PostQuantumGuard (Winternitz OTS+ Hybrid Quantum-Resistant Guard)
+  // ─────────────────────────────────────────────────────────────────────────────
+  console.log('[*] Desplegando PostQuantumGuard (PQC W-OTS+)...');
+  const pqGuardArtifact = loadArtifact('PostQuantumGuard', 'PostQuantumGuard.sol');
+  const hashPqGuard = await walletClient.deployContract({
+    abi: pqGuardArtifact.abi,
+    bytecode: pqGuardArtifact.bytecode.object as `0x${string}`,
+    args: [account.address, apAddr],
+    account
+  });
+  const receiptPqGuard = await publicClient.waitForTransactionReceipt({ hash: hashPqGuard });
+  const pqGuardAddr = receiptPqGuard.contractAddress as `0x${string}`;
+  console.log(`[+] PostQuantumGuard desplegado en: ${pqGuardAddr}`);
+
+  // Register in ProtocolAddressProvider
+  const idPqGuard = keccak256(toHex('POST_QUANTUM_GUARD'));
+  const hRegPqGuard = await walletClient.writeContract({
+    address: apAddr,
+    abi: apArtifact.abi,
+    functionName: 'setAddress',
+    args: [idPqGuard, pqGuardAddr],
+    account
+  });
+  await publicClient.waitForTransactionReceipt({ hash: hRegPqGuard });
   // ─────────────────────────────────────────────────────────────────────────────
 
   // Write addresses to root .env file & frontend contracts.json
@@ -905,6 +931,7 @@ async function main() {
   updateEnvVar('VITE_COMMUNITY_YIELD_VAULT_ADDRESS', communityYieldVaultAddr);
   updateEnvVar('VITE_DISCOUNT_BUYBACK_ENGINE_ADDRESS', buybackAddr);
   updateEnvVar('VITE_FOUNDER_VESTING_VAULT_ADDRESS', founderVestingAddr);
+  updateEnvVar('VITE_POST_QUANTUM_GUARD_ADDRESS', pqGuardAddr);
   removeEnvVar('VITE_CORPORATE_CONTRIBUTION_ADDRESS');
   removeEnvVar('VITE_PROTOCOL_OPEX_VAULT_ADDRESS');
   removeEnvVar('VITE_ADMIN_KEY');
@@ -943,7 +970,8 @@ async function main() {
     GOVERNOR: governorAddr,
     TIMELOCK: timelockAddr,
     DISCOUNT_BUYBACK_ENGINE: buybackAddr,
-    FOUNDER_VESTING_VAULT: founderVestingAddr
+    FOUNDER_VESTING_VAULT: founderVestingAddr,
+    POST_QUANTUM_GUARD: pqGuardAddr
   };
   fs.writeFileSync(jsonPath, JSON.stringify(addressesJson, null, 2), 'utf8');
 
