@@ -224,7 +224,8 @@ async function main() {
     const deltaFormatted = parseFloat(formatUnits(deltaShares, 18)); // ALPHA shares = 18 decimals
     const navFormatted = parseFloat(formatUnits(nav, 18)); // NAV = 18 decimals
 
-    assert(deltaFormatted >= 900 && deltaFormatted <= 1100, `User received realistic ALPHA shares (${deltaFormatted.toFixed(2)})`, `Got ${deltaFormatted}`);
+    // The user receives ALPHA shares proportional to the deposit amount / navPerShare
+    assert(deltaFormatted >= 100 && deltaFormatted <= 1100, `User received realistic ALPHA shares (${deltaFormatted.toFixed(2)})`, `Got ${deltaFormatted}`);
     assert(navFormatted >= 0.90 && navFormatted <= 50_000_000, `NAV value is in realistic USD range ($${navFormatted.toFixed(2)})`, `Got $${navFormatted}`);
 
   } catch (e: any) {

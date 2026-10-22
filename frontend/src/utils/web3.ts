@@ -34,6 +34,17 @@ export const getWalletClient = (userAddress?: string) => {
   });
 };
 
+export const getFreshNonce = async (account: `0x${string}`): Promise<number | undefined> => {
+  try {
+    return await publicClient.getTransactionCount({
+      address: account,
+      blockTag: 'pending'
+    });
+  } catch {
+    return undefined;
+  }
+};
+
 // Minimum required ABIs for dashboard actions
 export const ABIS = {
   ERC20: [
@@ -256,5 +267,20 @@ export const ABIS = {
       ],
       outputs: [{ name: 'usdValue', type: 'uint256' }]
     }
+  ] as const,
+  FOUNDER_VESTING: [
+    { name: 'TOTAL_ALLOCATION', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
+    { name: 'totalClaimed', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
+    { name: 'remainingAllocation', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
+    { name: 'beneficiary', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'address' }] },
+    { name: 'lastClaimTimestamp', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
+    { name: 'COOLDOWN_PERIOD', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
+    { name: 'getClaimableInfo', type: 'function', stateMutability: 'view', inputs: [], outputs: [
+      { name: 'claimableAlpha', type: 'uint256' },
+      { name: 'surplusUSD', type: 'uint256' },
+      { name: 'nextAvailableTimestamp', type: 'uint256' },
+      { name: 'canClaim', type: 'bool' }
+    ]},
+    { name: 'claimVestedAlpha', type: 'function', stateMutability: 'nonpayable', inputs: [], outputs: [{ name: 'claimedAmount', type: 'uint256' }] }
   ] as const
 };

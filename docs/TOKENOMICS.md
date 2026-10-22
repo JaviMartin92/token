@@ -18,6 +18,13 @@ $$\text{Ratio}_{\text{post\_tx}} \ge \text{Ratio}_{\text{pre\_tx}} \ge 100.00\%$
 
 * **Regla Inquebrantable:** Ninguna billetera, equipo, inversor o fundador puede recibir tokens ALPHA minteados sin un ingreso patrimonial previo o sin estar respaldados al 100% por la masa de colateral exógeno.
 * **Mecanismo:** La acuñación solo existe cuando ingresa colateral real en la Tesorería valorado a precio oficial $NAV_{\text{spot}}$, o a través de bonos con descuento temporalmente bloqueados en [`VestedDiscountVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/VestedDiscountVault.sol).
+* **Asignación del Propietario / Fundador (Bóveda Dedicada de Vesting por Superávit):**
+  - La asignación inicial del creador (100,000 ALPHA) se encuentra custodiada en el contrato autónomo [`FounderReserveVestingVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/FounderReserveVestingVault.sol).
+  - **Exclusión del Suministro Circulante:** Los 100,000 ALPHA bloqueados **no computan como circulante libre** ni como pasivo exigible en el estado génesis (garantizando un inicio limpio con 0.00 ALPHA en circulación y NAV exacto de $1.0000 USD).
+  - **Desbloqueo Dinámico Condicionado a la Salud de Reservas:** La liberación de tokens no depende del transcurso ciego del tiempo, sino del superávit matemático real de la Tesorería ($\text{Solvencia} > 100.00\%$):
+    $$\text{Superávit USD} = \max\left(0, \text{Total Activos USD} - \text{Total Pasivos USD}\right)$$
+  - **Límite de Reclamo (10% Máximo) y Cooldown:** En cada ciclo solo se puede reclamar hasta el 10% del superávit convertido a ALPHA a valor NAV oficial, imponiendo un enfriamiento estricto de 72 horas entre reclamos sucesivos.
+  - **Inmunidad de Reservas:** El reclamo transfiere exclusivamente tokens ALPHA custodiados en la bóveda hacia la billetera del fundador; **ningún activo de reserva (USDC/WBTC/WETH) es extraído ni tocado jamás**, asegurando que el propietario nunca pueda drenar el respaldo del protocolo.
 
 ---
 
@@ -167,15 +174,23 @@ Los bonos con descuento se emiten como NFTs de Posición ERC-721 ([`VaultPositio
 
 ## 🛡️ 9. Proof of Reserves (PoR) y Fórmula de Solvencia
 
-El contrato [`TreasuryManager.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/TreasuryManager.sol#L313-L329) calcula en cada bloque la solvencia del protocolo:
+El contrato [`TreasuryManager.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/TreasuryManager.sol) junto a [`TreasuryPoRLib.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/lib/TreasuryPoRLib.sol) calcula en cada bloque la solvencia del protocolo y el valor patrimonial neto con deducción estricta de deuda externa:
 
 $$\text{Activos Totales Exógenos USD} = \text{USDC}_{\text{Vault}} + \text{Morpho}_{\text{Yield}} + (\text{WBTC} \times P_{\text{BTC}}) + (\text{WETH} \times P_{\text{ETH}}) + \text{DeudaP2P}_{\text{USD}}$$
 
-$$\text{Pasivos Totales USD} = (\text{Circulante Neto ALPHA} \times \text{NAV}) + \text{Pasivos Bonos Vestados}$$
+$$\text{Pasivos Totales USD} = (\text{Circulante Neto ALPHA} \times \text{NAV}) + \text{Pasivos Deuda Bonos Vestados USD}$$
 
 $$\text{Ratio PoR} = \left(\frac{\text{Activos Totales Exógenos USD}}{\text{Pasivos Totales USD}}\right) \times 100 \ge \mathbf{100.00\%}$$
 
-$$\text{NAV Oficial por Share} = \frac{\text{Activos Totales Exógenos USD}}{\text{Circulante Neto ALPHA}}$$
+### Cálculo Institucional de Patrimonio Neto (Net Equity) y NAV por Acción
+Para evitar que los fondos pagados por la compra de bonos vestados inflen artificialmente el NAV de ALPHA (ya que representan deuda u obligaciones de pago futuras, no patrimonio libre), el protocolo descuenta la deuda antes de calcular el valor liquidativo:
+
+$$\text{Patrimonio Neto Libre (Net Equity USD)} = \max\left(0, \text{Activos Totales Exógenos USD} - \text{Pasivos Deuda Bonos Vestados USD}\right)$$
+
+$$\mathbf{\text{NAV Oficial por Share}} = \frac{\text{Patrimonio Neto Libre (Net Equity USD)}}{\text{Circulante Neto ALPHA}}$$
+
+* **Blindaje contra Distorsión:** La emisión de un bono mantiene invariable el NAV spot de ALPHA.
+* **Acreción Orgánica Real:** El NAV de ALPHA solo se incrementa de forma genuina cuando las reservas generan rendimientos pasivos (Morpho Blue / RWA / spread P2P) o cuando se recaudan cuotas de protocolo.
 
 ---
 

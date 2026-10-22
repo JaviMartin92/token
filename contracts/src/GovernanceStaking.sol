@@ -322,23 +322,16 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
 
     function getStakingBreakdown() external view returns (StakingBreakdown memory breakdown) {
         uint256 communityVaultStaked = communityYieldVault != address(0) ? balanceOf(communityYieldVault) : 0;
-        uint256 communityVaultBalance = communityYieldVault != address(0) ? govToken.balanceOf(communityYieldVault) : 0;
-
-        breakdown.communityVaultStaked = communityVaultStaked + communityVaultBalance;
-
         uint256 tmStaked = treasury != address(0) ? balanceOf(treasury) : 0;
-        uint256 tmBal = treasury != address(0) ? govToken.balanceOf(treasury) : 0;
         uint256 avStaked = alphaVault != address(0) ? balanceOf(alphaVault) : 0;
-        uint256 avBal = alphaVault != address(0) ? govToken.balanceOf(alphaVault) : 0;
         uint256 pvStaked = promoVault != address(0) ? balanceOf(promoVault) : 0;
-        uint256 pvBal = promoVault != address(0) ? govToken.balanceOf(promoVault) : 0;
 
-        breakdown.treasuryStaked = tmStaked + tmBal + avStaked + avBal + pvStaked + pvBal;
+        breakdown.communityVaultStaked = communityVaultStaked;
+        breakdown.treasuryStaked = tmStaked + avStaked + pvStaked;
 
-        uint256 instGovStaked = communityVaultStaked + tmStaked + avStaked + pvStaked;
-        breakdown.communityStaked = totalStaked > instGovStaked ? totalStaked - instGovStaked : totalStaked;
-        breakdown.globalTotalStaked =
-            breakdown.communityStaked + breakdown.communityVaultStaked + breakdown.treasuryStaked;
+        uint256 institutionalStaked = breakdown.treasuryStaked + breakdown.communityVaultStaked;
+        breakdown.communityStaked = totalStaked > institutionalStaked ? totalStaked - institutionalStaked : 0;
+        breakdown.globalTotalStaked = totalStaked;
 
         uint256 totalSupply = govToken.totalSupply();
         uint256 burned = 0;

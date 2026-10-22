@@ -823,44 +823,51 @@ async function main() {
   console.log('[+] Linked TreasuryManager into GovernanceStaking.');
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Initial Reserves Seeding
+  // Founder Reserve Vesting Vault (100,000 ALPHA Surplus-Backed Allocation)
   // ─────────────────────────────────────────────────────────────────────────────
-  console.log('[*] Realizando depósito de génesis en Tesorería...');
-  const initialDeposit = 100_000n * 1_000_000n; // 100,000 USDC (6 decimals)
-  const mintInitialUSDC = await walletClient.writeContract({
-    address: usdcAddr as `0x${string}`,
-    abi: MockERC20.abi,
+  console.log('[*] Desplegando FounderReserveVestingVault (100k ALPHA con Vesting de Reservas)...');
+  const founderVestingArtifactPath = path.resolve(process.cwd(), 'contracts/out/FounderReserveVestingVault.sol/FounderReserveVestingVault.json');
+  const founderVestingArtifact = JSON.parse(fs.readFileSync(founderVestingArtifactPath, 'utf8'));
+  const hashFounderVesting = await walletClient.deployContract({
+    abi: founderVestingArtifact.abi,
+    bytecode: founderVestingArtifact.bytecode.object as `0x${string}`,
+    args: [alphaTokenAddr, treasuryAddr, account.address, account.address],
+    account
+  });
+  const receiptFounderVesting = await publicClient.waitForTransactionReceipt({ hash: hashFounderVesting });
+  const founderVestingAddr = receiptFounderVesting.contractAddress as `0x${string}`;
+  console.log(`[+] FounderReserveVestingVault desplegado en: ${founderVestingAddr}`);
+
+  // Register in ProtocolAddressProvider
+  const idFounderVesting = keccak256(toHex('FOUNDER_VESTING_VAULT'));
+  const hRegFounderVesting = await walletClient.writeContract({
+    address: apAddr,
+    abi: apArtifact.abi,
+    functionName: 'setAddress',
+    args: [idFounderVesting, founderVestingAddr],
+    account
+  });
+  await publicClient.waitForTransactionReceipt({ hash: hRegFounderVesting });
+
+  // Grant MINTER_ROLE to deployer to mint 100,000 ALPHA locked into FounderReserveVestingVault
+  const hGrantAdminMinter = await walletClient.writeContract({
+    address: alphaTokenAddr,
+    abi: acAbi,
+    functionName: 'grantRole',
+    args: [MINTER_ROLE, account.address],
+    account
+  });
+  await publicClient.waitForTransactionReceipt({ hash: hGrantAdminMinter });
+
+  const hMintFounder = await walletClient.writeContract({
+    address: alphaTokenAddr,
+    abi: alphaArtifact.abi,
     functionName: 'mint',
-    args: [account.address, initialDeposit]
+    args: [founderVestingAddr, parseEther('100000')],
+    account
   });
-  await publicClient.waitForTransactionReceipt({ hash: mintInitialUSDC });
-
-  const approveInitialUSDC = await walletClient.writeContract({
-    address: usdcAddr as `0x${string}`,
-    abi: MockERC20.abi,
-    functionName: 'approve',
-    args: [treasuryAddr as `0x${string}`, initialDeposit]
-  });
-  await publicClient.waitForTransactionReceipt({ hash: approveInitialUSDC });
-
-  const depositAbi = [
-    {
-      name: 'deposit',
-      type: 'function',
-      stateMutability: 'nonpayable',
-      inputs: [{ name: 'usdcAmount', type: 'uint256' }, { name: 'minAlphaOut', type: 'uint256' }],
-      outputs: [{ name: '', type: 'uint256' }]
-    }
-  ] as const;
-
-  const depositInitial = await walletClient.writeContract({
-    address: treasuryAddr as `0x${string}`,
-    abi: depositAbi,
-    functionName: 'deposit',
-    args: [initialDeposit, 0n]
-  });
-  await publicClient.waitForTransactionReceipt({ hash: depositInitial });
-  console.log('[+] Protocolo fondeado con 100,000 USDC iniciales. Reservas activas y Stake Reservas iniciado.');
+  await publicClient.waitForTransactionReceipt({ hash: hMintFounder });
+  console.log('[+] Acuñados 100,000 ALPHA bloqueados en FounderReserveVestingVault (Estado Génesis Limpio).');
   // ─────────────────────────────────────────────────────────────────────────────
 
   // Write addresses to root .env file & frontend contracts.json
@@ -897,6 +904,7 @@ async function main() {
   updateEnvVar('VITE_STAKING_ADDRESS', stakingAddr);
   updateEnvVar('VITE_COMMUNITY_YIELD_VAULT_ADDRESS', communityYieldVaultAddr);
   updateEnvVar('VITE_DISCOUNT_BUYBACK_ENGINE_ADDRESS', buybackAddr);
+  updateEnvVar('VITE_FOUNDER_VESTING_VAULT_ADDRESS', founderVestingAddr);
   removeEnvVar('VITE_CORPORATE_CONTRIBUTION_ADDRESS');
   removeEnvVar('VITE_PROTOCOL_OPEX_VAULT_ADDRESS');
   removeEnvVar('VITE_ADMIN_KEY');
@@ -934,7 +942,8 @@ async function main() {
     ORACLE_ROUTER: oracleAddr,
     GOVERNOR: governorAddr,
     TIMELOCK: timelockAddr,
-    DISCOUNT_BUYBACK_ENGINE: buybackAddr
+    DISCOUNT_BUYBACK_ENGINE: buybackAddr,
+    FOUNDER_VESTING_VAULT: founderVestingAddr
   };
   fs.writeFileSync(jsonPath, JSON.stringify(addressesJson, null, 2), 'utf8');
 

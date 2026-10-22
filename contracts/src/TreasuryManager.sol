@@ -210,15 +210,21 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
         return assets;
     }
 
+    function getNetEquityUSD() public view returns (uint256) {
+        (uint256 assets,,) = getProofOfReserves();
+        uint256 debtUSD = TreasuryPoRLib.getDebtLiabilitiesUSD(addressProvider);
+        return assets > debtUSD ? assets - debtUSD : 0;
+    }
+
     function getNAV() external view returns (uint256) {
-        return getTotalNavUSD();
+        return getNetEquityUSD();
     }
 
     function getNAVPerShare() public view returns (uint256) {
-        uint256 totalAssetsUSD = getTotalNavUSD();
+        uint256 netEquityUSD = getNetEquityUSD();
         uint256 circulatingShares = getNetCirculatingShares();
         if (circulatingShares == 0) return 1e18;
-        return Math.mulDiv(totalAssetsUSD, 1e18, circulatingShares, Math.Rounding.Floor);
+        return Math.mulDiv(netEquityUSD, 1e18, circulatingShares, Math.Rounding.Floor);
     }
 
     struct ProtocolOverview {

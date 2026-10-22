@@ -54,6 +54,7 @@ const GovernanceStakingUI = lazyWithRetry(() => import('./components/GovernanceS
 const MetricsDashboard = lazyWithRetry(() => import('./components/MetricsDashboard.js').then(m => ({ default: m.MetricsDashboard })));
 const AdminControlPanel = lazyWithRetry(() => import('./components/AdminControlPanel.js').then(m => ({ default: m.AdminControlPanel })));
 const GovernanceCommandCenter = lazyWithRetry(() => import('./components/GovernanceCommandCenter.js').then(m => ({ default: m.GovernanceCommandCenter })));
+const FounderVestingCard = lazyWithRetry(() => import('./components/FounderVestingCard.js').then(m => ({ default: m.FounderVestingCard })));
 const ActivityLog = lazyWithRetry(() => import('./components/ActivityLog.js').then(m => ({ default: m.ActivityLog })));
 
 // Loading Fallback Component
@@ -362,6 +363,12 @@ export default function App() {
               onSimulateDrop={admin.handleSimulateDrop}
               onResetBreaker={admin.handleResetBreaker}
               onResetBlockchain={admin.handleResetBlockchain}
+            />
+
+            <FounderVestingCard
+              userAddress={global.userAddress || ''}
+              addLog={addLog}
+              addToast={addToast}
             />
 
             <GovernanceCommandCenter

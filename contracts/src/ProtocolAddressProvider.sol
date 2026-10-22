@@ -24,6 +24,7 @@ contract ProtocolAddressProvider is AccessControl {
     bytes32 public constant ID_COMMUNITY_YIELD_VAULT = keccak256("COMMUNITY_YIELD_VAULT");
     bytes32 public constant ID_MORPHO_ADAPTER = keccak256("MORPHO_ADAPTER");
     bytes32 public constant ID_DISCOUNT_BUYBACK_ENGINE = keccak256("DISCOUNT_BUYBACK_ENGINE");
+    bytes32 public constant ID_FOUNDER_VESTING_VAULT = keccak256("FOUNDER_VESTING_VAULT");
 
     mapping(bytes32 => address) private _addresses;
 
@@ -97,5 +98,9 @@ contract ProtocolAddressProvider is AccessControl {
 
     function getDiscountBuybackEngine() external view returns (address) {
         return getAddress(ID_DISCOUNT_BUYBACK_ENGINE);
+    }
+
+    function getFounderVestingVault() external view returns (address) {
+        return getAddress(ID_FOUNDER_VESTING_VAULT);
     }
 }

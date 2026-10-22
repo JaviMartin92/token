@@ -6,6 +6,7 @@ import "../AlphaVault.sol";
 import "../AlphaToken.sol";
 import "../interfaces/IOracleHub.sol";
 import "../interfaces/ISwapRouter.sol";
+import "../interfaces/ITreasury.sol";
 
 interface IGovernanceStakingRebalance {
     function stake(uint256 amount) external;
@@ -162,13 +163,14 @@ library TreasuryRebalanceLib {
 
         // 2. NAV Mint Fallback (Genesis Sandbox / Liquidity Protection)
         if (!dexSuccess) {
-            uint256 totalShares = params.token.totalSupply();
-            if (totalShares == 0 || params.totalNavUSD == 0) {
-                alphaObtained = (altsUsdc * 10 ** 18) / (10 ** params.redemptionTokenDecimals);
-            } else {
-                uint256 depositValueUSD = altsUsdc * (10 ** (18 - params.redemptionTokenDecimals));
-                alphaObtained = (depositValueUSD * totalShares) / params.totalNavUSD;
+            uint256 depositValueUSD = altsUsdc * (10 ** (18 - params.redemptionTokenDecimals));
+            uint256 navPerShare = 1e18;
+            if (params.treasuryContract != address(0)) {
+                try ITreasury(params.treasuryContract).getNAVPerShare() returns (uint256 nav) {
+                    if (nav > 0) navPerShare = nav;
+                } catch {}
             }
+            alphaObtained = (depositValueUSD * 1e18) / navPerShare;
             params.token.mint(params.treasuryContract, alphaObtained);
         }
 

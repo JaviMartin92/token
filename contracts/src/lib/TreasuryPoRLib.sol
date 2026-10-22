@@ -119,6 +119,11 @@ library TreasuryPoRLib {
         address govAddr = ctx.addressProvider.getGovernanceStaking();
 
         uint256 protocolOwnedAlpha = vault.getBalance(address(token)) + token.balanceOf(ctx.treasuryManagerContract);
+        address founderVesting = ctx.addressProvider.getFounderVestingVault();
+        if (founderVesting != address(0)) {
+            protocolOwnedAlpha += token.balanceOf(founderVesting);
+        }
+
         if (govAddr != address(0)) {
             protocolOwnedAlpha += IERC20(govAddr).balanceOf(address(vault))
             + IERC20(govAddr).balanceOf(ctx.treasuryManagerContract);
@@ -183,6 +188,11 @@ library TreasuryPoRLib {
         uint256 protocolOwned = (vaultAddr != address(0)) ? token.balanceOf(vaultAddr) : 0;
         protocolOwned += token.balanceOf(treasuryManagerContract);
 
+        address founderVesting = addressProvider.getFounderVestingVault();
+        if (founderVesting != address(0)) {
+            protocolOwned += token.balanceOf(founderVesting);
+        }
+
         if (govAddr != address(0)) {
             if (vaultAddr != address(0)) {
                 protocolOwned += IERC20(govAddr).balanceOf(vaultAddr);
@@ -199,6 +209,20 @@ library TreasuryPoRLib {
         }
 
         return total > protocolOwned ? total - protocolOwned : 0;
+    }
+
+    /**
+     * @notice Computes total external debt obligations (e.g. active Vested Bonds liability) to deduct from Net Equity.
+     */
+    function getDebtLiabilitiesUSD(ProtocolAddressProvider addressProvider) internal view returns (uint256 debtUSD) {
+        address vestedAddr = addressProvider.getVestedVault();
+        if (vestedAddr != address(0)) {
+            try IVestedDiscountVaultPoR(vestedAddr).totalPresentLiability() returns (uint256 vL) {
+                debtUSD += vL;
+            } catch {
+                // Ignore query revert
+            }
+        }
     }
 
     /**

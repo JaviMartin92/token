@@ -197,7 +197,8 @@ El protocolo está compuesto por 25 smart contracts fuertemente desacoplados med
 - **Funciones Principales**:
   - `deposit(uint256 stableAmount)`: Recibe colateral en USDC, calcula la tasa de comisión dinámica adaptativa al impacto de liquidez (`calculateDynamicFeeBps`), acuña shares $ALPHA$ a valor NAV actual y enruta la comisión de entrada al `RealYieldRouter`.
   - `redeem(uint256 sharesAmount)`: Destruye shares $ALPHA$, verifica las invariantes de monotonicidad de NAV y retiene la comisión de salida del 1%. Si la reserva líquida libre en `AlphaVault` es insuficiente, activa `_ensureLiquidBuffer` para rescatar capital desde `MorphoYieldVaultAdapter`.
-  - `getNAVPerShare()`: Calcula el NAV spot dividiendo el total de activos exógenos entre las shares netas en circulación ($NAV = \text{TotalAssetsUSD} / \text{NetShares}$).
+  - `getNetEquityUSD()`: Computa el Patrimonio Neto Libre deduciendo la deuda externa exigible (bonos vestados en `VestedDiscountVault`) del valor total de activos exógenos ($\text{NetEquityUSD} = \max(0, \text{TotalAssetsUSD} - \text{DebtLiabilitiesUSD})$).
+  - `getNAVPerShare()`: Calcula el NAV spot dividiendo el Patrimonio Neto Libre entre las shares netas en circulación ($NAV = \text{NetEquityUSD} / \text{NetCirculatingShares}$). Esto garantiza que la entrada de fondos por bonos no infle falsamente el valor intrínseco de ALPHA.
   - `getProofOfReserves()`: Devuelve `(totalAssetsUSD, totalLiabilitiesUSD, collateralRatioBps)`.
 - **Invariantes & Seguridad**: `nonReentrant`, `lastDepositBlock` anti-MEV cooldown, validación previa de congelamiento en `CircuitBreaker`.
 
@@ -307,6 +308,18 @@ La Tesorería implementa un enrutador de rendimiento agnóstico que gestiona el 
 #### 20. [`CompliantTreasuryGateway.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/adapters/CompliantTreasuryGateway.sol)
 - **Propósito**: Adaptador institucional stateless que permite a contrapartes reguladas operar depósitos y rescates con verificación KYC/AML delegada.
 - **Aislamiento Regulatorio**: El contrato es 100% *stateless* (no custodia fondos ni fragmenta liquidez), enrutando las operaciones directamente a [`TreasuryManager.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/TreasuryManager.sol), preservando la condición de *Pure DeFi* del Core.
+
+#### 21. [`FounderReserveVestingVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/FounderReserveVestingVault.sol)
+- **Propósito**: Bóveda autónoma de custodia y vesting para la asignación génesis de 100,000 ALPHA del fundador/creador del protocolo.
+- **Desbloqueo Basado en Solvencia (Health-Backed Vesting)**: La liberación de participaciones no transcurre de forma ciega por calendario, sino que está condicionada de manera estricta al superávit matemático de las reservas ($\text{Solvencia} > 100.00\%$ y $\text{ActivosTotales} > \text{PasivosTotales}$).
+- **Cap de Reclamo (10% del Excedente) y Cooldown de 72 Horas**:
+  - En cada reclamo, el fundador solo puede liberar como máximo el 10% del superávit de reservas convertido a ALPHA mediante `getNAVPerShare()` oficial.
+  - Se impone un candado temporal inmutable de 72 horas entre reclamos sucesivos.
+- **Inmunidad Patrimonial de la Tesorería**:
+  - El reclamo transfiere exclusivamente tokens ALPHA custodiados dentro de la bóveda; **cero reservas (USDC, WBTC, WETH) son extraídas de la Tesorería**.
+  - El fundador recibe tokens ALPHA líquidos y es libre de conservarlos, delegarlos para voto en la DAO, colocarlos en el mercado P2P como colateral o stakearlos en gobernanza.
+- **Aislamiento Génesis del Suministro Circulante**:
+  - Los 100,000 ALPHA en custodia de este contrato se deducen automáticamente del cálculo de circulante en [`TreasuryPoRLib.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/lib/TreasuryPoRLib.sol#L180-L195) y de las obligaciones pasivas, garantizando un Estado Génesis puro y limpio a bloque 0 (0.00 ALPHA en circulación y $1.0000 USD de NAV inicial).
 
 ---
 

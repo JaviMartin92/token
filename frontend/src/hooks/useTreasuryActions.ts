@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { publicClient, getWalletClient, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
+import { publicClient, getWalletClient, getFreshNonce, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
 import { parseUnits, parseEther, formatEther } from 'viem';
 import { UI_STRINGS } from '../constants/strings.js';
 import { parseWeb3Error } from '../utils/web3ErrorDecoder.js';
@@ -35,13 +35,15 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
       addToast('info', 'Faucet USDC', 'Enviando transacción...');
       const client = getWalletClient(userAddress || activeKey);
       const account = await getEffectiveAccount(client);
+      const nonce = await getFreshNonce(account);
 
       const tx = await client.writeContract({
         address: CONTRACT_ADDRESSES.USDC,
         abi: ABIS.ERC20,
         functionName: 'mint',
         args: [account, parseUnits('10000', 6)],
-        account
+        account,
+        ...(nonce !== undefined ? { nonce } : {})
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
       addLog(UI_STRINGS.TOASTS_AND_LOGS.FAUCET_SUCCESS);
