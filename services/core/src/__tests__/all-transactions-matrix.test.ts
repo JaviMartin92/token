@@ -416,10 +416,12 @@ async function runOmniTransactionMatrix() {
   // Mint fresh bond NFT for P2P testing
   let p2pNftId = 0n;
   try {
-    await user1Client.writeContract({ address: contracts.USDC, abi: ERC20_ABI, functionName: 'approve', args: [contracts.VESTED_VAULT, parseUnits('1000', 6)] });
-    await user1Client.writeContract({ address: contracts.VESTED_VAULT, abi: vestedArt.abi, functionName: 'buyVestedBond', args: [parseUnits('1000', 6), 1n, zeroAddress] });
+    const approveTx = await user1Client.writeContract({ address: contracts.USDC, abi: ERC20_ABI, functionName: 'approve', args: [contracts.VESTED_VAULT, parseUnits('1000', 6)] });
+    await publicClient.waitForTransactionReceipt({ hash: approveTx });
+    const buyTx = await user1Client.writeContract({ address: contracts.VESTED_VAULT, abi: vestedArt.abi, functionName: 'buyVestedBond', args: [parseUnits('1000', 6), 1n, zeroAddress] });
+    await publicClient.waitForTransactionReceipt({ hash: buyTx });
     p2pNftId = (await publicClient.readContract({ address: contracts.POSITION_NFT, abi: [{ name: 'nextTokenId', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] }], functionName: 'nextTokenId' }) as bigint) - 1n;
-  } catch {}
+  } catch (err: any) { console.error('P2P BOND MINT ERROR:', err?.shortMessage || err?.message || err); }
 
   // Tx 28: Create P2P Loan Offer with NFT
   let p2pLoanId1 = 0n;
