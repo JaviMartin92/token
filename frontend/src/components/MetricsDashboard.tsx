@@ -46,7 +46,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   loansList,
   onOpenApyModal,
   liveApyStr,
-  targetWeights = { stables: 60, wbtc: 26.67, weth: 13.33, alts: 0 }
+  targetWeights = { stables: 50, wbtc: 25, weth: 12.5, alts: 12.5 }
 }) => {
   const numericRatioPct = parseFloat((porRatio || '100').replace(/,/g, '').replace('%', '')) || 100.0;
   const numericAssets = parseFloat(porAssets.replace(/,/g, '')) || 0;
@@ -65,6 +65,19 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   const stablesUSD = porBreakdown.stables;
   const btcUSD = porBreakdown.wbtc;
   const ethUSD = porBreakdown.weth;
+
+  // Treasury Sub-Reserve (stALPHA in Governance Staking)
+  const treasuryStakedNum = parseFloat((treasuryStakedSupply || '0').replace(/,/g, '')) || 0;
+  const treasuryStakedUSD = treasuryStakedNum * numericNav;
+
+  // Dynamic portfolio allocation weights
+  const totalPortfolioUSD = stablesUSD + btcUSD + ethUSD + treasuryStakedUSD;
+  const safeTotalUSD = totalPortfolioUSD > 0 ? totalPortfolioUSD : 1;
+
+  const stablesActualPct = (stablesUSD / safeTotalUSD) * 100;
+  const btcActualPct = (btcUSD / safeTotalUSD) * 100;
+  const ethActualPct = (ethUSD / safeTotalUSD) * 100;
+  const alphaActualPct = (treasuryStakedUSD / safeTotalUSD) * 100;
 
   return (
     <div className="acp-container">
@@ -253,6 +266,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
             <thead>
               <tr className="gcc-tr-border text-muted">
                 <th className={styles.tableTh}>{UI_STRINGS.METRICS.TH_ASSET}</th>
+                <th className={styles.tableTh}>{UI_STRINGS.METRICS.TH_ALLOCATION}</th>
                 <th className={styles.tableTh}>{UI_STRINGS.METRICS.TH_TARGET_WEIGHT}</th>
                 <th className={styles.tableTh}>{UI_STRINGS.METRICS.TH_TOTAL_VALUE_USD}</th>
                 <th className={styles.tableTh}>{UI_STRINGS.METRICS.TH_YIELD_SOURCE}</th>
@@ -261,21 +275,38 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
             <tbody>
               <tr className="gcc-tr-border">
                 <td className={styles.tableTdCyan}>💵 USDC / Stablecoins</td>
-                <td className={styles.tableTd}>{(targetWeights?.stables || 60).toFixed(2)}% Target</td>
+                <td className={styles.tableTdBold} style={{ color: '#38bdf8' }}>{stablesActualPct.toFixed(2)}%</td>
+                <td className={styles.tableTd}>{(targetWeights?.stables || 50).toFixed(2)}% Target</td>
                 <td data-testid="por-row-usdc-val" className={styles.tableTdBold}>${stablesUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
                 <td className={styles.tableTdMuted}>{UI_STRINGS.METRICS.MORPHO_USDC_SOURCE} / Créditos P2P</td>
               </tr>
               <tr className="gcc-tr-border">
                 <td className={styles.tableTdAmber}>🪙 Wrapped Bitcoin (WBTC)</td>
-                <td className={styles.tableTd}>{(targetWeights?.wbtc || 26.67).toFixed(2)}% Target</td>
+                <td className={styles.tableTdBold} style={{ color: '#f59e0b' }}>{btcActualPct.toFixed(2)}%</td>
+                <td className={styles.tableTd}>{(targetWeights?.wbtc || 25).toFixed(2)}% Target</td>
                 <td data-testid="por-row-wbtc-val" className={styles.tableTdBold}>${btcUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
                 <td className={styles.tableTdMuted}>{UI_STRINGS.METRICS.LOMBARD_LBTC_SOURCE} / Oráculo Chainlink</td>
               </tr>
               <tr className="gcc-tr-border">
                 <td className={styles.tableTdIndigo}>🔷 Wrapped Ethereum (WETH)</td>
-                <td className={styles.tableTd}>{(targetWeights?.weth || 13.33).toFixed(2)}% Target</td>
+                <td className={styles.tableTdBold} style={{ color: '#818cf8' }}>{ethActualPct.toFixed(2)}%</td>
+                <td className={styles.tableTd}>{(targetWeights?.weth || 12.5).toFixed(2)}% Target</td>
                 <td data-testid="por-row-weth-val" className={styles.tableTdBold}>${ethUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
                 <td className={styles.tableTdMuted}>{UI_STRINGS.METRICS.LIDO_WSTETH_SOURCE} / Oráculo Chainlink</td>
+              </tr>
+              <tr className="gcc-tr-border">
+                <td className={styles.tableTd} style={{ color: '#ec4899', fontWeight: 600 }}>🏛️ Sub-Reserva ALPHA Staking (POL)</td>
+                <td className={styles.tableTdBold} style={{ color: '#ec4899' }}>{alphaActualPct.toFixed(2)}%</td>
+                <td className={styles.tableTd}>{(targetWeights?.alts || 12.5).toFixed(2)}% Target</td>
+                <td data-testid="por-row-alpha-val" className={styles.tableTdBold}>${treasuryStakedUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
+                <td className={styles.tableTdMuted}>Auto-Staking Gobernanza DAO / Real Yield</td>
+              </tr>
+              <tr style={{ borderTop: '2px solid rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.02)' }}>
+                <td className={styles.tableTdBold} style={{ color: '#f8fafc' }}>📊 Total Cartera de Tesorería</td>
+                <td className={styles.tableTdBold} style={{ color: '#4ade80' }}>100.00%</td>
+                <td className={styles.tableTdBold} style={{ color: '#94a3b8' }}>100.00% Target</td>
+                <td className={styles.tableTdBold} style={{ color: '#4ade80' }}>${totalPortfolioUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
+                <td className={styles.tableTdMuted}>Respaldo On-Chain Verificado</td>
               </tr>
             </tbody>
           </table>

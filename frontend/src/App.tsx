@@ -392,6 +392,7 @@ export default function App() {
         <span data-testid="por-row-usdc-val">${universalYield.porBreakdown.stables.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</span>
         <span data-testid="por-row-wbtc-val">${universalYield.porBreakdown.wbtc.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</span>
         <span data-testid="por-row-weth-val">${universalYield.porBreakdown.weth.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</span>
+        <span data-testid="por-row-alpha-val">${(parseFloat((stakingMetrics.treasuryStakedSupply || '0').replace(/,/g, '')) * (parseFloat((treasuryMetrics.navPerShareUSD || '1.0').replace('$', '').replace(' USDC', '')) || 1.0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</span>
         <span data-testid="staking-circulating-supply">{stakingMetrics.circulatingSupply} ALPHA</span>
         <span data-testid="staking-community-staked">{stakingMetrics.communityStakedSupply} stALPHA</span>
         <span data-testid="staking-community-vault-staked">{stakingMetrics.communityVaultStakedSupply} stALPHA</span>
