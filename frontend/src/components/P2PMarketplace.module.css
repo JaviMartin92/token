@@ -48,11 +48,14 @@
   flex-wrap: wrap;
 }
 
-/* 📊 Préstamos Activos & Health Factor */
+/* 📊 Préstamos Activos & Health Factor (División Fraccional 3 Columnas) */
 .activeLoansGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-4);
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .activeLoanCard {
@@ -87,10 +90,10 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ⚡ Grid de Operaciones (3 Columnas) */
+/* ⚡ Grid de Operaciones (3 Columnas Fraccionales) */
 .operationsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-5);
   width: 100%;
   max-width: 100%;
@@ -218,6 +221,13 @@
   flex-wrap: wrap;
 }
 
+@media (max-width: 1024px) {
+  .operationsGrid,
+  .activeLoansGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* 📱 ADAPTACIÓN RESPONSIVA TOTAL SMARTPHONES (<= 768px) */
 @media (max-width: 768px) {
   .container {
@@ -228,7 +238,8 @@
     display: none;
   }
 
-  .operationsGrid {
+  .operationsGrid,
+  .activeLoansGrid {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-4);
     width: 100%;

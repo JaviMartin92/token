@@ -31,6 +31,7 @@
   cursor: pointer;
   transition: color var(--transition-fast);
   font-variant-numeric: tabular-nums;
+  font-size: clamp(0.6875rem, 1.8vw, 0.75rem);
   margin-left: auto;
   max-width: 100%;
   word-break: break-word;
@@ -68,7 +69,7 @@
   background: transparent;
   border: none;
   color: var(--text-primary);
-  font-size: 1.125rem;
+  font-size: clamp(0.95rem, 2.5vw, 1.125rem);
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   outline: none;

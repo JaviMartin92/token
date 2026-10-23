@@ -75,11 +75,14 @@
   border: 1px solid var(--border-default);
 }
 
-/* 🗂️ Grid de Pestañas de Métricas */
+/* 🗂️ Grid de Pestañas de Métricas (4 Columnas Fraccionales) */
 .tabsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-4);
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   margin-bottom: var(--space-4);
 }
 
@@ -125,11 +128,13 @@
 }
 
 .tabVal {
-  font-size: 1.5rem;
+  font-size: clamp(1.15rem, 2.5vw, 1.5rem);
   font-weight: 700;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   margin: var(--space-1) 0;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .tabValGreen {
@@ -252,6 +257,13 @@
 .lineBlue { width: 14px; height: 3px; background: var(--color-blue); border-radius: 2px; }
 .linePurple { width: 14px; height: 3px; background: #c084fc; border-radius: 2px; }
 
+@media (max-width: 1024px) {
+  .tabsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+}
+
 /* 📱 ADAPTACIÓN RESPONSIVA TOTAL SMARTPHONES (<= 768px) */
 @media (max-width: 768px) {
   .headerContainer {
@@ -274,7 +286,7 @@
   }
 
   .tabsGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-2);
   }
 

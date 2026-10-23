@@ -27,11 +27,14 @@
   margin-top: var(--space-1);
 }
 
-/* 📊 Grid de Métricas Principales */
+/* 📊 Grid de Métricas Principales (3 Columnas Fraccionales) */
 .kpiGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-4);
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   margin-top: var(--space-4);
 }
 
@@ -76,11 +79,14 @@
   line-height: 1.5;
 }
 
-/* 🥩 Tokenomics & Oferta Deflacionaria */
+/* 🥩 Tokenomics & Oferta Deflacionaria (4 Columnas Fraccionales) */
 .tokenomicsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-4);
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 /* 📋 Estilos de Celdas de la Tabla */
@@ -124,6 +130,12 @@
   color: var(--color-emerald-light);
 }
 
+@media (max-width: 1024px) {
+  .tokenomicsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* 📱 ADAPTACIÓN RESPONSIVA TOTAL SMARTPHONES (<= 768px) */
 @media (max-width: 768px) {
   .container {
@@ -141,7 +153,7 @@
   }
 
   .kpiGrid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-2);
   }
 
@@ -150,7 +162,7 @@
   }
 
   .tokenomicsGrid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-2);
   }
 
@@ -175,12 +187,12 @@
 
 @media (max-width: 480px) {
   .title {
-    font-size: 1.05rem;
+    font-size: clamp(1rem, 3.5vw, 1.125rem);
   }
 
   .kpiGrid,
   .tokenomicsGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .kpiGrid > div:last-child {

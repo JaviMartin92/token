@@ -622,7 +622,7 @@ Descripción: "${description}"
                 Módulo institucional de resistencia post-cuántica que protege las acciones críticas de gobernanza y tesorería frente a ataques de ordenadores cuánticos (algoritmos de Shor y Grover). Implementa esquemas de firma basados en hash de Winternitz (W-OTS+ w=4, 67 cadenas) verificados directamente por el contrato inteligente <code>PostQuantumGuard.sol</code>.
               </p>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+              <div className={styles.pqcInfoGrid}>
                 <div style={{ background: 'var(--bg-surface)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>CONTRATO POST-CUÁNTICO:</div>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', color: 'var(--text-primary)', wordBreak: 'break-all', marginTop: '4px' }}>

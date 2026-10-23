@@ -5,18 +5,20 @@
   width: 100%;
 }
 
-/* 💳 Grid de Saldos del Usuario */
+/* 💳 Grid de Saldos del Usuario (División 50/50 Fraccional) */
 .balancesGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-4);
+  width: 100%;
   margin-bottom: var(--space-4);
+  box-sizing: border-box;
 }
 
-/* ⚡ Formularios de Depósito y Reembolso */
+/* ⚡ Formularios de Depósito y Reembolso (División 50/50 Fraccional) */
 .operationsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-5);
   width: 100%;
   max-width: 100%;
@@ -64,9 +66,11 @@
 /* 🌾 Estrategias Institucionales (Admin) */
 .strategyGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-4);
+  width: 100%;
   margin-top: var(--space-4);
+  box-sizing: border-box;
 }
 
 .strategyCard {
@@ -108,6 +112,12 @@
   color: var(--text-primary);
 }
 
+@media (max-width: 1024px) {
+  .strategyGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* 📱 ADAPTACIÓN RESPONSIVA TOTAL SMARTPHONES (<= 768px) */
 @media (max-width: 768px) {
   .container {
@@ -115,7 +125,7 @@
   }
 
   .balancesGrid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-2);
     margin-bottom: var(--space-3);
   }
@@ -158,6 +168,6 @@
   }
 
   .actionHeader {
-    font-size: 0.9375rem;
+    font-size: clamp(0.875rem, 3.5vw, 0.9375rem);
   }
 }

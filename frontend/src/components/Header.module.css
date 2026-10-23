@@ -54,7 +54,7 @@
 }
 
 .brandTitle {
-  font-size: 1.125rem;
+  font-size: clamp(0.95rem, 2.5vw, 1.125rem);
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-primary);
@@ -289,7 +289,7 @@
     order: 3;
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--space-2);
     margin-top: var(--space-1);
   }
@@ -319,7 +319,7 @@
 
   @media (max-width: 360px) {
     .metricsGroup {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 

@@ -101,12 +101,14 @@
   border: 1px solid var(--border-default);
 }
 
-/* 📐 Cuadrícula de 3 Columnas para Sandbox */
+/* 📐 Cuadrícula de 3 Columnas Fraccionales para Sandbox */
 .gridAdmin {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-4);
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .controlStack {
@@ -310,6 +312,12 @@
   overflow-wrap: break-all;
 }
 
+@media (max-width: 1024px) {
+  .gridAdmin {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* 📱 ADAPTACIÓN RESPONSIVA TOTAL */
 @media (max-width: 768px) {
   .modeCard {
@@ -332,7 +340,7 @@
   .gridAdmin,
   .twoColInputs,
   .twoColButtons {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .inputRow {

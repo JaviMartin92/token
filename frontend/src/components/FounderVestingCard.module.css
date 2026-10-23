@@ -10,12 +10,14 @@
   width: 100%;
 }
 
-/* 📊 Grid de Métricas de Vesting */
+/* 📊 Grid de Métricas de Vesting (4 Columnas Fraccionales) */
 .gridKpi {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-4);
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 /* 👛 Panel de Control de Reclamo Fiduciario */
@@ -55,10 +57,12 @@
 
 .beneficiaryAddr {
   font-family: var(--font-mono);
-  font-size: 0.875rem;
+  font-size: clamp(0.75rem, 2vw, 0.875rem);
   color: var(--color-blue-light);
   font-weight: 600;
   letter-spacing: 0.02em;
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 .disclaimer {
@@ -73,10 +77,16 @@
   white-space: nowrap;
 }
 
+@media (max-width: 1024px) {
+  .gridKpi {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* 📱 ADAPTACIÓN RESPONSIVA TOTAL */
 @media (max-width: 768px) {
   .gridKpi {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-3);
   }
 
@@ -97,7 +107,7 @@
 
 @media (max-width: 480px) {
   .gridKpi {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-2);
   }
 

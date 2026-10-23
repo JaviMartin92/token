@@ -56,13 +56,15 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* 📊 TAB 1: MÉTRICAS Y TABLA DE ASIGNACIONES */
+/* 📊 TAB 1: MÉTRICAS Y TABLA DE ASIGNACIONES (3 Columnas Fraccionales) */
 .metricsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-4);
   margin-bottom: var(--space-5);
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .sectionHeading {
@@ -141,12 +143,14 @@
   font-size: 0.8125rem;
 }
 
-/* ⚙️ TAB 2: PARÁMETROS ON-CHAIN */
+/* ⚙️ TAB 2: PARÁMETROS ON-CHAIN (3 Columnas Fraccionales) */
 .paramGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-4);
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .paramCard {
@@ -272,12 +276,23 @@
   gap: var(--space-3);
 }
 
-/* 🛡️ TAB 5: SEGURIDAD & BLINDAJE POST-CUÁNTICO */
+/* 🛡️ TAB 5: SEGURIDAD & BLINDAJE POST-CUÁNTICO (2 Columnas Fraccionales) */
 .secGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-4);
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.pqcInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .secCard {
@@ -368,13 +383,21 @@
   flex-wrap: wrap;
 }
 
+@media (max-width: 1024px) {
+  .metricsGrid,
+  .paramGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* 📱 ADAPTACIÓN RESPONSIVA TOTAL */
 @media (max-width: 768px) {
   .metricsGrid,
   .paramGrid,
   .twoColInputs,
-  .secGrid {
-    grid-template-columns: 1fr;
+  .secGrid,
+  .pqcInfoGrid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .paramRow {
