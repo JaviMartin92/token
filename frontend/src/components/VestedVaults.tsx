@@ -80,7 +80,7 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
       <Card
         variant="surface"
         collapsible
-        defaultExpanded={true}
+        defaultExpanded={false}
         headerTitle={UI_STRINGS.VESTED_VAULTS.TITLE}
         headerSubtitle={UI_STRINGS.VESTED_VAULTS.SUBTITLE}
       >
@@ -175,7 +175,7 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
       <Card
         variant="surface"
         collapsible
-        defaultExpanded={true}
+        defaultExpanded={false}
         headerTitle={`${UI_STRINGS.VESTED_VAULTS.TABLE_TITLE} (${userPositions.length})`}
         headerSubtitle="Posiciones activas, maduradas y opciones de liquidación temprana (Ragequit)"
       >

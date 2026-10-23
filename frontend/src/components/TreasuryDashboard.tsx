@@ -51,7 +51,7 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
       <Card
         variant="surface"
         collapsible
-        defaultExpanded={true}
+        defaultExpanded={false}
         headerTitle={UI_STRINGS.TREASURY.CARD_DEPOSIT_TITLE}
         headerSubtitle={UI_STRINGS.TREASURY.SUBTITLE}
         headerAction={

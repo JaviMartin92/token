@@ -169,7 +169,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
         <Card
           variant="surface"
           collapsible
-          defaultExpanded={true}
+          defaultExpanded={false}
           headerTitle={UI_STRINGS.P2P_MARKETPLACE.CARD_TREASURY_TITLE}
           headerSubtitle={UI_STRINGS.P2P_MARKETPLACE.CARD_TREASURY_DESC}
         >
@@ -420,7 +420,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
       <Card
         variant="surface"
         collapsible
-        defaultExpanded={true}
+        defaultExpanded={false}
         headerTitle={`${UI_STRINGS.P2P_MARKETPLACE.TABLE_MARKET_TITLE} (${filteredLoans.length})`}
         headerSubtitle={UI_STRINGS.P2P_MARKETPLACE.SUBTITLE}
         headerAction={

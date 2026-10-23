@@ -216,9 +216,7 @@
   }
 
   .boosterBanner {
-    padding: var(--space-3);
-    flex-direction: column;
-    align-items: flex-start;
+    display: none;
   }
 
   .operationsGrid {

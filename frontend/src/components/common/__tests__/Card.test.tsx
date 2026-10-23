@@ -101,4 +101,15 @@ describe('Card Component - Collapsible & Accessibility', () => {
     const header = screen.getByRole('button', { name: /Inicialmente Colapsada/i });
     expect(header.getAttribute('aria-expanded')).toBe('false');
   });
+
+  it('renders collapsed by default when defaultExpanded is omitted and collapsible=true', () => {
+    render(
+      <Card collapsible headerTitle="Cerrada por defecto">
+        <div>Contenido oculto</div>
+      </Card>
+    );
+
+    const header = screen.getByRole('button', { name: /Cerrada por defecto/i });
+    expect(header.getAttribute('aria-expanded')).toBe('false');
+  });
 });

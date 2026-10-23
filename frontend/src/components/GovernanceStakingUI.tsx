@@ -47,7 +47,7 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
       <Card
         variant="surface"
         collapsible
-        defaultExpanded={true}
+        defaultExpanded={false}
         headerTitle={UI_STRINGS.STAKING.TITLE}
         headerSubtitle="Bloqueo de participaciones ALPHA para derechos de voto DAO y rendimientos reales exógenos"
         headerAction={

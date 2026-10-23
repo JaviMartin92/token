@@ -286,7 +286,7 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
       variant="surface"
       className={styles.analyticsCard}
       collapsible
-      defaultExpanded={true}
+      defaultExpanded={false}
       headerTitle={`📊 ${UI_STRINGS.ANALYTICS_CHARTS.MAIN_TITLE}`}
       headerSubtitle={`${UI_STRINGS.ANALYTICS_CHARTS.SUBTITLE_PREFIX} (${realStakedAlpha.toLocaleString('en-US', { maximumFractionDigits: 0 })} ${UI_STRINGS.ANALYTICS_CHARTS.SUBTITLE_SUFFIX})`}
       headerAction={

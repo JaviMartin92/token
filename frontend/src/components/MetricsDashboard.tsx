@@ -94,7 +94,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
       <Card
         variant="surface"
         collapsible
-        defaultExpanded={true}
+        defaultExpanded={false}
         headerTitle={UI_STRINGS.METRICS.TITLE}
         headerSubtitle={UI_STRINGS.METRICS.SUBTITLE}
         headerAction={
@@ -259,7 +259,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
       <Card
         variant="surface"
         collapsible
-        defaultExpanded={true}
+        defaultExpanded={false}
         headerTitle={UI_STRINGS.METRICS.TABLE_ASSETS_TITLE}
         headerSubtitle="Auditoría matemática de activos colaterales y bóvedas generadoras de rendimiento"
       >

@@ -22,13 +22,17 @@ export const Card: React.FC<CardProps> = ({
   headerSubtitle,
   headerAction,
   collapsible = false,
-  defaultExpanded = true,
+  defaultExpanded = false,
   isExpanded: controlledExpanded,
   onToggleExpanded,
   ...props
 }) => {
   const [internalExpanded, setInternalExpanded] = useState(defaultExpanded);
-  const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
+  const isExpanded = !collapsible
+    ? true
+    : controlledExpanded !== undefined
+    ? controlledExpanded
+    : internalExpanded;
 
   const handleToggle = () => {
     if (!collapsible) return;
@@ -64,10 +68,10 @@ export const Card: React.FC<CardProps> = ({
             {headerSubtitle && <p className={styles.subtitle}>{headerSubtitle}</p>}
           </div>
 
-          <div className={styles.headerActionGroup}>
+          <div className={styles.headerRight}>
             {headerAction && (
               <div
-                className={styles.headerAction}
+                className={`${styles.headerAction} ${!isExpanded ? styles.headerActionHidden : ''}`}
                 onClick={(e) => {
                   if (collapsible) e.stopPropagation();
                 }}
@@ -78,10 +82,22 @@ export const Card: React.FC<CardProps> = ({
 
             {collapsible && (
               <span
-                className={`${styles.chevron} ${isExpanded ? styles.chevronExpanded : ''}`}
+                className={`${styles.chevronWrapper} ${isExpanded ? styles.chevronWrapperExpanded : ''}`}
                 aria-hidden="true"
               >
-                ▼
+                <svg
+                  className={styles.chevronSvg}
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
               </span>
             )}
           </div>
