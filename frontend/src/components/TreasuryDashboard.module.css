@@ -16,8 +16,12 @@
 /* ⚡ Formularios de Depósito y Reembolso */
 .operationsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: var(--space-5);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .actionCard {
@@ -29,6 +33,11 @@
   flex-direction: column;
   justify-content: space-between;
   gap: var(--space-4);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .actionHeader {
@@ -38,10 +47,17 @@
   font-weight: 700;
   font-size: 1rem;
   color: var(--text-primary);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  word-break: break-word;
 }
 
 .submitBtn {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   min-height: 44px;
 }
 
@@ -106,12 +122,19 @@
 
   .operationsGrid,
   .strategyGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-4);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .actionCard {
     padding: var(--space-4);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
   }
 
   .submitBtn {
@@ -121,6 +144,20 @@
 
 @media (max-width: 480px) {
   .balancesGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .operationsGrid,
+  .strategyGrid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+
+  .actionCard {
+    padding: var(--space-3);
+  }
+
+  .actionHeader {
+    font-size: 0.9375rem;
   }
 }
