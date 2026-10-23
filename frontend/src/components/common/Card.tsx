@@ -63,24 +63,12 @@ export const Card: React.FC<CardProps> = ({
             }
           } : undefined}
         >
-          <div className={styles.headerTitleGroup}>
+          <div className={styles.titleArea}>
             {headerTitle && <h3 className={styles.title}>{headerTitle}</h3>}
-            {headerSubtitle && <p className={styles.subtitle}>{headerSubtitle}</p>}
           </div>
 
-          <div className={styles.headerRight}>
-            {headerAction && (
-              <div
-                className={`${styles.headerAction} ${!isExpanded ? styles.headerActionHidden : ''}`}
-                onClick={(e) => {
-                  if (collapsible) e.stopPropagation();
-                }}
-              >
-                {headerAction}
-              </div>
-            )}
-
-            {collapsible && (
+          {collapsible && (
+            <div className={styles.chevronArea}>
               <span
                 className={`${styles.chevronWrapper} ${isExpanded ? styles.chevronWrapperExpanded : ''}`}
                 aria-hidden="true"
@@ -99,8 +87,25 @@ export const Card: React.FC<CardProps> = ({
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </span>
-            )}
-          </div>
+            </div>
+          )}
+
+          {headerSubtitle && (
+            <div className={styles.subtitleArea}>
+              <p className={styles.subtitle}>{headerSubtitle}</p>
+            </div>
+          )}
+
+          {headerAction && (
+            <div
+              className={`${styles.actionArea} ${!isExpanded ? styles.actionAreaHidden : ''}`}
+              onClick={(e) => {
+                if (collapsible) e.stopPropagation();
+              }}
+            >
+              {headerAction}
+            </div>
+          )}
         </div>
       )}
       <div

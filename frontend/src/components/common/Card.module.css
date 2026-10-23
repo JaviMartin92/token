@@ -29,11 +29,25 @@
 .header {
   padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--border-subtle);
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "title chevron"
+    "subtitle chevron"
+    "action action";
+  row-gap: 2px;
+  column-gap: var(--space-3);
   align-items: center;
-  gap: var(--space-3);
   width: 100%;
+  box-sizing: border-box;
+}
+
+.titleArea {
+  grid-area: title;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
 }
 
 .title {
@@ -43,12 +57,19 @@
   letter-spacing: -0.01em;
   line-height: 1.35;
   margin: 0;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.subtitleArea {
+  grid-area: subtitle;
+  min-width: 0;
 }
 
 .subtitle {
   font-size: 0.8125rem;
   color: var(--text-secondary);
-  margin-top: var(--space-1);
+  margin-top: 2px;
   line-height: 1.4;
 }
 
@@ -71,25 +92,27 @@
   border-bottom: none;
 }
 
-.headerTitleGroup {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.headerRight {
+.chevronArea {
+  grid-area: chevron;
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  justify-content: flex-end;
+  align-self: center;
   flex-shrink: 0;
 }
 
-.headerAction {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
+.actionArea {
+  grid-area: action;
+  width: 100%;
+  margin-top: var(--space-2);
 }
 
-.headerActionHidden {
+.actionArea > * {
+  width: 100%;
+  justify-content: center;
+}
+
+.actionAreaHidden {
   display: none !important;
 }
 
@@ -130,6 +153,26 @@
   display: block;
 }
 
+@media (min-width: 769px) {
+  .header {
+    grid-template-columns: 1fr auto auto;
+    grid-template-areas:
+      "title action chevron"
+      "subtitle action chevron";
+    column-gap: var(--space-4);
+    row-gap: 2px;
+  }
+
+  .actionArea {
+    margin-top: 0;
+    width: auto;
+  }
+
+  .actionArea > * {
+    width: auto;
+  }
+}
+
 @media (max-width: 768px) {
   .body {
     padding: var(--space-4);
@@ -137,21 +180,6 @@
 
   .header {
     padding: var(--space-3) var(--space-4);
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-2);
-  }
-
-  .headerTitleGroup {
-    flex: 1 1 70%;
-    min-width: 0;
-  }
-
-  .headerRight {
-    gap: var(--space-2);
-    margin-left: auto;
   }
 
   .title {
@@ -162,21 +190,9 @@
     font-size: 0.75rem;
   }
 
-  .headerAction {
-    order: 3;
-    width: 100%;
-    margin-top: var(--space-2);
-  }
-
-  .headerAction > * {
-    width: 100%;
-    justify-content: center;
-  }
-
   .chevronWrapper {
     width: 28px;
     height: 28px;
-    order: 2;
   }
 }
 

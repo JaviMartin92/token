@@ -158,7 +158,7 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
             variant="surface"
             collapsible
             defaultExpanded={false}
-            headerTitle={UI_STRINGS.METRICS.TABLE_ASSETS_TITLE}
+            headerTitle="🌾 Estrategias de Rendimiento de Bóvedas (Admin)"
             headerSubtitle="Distribución institucional de bóvedas y cosechas de rendimiento activas"
             headerAction={
               <Button
