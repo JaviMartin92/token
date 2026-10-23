@@ -24,17 +24,47 @@ contract DynamicYieldOracleRouter is AccessControl {
         uint256 lastUpdatedTimestamp;
     }
 
+    error YieldRateOutOfBounds(uint8 assetClass, uint256 apyBps, uint256 minBps, uint256 maxBps);
+    error InvalidSanityBounds();
+
+    struct SanityBounds {
+        uint256 minApyBps;
+        uint256 maxApyBps;
+    }
+
+    // Mapping from AssetClass => min/max allowed APY in BPS (Sanity Bounds)
+    mapping(uint8 => SanityBounds) public sanityBounds;
+
     // Mapping from AssetClass => list of evaluated protocols
     mapping(uint8 => ProtocolYieldInfo[]) public protocolOptions;
 
     event ProtocolYieldUpdated(uint8 indexed assetClass, string name, address vaultAddress, uint256 apyBps);
     event BestVaultSelected(uint8 indexed assetClass, string name, address vaultAddress, uint256 highestApyBps);
+    event SanityBoundsUpdated(uint8 indexed assetClass, uint256 minApyBps, uint256 maxApyBps);
 
     constructor(address _initialOwner) {
         address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
+
+        // Conservative Sanity Bounds (Protocol Survival Baseline)
+        sanityBounds[uint8(AssetClass.STABLECOIN)] = SanityBounds({minApyBps: 100, maxApyBps: 1500}); // 1.00% - 15.00%
+        sanityBounds[uint8(AssetClass.ETHEREUM)] = SanityBounds({minApyBps: 100, maxApyBps: 800});   // 1.00% - 8.00%
+        sanityBounds[uint8(AssetClass.BITCOIN)] = SanityBounds({minApyBps: 50, maxApyBps: 800});     // 0.50% - 8.00%
+
         _initDefaultProtocols();
+    }
+
+    /**
+     * @notice Updates the conservative sanity bounds for an asset class
+     */
+    function setSanityBounds(uint8 assetClass, uint256 minApyBps, uint256 maxApyBps)
+        external
+        onlyRole(ProtocolRoles.ADMIN_ROLE)
+    {
+        if (minApyBps > maxApyBps) revert InvalidSanityBounds();
+        sanityBounds[assetClass] = SanityBounds({minApyBps: minApyBps, maxApyBps: maxApyBps});
+        emit SanityBoundsUpdated(assetClass, minApyBps, maxApyBps);
     }
 
     function _initDefaultProtocols() internal {
@@ -99,6 +129,13 @@ contract DynamicYieldOracleRouter is AccessControl {
         uint256 apyBps,
         bool isVerified
     ) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        SanityBounds memory bounds = sanityBounds[assetClass];
+        if (bounds.maxApyBps > 0) {
+            if (apyBps < bounds.minApyBps || apyBps > bounds.maxApyBps) {
+                revert YieldRateOutOfBounds(assetClass, apyBps, bounds.minApyBps, bounds.maxApyBps);
+            }
+        }
+
         ProtocolYieldInfo[] storage list = protocolOptions[assetClass];
         bool found = false;
 
