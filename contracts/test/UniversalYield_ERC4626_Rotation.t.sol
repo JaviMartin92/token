@@ -150,4 +150,36 @@ contract UniversalYield_ERC4626_Rotation_Test is Test {
         uint256 aaveSharesLeft = aaveAdapter.balanceOf(address(vault));
         assertLt(aaveSharesLeft, 1_000_000 * 10 ** 6, "Liquidity should have been pulled from Aave");
     }
+
+    function test_JIT_LoanDisbursement_PullsFromYieldAdapter() public {
+        // 1. User deposits 500,000 USDC into Treasury
+        uint256 depositAmount = 500_000 * 10 ** 6;
+        usdc.mint(user, depositAmount);
+
+        vm.startPrank(user);
+        usdc.approve(address(manager), depositAmount);
+        manager.deposit(depositAmount, 0);
+        vm.stopPrank();
+
+        // 2. Deposit 100% of liquid USDC to Aave Yield Adapter (0 USDC left in AlphaVault)
+        vm.startPrank(admin);
+        manager.depositToYieldAdapter(address(aaveAdapter), depositAmount);
+        vm.stopPrank();
+
+        assertEq(vault.getBalance(address(usdc)), 0, "Vault liquid USDC should be 0");
+        assertEq(aaveAdapter.balanceOf(address(vault)), depositAmount, "All USDC should be in Yield Adapter");
+
+        // 3. Disburse a Treasury Loan of 100,000 USDC (JIT rescue from Yield Adapter)
+        address borrower = address(0xBEEF);
+        uint256 loanAmount = 100_000 * 10 ** 6;
+
+        vm.startPrank(admin);
+        manager.disburseTreasuryLoan(borrower, loanAmount);
+        vm.stopPrank();
+
+        // 4. Assert borrower received the loan funds
+        assertEq(usdc.balanceOf(borrower), loanAmount, "Borrower should have received loan disbursement");
+        assertEq(aaveAdapter.balanceOf(address(vault)), depositAmount - loanAmount, "Adapter balance should decrease by loan amount");
+        assertEq(vault.getBalance(address(usdc)), 0, "Vault liquid buffer remains 0 (fully disbursed)");
+    }
 }

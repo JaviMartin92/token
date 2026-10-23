@@ -607,7 +607,13 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
         AlphaVault vault = AlphaVault(addressProvider.getAddress(addressProvider.ID_ALPHA_VAULT()));
 
         uint256 available = vault.getBalance(redemptionToken);
-        if (available < amount) revert InsufficientLiquidity();
+        if (available < amount) {
+            TreasuryLiquidityLib.ensureLiquidBuffer(
+                vault, redemptionToken, activeYieldAdapters, amount, address(this)
+            );
+            available = vault.getBalance(redemptionToken);
+            if (available < amount) revert InsufficientLiquidity();
+        }
 
         vault.transferFunds(redemptionToken, recipient, amount);
     }
@@ -624,7 +630,13 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
 
         AlphaVault vault = AlphaVault(addressProvider.getAlphaVault());
         uint256 available = vault.getBalance(redemptionToken);
-        if (available < amount) revert InsufficientLiquidity();
+        if (available < amount) {
+            TreasuryLiquidityLib.ensureLiquidBuffer(
+                vault, redemptionToken, activeYieldAdapters, amount, address(this)
+            );
+            available = vault.getBalance(redemptionToken);
+            if (available < amount) revert InsufficientLiquidity();
+        }
 
         vault.transferFunds(redemptionToken, recipient, amount);
     }
