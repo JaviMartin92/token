@@ -50,6 +50,8 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
       {/* 🏛️ Panel Principal de Emisión y Reembolso */}
       <Card
         variant="surface"
+        collapsible
+        defaultExpanded={true}
         headerTitle={UI_STRINGS.TREASURY.CARD_DEPOSIT_TITLE}
         headerSubtitle={UI_STRINGS.TREASURY.SUBTITLE}
         headerAction={
@@ -154,6 +156,8 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
         return (
           <Card
             variant="surface"
+            collapsible
+            defaultExpanded={false}
             headerTitle={UI_STRINGS.METRICS.TABLE_ASSETS_TITLE}
             headerSubtitle="Distribución institucional de bóvedas y cosechas de rendimiento activas"
             headerAction={

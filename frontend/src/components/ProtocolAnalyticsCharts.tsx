@@ -282,37 +282,33 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
   };
 
   return (
-    <Card variant="surface" className={styles.analyticsCard}>
-      {/* Header Con Diagnóstico Institucional */}
-      <div className={styles.headerContainer}>
-        <div className={styles.titleGroup}>
-          <span className={styles.icon}>📊</span>
-          <div>
-            <h3 className={styles.mainTitle}>{UI_STRINGS.ANALYTICS_CHARTS.MAIN_TITLE}</h3>
-            <p className={styles.subtitle}>
-              {UI_STRINGS.ANALYTICS_CHARTS.SUBTITLE_PREFIX} ({realStakedAlpha.toLocaleString('en-US', { maximumFractionDigits: 0 })} {UI_STRINGS.ANALYTICS_CHARTS.SUBTITLE_SUFFIX})
-            </p>
-          </div>
+    <Card
+      variant="surface"
+      className={styles.analyticsCard}
+      collapsible
+      defaultExpanded={true}
+      headerTitle={`📊 ${UI_STRINGS.ANALYTICS_CHARTS.MAIN_TITLE}`}
+      headerSubtitle={`${UI_STRINGS.ANALYTICS_CHARTS.SUBTITLE_PREFIX} (${realStakedAlpha.toLocaleString('en-US', { maximumFractionDigits: 0 })} ${UI_STRINGS.ANALYTICS_CHARTS.SUBTITLE_SUFFIX})`}
+      headerAction={
+        <div className={styles.headerControls}>
           <Badge variant="emerald" size="sm" data-testid="analytics-por-badge">
             {UI_STRINGS.ANALYTICS_CHARTS.BADGE_POR_ACTIVE} {porRatio}
           </Badge>
+          <div className={styles.horizonGroup}>
+            {(['1W', '1M', '3M', '1Y', 'ALL'] as const).map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setTimeRange(r)}
+                className={`${styles.horizonBtn} ${timeRange === r ? styles.horizonBtnActive : ''}`}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
         </div>
-
-        {/* Selector Horizontes Temporal */}
-        <div className={styles.horizonGroup}>
-          {(['1W', '1M', '3M', '1Y', 'ALL'] as const).map((r) => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => setTimeRange(r)}
-              className={`${styles.horizonBtn} ${timeRange === r ? styles.horizonBtnActive : ''}`}
-            >
-              {r}
-            </button>
-          ))}
-        </div>
-      </div>
-
+      }
+    >
       {/* Tarjetas de Selección de Métricas */}
       <div className={styles.tabsGrid}>
         {/* Tab 1: Reservas Exógenas */}

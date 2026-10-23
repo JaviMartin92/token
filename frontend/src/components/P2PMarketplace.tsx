@@ -168,6 +168,8 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
         {/* Operación 1: Préstamo Directo de Tesorería */}
         <Card
           variant="surface"
+          collapsible
+          defaultExpanded={true}
           headerTitle={UI_STRINGS.P2P_MARKETPLACE.CARD_TREASURY_TITLE}
           headerSubtitle={UI_STRINGS.P2P_MARKETPLACE.CARD_TREASURY_DESC}
         >
@@ -265,6 +267,8 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
         {/* Operación 2: Crear Oferta de Préstamo P2P */}
         <Card
           variant="surface"
+          collapsible
+          defaultExpanded={false}
           headerTitle={UI_STRINGS.P2P_MARKETPLACE.CARD_OFFER_TITLE}
           headerSubtitle={UI_STRINGS.P2P_MARKETPLACE.CARD_OFFER_DESC}
         >
@@ -346,6 +350,8 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
         {/* Operación 3: Gestor Manual de Préstamos */}
         <Card
           variant="surface"
+          collapsible
+          defaultExpanded={false}
           headerTitle={UI_STRINGS.P2P_MARKETPLACE.LABEL_MANUAL_MANAGER}
           headerSubtitle={UI_STRINGS.P2P_MARKETPLACE.DESC_MANUAL_MANAGER}
         >
@@ -413,6 +419,8 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
       {/* 📋 Tabla de Listados del Mercado P2P */}
       <Card
         variant="surface"
+        collapsible
+        defaultExpanded={true}
         headerTitle={`${UI_STRINGS.P2P_MARKETPLACE.TABLE_MARKET_TITLE} (${filteredLoans.length})`}
         headerSubtitle={UI_STRINGS.P2P_MARKETPLACE.SUBTITLE}
         headerAction={

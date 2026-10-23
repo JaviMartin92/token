@@ -91,13 +91,13 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   return (
     <div className={styles.container}>
       {/* 📊 SECCIÓN 1: PANEL SUPERIOR DE KPI METRICS */}
-      <Card variant="surface">
-        <div className={styles.headerRow}>
-          <div>
-            <h2 className={styles.title}>{UI_STRINGS.METRICS.TITLE}</h2>
-            <p className={styles.subtitle}>{UI_STRINGS.METRICS.SUBTITLE}</p>
-          </div>
-
+      <Card
+        variant="surface"
+        collapsible
+        defaultExpanded={true}
+        headerTitle={UI_STRINGS.METRICS.TITLE}
+        headerSubtitle={UI_STRINGS.METRICS.SUBTITLE}
+        headerAction={
           <Button
             variant="primary"
             size="sm"
@@ -105,8 +105,8 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
           >
             ⚡ Desglose Matemático APY ({liveApyStr})
           </Button>
-        </div>
-
+        }
+      >
         {/* KPIs Grid con StatCards */}
         <div className={styles.kpiGrid}>
           <StatCard
@@ -181,6 +181,8 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
       {/* 🪙 SECCIÓN 2: ESTADO DE TOKENOMICS & STAKING EN PANTALLA */}
       <Card
         variant="surface"
+        collapsible
+        defaultExpanded={false}
         headerTitle="🥩 Tokenomics & Estado de Oferta Deflacionaria"
         headerSubtitle="Monitoreo en tiempo real de suministro circulante, staking en gobernanza y quemas deflacionarias"
       >
@@ -256,6 +258,8 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
       {/* 📊 SECCIÓN 3: TABLA DE RESPALDO EXÓGENO DE RESERVAS */}
       <Card
         variant="surface"
+        collapsible
+        defaultExpanded={true}
         headerTitle={UI_STRINGS.METRICS.TABLE_ASSETS_TITLE}
         headerSubtitle="Auditoría matemática de activos colaterales y bóvedas generadoras de rendimiento"
       >

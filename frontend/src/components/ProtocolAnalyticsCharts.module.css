@@ -2,6 +2,13 @@
   margin-top: var(--space-6);
 }
 
+.headerControls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
 .headerContainer {
   display: flex;
   justify-content: space-between;

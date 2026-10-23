@@ -46,6 +46,8 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
       {/* 🥩 Tarjeta 1: Staking y Gobernanza Deflacionaria */}
       <Card
         variant="surface"
+        collapsible
+        defaultExpanded={true}
         headerTitle={UI_STRINGS.STAKING.TITLE}
         headerSubtitle="Bloqueo de participaciones ALPHA para derechos de voto DAO y rendimientos reales exógenos"
         headerAction={
@@ -120,6 +122,8 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
       {/* 🔀 Tarjeta 2: Real Yield Router & Preferencia Payout */}
       <Card
         variant="surface"
+        collapsible
+        defaultExpanded={false}
         headerTitle="🔀 Real Yield Router & Preferencia Payout"
         headerSubtitle="Configuración institucional del destino de rendimientos y reclamos gasless"
       >

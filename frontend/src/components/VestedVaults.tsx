@@ -79,6 +79,8 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
       {/* 🏛️ Tarjeta 1: Suscripción de Bonos con Descuento */}
       <Card
         variant="surface"
+        collapsible
+        defaultExpanded={true}
         headerTitle={UI_STRINGS.VESTED_VAULTS.TITLE}
         headerSubtitle={UI_STRINGS.VESTED_VAULTS.SUBTITLE}
       >
@@ -172,6 +174,8 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
       {/* 🎴 Tarjeta 2: Posiciones de Bonos NFT del Usuario */}
       <Card
         variant="surface"
+        collapsible
+        defaultExpanded={true}
         headerTitle={`${UI_STRINGS.VESTED_VAULTS.TABLE_TITLE} (${userPositions.length})`}
         headerSubtitle="Posiciones activas, maduradas y opciones de liquidación temprana (Ragequit)"
       >
