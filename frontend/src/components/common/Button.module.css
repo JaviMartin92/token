@@ -1,0 +1,133 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
+  white-space: nowrap;
+  user-select: none;
+  text-decoration: none;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 📏 Tamaños */
+.sm {
+  font-size: 0.8125rem;
+  padding: var(--space-1) var(--space-3);
+  min-height: 32px;
+  gap: var(--space-1);
+}
+
+.md {
+  font-size: 0.875rem;
+  padding: var(--space-2) var(--space-4);
+  min-height: 40px;
+  gap: var(--space-2);
+}
+
+.lg {
+  font-size: 1rem;
+  padding: var(--space-3) var(--space-6);
+  min-height: 48px;
+  gap: var(--space-2);
+}
+
+/* 🎨 Variantes */
+.primary {
+  background-color: var(--color-blue);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.primary:hover:not(:disabled) {
+  background-color: #1d4ed8;
+}
+
+.emerald {
+  background-color: var(--color-emerald);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.emerald:hover:not(:disabled) {
+  background-color: #059669;
+}
+
+.secondary {
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+.secondary:hover:not(:disabled) {
+  background-color: var(--bg-surface-hover);
+  border-color: var(--border-hover);
+}
+
+.outline {
+  background-color: transparent;
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+.outline:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-hover);
+}
+
+.ghost {
+  background-color: transparent;
+  color: var(--text-secondary);
+  border-color: transparent;
+}
+
+.ghost:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.danger {
+  background-color: var(--color-crimson);
+  color: #ffffff;
+}
+
+.danger:hover:not(:disabled) {
+  background-color: #dc2626;
+}
+
+/* 🌀 Spinner y contenido */
+.contentWrapper,
+.loadingWrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: inherit;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 600ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -2,6 +2,7 @@ import React from 'react';
 import styles from './MetricsDashboard.module.css';
 import { ProtocolAnalyticsCharts } from './ProtocolAnalyticsCharts.js';
 import { UI_STRINGS } from '../constants/strings.js';
+import { Card, StatCard, DataTable, Badge, Button } from './common/index.js';
 
 interface MetricsDashboardProps {
   porAssets: string;
@@ -79,258 +80,271 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   const ethActualPct = (ethUSD / safeTotalUSD) * 100;
   const alphaActualPct = (treasuryStakedUSD / safeTotalUSD) * 100;
 
+  const tableHeaders = [
+    UI_STRINGS.METRICS.TH_ASSET,
+    UI_STRINGS.METRICS.TH_ALLOCATION,
+    UI_STRINGS.METRICS.TH_TARGET_WEIGHT,
+    UI_STRINGS.METRICS.TH_TOTAL_VALUE_USD,
+    UI_STRINGS.METRICS.TH_YIELD_SOURCE
+  ];
+
   return (
-    <div className="acp-container">
-      
+    <div className={styles.container}>
       {/* 📊 SECCIÓN 1: PANEL SUPERIOR DE KPI METRICS */}
-      <div className={`card ${styles.topCard}`}>
+      <Card variant="surface">
         <div className={styles.headerRow}>
           <div>
-            <h2 className={styles.headerH2}>
-              {UI_STRINGS.METRICS.TITLE}
-            </h2>
-            <p className={styles.headerSubtitle}>
-              {UI_STRINGS.METRICS.SUBTITLE}
-            </p>
+            <h2 className={styles.title}>{UI_STRINGS.METRICS.TITLE}</h2>
+            <p className={styles.subtitle}>{UI_STRINGS.METRICS.SUBTITLE}</p>
           </div>
 
-          <button
+          <Button
+            variant="primary"
+            size="sm"
             onClick={onOpenApyModal}
-            className={styles.apyBtn}
           >
             ⚡ Desglose Matemático APY ({liveApyStr})
-          </button>
+          </Button>
         </div>
 
-        {/* KPIs Grid */}
+        {/* KPIs Grid con StatCards */}
         <div className={styles.kpiGrid}>
-          <div className={styles.kpiCard}>
-            <div className={styles.kpiTitle}>🛡️ {UI_STRINGS.METRICS.SOLVENCY_CARD_TITLE}</div>
-            <div data-testid="por-collateral-ratio" className={`font-black text-md margin-top-sm ${numericRatioPct >= 100 ? 'text-green-bright' : styles.valLgRed}`}>
-              {porRatio.includes('%') ? porRatio : `${porRatio}%`}
-            </div>
-            <div className={styles.kpiSubtext}>
-              Respaldo 1:1 al 100% NAV (Solvencia Plena)
-            </div>
-          </div>
+          <StatCard
+            title={UI_STRINGS.METRICS.SOLVENCY_CARD_TITLE}
+            value={porRatio.includes('%') ? porRatio : `${porRatio}%`}
+            testId="por-collateral-ratio"
+            variant={numericRatioPct >= 100 ? 'emerald' : 'crimson'}
+            icon="🛡️"
+            subtext="Respaldo 1:1 al 100% NAV (Solvencia Plena)"
+          />
 
-          <div className={styles.kpiCard}>
-            <div className={styles.kpiTitle}>💎 Respaldo (NAV / ALPHA)</div>
-            <div data-testid="header-nav-value" className="font-black text-md text-cyan margin-top-sm">
-              {navPerShareUSD.startsWith('$') ? navPerShareUSD : `$${navPerShareUSD} USDC`}
-            </div>
-            <div className={styles.kpiSubtext}>
-              Valor Patrimonial Neto On-Chain
-            </div>
-          </div>
+          <StatCard
+            title="Respaldo (NAV / ALPHA)"
+            value={navPerShareUSD.startsWith('$') ? navPerShareUSD : `$${navPerShareUSD} USDC`}
+            testId="header-nav-value"
+            variant="blue"
+            icon="💎"
+            subtext="Valor Patrimonial Neto On-Chain"
+          />
 
-          <div className={styles.kpiCard}>
-            <div className={styles.kpiTitle}>🏦 {UI_STRINGS.METRICS.TOTAL_ASSETS_LABEL}</div>
-            <div data-testid="por-assets-total" className="font-black text-md text-purple-bright margin-top-sm">
-              ${porAssets} USD
-            </div>
-            <div className={styles.kpiSubtext}>
-              USDC + WBTC + WETH en Reservas
-            </div>
-          </div>
+          <StatCard
+            title={UI_STRINGS.METRICS.TOTAL_ASSETS_LABEL}
+            value={`$${porAssets} USD`}
+            testId="por-assets-total"
+            variant="default"
+            icon="🏦"
+            subtext="USDC + WBTC + WETH en Reservas"
+          />
 
-          <div className={styles.kpiCard}>
-            <div className={styles.kpiTitle}>📄 {UI_STRINGS.METRICS.TOTAL_LIABILITIES_LABEL}</div>
-            <div data-testid="por-liabilities-total" className="font-black text-md margin-top-sm">
-              ${porLiabilities} USD
-            </div>
-            <div className={styles.kpiSubtext}>
-              {parNominalLiabilities > 0
-                ? `100% Cobertura de Reembolso Inmediato a Valor Liquidativo (NAV)`
-                : 'Obligaciones con Tenedores de ALPHA'}
-            </div>
-          </div>
+          <StatCard
+            title={UI_STRINGS.METRICS.TOTAL_LIABILITIES_LABEL}
+            value={`$${porLiabilities} USD`}
+            testId="por-liabilities-total"
+            variant="default"
+            icon="📄"
+            subtext={parNominalLiabilities > 0
+              ? '100% Cobertura de Reembolso Inmediato a Valor Liquidativo (NAV)'
+              : 'Obligaciones con Tenedores de ALPHA'}
+          />
 
-          <div className={styles.kpiCard} style={{ borderColor: 'rgba(34, 197, 94, 0.4)', background: 'rgba(34, 197, 94, 0.06)' }}>
-            <div className={styles.kpiTitle} style={{ color: '#86efac' }}>✨ Crecimiento de Reservas</div>
-            <div data-testid="treasury-surplus-total" className="font-black text-md text-green-bright margin-top-sm">
-              +${treasurySurplusUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
-            </div>
-            <div className={styles.kpiSubtext} style={{ color: '#a7f3d0' }}>
-              +{surplusPct.toFixed(2)}% Crecimiento de NAV desde Génesis ($1.00)
-            </div>
-          </div>
+          <StatCard
+            title="Crecimiento de Reservas"
+            value={`+$${treasurySurplusUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`}
+            testId="treasury-surplus-total"
+            variant="emerald"
+            icon="✨"
+            subtext={`+${surplusPct.toFixed(2)}% Crecimiento de NAV desde Génesis ($1.00)`}
+          />
         </div>
 
         {/* 💎 Institutional Claim: Banner de Acreción de NAV y No Dilución */}
         {treasurySurplusUSD > 0 && (
-          <div style={{
-            marginTop: '1.25rem',
-            background: 'linear-gradient(90deg, rgba(34, 197, 94, 0.12) 0%, rgba(56, 189, 248, 0.12) 100%)',
-            border: '1px solid rgba(34, 197, 94, 0.35)',
-            borderRadius: '12px',
-            padding: '0.85rem 1.25rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '0.75rem'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <span style={{ fontSize: '1.5rem' }}>💎</span>
+          <div className={styles.surplusBanner}>
+            <div className={styles.surplusInfo}>
+              <span className={styles.surplusIcon} aria-hidden="true">💎</span>
               <div>
-                <div style={{ fontWeight: 800, color: '#4ade80', fontSize: '0.95rem', letterSpacing: '0.02em' }}>
+                <div className={styles.surplusHeading}>
                   CRECIMIENTO PATRIMONIAL DEL PROTOCOLO: +${treasurySurplusUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD (+{surplusPct.toFixed(2)}% sobre Base Génesis)
                 </div>
-                <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '2px' }}>
+                <div className={styles.surplusText}>
                   Cada nueva cuota de ALPHA se emite estrictamente a valor liquidativo (NAV actual: <strong>{navPerShareUSD.startsWith('$') ? navPerShareUSD : `$${navPerShareUSD} USDC`}</strong>) protegiendo a los tenedores contra la dilución. El valor patrimonial por share se ha revalorizado un <strong>+{surplusPct.toFixed(2)}%</strong> sobre la base génesis ($1.00 USD) impulsado por las comisiones de emisión protocolarias y los rendimientos reales de las bóvedas institucionales.
                 </div>
               </div>
             </div>
-            <div style={{
-              fontSize: '0.75rem',
-              padding: '6px 12px',
-              borderRadius: '20px',
-              background: 'rgba(34, 197, 94, 0.2)',
-              color: '#86efac',
-              fontWeight: 800,
-              border: '1px solid rgba(34, 197, 94, 0.4)',
-              letterSpacing: '0.05em'
-            }}>
+            <Badge variant="emerald" size="md">
               ACRECIÓN DE VALOR ON-CHAIN
-            </div>
+            </Badge>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* 🪙 SECCIÓN 2: ESTADO DE TOKENOMICS & STAKING EN PANTALLA */}
-      <div className={`card ${styles.sectionCard}`}>
-        <h3 className={styles.sectionH3}>
-          <span>🥩</span> Tokenomics & Estado de Oferta Deflacionaria
-        </h3>
+      <Card
+        variant="surface"
+        headerTitle="🥩 Tokenomics & Estado de Oferta Deflacionaria"
+        headerSubtitle="Monitoreo en tiempo real de suministro circulante, staking en gobernanza y quemas deflacionarias"
+      >
+        <div className={styles.tokenomicsGrid}>
+          <StatCard
+            title={UI_STRINGS.STAKING.METRIC_CIRCULATING}
+            value={`${circulatingSupply} ${UI_STRINGS.COMMON.SYMBOL_ALPHA}`}
+            testId="staking-circulating-supply"
+            variant="blue"
+            icon="🪙"
+            subtext="Suministro Circulante Total"
+          />
 
-        <div className={styles.gridSubtle}>
-          <div className={styles.boxSubtle}>
-            <div className={styles.boxTitle}>🪙 {UI_STRINGS.STAKING.METRIC_CIRCULATING}</div>
-            <div data-testid="staking-circulating-supply" className={styles.valLgCyan}>
-              {circulatingSupply} {UI_STRINGS.COMMON.SYMBOL_ALPHA}
-            </div>
-            <div className={styles.kpiSubtext}>Suministro Circulante Total</div>
-          </div>
+          <StatCard
+            title="Stake Comunidad"
+            value={`${communityStakedSupply} ${UI_STRINGS.COMMON.SYMBOL_STALPHA}`}
+            testId="staking-community-staked"
+            variant="default"
+            icon="👤"
+            subtext="Bloqueado por Inversores"
+          />
 
-          <div className={styles.boxSubtle}>
-            <div className={styles.boxTitle}>👤 Stake Comunidad</div>
-            <div data-testid="staking-community-staked" className={styles.valLgPurple}>
-              {communityStakedSupply} {UI_STRINGS.COMMON.SYMBOL_STALPHA}
-            </div>
-            <div className={styles.kpiSubtext}>Bloqueado por Inversores</div>
-          </div>
+          <StatCard
+            title="Stake Bóveda Comunitaria"
+            value={
+              <>
+                <span data-testid="staking-vaults-staked">{communityVaultStakedSupply}</span> {UI_STRINGS.COMMON.SYMBOL_STALPHA}
+              </>
+            }
+            testId="staking-community-vault-staked"
+            variant="default"
+            icon="💎"
+            subtext="Community Yield Vault"
+          />
 
-          <div className={styles.boxSubtle}>
-            <div className={styles.boxTitle}>💎 Stake Bóveda Comunitaria</div>
-            <div data-testid="staking-community-vault-staked" className={styles.valLgPink}>
-              <span data-testid="staking-vaults-staked">{communityVaultStakedSupply}</span> {UI_STRINGS.COMMON.SYMBOL_STALPHA}
-            </div>
-            <div className={styles.kpiSubtext}>Community Yield Vault</div>
-          </div>
+          <StatCard
+            title="Stake Reservas"
+            value={`${treasuryStakedSupply} ${UI_STRINGS.COMMON.SYMBOL_STALPHA}`}
+            testId="staking-reserves-staked"
+            variant="emerald"
+            icon="🏛️"
+            subtext="Sub-Reserva Tesorería"
+          />
 
-          <div className={styles.boxSubtle}>
-            <div className={styles.boxTitle}>🏛️ Stake Reservas</div>
-            <div data-testid="staking-reserves-staked" className={styles.valLgGreen}>
-              {treasuryStakedSupply} {UI_STRINGS.COMMON.SYMBOL_STALPHA}
-            </div>
-            <div className={styles.kpiSubtext}>Sub-Reserva Tesorería</div>
-          </div>
+          <StatCard
+            title={UI_STRINGS.STAKING.METRIC_TOTAL_STAKED}
+            value={
+              <>
+                <span data-testid="staking-global-staked">{totalStakedSupply}</span> {UI_STRINGS.COMMON.SYMBOL_ALPHA} ({stakingRatioPct.includes('%') ? stakingRatioPct : `${stakingRatioPct}%`})
+              </>
+            }
+            testId="staking-total-staked"
+            variant="default"
+            icon="🥩"
+            subtext="Total stALPHA en Gobernanza"
+          />
 
-          <div className={styles.boxSubtle}>
-            <div className={styles.boxTitle}>🥩 {UI_STRINGS.STAKING.METRIC_TOTAL_STAKED}</div>
-            <div data-testid="staking-total-staked" className={styles.valLgViolet}>
-              <span data-testid="staking-global-staked">{totalStakedSupply}</span> {UI_STRINGS.COMMON.SYMBOL_ALPHA} ({stakingRatioPct.includes('%') ? stakingRatioPct : `${stakingRatioPct}%`})
-            </div>
-            <div className={styles.kpiSubtext}>Total stALPHA en Gobernanza</div>
-          </div>
-
-          <div className={styles.boxSubtle}>
-            <div className={styles.boxTitle}>🔥 {UI_STRINGS.STAKING.METRIC_TOTAL_BURNED}</div>
-            <div data-testid="staking-deflation-burned" className={styles.valLgRed}>
-              <span data-testid="staking-deflation-destroyed">{totalBurnedTokens}</span> {UI_STRINGS.COMMON.SYMBOL_ALPHA} Destruidos
-            </div>
-            <div className={styles.kpiSubtext}>Quema Definitiva Irreversible</div>
-          </div>
+          <StatCard
+            title={UI_STRINGS.STAKING.METRIC_TOTAL_BURNED}
+            value={
+              <>
+                <span data-testid="staking-deflation-destroyed">{totalBurnedTokens}</span> {UI_STRINGS.COMMON.SYMBOL_ALPHA}
+              </>
+            }
+            testId="staking-deflation-burned"
+            variant="crimson"
+            icon="🔥"
+            subtext="Quema Definitiva Irreversible"
+          />
         </div>
-      </div>
+      </Card>
 
       {/* 📊 SECCIÓN 3: TABLA DE RESPALDO EXÓGENO DE RESERVAS */}
-      <div className={`card ${styles.sectionCard}`}>
-        <h3 className={styles.sectionH3}>
-          {UI_STRINGS.METRICS.TABLE_ASSETS_TITLE}
-        </h3>
+      <Card
+        variant="surface"
+        headerTitle={UI_STRINGS.METRICS.TABLE_ASSETS_TITLE}
+        headerSubtitle="Auditoría matemática de activos colaterales y bóvedas generadoras de rendimiento"
+      >
+        <DataTable headers={tableHeaders} minWidth="650px">
+          <tr>
+            <td>
+              <div className={styles.assetCell}>
+                <span>💵</span>
+                <span>USDC / Stablecoins</span>
+              </div>
+            </td>
+            <td className={styles.boldNum}>{stablesActualPct.toFixed(2)}%</td>
+            <td>{(targetWeights?.stables || 50).toFixed(2)}% Target</td>
+            <td data-testid="por-row-usdc-val" className={styles.boldNum}>
+              ${stablesUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+            </td>
+            <td className={styles.mutedText}>{UI_STRINGS.METRICS.MORPHO_USDC_SOURCE} / Créditos P2P</td>
+          </tr>
 
-        <div className="table-responsive">
-          <table className="gcc-table">
-            <thead>
-              <tr className="gcc-tr-border text-muted">
-                <th className={styles.tableTh}>{UI_STRINGS.METRICS.TH_ASSET}</th>
-                <th className={styles.tableTh}>{UI_STRINGS.METRICS.TH_ALLOCATION}</th>
-                <th className={styles.tableTh}>{UI_STRINGS.METRICS.TH_TARGET_WEIGHT}</th>
-                <th className={styles.tableTh}>{UI_STRINGS.METRICS.TH_TOTAL_VALUE_USD}</th>
-                <th className={styles.tableTh}>{UI_STRINGS.METRICS.TH_YIELD_SOURCE}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="gcc-tr-border">
-                <td className={styles.tableTdCyan}>💵 USDC / Stablecoins</td>
-                <td className={styles.tableTdBold} style={{ color: '#38bdf8' }}>{stablesActualPct.toFixed(2)}%</td>
-                <td className={styles.tableTd}>{(targetWeights?.stables || 50).toFixed(2)}% Target</td>
-                <td data-testid="por-row-usdc-val" className={styles.tableTdBold}>${stablesUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
-                <td className={styles.tableTdMuted}>{UI_STRINGS.METRICS.MORPHO_USDC_SOURCE} / Créditos P2P</td>
-              </tr>
-              <tr className="gcc-tr-border">
-                <td className={styles.tableTdAmber}>🪙 Wrapped Bitcoin (WBTC)</td>
-                <td className={styles.tableTdBold} style={{ color: '#f59e0b' }}>{btcActualPct.toFixed(2)}%</td>
-                <td className={styles.tableTd}>{(targetWeights?.wbtc || 25).toFixed(2)}% Target</td>
-                <td data-testid="por-row-wbtc-val" className={styles.tableTdBold}>${btcUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
-                <td className={styles.tableTdMuted}>{UI_STRINGS.METRICS.LOMBARD_LBTC_SOURCE} / Oráculo Chainlink</td>
-              </tr>
-              <tr className="gcc-tr-border">
-                <td className={styles.tableTdIndigo}>🔷 Wrapped Ethereum (WETH)</td>
-                <td className={styles.tableTdBold} style={{ color: '#818cf8' }}>{ethActualPct.toFixed(2)}%</td>
-                <td className={styles.tableTd}>{(targetWeights?.weth || 12.5).toFixed(2)}% Target</td>
-                <td data-testid="por-row-weth-val" className={styles.tableTdBold}>${ethUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
-                <td className={styles.tableTdMuted}>{UI_STRINGS.METRICS.LIDO_WSTETH_SOURCE} / Oráculo Chainlink</td>
-              </tr>
-              <tr className="gcc-tr-border">
-                <td className={styles.tableTd} style={{ color: '#ec4899', fontWeight: 600 }}>🏛️ Sub-Reserva ALPHA Staking (POL)</td>
-                <td className={styles.tableTdBold} style={{ color: '#ec4899' }}>{alphaActualPct.toFixed(2)}%</td>
-                <td className={styles.tableTd}>{(targetWeights?.alts || 12.5).toFixed(2)}% Target</td>
-                <td data-testid="por-row-alpha-val" className={styles.tableTdBold}>${treasuryStakedUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
-                <td className={styles.tableTdMuted}>Auto-Staking Gobernanza DAO / Real Yield</td>
-              </tr>
-              <tr style={{ borderTop: '2px solid rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.02)' }}>
-                <td className={styles.tableTdBold} style={{ color: '#f8fafc' }}>📊 Total Cartera de Tesorería</td>
-                <td className={styles.tableTdBold} style={{ color: '#4ade80' }}>100.00%</td>
-                <td className={styles.tableTdBold} style={{ color: '#94a3b8' }}>100.00% Target</td>
-                <td className={styles.tableTdBold} style={{ color: '#4ade80' }}>${totalPortfolioUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</td>
-                <td className={styles.tableTdMuted}>Respaldo On-Chain Verificado</td>
-              </tr>
-            </tbody>
-          </table>
-          {treasurySurplusUSD > 0 && (
-            <div style={{
-              marginTop: '0.75rem',
-              padding: '0.6rem 1rem',
-              background: 'rgba(34, 197, 94, 0.08)',
-              border: '1px solid rgba(34, 197, 94, 0.25)',
-              borderRadius: '8px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '0.5rem',
-              fontSize: '0.8rem',
-              color: '#86efac'
-            }}>
-              <span>✨ <strong>Acreción Patrimonial de Tesorería:</strong> +${treasurySurplusUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD acumulados en reservas por encima de la base génesis</span>
-              <span style={{ fontWeight: 700, color: '#4ade80' }}>+{surplusPct.toFixed(2)}% Apreciación NAV</span>
-            </div>
-          )}
-        </div>
-      </div>
+          <tr>
+            <td>
+              <div className={styles.assetCell}>
+                <span>🪙</span>
+                <span>Wrapped Bitcoin (WBTC)</span>
+              </div>
+            </td>
+            <td className={styles.boldNum}>{btcActualPct.toFixed(2)}%</td>
+            <td>{(targetWeights?.wbtc || 25).toFixed(2)}% Target</td>
+            <td data-testid="por-row-wbtc-val" className={styles.boldNum}>
+              ${btcUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+            </td>
+            <td className={styles.mutedText}>{UI_STRINGS.METRICS.LOMBARD_LBTC_SOURCE} / Oráculo Chainlink</td>
+          </tr>
+
+          <tr>
+            <td>
+              <div className={styles.assetCell}>
+                <span>🔷</span>
+                <span>Wrapped Ethereum (WETH)</span>
+              </div>
+            </td>
+            <td className={styles.boldNum}>{ethActualPct.toFixed(2)}%</td>
+            <td>{(targetWeights?.weth || 12.5).toFixed(2)}% Target</td>
+            <td data-testid="por-row-weth-val" className={styles.boldNum}>
+              ${ethUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+            </td>
+            <td className={styles.mutedText}>{UI_STRINGS.METRICS.LIDO_WSTETH_SOURCE} / Oráculo Chainlink</td>
+          </tr>
+
+          <tr>
+            <td>
+              <div className={styles.assetCell}>
+                <span>🏛️</span>
+                <span>Sub-Reserva ALPHA Staking (POL)</span>
+              </div>
+            </td>
+            <td className={styles.boldNum}>{alphaActualPct.toFixed(2)}%</td>
+            <td>{(targetWeights?.alts || 12.5).toFixed(2)}% Target</td>
+            <td data-testid="por-row-alpha-val" className={styles.boldNum}>
+              ${treasuryStakedUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+            </td>
+            <td className={styles.mutedText}>Auto-Staking Gobernanza DAO / Real Yield</td>
+          </tr>
+
+          <tr className={styles.totalRow}>
+            <td>
+              <div className={styles.assetCell}>
+                <span>📊</span>
+                <span>Total Cartera de Tesorería</span>
+              </div>
+            </td>
+            <td className={styles.boldNum}>100.00%</td>
+            <td className={styles.boldNum}>100.00% Target</td>
+            <td className={styles.boldNum}>
+              ${totalPortfolioUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+            </td>
+            <td className={styles.mutedText}>Respaldo On-Chain Verificado</td>
+          </tr>
+        </DataTable>
+
+        {treasurySurplusUSD > 0 && (
+          <div className={styles.surplusNote}>
+            <span>
+              ✨ <strong>Acreción Patrimonial de Tesorería:</strong> +${treasurySurplusUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD acumulados en reservas por encima de la base génesis
+            </span>
+            <span className={styles.boldNum}>+{surplusPct.toFixed(2)}% Apreciación NAV</span>
+          </div>
+        )}
+      </Card>
 
       {/* 📈 SECCIÓN 4: GRÁFICOS ANALÍTICOS Y TENDENCIAS HISTÓRICAS */}
       <ProtocolAnalyticsCharts

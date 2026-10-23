@@ -1,19 +1,254 @@
-.icon { font-size: 1.35rem; color: #fff; }
-.tabSub { font-size: 0.74rem; margin-top: 0.4rem; display: flex; justify-content: space-between; font-weight: 600; }
-.tabSubGreen { color: #6ee7b7; }
-.tabSubBlue { color: #93c5fd; }
-.tabSubPurple { color: #e9d5ff; }
-.tooltipHeader { font-size: 0.74rem; color: #94a3b8; margin-bottom: 0.4rem; font-weight: 700; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-.tooltipBadge { font-size: 0.65rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 0.15rem 0.5rem; border-radius: 6px; font-weight: 700; border: 1px solid rgba(56, 189, 248, 0.3); }
-.tooltipTitle { font-size: 1.05rem; font-weight: 800; color: #38bdf8; margin-bottom: 0.45rem; letter-spacing: -0.01em; }
-.tooltipStack { font-size: 0.78rem; color: #e2e8f0; display: flex; flex-direction: column; gap: 0.3rem; }
-.dotGreen { width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 6px #10b981; }
-.dotAmber { width: 8px; height: 8px; background: #f59e0b; border-radius: 50%; box-shadow: 0 0 6px #f59e0b; }
-.dotBlue { width: 8px; height: 8px; background: #3b82f6; border-radius: 50%; box-shadow: 0 0 6px #3b82f6; }
-.tooltipValBlue { font-size: 1rem; font-weight: 800; color: #60a5fa; }
-.tooltipValPurple { font-size: 1rem; font-weight: 800; color: #c084fc; }
-.dotLgGreen { width: 10px; height: 10px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; }
-.dotLgAmber { width: 10px; height: 10px; background: #f59e0b; border-radius: 50%; box-shadow: 0 0 8px #f59e0b; }
-.dotLgBlue { width: 10px; height: 10px; background: #3b82f6; border-radius: 50%; box-shadow: 0 0 8px #3b82f6; }
-.lineBlue { width: 14px; height: 3.5px; background: #3b82f6; border-radius: 2px; box-shadow: 0 0 10px #3b82f6; }
-.linePurple { width: 14px; height: 3.5px; background: #a855f7; border-radius: 2px; box-shadow: 0 0 10px #a855f7; }
+.analyticsCard {
+  margin-top: var(--space-6);
+}
+
+.headerContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.mainTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+/* 🕒 Selector de Rango Temporal */
+.horizonGroup {
+  display: flex;
+  gap: 2px;
+  background-color: var(--bg-surface-elevated);
+  padding: 3px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.horizonBtn {
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.horizonBtn:hover {
+  color: var(--text-primary);
+}
+
+.horizonBtnActive {
+  background-color: var(--bg-surface-hover);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+}
+
+/* 🗂️ Grid de Pestañas de Métricas */
+.tabsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.tabCard {
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.tabCard:hover {
+  border-color: var(--border-default);
+  background-color: var(--bg-surface-hover);
+}
+
+.tabCardReserves {
+  border-color: var(--color-emerald-border);
+  background-color: rgba(16, 185, 129, 0.05);
+}
+
+.tabCardCashflow {
+  border-color: var(--color-blue-border);
+  background-color: rgba(37, 99, 235, 0.05);
+}
+
+.tabCardApy {
+  border-color: rgba(192, 132, 252, 0.4);
+  background-color: rgba(192, 132, 252, 0.05);
+}
+
+.tabHeaderLabel {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+  font-weight: 700;
+  margin-bottom: var(--space-1);
+}
+
+.tabVal {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  margin: var(--space-1) 0;
+}
+
+.tabValGreen {
+  composes: tabVal;
+  color: var(--color-emerald-light);
+}
+
+.tabValBlue {
+  composes: tabVal;
+  color: var(--color-blue-light);
+}
+
+.tabValPurple {
+  composes: tabVal;
+  color: #c084fc;
+}
+
+.tabSub {
+  font-size: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
+}
+
+.tabSubGreen { color: var(--color-emerald-light); }
+.tabSubBlue { color: var(--color-blue-light); }
+.tabSubPurple { color: #c084fc; }
+
+/* 📈 Contenedor del Lienzo SVG */
+.canvasContainer {
+  position: relative;
+  width: 100%;
+  height: 290px;
+  background-color: var(--bg-app);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  padding: var(--space-2);
+  overflow: hidden;
+}
+
+/* 🔍 Tooltip Flotante */
+.tooltip {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  box-shadow: var(--shadow-elevated);
+  pointer-events: none;
+  z-index: 10;
+  min-width: 180px;
+}
+
+.tooltipHeader {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tooltipStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.tooltipRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.tooltipDotItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.dotGreen { width: 8px; height: 8px; background: var(--color-emerald); border-radius: 50%; }
+.dotAmber { width: 8px; height: 8px; background: var(--color-amber); border-radius: 50%; }
+.dotBlue { width: 8px; height: 8px; background: var(--color-blue); border-radius: 50%; }
+
+.tooltipValBlue { font-size: 1rem; font-weight: 700; color: var(--color-blue-light); font-variant-numeric: tabular-nums; }
+.tooltipValPurple { font-size: 1rem; font-weight: 700; color: #c084fc; font-variant-numeric: tabular-nums; }
+
+/* 🏷️ Leyenda Footer */
+.legendContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.legendPill {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.dotLgGreen { width: 8px; height: 8px; background: var(--color-emerald); border-radius: 50%; }
+.dotLgAmber { width: 8px; height: 8px; background: var(--color-amber); border-radius: 50%; }
+.dotLgBlue { width: 8px; height: 8px; background: var(--color-blue); border-radius: 50%; }
+.lineBlue { width: 14px; height: 3px; background: var(--color-blue); border-radius: 2px; }
+.linePurple { width: 14px; height: 3px; background: #c084fc; border-radius: 2px; }
+
+@media (max-width: 768px) {
+  .headerContainer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .canvasContainer {
+    height: 220px;
+  }
+  .tabsGrid {
+    grid-template-columns: 1fr;
+  }
+}

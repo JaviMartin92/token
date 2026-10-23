@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from './GovernanceStakingUI.module.css';
 import { UI_STRINGS } from '../constants/strings.js';
-import { TokenAmountInput } from './common/TokenAmountInput.js';
+import { Card, StatCard, Badge, Button, TokenAmountInput } from './common/index.js';
 
 interface GovernanceStakingUIProps {
   sharesBalance?: string;
@@ -42,96 +42,145 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
   onSetPayoutPreference
 }) => {
   return (
-    <div className="admin-grid">
-      {/* Staking & Reward Metrics Card */}
-      <div className="glass-panel por-card">
-        <h3 className="acp-banner-flex margin-bottom-lg">
-          <span>{UI_STRINGS.STAKING.TITLE}</span>
-          <span className={styles.deflationaryTag}>
+    <div className={styles.container}>
+      {/* 🥩 Tarjeta 1: Staking y Gobernanza Deflacionaria */}
+      <Card
+        variant="surface"
+        headerTitle={UI_STRINGS.STAKING.TITLE}
+        headerSubtitle="Bloqueo de participaciones ALPHA para derechos de voto DAO y rendimientos reales exógenos"
+        headerAction={
+          <Badge variant="crimson" size="sm" dot>
             🔥 Deflacionario
-          </span>
-        </h3>
+          </Badge>
+        }
+      >
+        <div className={styles.kpiRow}>
+          <StatCard
+            title={`Tu Staking (${UI_STRINGS.COMMON.SYMBOL_STALPHA})`}
+            value={`${stakedBalance} ${UI_STRINGS.COMMON.SYMBOL_STALPHA}`}
+            testId="staking-stalpha-balance"
+            variant="blue"
+            icon="🥩"
+            subtext="Participaciones en gobernanza activa"
+          />
 
-        <div className="admin-grid-3col margin-bottom-lg">
-          <div className="por-metric-box">
-            <div className="por-metric-label">TU STAKING ({UI_STRINGS.COMMON.SYMBOL_STALPHA})</div>
-            <div data-testid="staking-stalpha-balance" className={styles.valPurple}>{stakedBalance} {UI_STRINGS.COMMON.SYMBOL_STALPHA}</div>
-          </div>
-          <div className="por-metric-box">
-            <div className="por-metric-label">REAL YIELD ACUMULADO</div>
-            <div data-testid="staking-real-yield" className={styles.valGreen}>${claimableYield} USD</div>
-          </div>
-          <div className={`por-metric-box ${styles.burnedBox}`}>
-            <div className={`por-metric-label ${styles.burnedLabel}`}>🔥 {UI_STRINGS.STAKING.METRIC_TOTAL_BURNED}</div>
-            <div data-testid="staking-total-burned" className={styles.burnedVal}>{totalBurnedTokens} {UI_STRINGS.COMMON.SYMBOL_ALPHA}</div>
-          </div>
+          <StatCard
+            title="Real Yield Acumulado"
+            value={`$${claimableYield} USD`}
+            testId="staking-real-yield"
+            variant="emerald"
+            icon="💎"
+            subtext="Rendimiento disponible para reclamar"
+          />
+
+          <StatCard
+            title={UI_STRINGS.STAKING.METRIC_TOTAL_BURNED}
+            value={`${totalBurnedTokens} ${UI_STRINGS.COMMON.SYMBOL_ALPHA}`}
+            testId="staking-total-burned"
+            variant="crimson"
+            icon="🔥"
+            subtext="Quema definitiva irreversible"
+          />
         </div>
 
-        <div className="acp-control-stack">
-          <div>
-            <TokenAmountInput
-              label={UI_STRINGS.STAKING.INPUT_STAKE_LABEL}
-              testId="staking-amount-input"
-              placeholder={UI_STRINGS.STAKING.INPUT_STAKE_PLACEHOLDER}
-              value={stakeAmount}
-              onChange={setStakeAmount}
-              tokenSymbol={UI_STRINGS.COMMON.SYMBOL_ALPHA}
-              tokenDecimals={18}
-              maxBalance={sharesBalance}
-            />
-          </div>
+        <div className={styles.formStack}>
+          <TokenAmountInput
+            label={UI_STRINGS.STAKING.INPUT_STAKE_LABEL}
+            testId="staking-amount-input"
+            placeholder={UI_STRINGS.STAKING.INPUT_STAKE_PLACEHOLDER}
+            value={stakeAmount}
+            onChange={setStakeAmount}
+            tokenSymbol={UI_STRINGS.COMMON.SYMBOL_ALPHA}
+            tokenDecimals={18}
+            maxBalance={sharesBalance}
+          />
 
-          <div className="admin-grid-2col margin-top-xs">
-            <button data-testid="staking-stake-btn" className={`btn-primary ${styles.btnPurple}`} onClick={onStake}>
+          <div className={styles.buttonRow}>
+            <Button
+              data-testid="staking-stake-btn"
+              variant="primary"
+              size="md"
+              onClick={onStake}
+            >
               {UI_STRINGS.STAKING.BTN_STAKE}
-            </button>
-            <button data-testid="staking-unstake-btn" className="btn-secondary" onClick={onUnstake}>
+            </Button>
+
+            <Button
+              data-testid="staking-unstake-btn"
+              variant="outline"
+              size="md"
+              onClick={onUnstake}
+            >
               {UI_STRINGS.STAKING.BTN_UNSTAKE}
-            </button>
+            </Button>
           </div>
         </div>
-      </div>
+      </Card>
 
-      {/* Real Yield Routing & Preferences Card */}
-      <div className="glass-panel por-card">
-        <h3 className="margin-bottom-lg">🔀 Real Yield Router & Preferencia Payout</h3>
-
-        <p className="acp-label-sm margin-bottom-lg">
+      {/* 🔀 Tarjeta 2: Real Yield Router & Preferencia Payout */}
+      <Card
+        variant="surface"
+        headerTitle="🔀 Real Yield Router & Preferencia Payout"
+        headerSubtitle="Configuración institucional del destino de rendimientos y reclamos gasless"
+      >
+        <p className={styles.description}>
           {UI_STRINGS.STAKING.CARD_YIELD_DESC}
         </p>
 
-        <div className="strategy-card margin-bottom-lg">
-          <div className="acp-control-stack">
-            <label className={styles.radioLabel}>
-              <input
-                type="radio"
-                name="payoutPref"
-                checked={payoutPref === 0}
-                onChange={() => { setPayoutPref(0); onSetPayoutPreference(0); }}
-              />
-              <span><strong>Opción A:</strong> {UI_STRINGS.STAKING.PREF_OPTION_A}</span>
-            </label>
-            <label className={styles.radioLabel}>
-              <input
-                type="radio"
-                name="payoutPref"
-                checked={payoutPref === 1}
-                onChange={() => { setPayoutPref(1); onSetPayoutPreference(1); }}
-              />
-              <span><strong>Opción B:</strong> {UI_STRINGS.STAKING.PREF_OPTION_B}</span>
-            </label>
-          </div>
+        <div className={styles.optionsCard}>
+          <label className={styles.radioOption}>
+            <input
+              type="radio"
+              name="payoutPref"
+              checked={payoutPref === 0}
+              onChange={() => {
+                setPayoutPref(0);
+                onSetPayoutPreference(0);
+              }}
+              className={styles.radioInput}
+            />
+            <span className={styles.radioText}>
+              <strong>Opción A:</strong> {UI_STRINGS.STAKING.PREF_OPTION_A}
+            </span>
+          </label>
+
+          <label className={styles.radioOption}>
+            <input
+              type="radio"
+              name="payoutPref"
+              checked={payoutPref === 1}
+              onChange={() => {
+                setPayoutPref(1);
+                onSetPayoutPreference(1);
+              }}
+              className={styles.radioInput}
+            />
+            <span className={styles.radioText}>
+              <strong>Opción B:</strong> {UI_STRINGS.STAKING.PREF_OPTION_B}
+            </span>
+          </label>
         </div>
 
-        <div className="admin-grid-2col">
-          <button data-testid="yield-claim-btn" className={`btn-primary ${styles.btnGreenGrad}`} onClick={onClaimYield}>
+        <div className={styles.buttonRow}>
+          <Button
+            data-testid="yield-claim-btn"
+            variant="emerald"
+            size="md"
+            onClick={onClaimYield}
+          >
             {UI_STRINGS.STAKING.BTN_CLAIM_YIELD}
-          </button>
-          <button data-testid="yield-gasless-btn" className={`btn-secondary ${styles.btnIndigoOutline}`} onClick={onGaslessClaim}>
+          </Button>
+
+          <Button
+            data-testid="yield-gasless-btn"
+            variant="outline"
+            size="md"
+            onClick={onGaslessClaim}
+          >
             {UI_STRINGS.STAKING.BTN_GASLESS_CLAIM}
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from './TreasuryDashboard.module.css';
 import { UI_STRINGS } from '../constants/strings.js';
-import { TokenAmountInput } from './common/TokenAmountInput.js';
+import { Card, StatCard, Button, Badge, TokenAmountInput } from './common/index.js';
 
 interface TreasuryDashboardProps {
   porAssets?: string;
@@ -41,86 +41,110 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
   isAdmin = false,
   loansList = []
 }) => {
-  const totalLentUsd = loansList.filter((l: any) => l.active).reduce((acc: number, curr: any) => acc + (parseFloat(curr.amount) || 0), 0);
+  const totalLentUsd = loansList
+    .filter((l: any) => l.active)
+    .reduce((acc: number, curr: any) => acc + (parseFloat(curr.amount) || 0), 0);
 
   return (
-    <div className="tab-content-container">
-      {/* Top Banner Hero */}
-      <div className="glass-panel text-center hero-banner-pad margin-bottom-lg">
-        <h2 className={styles.heroH2}>
-          {UI_STRINGS.TREASURY.TITLE}
-        </h2>
-        <p className={styles.heroP}>
-          {UI_STRINGS.TREASURY.SUBTITLE}
-        </p>
-      </div>
-
-      {/* Main Operations Card */}
-      <div className="glass-panel padding-lg margin-bottom-lg">
-        <div className="acp-banner-flex margin-bottom-md">
-          <h3 className={styles.vaultH3}>
-            {UI_STRINGS.TREASURY.CARD_DEPOSIT_TITLE}
-          </h3>
-          <button
+    <div className={styles.container}>
+      {/* 🏛️ Panel Principal de Emisión y Reembolso */}
+      <Card
+        variant="surface"
+        headerTitle={UI_STRINGS.TREASURY.CARD_DEPOSIT_TITLE}
+        headerSubtitle={UI_STRINGS.TREASURY.SUBTITLE}
+        headerAction={
+          <Button
             data-testid="treasury-faucet-btn"
+            variant="outline"
+            size="sm"
             onClick={onFaucetUSDC}
-            className={`btn-primary ${styles.faucetBtn}`}
           >
-            {UI_STRINGS.TREASURY.BTN_FAUCET}
-          </button>
+            🚰 {UI_STRINGS.TREASURY.BTN_FAUCET}
+          </Button>
+        }
+      >
+        {/* 👛 Saldos Disponibles del Usuario */}
+        <div className={styles.balancesGrid}>
+          <StatCard
+            title="Mi Balance Disponible"
+            value={`${usdcBalance} ${UI_STRINGS.COMMON.SYMBOL_USDC}`}
+            testId="treasury-usdc-balance"
+            variant="emerald"
+            icon="💵"
+            subtext="Fondos líquidos disponibles para suscripción"
+          />
+
+          <StatCard
+            title={`Mis ${UI_STRINGS.COMMON.SYMBOL_ALPHA} Shares`}
+            value={`${sharesBalance} ${UI_STRINGS.COMMON.SYMBOL_ALPHA}`}
+            testId="treasury-shares-balance"
+            variant="blue"
+            icon="💎"
+            subtext="Participaciones con respaldo NAV en tesorería"
+          />
         </div>
 
-        <div>
-          {/* User Balances Summary Cards */}
-          <div className="admin-grid-2col margin-bottom-md">
-            <div className={styles.cardBox}>
-              <div className={styles.cardTitle}>MI BALANCE DISPONIBLE</div>
-              <div data-testid="treasury-usdc-balance" className={styles.cardValGreen}>{usdcBalance} {UI_STRINGS.COMMON.SYMBOL_USDC}</div>
+        {/* ⚡ Operaciones: Suscripción (Mint) y Reembolso (Redeem) */}
+        <div className={styles.operationsGrid}>
+          {/* Tarjeta de Depósito / Mint */}
+          <div className={styles.actionCard}>
+            <div className={styles.actionHeader}>
+              <span>💳</span>
+              <span>{UI_STRINGS.TREASURY.INPUT_DEPOSIT_LABEL}</span>
             </div>
-            <div className={styles.cardBox}>
-              <div className={styles.cardTitle}>MIS {UI_STRINGS.COMMON.SYMBOL_ALPHA} SHARES</div>
-              <div data-testid="treasury-shares-balance" className={styles.cardValPurple}>{sharesBalance} {UI_STRINGS.COMMON.SYMBOL_ALPHA}</div>
-            </div>
+
+            <TokenAmountInput
+              testId="treasury-deposit-input"
+              placeholder={UI_STRINGS.TREASURY.INPUT_DEPOSIT_PLACEHOLDER}
+              value={depositAmount}
+              onChange={setDepositAmount}
+              tokenSymbol={UI_STRINGS.COMMON.SYMBOL_USDC}
+              tokenDecimals={6}
+              maxBalance={usdcBalance}
+            />
+
+            <Button
+              data-testid="treasury-deposit-btn"
+              variant="emerald"
+              size="md"
+              className={styles.submitBtn}
+              onClick={onDeposit}
+            >
+              Suscribir ALPHA (Mint)
+            </Button>
           </div>
 
-          {/* Actions Forms */}
-          <div className="admin-grid-2col">
-            <div className={styles.actionBox}>
-              <TokenAmountInput
-                label={`💳 ${UI_STRINGS.TREASURY.INPUT_DEPOSIT_LABEL}`}
-                testId="treasury-deposit-input"
-                placeholder={UI_STRINGS.TREASURY.INPUT_DEPOSIT_PLACEHOLDER}
-                value={depositAmount}
-                onChange={setDepositAmount}
-                tokenSymbol={UI_STRINGS.COMMON.SYMBOL_USDC}
-                tokenDecimals={6}
-                maxBalance={usdcBalance}
-              />
-              <button data-testid="treasury-deposit-btn" className={`btn-primary ${styles.depositBtn} margin-top-xs`} onClick={onDeposit}>
-                {UI_STRINGS.COMMON.BTN_CONFIRM}
-              </button>
+          {/* Tarjeta de Reembolso / Burn */}
+          <div className={styles.actionCard}>
+            <div className={styles.actionHeader}>
+              <span>🔥</span>
+              <span>{UI_STRINGS.TREASURY.INPUT_REDEEM_LABEL}</span>
             </div>
 
-            <div className={styles.actionBox}>
-              <TokenAmountInput
-                label={`🔥 ${UI_STRINGS.TREASURY.INPUT_REDEEM_LABEL}`}
-                testId="treasury-redeem-input"
-                placeholder={UI_STRINGS.TREASURY.INPUT_REDEEM_PLACEHOLDER}
-                value={redeemAmount}
-                onChange={setRedeemAmount}
-                tokenSymbol={UI_STRINGS.COMMON.SYMBOL_ALPHA}
-                tokenDecimals={18}
-                maxBalance={sharesBalance}
-              />
-              <button data-testid="treasury-redeem-btn" className={`btn-primary ${styles.redeemBtn} margin-top-xs`} onClick={onRedeem}>
-                {UI_STRINGS.COMMON.BTN_CONFIRM}
-              </button>
-            </div>
+            <TokenAmountInput
+              testId="treasury-redeem-input"
+              placeholder={UI_STRINGS.TREASURY.INPUT_REDEEM_PLACEHOLDER}
+              value={redeemAmount}
+              onChange={setRedeemAmount}
+              tokenSymbol={UI_STRINGS.COMMON.SYMBOL_ALPHA}
+              tokenDecimals={18}
+              maxBalance={sharesBalance}
+            />
+
+            <Button
+              data-testid="treasury-redeem-btn"
+              variant="danger"
+              size="md"
+              className={styles.submitBtn}
+              onClick={onRedeem}
+            >
+              Reembolsar USDC (Redeem)
+            </Button>
           </div>
         </div>
-      </div>
+      </Card>
 
-      {/* Sección Admin: Solo 3 Estrategias Exógenas */}
+      {/* 🌾 Panel de Estrategias Exógenas (Admin / Fiduciario) */}
       {isAdmin && (() => {
         const p2pAllocationUsd = totalLentUsd;
         const morphoAllocationUsd = Math.max(0, porBreakdown.stables - p2pAllocationUsd);
@@ -128,69 +152,76 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
         const ethAllocationUsd = porBreakdown.weth;
 
         return (
-        <div className="admin-strategy-panel margin-top-xl">
-          <div className="acp-banner-flex margin-bottom-lg">
-            <div>
-              <h3 className={styles.adminH3}>
-                {UI_STRINGS.METRICS.TABLE_ASSETS_TITLE}
-              </h3>
-            </div>
-            <button
-              className={`btn-primary ${styles.harvestBtn}`}
-              onClick={onAuditPoR}
-            >
-              🌾 Cosechar Rendimiento Diario (Morpho Harvest)
-            </button>
-          </div>
+          <Card
+            variant="surface"
+            headerTitle={UI_STRINGS.METRICS.TABLE_ASSETS_TITLE}
+            headerSubtitle="Distribución institucional de bóvedas y cosechas de rendimiento activas"
+            headerAction={
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onAuditPoR}
+              >
+                🌾 Cosechar Rendimiento Diario (Morpho Harvest)
+              </Button>
+            }
+          >
+            <div className={styles.strategyGrid}>
+              {/* Stablecoins Strategy */}
+              <div className={styles.strategyCard}>
+                <div className={styles.strategyHeader}>
+                  <span>💵 Stablecoins (USDC / USDT)</span>
+                  <Badge variant="emerald" size="sm">Real Yield Active</Badge>
+                </div>
+                <div className={styles.strategyList}>
+                  <div className={styles.strategyRow}>
+                    <span>Créditos Directos / P2P:</span>
+                    <span className={styles.strategyVal}>
+                      ${p2pAllocationUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                    </span>
+                  </div>
+                  <div className={styles.strategyRow}>
+                    <span>Bóvedas Morpho Blue:</span>
+                    <span className={styles.strategyVal}>
+                      ${morphoAllocationUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                    </span>
+                  </div>
+                </div>
+              </div>
 
-          <div className="strategy-grid">
-            {/* Stablecoins Strategy Box */}
-            <div className="strategy-card">
-              <div className="acp-banner-flex margin-bottom-sm">
-                <span className="font-bold text-sm text-green-bright">💵 Stablecoins (USDC / USDT)</span>
-                <span className={styles.tagGreen}>Real Yield Active</span>
-              </div>
-              <div className={styles.stratList}>
-                <div className="acp-banner-flex">
-                  <span>• Créditos Directos / P2P:</span>
-                  <strong>${p2pAllocationUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong>
+              {/* Bitcoin Strategy */}
+              <div className={styles.strategyCard}>
+                <div className={styles.strategyHeader}>
+                  <span>🪙 Bitcoin (WBTC / cbBTC)</span>
+                  <Badge variant="amber" size="sm">Babylon & Morpho</Badge>
                 </div>
-                <div className="acp-banner-flex">
-                  <span>• Bóvedas Morpho Blue:</span>
-                  <strong>${morphoAllocationUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong>
+                <div className={styles.strategyList}>
+                  <div className={styles.strategyRow}>
+                    <span>Reserva Auditada:</span>
+                    <span className={styles.strategyVal}>
+                      ${btcAllocationUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (WBTC)
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Bitcoin Strategy Box */}
-            <div className="strategy-card">
-              <div className="acp-banner-flex margin-bottom-sm">
-                <span className="font-bold text-sm gcc-td-amber">₿ Bitcoin (WBTC / cbBTC)</span>
-                <span className={styles.tagAmber}>Babylon & Morpho</span>
-              </div>
-              <div className={styles.stratList}>
-                <div className="acp-banner-flex">
-                  <span>• Reserva On-Chain Auditada:</span>
-                  <strong>${btcAllocationUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (WBTC)</strong>
+              {/* Ethereum Strategy */}
+              <div className={styles.strategyCard}>
+                <div className={styles.strategyHeader}>
+                  <span>🔷 Ethereum (WETH / stETH)</span>
+                  <Badge variant="blue" size="sm">Staking & Vaults</Badge>
+                </div>
+                <div className={styles.strategyList}>
+                  <div className={styles.strategyRow}>
+                    <span>Reserva Auditada:</span>
+                    <span className={styles.strategyVal}>
+                      ${ethAllocationUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (WETH)
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-
-            {/* Ethereum Strategy Box */}
-            <div className="strategy-card">
-              <div className="acp-banner-flex margin-bottom-sm">
-                <span className="font-bold text-sm stk-val-purple">Ξ Ethereum (WETH / stETH)</span>
-                <span className={styles.tagPurple}>Staking & Vaults</span>
-              </div>
-              <div className={styles.stratList}>
-                <div className="acp-banner-flex">
-                  <span>• Reserva On-Chain Auditada:</span>
-                  <strong>${ethAllocationUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (WETH)</strong>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+          </Card>
         );
       })()}
     </div>

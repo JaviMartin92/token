@@ -1,0 +1,245 @@
+.header {
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-default);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) var(--space-6);
+  max-width: 1400px;
+  margin: 0 auto;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.brandGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.brandLogo {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--color-blue) 0%, #1e40af 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #ffffff;
+  font-size: 1.1rem;
+  border: 1px solid var(--border-subtle);
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.brandTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+/* 📊 Métricas Globales en Header */
+.metricsGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.metricPill {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 12px;
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  transition: border-color var(--transition-fast);
+}
+
+.metricPillInteractive {
+  composes: metricPill;
+  cursor: pointer;
+}
+
+.metricPillInteractive:hover {
+  border-color: var(--color-blue-border);
+  background-color: var(--bg-surface-hover);
+}
+
+.metricLabel {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.metricValue {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.metricEmerald {
+  color: var(--color-emerald-light);
+}
+
+.metricBlue {
+  color: var(--color-blue-light);
+}
+
+.metricPurple {
+  color: #c084fc;
+}
+
+/* 👛 Billetera & Controles */
+.walletGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.walletBadge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px 12px;
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.walletDotConnected {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-emerald);
+}
+
+.walletDotDisconnected {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--text-disabled);
+}
+
+/* 🧭 Fila de Navegación */
+.navBar {
+  border-top: 1px solid var(--border-subtle);
+  background-color: rgba(17, 24, 39, 0.4);
+}
+
+.navContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 var(--space-6);
+  max-width: 1400px;
+  margin: 0 auto;
+  gap: var(--space-3);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.navTabs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.navTab {
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.navTab:hover {
+  color: var(--text-primary);
+}
+
+.navTabActive {
+  composes: navTab;
+  color: var(--text-primary);
+  border-bottom-color: var(--color-emerald);
+}
+
+.navActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.referralBtn {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.referralBtn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+  background: var(--bg-surface-hover);
+}
+
+.blockDate {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .topBar {
+    padding: var(--space-3) var(--space-4);
+  }
+  .metricsGroup {
+    order: 3;
+    width: 100%;
+    justify-content: space-between;
+  }
+}

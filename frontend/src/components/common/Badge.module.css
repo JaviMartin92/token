@@ -1,0 +1,69 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  line-height: 1;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+/* Tamaños */
+.sm {
+  font-size: 0.6875rem;
+  padding: 3px 8px;
+  gap: 5px;
+}
+
+.md {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  gap: 6px;
+}
+
+/* Indicador Punto (Dot) */
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+/* Variantes Semánticas */
+.emerald {
+  background-color: var(--color-emerald-subtle);
+  color: var(--color-emerald-light);
+  border-color: var(--color-emerald-border);
+}
+
+.blue {
+  background-color: var(--color-blue-subtle);
+  color: var(--color-blue-light);
+  border-color: var(--color-blue-border);
+}
+
+.amber {
+  background-color: var(--color-amber-subtle);
+  color: var(--color-amber-light);
+  border-color: var(--color-amber-border);
+}
+
+.crimson {
+  background-color: var(--color-crimson-subtle);
+  color: var(--color-crimson-light);
+  border-color: var(--color-crimson-border);
+}
+
+.purple {
+  background-color: var(--color-purple-subtle);
+  color: #c084fc;
+  border-color: rgba(192, 132, 252, 0.28);
+}
+
+.neutral {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  border-color: var(--border-subtle);
+}

@@ -1,185 +1,131 @@
-.topCard {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.9) 100%);
-  border: 1px solid rgba(168, 85, 247, 0.3);
-  border-radius: 16px;
-  padding: 1.5rem;
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  width: 100%;
 }
 
 .headerRow {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  padding-bottom: 1rem;
+  gap: var(--space-4);
 }
 
-.headerH2 {
-  font-size: 1.5rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, #a855f7 0%, #38bdf8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
   margin: 0;
 }
 
-.headerSubtitle {
-  color: #94a3b8;
-  font-size: 0.85rem;
-  margin: 0.25rem 0 0 0;
+.subtitle {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin-top: var(--space-1);
 }
 
-.apyBtn {
-  background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
-  color: #fff;
-  border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 10px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.4);
-  font-size: 0.9rem;
-}
-
+/* 📊 Grid de Métricas Principales */
 .kpiGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-4);
 }
 
-.kpiCard {
-  background: rgba(15, 23, 42, 0.6);
-  padding: 1rem;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.kpiTitle {
-  color: #94a3b8;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.kpiSubtext {
-  font-size: 0.75rem;
-  color: #64748b;
-  margin-top: 0.2rem;
-}
-
-.sectionCard {
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 1.5rem;
-}
-
-.sectionH3 {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #f8fafc;
-  margin-bottom: 1rem;
+/* 💎 Banner de Acreción Patrimonial */
+.surplusBanner {
+  margin-top: var(--space-4);
+  background-color: var(--color-emerald-subtle);
+  border: 1px solid var(--color-emerald-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
 }
 
-.gridSubtle {
+.surplusInfo {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  max-width: 850px;
+}
+
+.surplusIcon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.surplusHeading {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-emerald-light);
+  letter-spacing: 0.02em;
+}
+
+.surplusText {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin-top: var(--space-1);
+  line-height: 1.5;
+}
+
+/* 🥩 Tokenomics & Oferta Deflacionaria */
+.tokenomicsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
 }
 
-.boxSubtle {
-  background: rgba(30, 41, 59, 0.5);
-  padding: 1rem;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.05);
-}
-
-.boxTitle {
-  color: #94a3b8;
-  font-size: 0.8rem;
+/* 📋 Estilos de Celdas de la Tabla */
+.assetCell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   font-weight: 600;
+  color: var(--text-primary);
 }
 
-.valLgCyan { font-size: 1.3rem; font-weight: 700; color: #38bdf8; margin-top: 0.3rem; }
-.valLgPurple { font-size: 1.3rem; font-weight: 700; color: #c084fc; margin-top: 0.3rem; }
-.valLgPink { font-size: 1.3rem; font-weight: 700; color: #f472b6; margin-top: 0.3rem; }
-.valLgGreen { font-size: 1.3rem; font-weight: 700; color: #4ade80; margin-top: 0.3rem; }
-.valLgViolet { font-size: 1.3rem; font-weight: 700; color: #a855f7; margin-top: 0.3rem; }
-.valLgRed { font-size: 1.3rem; font-weight: 700; color: #ef4444; margin-top: 0.3rem; }
+.boldNum {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
 
-.tableTh { padding: 0.75rem; }
-.tableTd { padding: 0.75rem; }
-.tableTdCyan { padding: 0.75rem; font-weight: 600; color: #38bdf8; }
-.tableTdAmber { padding: 0.75rem; font-weight: 600; color: #f59e0b; }
-.tableTdIndigo { padding: 0.75rem; font-weight: 600; color: #6366f1; }
-.tableTdBold { padding: 0.75rem; font-weight: 700; }
-.tableTdMuted { padding: 0.75rem; color: #94a3b8; }
+.mutedText {
+  color: var(--text-tertiary);
+  font-size: 0.8125rem;
+}
 
-/* Responsive */
+.totalRow td {
+  border-top: 2px solid var(--border-default) !important;
+  background-color: var(--bg-surface-elevated);
+  font-weight: 700;
+}
+
+.surplusNote {
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-emerald-subtle);
+  border: 1px solid var(--color-emerald-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-size: 0.8125rem;
+  color: var(--color-emerald-light);
+}
+
 @media (max-width: 768px) {
-  .topCard {
-    padding: 1rem;
-  }
-
-  .headerRow {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .headerH2 {
-    font-size: 1.2rem;
-  }
-
-  .kpiGrid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-  }
-
-  .kpiCard {
-    padding: 0.75rem;
-  }
-
-  .gridSubtle {
+  .kpiGrid,
+  .tokenomicsGrid {
     grid-template-columns: 1fr;
-  }
-
-  .sectionCard {
-    padding: 1rem;
-  }
-
-  .sectionH3 {
-    font-size: 1rem;
-  }
-
-  .valLgCyan, .valLgPurple, .valLgPink,
-  .valLgGreen, .valLgViolet, .valLgRed {
-    font-size: 1.05rem;
-  }
-
-  .tableTh, .tableTd, .tableTdCyan,
-  .tableTdAmber, .tableTdIndigo, .tableTdBold, .tableTdMuted {
-    padding: 0.55rem;
-    font-size: 0.78rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .kpiGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .headerH2 {
-    font-size: 1.05rem;
-  }
-
-  .valLgCyan, .valLgPurple, .valLgPink,
-  .valLgGreen, .valLgViolet, .valLgRed {
-    font-size: 0.95rem;
   }
 }

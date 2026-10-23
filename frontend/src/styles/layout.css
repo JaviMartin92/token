@@ -1,0 +1,410 @@
+/* ==========================================================================
+   🏛️ ALPHA CENTAURI INSTITUTIONAL LAYOUT & COMPATIBILITY LAYER
+   Modular, Clean, Zero Neon Glow
+   ========================================================================== */
+
+/* 📱 Contenedor Principal de la Aplicación */
+.app-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-6);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    padding: var(--space-3) var(--space-4);
+    gap: var(--space-4);
+  }
+}
+
+/* 🔒 Telemetría Oculta para Pruebas E2E / Automatizadas */
+.telemetry-hidden-container {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  pointer-events: none;
+}
+
+/* 🔲 Contenedores Base */
+.glass-panel {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-card);
+  box-sizing: border-box;
+}
+
+.card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-card);
+}
+
+/* 📐 Grids Responsivos */
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: var(--space-6);
+  width: 100%;
+}
+
+.admin-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.admin-grid-3col {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+
+@media (max-width: 768px) {
+  .admin-grid,
+  .admin-grid-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 🛠️ Clases de Utilidad y Flexbox */
+.acp-container,
+.gcc-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  width: 100%;
+}
+
+.acp-banner-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.acp-control-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.acp-flex-row-gap5 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.acp-label-sm {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.acp-label-xs {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+.acp-banner-devnet {
+  background-color: var(--color-blue-subtle);
+  border-color: var(--color-blue-border);
+}
+
+.acp-banner-prod {
+  background-color: var(--bg-surface-elevated);
+  border-color: var(--border-default);
+}
+
+.acp-title-sandbox {
+  color: var(--color-blue-light);
+  font-weight: 700;
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.acp-title-prod {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.acp-toggle-box {
+  display: flex;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 2px;
+}
+
+.acp-toggle-btn-sandbox-active {
+  background-color: var(--color-blue);
+  color: #ffffff;
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.acp-toggle-btn-sandbox-inactive {
+  background-color: transparent;
+  color: var(--text-tertiary);
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* 📊 Tablas Institucionales */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.gcc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.gcc-tr-border {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.gcc-tr-border td,
+.gcc-tr-border th {
+  padding: var(--space-3) var(--space-4);
+  vertical-align: middle;
+}
+
+.gcc-input-dark {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  box-sizing: border-box;
+}
+
+.gcc-input-dark:focus {
+  outline: none;
+  border-color: var(--border-focus);
+}
+
+.gcc-subtabs-row {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: var(--space-4);
+}
+
+.gcc-tab-btn-active {
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  padding: 6px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.gcc-tab-btn-inactive {
+  background-color: transparent;
+  color: var(--text-tertiary);
+  border: 1px solid transparent;
+  padding: 6px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.gcc-tab-btn-inactive:hover {
+  color: var(--text-secondary);
+}
+
+/* 🏷️ Badges Semánticos de Compatibilidad */
+.gcc-badge-green {
+  background-color: var(--color-emerald-subtle);
+  color: var(--color-emerald-light);
+  border: 1px solid var(--color-emerald-border);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.gcc-badge-cyan,
+.gcc-badge-indigo {
+  background-color: var(--color-blue-subtle);
+  color: var(--color-blue-light);
+  border: 1px solid var(--color-blue-border);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.gcc-badge-purple {
+  background-color: var(--color-purple-subtle);
+  color: #c084fc;
+  border: 1px solid rgba(192, 132, 252, 0.28);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.gcc-badge-amber {
+  background-color: var(--color-amber-subtle);
+  color: var(--color-amber-light);
+  border: 1px solid var(--color-amber-border);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* 🎨 Acentos Tipográficos */
+.text-green-bright,
+.stk-val-green {
+  color: var(--color-emerald-light);
+}
+
+.text-cyan {
+  color: var(--color-blue-light);
+}
+
+.text-amber-bright {
+  color: var(--color-amber-light);
+}
+
+.text-purple-bright,
+.stk-val-purple {
+  color: #c084fc;
+}
+
+.text-muted {
+  color: var(--text-tertiary);
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.font-black {
+  font-weight: 800;
+}
+
+.margin-top-sm {
+  margin-top: var(--space-2);
+}
+
+.margin-top-xs {
+  margin-top: var(--space-1);
+}
+
+.margin-bottom-sm {
+  margin-bottom: var(--space-2);
+}
+
+.margin-bottom-md {
+  margin-bottom: var(--space-4);
+}
+
+.margin-bottom-lg {
+  margin-bottom: var(--space-6);
+}
+
+.margin-bottom-xl {
+  margin-bottom: var(--space-8);
+}
+
+/* 🔘 Botones Base Institucionales de Retrocompatibilidad */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: var(--color-blue);
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #1d4ed8;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--bg-surface-hover);
+}
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  border: none;
+  background-color: var(--color-crimson);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: #dc2626;
+}

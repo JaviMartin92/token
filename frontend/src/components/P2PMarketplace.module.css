@@ -1,223 +1,208 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  width: 100%;
+}
+
+/* 💎 Banner de Aceleración de Rendimiento */
 .boosterBanner {
-  padding: 1.25rem 1.5rem;
-  border-radius: 16px;
-  border-left: 4px solid #10b981;
-  background: linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(15,23,42,0.4) 100%);
+  background-color: var(--color-emerald-subtle);
+  border: 1px solid var(--color-emerald-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.boosterInfo {
+  max-width: 800px;
 }
 
 .boosterTitle {
-  margin: 0;
-  color: #34d399;
-  font-size: 1.05rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-emerald-light);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
+  margin: 0;
 }
 
 .boosterDesc {
-  margin: 0.35rem 0 0 0;
-  font-size: 0.82rem;
-  opacity: 0.85;
-  line-height: 1.45;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin-top: var(--space-1);
+  line-height: 1.5;
 }
 
-.tagGreen {
-  padding: 0.4rem 0.8rem;
-  background: rgba(16,185,129,0.2);
-  border: 1px solid rgba(16,185,129,0.4);
-  border-radius: 8px;
-  color: #6ee7b7;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.tagBlue {
-  padding: 0.4rem 0.8rem;
-  background: rgba(59,130,246,0.2);
-  border: 1px solid rgba(59,130,246,0.4);
-  border-radius: 8px;
-  color: #93c5fd;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.activePanel {
-  padding: 1.25rem 1.5rem;
-  border-radius: 16px;
-  border: 1px solid rgba(59, 130, 246, 0.4);
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(15, 23, 42, 0.6) 100%);
-}
-
-.activeTitle {
-  margin: 0 0 0.75rem 0;
-  font-size: 1.1rem;
-  color: #60a5fa;
+.boosterTags {
   display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* 📊 Préstamos Activos & Health Factor */
+.activeLoansGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+.activeLoanCard {
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.activeLoanHeader {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.5rem;
 }
 
-.activeCardActive {
-  background: rgba(0,0,0,0.3);
-  border: 1px solid rgba(34, 197, 94, 0.4);
-  border-radius: 12px;
-  padding: 1rem;
+.activeLoanTitle {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.loanDetails {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 0.75rem;
+  gap: var(--space-1);
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 
-.activeCardOffer {
-  background: rgba(0,0,0,0.3);
-  border: 1px solid rgba(234, 179, 8, 0.4);
-  border-radius: 12px;
-  padding: 1rem;
+/* ⚡ Grid de Operaciones (3 Columnas) */
+.operationsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-5);
+}
+
+.opStack {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 0.75rem;
+  gap: var(--space-4);
 }
 
-.treasuryCard {
-  padding: 1.5rem;
-  border-radius: 16px;
-  border: 1px solid rgba(16, 185, 129, 0.4);
-  background: linear-gradient(145deg, rgba(16,185,129,0.06) 0%, rgba(15,23,42,0.8) 100%);
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
-.selectGreen {
-  width: 100%;
-  padding: 0.55rem 0.75rem;
-  border-radius: 8px;
-  background: #0f172a;
-  border: 1px solid rgba(16, 185, 129, 0.4);
-  color: #fff;
-  margin-bottom: 0.6rem;
-  font-size: 0.85rem;
+.label {
+  font-size: 0.8125rem;
   font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.input,
+.select {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  box-sizing: border-box;
+  transition: border-color var(--transition-fast);
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--border-focus);
+}
+
+.twoColRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
 }
 
 .colCalcBox {
-  padding: 0.65rem 0.85rem;
-  border-radius: 8px;
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.4);
-  color: #34d399;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background-color: var(--color-emerald-subtle);
+  border: 1px solid var(--color-emerald-border);
+  color: var(--color-emerald-light);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 🧭 Pestañas de Filtro del Mercado */
+.filterBox {
+  display: flex;
+  gap: 2px;
+  background-color: var(--bg-surface-elevated);
+  padding: 3px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.filterBtn {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.filterBtn:hover {
+  color: var(--text-primary);
+}
+
+.filterBtnActive {
+  background-color: var(--bg-surface-hover);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+}
+
+/* 📋 Celdas de la Tabla */
+.tableBold {
   font-weight: 700;
-  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
 }
 
-.inputGreen {
-  width: 100%;
-  padding: 0.55rem 0.75rem;
-  border-radius: 8px;
-  background: rgba(0,0,0,0.4);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  color: #fff;
+.tableMuted {
+  color: var(--text-tertiary);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
 }
 
-.btnEmerald {
-  width: 100%;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  margin-top: 0.2rem;
-  padding: 0.7rem;
-  font-weight: 700;
-  box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+.actionsCell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
-.btnBlueGrad {
-  width: 100%;
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  margin-top: 0.2rem;
-  padding: 0.7rem;
-}
-
-.btnDangerGrad {
-  width: 100%;
-  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
-  margin-top: 0.2rem;
-  padding: 0.6rem;
-}
-
-.emptyBox {
-  text-align: center;
-  padding: 3rem 1rem;
-  background: rgba(0,0,0,0.2);
-  border-radius: 12px;
-  border: 1px dashed rgba(255,255,255,0.15);
-}
-
-.badgeAvailable { background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.4); padding: 0.2rem 0.55rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
-.badgeActive { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); padding: 0.2rem 0.55rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
-.badgeRepaid { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); padding: 0.2rem 0.55rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
-.badgeLiquidated { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 0.2rem 0.55rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
-.badgeCancelled { background: rgba(156, 163, 175, 0.2); color: #9ca3af; border: 1px solid rgba(156, 163, 175, 0.4); padding: 0.2rem 0.55rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
-
-.filterBox { display: flex; gap: 0.35rem; background: rgba(0,0,0,0.4); padding: 0.3rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); }
-.filterBtn { padding: 0.35rem 0.85rem; border-radius: 8px; border: none; font-size: 0.8rem; cursor: pointer; color: #fff; background: transparent; }
-.filterBtnActiveAll { background: rgba(255,255,255,0.15); font-weight: 600; }
-.filterBtnActiveCreated { background: rgba(234, 179, 8, 0.25); color: #facc15; font-weight: 600; }
-.filterBtnActiveActive { background: rgba(34, 197, 94, 0.25); color: #4ade80; font-weight: 600; }
-.filterBtnActiveMy { background: rgba(59, 130, 246, 0.25); color: #60a5fa; font-weight: 600; }
-.actionBtnSm { padding: 0.35rem 0.75rem; font-size: 0.78rem; }
-
-/* Responsive */
-@media (max-width: 768px) {
-  .boosterBanner {
-    padding: 1rem;
-  }
-
-  .activePanel {
-    padding: 1rem;
-  }
-
-  .treasuryCard {
-    padding: 1rem;
-  }
-
-  .filterBox {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-
-  .filterBox::-webkit-scrollbar {
-    display: none;
-  }
-
-  .filterBtn {
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  .activeCardActive,
-  .activeCardOffer {
-    padding: 0.85rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .boosterTitle {
-    font-size: 0.95rem;
-  }
-
-  .boosterDesc {
-    font-size: 0.78rem;
-  }
-
-  .emptyBox {
-    padding: 2rem 0.75rem;
-    font-size: 0.82rem;
-  }
-
-  .filterBtn {
-    padding: 0.3rem 0.65rem;
-    font-size: 0.72rem;
-  }
-
-  .actionBtnSm {
-    padding: 0.3rem 0.55rem;
-    font-size: 0.7rem;
+@media (max-width: 900px) {
+  .operationsGrid {
+    grid-template-columns: 1fr;
   }
 }

@@ -1,57 +1,81 @@
-.deflationaryTag {
-  font-size: 0.75rem;
-  background: rgba(239, 68, 68, 0.2);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  padding: 0.25rem 0.6rem;
-  border-radius: 12px;
-  font-weight: 600;
+.container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: var(--space-6);
+  width: 100%;
 }
 
-.burnedBox {
-  background: rgba(239, 68, 68, 0.08);
-  border-color: rgba(239, 68, 68, 0.3);
+.kpiRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 
-.burnedLabel {
-  color: #f87171;
-}
-
-.burnedVal {
-  font-weight: 700;
-  font-size: 1.05rem;
-  color: #f87171;
-}
-
-.valPurple {
-  font-weight: 700;
-  font-size: 1.05rem;
-  color: #c084fc;
-}
-
-.valGreen {
-  font-weight: 700;
-  font-size: 1.05rem;
-  color: #4ade80;
-}
-
-.btnPurple {
-  background: #a855f7;
-}
-
-.btnGreenGrad {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-}
-
-.btnIndigoOutline {
-  border-color: #6366f1;
-  color: #818cf8;
-}
-
-.radioLabel {
+.formStack {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.buttonRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.description {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: var(--space-4);
+}
+
+.optionsCard {
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.radioOption {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
   cursor: pointer;
-  font-size: 0.85rem;
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition-fast);
+}
+
+.radioOption:hover {
+  background-color: var(--bg-surface-hover);
+}
+
+.radioInput {
+  margin-top: 3px;
+  cursor: pointer;
+}
+
+.radioText {
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+  .kpiRow {
+    grid-template-columns: 1fr;
+  }
+  .buttonRow {
+    grid-template-columns: 1fr;
+  }
 }

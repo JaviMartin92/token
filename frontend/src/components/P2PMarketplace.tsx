@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import styles from './P2PMarketplace.module.css';
 import { UI_STRINGS } from '../constants/strings.js';
-import { TokenAmountInput } from './common/TokenAmountInput.js';
-
+import { Card, Badge, Button, DataTable, TokenAmountInput } from './common/index.js';
 import type { UserPosition } from './VestedVaults.js';
 
 export interface MarketplaceLoan {
@@ -98,16 +97,15 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
   const currentPrice = ASSET_PRICE_MAP[treasuryColType] || 1.0;
   const requiredUsdBacking = borrowAmtNum > 0 ? borrowAmtNum / currentLtv : 0;
   const rawColTokens = currentPrice > 0 ? requiredUsdBacking / currentPrice : 0;
-  const colDecimalsMult = treasuryColType === 'alpha' ? 100 : 10000;
-  const autoCalculatedColAmount = rawColTokens > 0 ? (Math.ceil(rawColTokens * colDecimalsMult) / colDecimalsMult).toFixed(treasuryColType === 'alpha' ? 2 : 4) : '0.00';
+  const autoCalculatedColAmount = rawColTokens > 0 ? (Math.ceil(rawColTokens * 10000) / 10000).toString() : '0';
 
   const filteredLoans = loansList.filter((loan) => {
     if (filterTab === 'created') return loan.state === 0;
     if (filterTab === 'active') return loan.state === 1;
     if (filterTab === 'my') {
-      const isMine = (loan.lender || '').toLowerCase() === (userAddress || '').toLowerCase() ||
-                     (loan.borrower || '').toLowerCase() === (userAddress || '').toLowerCase();
-      return isMine && (loan.state === 0 || loan.state === 1);
+      const isBorrower = (loan.borrower || '').toLowerCase() === (userAddress || '').toLowerCase();
+      const isLender = (loan.lender || '').toLowerCase() === (userAddress || '').toLowerCase();
+      return (isBorrower || isLender) && (loan.state === 0 || loan.state === 1);
     }
     if (filterTab === 'history') return loan.state === 2 || loan.state === 3 || loan.state === 4;
     return true;
@@ -116,130 +114,91 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
   const getStatusBadge = (state: number) => {
     switch (state) {
       case 0:
-        return <span className={styles.badgeAvailable}>🟡 {UI_STRINGS.COMMON.STATUS_AVAILABLE} (Oferta)</span>;
+        return <Badge variant="amber" size="sm">Disponible</Badge>;
       case 1:
-        return <span className={styles.badgeActive}>🟢 {UI_STRINGS.COMMON.STATUS_ACTIVE} ({UI_STRINGS.COMMON.STATUS_FUNDED})</span>;
+        return <Badge variant="emerald" size="sm">Activo</Badge>;
       case 2:
-        return <span className={styles.badgeRepaid}>🔵 {UI_STRINGS.COMMON.STATUS_REPAID}</span>;
+        return <Badge variant="blue" size="sm">Reembolsado</Badge>;
       case 3:
-        return <span className={styles.badgeLiquidated}>🔴 {UI_STRINGS.COMMON.STATUS_LIQUIDATED}</span>;
+        return <Badge variant="crimson" size="sm">Liquidado</Badge>;
       case 4:
-        return <span className={styles.badgeCancelled}>⚪ {UI_STRINGS.COMMON.STATUS_CANCELLED}</span>;
+        return <Badge variant="neutral" size="sm">Cancelado</Badge>;
       default:
-        return null;
+        return <Badge variant="neutral" size="sm">Desconocido</Badge>;
     }
   };
 
+  const tableHeaders = [
+    UI_STRINGS.P2P_MARKETPLACE.TH_LOAN_ID,
+    'Estado',
+    UI_STRINGS.P2P_MARKETPLACE.TH_COLLATERAL,
+    UI_STRINGS.P2P_MARKETPLACE.TH_AMOUNT,
+    UI_STRINGS.P2P_MARKETPLACE.TH_APR,
+    UI_STRINGS.P2P_MARKETPLACE.TH_DURATION,
+    UI_STRINGS.P2P_MARKETPLACE.TH_BORROWER,
+    UI_STRINGS.P2P_MARKETPLACE.TH_HEALTH,
+    UI_STRINGS.P2P_MARKETPLACE.TH_ACTIONS
+  ];
+
   return (
-    <div className="acp-container">
-      
-      {/* Treasury Reserve APY Booster Banner */}
-      <div className={`glass-panel ${styles.boosterBanner}`}>
-        <div className="acp-banner-flex">
-          <div>
-            <h4 className={styles.boosterTitle}>
-              {UI_STRINGS.P2P_MARKETPLACE.CARD_TREASURY_TITLE}
-            </h4>
-            <p className={styles.boosterDesc}>
-              {UI_STRINGS.P2P_MARKETPLACE.CARD_TREASURY_DESC}
-            </p>
-          </div>
-          <div className="acp-flex-row-gap5">
-            <span className={styles.tagGreen}>
-              {UI_STRINGS.P2P_MARKETPLACE.TAG_RESERVE_ACTIVE}
-            </span>
-            <span className={styles.tagBlue}>
-              {UI_STRINGS.P2P_MARKETPLACE.TAG_FIXED_RATE}
-            </span>
-          </div>
+    <div className={styles.container}>
+      {/* 💎 Banner de Aceleración de Rendimiento */}
+      <div className={styles.boosterBanner}>
+        <div className={styles.boosterInfo}>
+          <h3 className={styles.boosterTitle}>
+            <span>⚡</span>
+            <span>{UI_STRINGS.P2P_MARKETPLACE.TITLE}</span>
+          </h3>
+          <p className={styles.boosterDesc}>
+            {UI_STRINGS.P2P_MARKETPLACE.SUBTITLE}
+          </p>
+        </div>
+        <div className={styles.boosterTags}>
+          <Badge variant="emerald" size="md">
+            Morpho Blue: 80% LTV
+          </Badge>
+          <Badge variant="blue" size="md">
+            P2P Escrow: Real Yield
+          </Badge>
         </div>
       </div>
 
-      {/* ACTIVE LOANS QUICK REPAYMENT PANEL - show user's created and active loans */}
-      {loansList.filter(l => (l.borrower.toLowerCase() === userAddress.toLowerCase() || l.lender.toLowerCase() === userAddress.toLowerCase()) && (l.state === 0 || l.state === 1)).length > 0 && (
-        <div className={`glass-panel ${styles.activePanel}`}>
-          <h3 className={styles.activeTitle}>
-            {UI_STRINGS.P2P_MARKETPLACE.CARD_ACTIVE_LOANS_TITLE} ({loansList.filter(l => (l.borrower.toLowerCase() === userAddress.toLowerCase() || l.lender.toLowerCase() === userAddress.toLowerCase()) && (l.state === 0 || l.state === 1)).length})
-          </h3>
-          <p className="acp-label-sm margin-bottom-lg">
-            {UI_STRINGS.P2P_MARKETPLACE.CARD_ACTIVE_LOANS_DESC}
-          </p>
-
-          <div className="met-grid-subtle">
-            {loansList.filter(l => (l.borrower.toLowerCase() === userAddress.toLowerCase() || l.lender.toLowerCase() === userAddress.toLowerCase()) && (l.state === 0 || l.state === 1)).map((loan) => (
-              <div key={loan.id} className={loan.state === 1 ? styles.activeCardActive : styles.activeCardOffer}>
-                <div>
-                  <div className="acp-banner-flex margin-bottom-xs">
-                    <span className="font-bold text-slate-100 text-sm">Préstamo #{loan.id}</span>
-                    {getStatusBadge(loan.state)}
-                  </div>
-                  <div className="text-cyan font-semibold text-xs">
-                    Monto: <strong>${loan.borrowAmount} {UI_STRINGS.COMMON.SYMBOL_USDC}</strong> @ {loan.interestRateApr}% APR
-                  </div>
-                  <div className="text-muted text-xs margin-top-xs">
-                    Garantía Custodiada: <strong className="text-pink-light">{loan.positionTokenId > 0 ? `NFT #${loan.positionTokenId}` : `${loan.collateralAmount} ${loan.collateralSymbol || 'ALPHA'}`}</strong>
-                  </div>
-                  <div className="text-muted-dark text-xs margin-top-xs">
-                    Plazo: {loan.durationDays} días • {loan.state === 1 ? (loan.lender.toLowerCase() === loan.borrower.toLowerCase() ? 'Financiado' : '🏛️ Fondeado por Tesorería') : '🟡 Oferta Disponible'}
-                  </div>
-                </div>
-
-                {loan.state === 1 && loan.borrower.toLowerCase() === userAddress.toLowerCase() && onRepayLoanById ? (
-                  <button
-                    className={`btn-primary ${styles.btnBlueGrad}`}
-                    onClick={() => onRepayLoanById(loan.id, loan)}
-                  >
-                    💳 {UI_STRINGS.P2P_MARKETPLACE.BTN_REPAY_LOAN}
-                  </button>
-                ) : loan.state === 0 && loan.borrower.toLowerCase() === userAddress.toLowerCase() && onCancelLoanOffer ? (
-                  <button
-                    className="btn-primary acp-pure-warning-card text-red-light border-red-500"
-                    onClick={() => onCancelLoanOffer(loan.id)}
-                  >
-                    ❌ {UI_STRINGS.P2P_MARKETPLACE.BTN_CANCEL_OFFER} #{loan.id}
-                  </button>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Grid: Create Loan & Treasury Borrow & Quick Action Cards */}
-      <div className="met-grid-subtle">
-        
-        {/* Treasury Direct Reserve Loan Card */}
-        <div className={`glass-panel ${styles.treasuryCard}`}>
-          <div className="acp-flex-row-gap5 margin-bottom-sm">
-            <span className="text-md">🏛️</span>
-            <h3 className="gcc-metric-subtext-green font-bold text-sm margin-none">{UI_STRINGS.P2P_MARKETPLACE.CARD_TREASURY_TITLE}</h3>
-          </div>
-          <p className="acp-label-sm margin-bottom-lg line-height-normal">
-            {UI_STRINGS.P2P_MARKETPLACE.CARD_TREASURY_DESC}
-          </p>
-
-          <div className="acp-control-stack">
-            <div>
-              <label className="acp-label-sm">{UI_STRINGS.P2P_MARKETPLACE.LABEL_COL_TYPE}</label>
+      {/* ⚡ Operaciones: 3 Columnas Institucionales */}
+      <div className={styles.operationsGrid}>
+        {/* Operación 1: Préstamo Directo de Tesorería */}
+        <Card
+          variant="surface"
+          headerTitle={UI_STRINGS.P2P_MARKETPLACE.CARD_TREASURY_TITLE}
+          headerSubtitle={UI_STRINGS.P2P_MARKETPLACE.CARD_TREASURY_DESC}
+        >
+          <div className={styles.opStack}>
+            <div className={styles.fieldGroup}>
+              <label htmlFor="treasury-col-type" className={styles.label}>
+                {UI_STRINGS.P2P_MARKETPLACE.LABEL_COL_TYPE}
+              </label>
               <select
+                id="treasury-col-type"
                 value={treasuryColType}
                 onChange={(e) => setTreasuryColType(e.target.value)}
-                className={styles.selectGreen}
+                className={styles.select}
               >
-                <option value="nft">🖼️ {UI_STRINGS.P2P_MARKETPLACE.COL_NFT}</option>
+                <option value="nft">🎫 {UI_STRINGS.P2P_MARKETPLACE.COL_NFT}</option>
                 <option value="alpha">🥩 {UI_STRINGS.P2P_MARKETPLACE.COL_ALPHA}</option>
-                <option value="wbtc">₿ {UI_STRINGS.P2P_MARKETPLACE.COL_WBTC}</option>
-                <option value="weth">Ξ {UI_STRINGS.P2P_MARKETPLACE.COL_WETH}</option>
+                <option value="wbtc">🪙 {UI_STRINGS.P2P_MARKETPLACE.COL_WBTC}</option>
+                <option value="weth">🔷 {UI_STRINGS.P2P_MARKETPLACE.COL_WETH}</option>
               </select>
 
               {treasuryColType === 'nft' ? (
                 <>
-                  <label className="acp-label-sm">{UI_STRINGS.P2P_MARKETPLACE.LABEL_NFT_SELECT}</label>
+                  <label htmlFor="p2p-treasury-nft-id-input" className={styles.label}>
+                    {UI_STRINGS.P2P_MARKETPLACE.LABEL_NFT_SELECT}
+                  </label>
                   <select
+                    id="p2p-treasury-nft-id-input"
                     data-testid="p2p-treasury-nft-id-input"
                     value={p2pTokenId}
                     onChange={(e) => setP2pTokenId(e.target.value)}
-                    className="gcc-input-dark"
+                    className={styles.select}
                   >
                     <option value="">{UI_STRINGS.COMMON.SELECT_OPTION_DEFAULT}</option>
                     {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).map((pos) => (
@@ -253,45 +212,42 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                   </select>
                 </>
               ) : (
-                <div>
-                  <label className="acp-label-sm">
-                    {UI_STRINGS.P2P_MARKETPLACE.LABEL_REQ_COL_AMOUNT} ({treasuryColType.toUpperCase()}):
-                  </label>
-                  <div className={styles.colCalcBox}>
-                    ⚡ {autoCalculatedColAmount} {treasuryColType.toUpperCase()} (${requiredUsdBacking.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD Respaldo @ {(currentLtv * 100).toFixed(0)}% LTV)
-                  </div>
+                <div className={styles.colCalcBox}>
+                  ⚡ {autoCalculatedColAmount} {treasuryColType.toUpperCase()} (${requiredUsdBacking.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD Respaldo @ {(currentLtv * 100).toFixed(0)}% LTV)
                 </div>
               )}
             </div>
 
-            <div className="admin-grid-2col">
-              <div>
-                <TokenAmountInput
-                  label={UI_STRINGS.P2P_MARKETPLACE.LABEL_BORROW_AMOUNT}
-                  testId="p2p-treasury-amount-input"
-                  placeholder="ej. 500"
-                  value={p2pBorrowAmount}
-                  onChange={setP2pBorrowAmount}
-                  tokenSymbol={UI_STRINGS.COMMON.SYMBOL_USDC}
-                  tokenDecimals={6}
-                  showMaxButton={false}
-                />
-              </div>
-              <div>
-                <label className="acp-label-xs">{UI_STRINGS.P2P_MARKETPLACE.LABEL_DURATION_DAYS}</label>
+            <div className={styles.twoColRow}>
+              <TokenAmountInput
+                label={UI_STRINGS.P2P_MARKETPLACE.LABEL_BORROW_AMOUNT}
+                testId="p2p-treasury-amount-input"
+                placeholder="ej. 500"
+                value={p2pBorrowAmount}
+                onChange={setP2pBorrowAmount}
+                tokenSymbol={UI_STRINGS.COMMON.SYMBOL_USDC}
+                tokenDecimals={6}
+                showMaxButton={false}
+              />
+              <div className={styles.fieldGroup}>
+                <label htmlFor="p2p-treasury-duration-input" className={styles.label}>
+                  {UI_STRINGS.P2P_MARKETPLACE.LABEL_DURATION_DAYS}
+                </label>
                 <input
+                  id="p2p-treasury-duration-input"
                   data-testid="p2p-treasury-duration-input"
                   type="number"
                   value={p2pDays}
                   onChange={(e) => setP2pDays(e.target.value)}
-                  className={styles.inputGreen}
+                  className={styles.input}
                 />
               </div>
             </div>
 
-            <button
+            <Button
               data-testid="p2p-treasury-request-btn"
-              className={`btn-primary ${styles.btnEmerald}`}
+              variant="emerald"
+              size="md"
               onClick={() => onBorrowFromTreasury && onBorrowFromTreasury(
                 treasuryColType,
                 treasuryColType === 'nft'
@@ -302,25 +258,27 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
               )}
             >
               {UI_STRINGS.P2P_MARKETPLACE.BTN_BORROW_TREASURY} ({treasuryColType.toUpperCase()})
-            </button>
+            </Button>
           </div>
-        </div>
-        
-        {/* Create Loan Offer Card */}
-        <div className="glass-panel acp-proposal-card">
-          <h3 className="margin-bottom-xs font-bold text-sm">{UI_STRINGS.P2P_MARKETPLACE.CARD_OFFER_TITLE}</h3>
-          <p className="acp-label-sm margin-bottom-lg">
-            {UI_STRINGS.P2P_MARKETPLACE.CARD_OFFER_DESC}
-          </p>
+        </Card>
 
-          <div className="acp-control-stack">
-            <div>
-              <label className="acp-label-sm">{UI_STRINGS.P2P_MARKETPLACE.LABEL_OFFER_NFT}</label>
+        {/* Operación 2: Crear Oferta de Préstamo P2P */}
+        <Card
+          variant="surface"
+          headerTitle={UI_STRINGS.P2P_MARKETPLACE.CARD_OFFER_TITLE}
+          headerSubtitle={UI_STRINGS.P2P_MARKETPLACE.CARD_OFFER_DESC}
+        >
+          <div className={styles.opStack}>
+            <div className={styles.fieldGroup}>
+              <label htmlFor="p2p-offer-nft-id-input" className={styles.label}>
+                {UI_STRINGS.P2P_MARKETPLACE.LABEL_OFFER_NFT}
+              </label>
               <select
+                id="p2p-offer-nft-id-input"
                 data-testid="p2p-offer-nft-id-input"
                 value={p2pTokenId}
                 onChange={(e) => setP2pTokenId(e.target.value)}
-                className="gcc-input-dark"
+                className={styles.select}
               >
                 <option value="">{UI_STRINGS.COMMON.SELECT_OPTION_DEFAULT}</option>
                 {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).map((pos) => (
@@ -334,287 +292,289 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
               </select>
             </div>
 
-            <div>
-              <TokenAmountInput
-                label={UI_STRINGS.P2P_MARKETPLACE.LABEL_OFFER_AMOUNT}
-                testId="p2p-offer-amount-input"
-                placeholder="ej. 500"
-                value={p2pBorrowAmount}
-                onChange={setP2pBorrowAmount}
-                tokenSymbol={UI_STRINGS.COMMON.SYMBOL_USDC}
-                tokenDecimals={6}
-                showMaxButton={false}
-              />
-            </div>
+            <TokenAmountInput
+              label={UI_STRINGS.P2P_MARKETPLACE.LABEL_OFFER_AMOUNT}
+              testId="p2p-offer-amount-input"
+              placeholder="ej. 500"
+              value={p2pBorrowAmount}
+              onChange={setP2pBorrowAmount}
+              tokenSymbol={UI_STRINGS.COMMON.SYMBOL_USDC}
+              tokenDecimals={6}
+              showMaxButton={false}
+            />
 
-            <div className="admin-grid-2col">
-              <div>
-                <label className="acp-label-xs">{UI_STRINGS.P2P_MARKETPLACE.LABEL_OFFER_INTEREST}</label>
+            <div className={styles.twoColRow}>
+              <div className={styles.fieldGroup}>
+                <label htmlFor="p2p-offer-interest-input" className={styles.label}>
+                  {UI_STRINGS.P2P_MARKETPLACE.LABEL_OFFER_INTEREST}
+                </label>
                 <input
+                  id="p2p-offer-interest-input"
                   data-testid="p2p-offer-interest-input"
                   type="number"
                   value={p2pInterestBps}
                   onChange={(e) => setP2pInterestBps(e.target.value)}
-                  className="gcc-input-dark"
+                  className={styles.input}
                 />
               </div>
-              <div>
-                <label className="acp-label-xs">{UI_STRINGS.P2P_MARKETPLACE.LABEL_OFFER_DURATION}</label>
+              <div className={styles.fieldGroup}>
+                <label htmlFor="p2p-offer-duration-input" className={styles.label}>
+                  {UI_STRINGS.P2P_MARKETPLACE.LABEL_OFFER_DURATION}
+                </label>
                 <input
+                  id="p2p-offer-duration-input"
                   data-testid="p2p-offer-duration-input"
                   type="number"
                   value={p2pDays}
                   onChange={(e) => setP2pDays(e.target.value)}
-                  className="gcc-input-dark"
+                  className={styles.input}
                 />
               </div>
             </div>
 
-            <button data-testid="p2p-offer-create-btn" className={`btn-primary ${styles.btnBlueGrad}`} onClick={onCreateLoanOffer}>
+            <Button
+              data-testid="p2p-offer-create-btn"
+              variant="primary"
+              size="md"
+              onClick={onCreateLoanOffer}
+            >
               {UI_STRINGS.P2P_MARKETPLACE.BTN_CREATE_OFFER}
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
 
-        {/* Manual Operation Card */}
-        <div className="glass-panel acp-proposal-card">
-          <h3 className="margin-bottom-xs font-bold text-sm">{UI_STRINGS.P2P_MARKETPLACE.LABEL_MANUAL_MANAGER}</h3>
-          <p className="acp-label-sm margin-bottom-lg">
-            {UI_STRINGS.P2P_MARKETPLACE.DESC_MANUAL_MANAGER}
-          </p>
-
-          <div className="acp-control-stack">
-            <div>
-              <label className="acp-label-sm">{UI_STRINGS.P2P_MARKETPLACE.LABEL_TARGET_LOAN_ID}</label>
+        {/* Operación 3: Gestor Manual de Préstamos */}
+        <Card
+          variant="surface"
+          headerTitle={UI_STRINGS.P2P_MARKETPLACE.LABEL_MANUAL_MANAGER}
+          headerSubtitle={UI_STRINGS.P2P_MARKETPLACE.DESC_MANUAL_MANAGER}
+        >
+          <div className={styles.opStack}>
+            <div className={styles.fieldGroup}>
+              <label htmlFor="p2p-manual-loan-id-input" className={styles.label}>
+                {UI_STRINGS.P2P_MARKETPLACE.LABEL_TARGET_LOAN_ID}
+              </label>
               <input
+                id="p2p-manual-loan-id-input"
                 data-testid="p2p-manual-loan-id-input"
                 type="number"
                 placeholder="ej. 1"
                 value={targetLoanId}
                 onChange={(e) => setTargetLoanId(e.target.value)}
-                className="gcc-input-dark"
+                className={styles.input}
               />
             </div>
 
-            <div>
-              <label className="acp-label-sm">{UI_STRINGS.P2P_MARKETPLACE.LABEL_REQ_COL_PERCENT}</label>
+            <div className={styles.fieldGroup}>
+              <label htmlFor="loan-collateral-input" className={styles.label}>
+                {UI_STRINGS.P2P_MARKETPLACE.LABEL_REQ_COL_PERCENT}
+              </label>
               <input
+                id="loan-collateral-input"
                 type="number"
                 placeholder="ej. 700"
                 value={loanCollateral}
                 onChange={(e) => setLoanCollateral(e.target.value)}
-                className="gcc-input-dark"
+                className={styles.input}
               />
             </div>
 
-            <div className="admin-grid-2col margin-top-xs">
-              <button data-testid="p2p-manual-fund-btn" className="btn-primary stk-btn-green-grad" onClick={onAcceptLoan}>
+            <div className={styles.twoColRow}>
+              <Button
+                data-testid="p2p-manual-fund-btn"
+                variant="emerald"
+                size="md"
+                onClick={onAcceptLoan}
+              >
                 {UI_STRINGS.P2P_MARKETPLACE.BTN_FUND_LOAN}
-              </button>
-              <button data-testid="p2p-manual-repay-btn" className="btn-primary stk-btn-indigo-outline" onClick={onRepayLoan}>
+              </Button>
+              <Button
+                data-testid="p2p-manual-repay-btn"
+                variant="outline"
+                size="md"
+                onClick={onRepayLoan}
+              >
                 {UI_STRINGS.P2P_MARKETPLACE.BTN_REPAY_LOAN}
-              </button>
+              </Button>
             </div>
 
-            <button data-testid="p2p-autoliquidate-btn" className={`btn-primary ${styles.btnDangerGrad}`} onClick={onLiquidateLoan}>
+            <Button
+              data-testid="p2p-autoliquidate-btn"
+              variant="danger"
+              size="md"
+              onClick={onLiquidateLoan}
+            >
               {UI_STRINGS.P2P_MARKETPLACE.BTN_LIQUIDATE_LOAN} (HF &lt; 115%)
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       </div>
 
-      {/* Main P2P Loan Marketplace Table / Cards */}
-      <div className="glass-panel acp-proposal-card">
-        <div className="acp-banner-flex margin-bottom-lg">
-          <div>
-            <h3 className="margin-none text-sm font-bold acp-flex-row-gap5">
-              {UI_STRINGS.P2P_MARKETPLACE.TABLE_MARKET_TITLE} ({filteredLoans.length})
-            </h3>
-            <p className="acp-label-sm margin-top-xs">
-              {UI_STRINGS.P2P_MARKETPLACE.SUBTITLE}
-            </p>
-          </div>
-
-          {/* Filter Tabs */}
+      {/* 📋 Tabla de Listados del Mercado P2P */}
+      <Card
+        variant="surface"
+        headerTitle={`${UI_STRINGS.P2P_MARKETPLACE.TABLE_MARKET_TITLE} (${filteredLoans.length})`}
+        headerSubtitle={UI_STRINGS.P2P_MARKETPLACE.SUBTITLE}
+        headerAction={
           <div className={styles.filterBox}>
             <button
+              type="button"
               onClick={() => setFilterTab('all')}
-              className={`${styles.filterBtn} ${filterTab === 'all' ? styles.filterBtnActiveAll : ''}`}
+              className={`${styles.filterBtn} ${filterTab === 'all' ? styles.filterBtnActive : ''}`}
             >
               {UI_STRINGS.P2P_MARKETPLACE.TAB_ALL_OFFERS} ({loansList.length})
             </button>
             <button
+              type="button"
               onClick={() => setFilterTab('created')}
-              className={`${styles.filterBtn} ${filterTab === 'created' ? styles.filterBtnActiveCreated : ''}`}
+              className={`${styles.filterBtn} ${filterTab === 'created' ? styles.filterBtnActive : ''}`}
             >
               {UI_STRINGS.P2P_MARKETPLACE.TAB_AVAILABLE} ({loansList.filter((l) => l.state === 0).length})
             </button>
             <button
+              type="button"
               onClick={() => setFilterTab('active')}
-              className={`${styles.filterBtn} ${filterTab === 'active' ? styles.filterBtnActiveActive : ''}`}
+              className={`${styles.filterBtn} ${filterTab === 'active' ? styles.filterBtnActive : ''}`}
             >
               {UI_STRINGS.P2P_MARKETPLACE.TAB_FUNDED} ({loansList.filter((l) => l.state === 1).length})
             </button>
             <button
+              type="button"
               onClick={() => setFilterTab('my')}
-              className={`${styles.filterBtn} ${filterTab === 'my' ? styles.filterBtnActiveMy : ''}`}
+              className={`${styles.filterBtn} ${filterTab === 'my' ? styles.filterBtnActive : ''}`}
             >
               {UI_STRINGS.P2P_MARKETPLACE.TAB_MY_LOANS} ({loansList.filter((l) => ((l.lender || '').toLowerCase() === (userAddress || '').toLowerCase() || (l.borrower || '').toLowerCase() === (userAddress || '').toLowerCase()) && (l.state === 0 || l.state === 1)).length})
             </button>
             <button
+              type="button"
               onClick={() => setFilterTab('history')}
-              className={`${styles.filterBtn} ${filterTab === 'history' ? styles.filterBtnActiveMy : ''}`}
+              className={`${styles.filterBtn} ${filterTab === 'history' ? styles.filterBtnActive : ''}`}
             >
               📜 Historial ({loansList.filter((l) => l.state === 2 || l.state === 3 || l.state === 4).length})
             </button>
           </div>
-        </div>
+        }
+      >
+        <DataTable
+          headers={tableHeaders}
+          emptyState={UI_STRINGS.P2P_MARKETPLACE.TABLE_MARKET_EMPTY}
+          minWidth="800px"
+        >
+          {filteredLoans.map((loan) => {
+            const isBorrower = loan.borrower.toLowerCase() === userAddress.toLowerCase();
+            const isLender = loan.lender.toLowerCase() === userAddress.toLowerCase();
 
-        {/* Loan Table */}
-        {filteredLoans.length === 0 ? (
-          <div className={styles.emptyBox}>
-            <p className="margin-none text-sm opacity-60">{UI_STRINGS.P2P_MARKETPLACE.TABLE_MARKET_EMPTY}</p>
-          </div>
-        ) : (
-          <div className="table-responsive">
-            <table className="gcc-table">
-              <thead>
-                <tr className="gcc-tr-border text-muted">
-                  <th className="met-table-th">{UI_STRINGS.P2P_MARKETPLACE.TH_LOAN_ID}</th>
-                  <th className="met-table-th">Estado</th>
-                  <th className="met-table-th">{UI_STRINGS.P2P_MARKETPLACE.TH_COLLATERAL}</th>
-                  <th className="met-table-th">{UI_STRINGS.P2P_MARKETPLACE.TH_AMOUNT}</th>
-                  <th className="met-table-th">{UI_STRINGS.P2P_MARKETPLACE.TH_APR}</th>
-                  <th className="met-table-th">{UI_STRINGS.P2P_MARKETPLACE.TH_DURATION}</th>
-                  <th className="met-table-th">{UI_STRINGS.P2P_MARKETPLACE.TH_BORROWER}</th>
-                  <th className="met-table-th">{UI_STRINGS.P2P_MARKETPLACE.TH_HEALTH}</th>
-                  <th className="met-table-th text-right">{UI_STRINGS.P2P_MARKETPLACE.TH_ACTIONS}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredLoans.map((loan) => {
-                  const isBorrower = loan.borrower.toLowerCase() === userAddress.toLowerCase();
-                  const isLender = loan.lender.toLowerCase() === userAddress.toLowerCase();
+            return (
+              <tr key={loan.id}>
+                <td className={styles.tableBold}>#{loan.id}</td>
+                <td>{getStatusBadge(loan.state)}</td>
+                <td>
+                  {loan.positionTokenId > 0 ? (
+                    <Badge variant="purple" size="sm">NFT #{loan.positionTokenId}</Badge>
+                  ) : loan.collateralSymbol === 'USDC' ? (
+                    <Badge variant="blue" size="sm">💵 ${loan.collateralAmount} USDC</Badge>
+                  ) : loan.collateralSymbol === 'WBTC' ? (
+                    <Badge variant="amber" size="sm">🪙 {loan.collateralAmount} WBTC</Badge>
+                  ) : loan.collateralSymbol === 'WETH' ? (
+                    <Badge variant="blue" size="sm">🔷 {loan.collateralAmount} WETH</Badge>
+                  ) : (
+                    <Badge variant="emerald" size="sm">🥩 {loan.collateralAmount} ALPHA</Badge>
+                  )}
+                </td>
+                <td className={styles.tableBold}>
+                  ${loan.borrowAmount} {UI_STRINGS.COMMON.SYMBOL_USDC}
+                </td>
+                <td style={{ color: 'var(--color-emerald-light)', fontWeight: 700 }}>
+                  {loan.interestRateApr}% APR
+                </td>
+                <td>{loan.durationDays} días</td>
+                <td className={styles.tableMuted}>
+                  {isBorrower ? (
+                    <span style={{ color: 'var(--color-amber-light)', fontWeight: 600 }}>
+                      Tú ({loan.state === 1 ? 'Prestatario' : 'Solicitante'})
+                    </span>
+                  ) : isLender ? (
+                    <span style={{ color: 'var(--color-blue-light)', fontWeight: 600 }}>
+                      Tú (Prestamista)
+                    </span>
+                  ) : (
+                    `${loan.borrower.slice(0, 6)}...${loan.borrower.slice(-4)}`
+                  )}
+                </td>
+                <td>
+                  {loan.state === 1 ? (
+                    <span style={{
+                      fontWeight: 700,
+                      color: parseFloat(loan.healthFactor || '0') >= 130 ? 'var(--color-emerald-light)' : 'var(--color-crimson-light)'
+                    }}>
+                      {loan.healthFactor}
+                    </span>
+                  ) : (
+                    <span className={styles.tableMuted}>-</span>
+                  )}
+                </td>
+                <td>
+                  <div className={styles.actionsCell}>
+                    {loan.state === 0 && !isBorrower && onAcceptLoanById && (
+                      <Button
+                        variant="emerald"
+                        size="sm"
+                        onClick={() => onAcceptLoanById(loan.id, loan.borrowAmount)}
+                      >
+                        {UI_STRINGS.P2P_MARKETPLACE.BTN_FUND_LOAN}
+                      </Button>
+                    )}
 
-                  return (
-                    <tr key={loan.id} className="gcc-tr-border">
-                      <td className="met-table-td-bold">#{loan.id}</td>
-                      <td className="met-table-td">{getStatusBadge(loan.state)}</td>
-                      <td className="met-table-td">
-                        {loan.positionTokenId > 0 ? (
-                          <span className="gcc-badge-indigo">
-                            NFT #{loan.positionTokenId}
-                          </span>
-                        ) : loan.collateralSymbol === 'USDC' ? (
-                          <span className="gcc-badge-cyan">
-                            💵 ${loan.collateralAmount} USDC
-                          </span>
-                        ) : loan.collateralSymbol === 'WBTC' ? (
-                          <span className="gcc-badge-amber">
-                            ₿ {loan.collateralAmount} WBTC
-                          </span>
-                        ) : loan.collateralSymbol === 'WETH' ? (
-                          <span className="gcc-badge-indigo">
-                            Ξ {loan.collateralAmount} WETH
-                          </span>
-                        ) : (
-                          <span className="gcc-badge-cyan">
-                            🥩 {loan.collateralAmount} ALPHA
-                          </span>
-                        )}
-                      </td>
-                      <td className="met-table-td-cyan">
-                        ${loan.borrowAmount} {UI_STRINGS.COMMON.SYMBOL_USDC}
-                      </td>
-                      <td className="stk-val-green met-table-td">
-                        {loan.interestRateApr}% APR
-                      </td>
-                      <td className="met-table-td">{loan.durationDays} días</td>
-                      <td className="met-table-td opacity-80 text-xs">
-                        {isBorrower ? (
-                          <span className="text-amber-bright font-semibold">Tú ({loan.state === 1 ? 'Prestatario' : 'Solicitante'})</span>
-                        ) : isLender ? (
-                          <span className="text-cyan font-semibold">Tú (Prestamista)</span>
-                        ) : (
-                          `${loan.borrower.slice(0, 6)}...${loan.borrower.slice(-4)}`
-                        )}
-                      </td>
-                      <td className="met-table-td">
-                        {loan.state === 1 ? (
-                          <span className={`font-semibold ${parseFloat(loan.healthFactor || '0') >= 130 ? 'text-green-bright' : 'stk-burned-label'}`}>
-                            {loan.healthFactor}
-                          </span>
-                        ) : (
-                          <span className="opacity-40">-</span>
-                        )}
-                      </td>
-                      <td className="met-table-td text-right">
-                        {/* Action Buttons based on Loan State */}
-                        {loan.state === 0 && !isBorrower && onAcceptLoanById && (
-                          <button
-                            className={`btn-primary stk-btn-green-grad ${styles.actionBtnSm}`}
-                            onClick={() => onAcceptLoanById(loan.id, loan.borrowAmount)}
-                          >
-                            {UI_STRINGS.P2P_MARKETPLACE.BTN_FUND_LOAN}
-                          </button>
-                        )}
+                    {loan.state === 0 && isBorrower && onCancelLoanOffer && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onCancelLoanOffer(loan.id)}
+                      >
+                        {UI_STRINGS.P2P_MARKETPLACE.BTN_CANCEL_OFFER}
+                      </Button>
+                    )}
 
-                        {loan.state === 0 && isBorrower && onCancelLoanOffer && (
-                          <button
-                            className={`btn-primary acp-pure-warning-card text-red-light border-red-500 ${styles.actionBtnSm}`}
-                            onClick={() => onCancelLoanOffer(loan.id)}
-                          >
-                            {UI_STRINGS.P2P_MARKETPLACE.BTN_CANCEL_OFFER}
-                          </button>
-                        )}
+                    {loan.state === 1 && isBorrower && onRepayLoanById && (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => onRepayLoanById(loan.id, loan)}
+                      >
+                        {UI_STRINGS.P2P_MARKETPLACE.BTN_REPAY_LOAN}
+                      </Button>
+                    )}
 
-                        {loan.state === 1 && isBorrower && onRepayLoanById && (
-                          <button
-                            className={`btn-primary ${styles.btnBlueGrad} ${styles.actionBtnSm}`}
-                            onClick={() => onRepayLoanById(loan.id, loan)}
-                          >
-                            {UI_STRINGS.P2P_MARKETPLACE.BTN_REPAY_LOAN}
-                          </button>
-                        )}
+                    {loan.state === 1 && onLiquidateLoanById && (
+                      parseFloat(loan.healthFactor?.replace('%', '') || '1000') < 115 ? (
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => onLiquidateLoanById(loan.id, loan)}
+                        >
+                          ⚡ {UI_STRINGS.P2P_MARKETPLACE.BTN_LIQUIDATE_LOAN}
+                        </Button>
+                      ) : (
+                        <Badge variant="emerald" size="sm">🛡️ Solvente</Badge>
+                      )
+                    )}
 
-                        {loan.state === 1 && onLiquidateLoanById && (
-                          parseFloat(loan.healthFactor?.replace('%', '') || '1000') < 115 ? (
-                            <button
-                              className={`btn-primary acp-pure-warning-card text-red-light border-red-500 ${styles.actionBtnSm}`}
-                              onClick={() => onLiquidateLoanById(loan.id, loan)}
-                            >
-                              ⚡ {UI_STRINGS.P2P_MARKETPLACE.BTN_LIQUIDATE_LOAN}
-                            </button>
-                          ) : (
-                            <button
-                              disabled
-                              className={`btn-primary opacity-50 cursor-not-allowed ${styles.actionBtnSm}`}
-                              title="Préstamo 100% solvente (Factor de Salud ≥ 115%). Solo es liquidable si el HF cae por debajo del 115% o si expira el plazo acordado."
-                            >
-                              🛡️ Solvente
-                            </button>
-                          )
-                        )}
-
-                        {loan.state === 2 && (
-                          <span className="text-cyan text-xs font-semibold">🔵 Reembolsado</span>
-                        )}
-                        {loan.state === 3 && (
-                          <span className="text-red-light text-xs font-semibold">🔴 Liquidado</span>
-                        )}
-                        {loan.state === 4 && (
-                          <span className="opacity-40 text-xs">⚪ Cancelado</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
+                    {loan.state === 2 && (
+                      <Badge variant="blue" size="sm">🔵 Reembolsado</Badge>
+                    )}
+                    {loan.state === 3 && (
+                      <Badge variant="crimson" size="sm">🔴 Liquidado</Badge>
+                    )}
+                    {loan.state === 4 && (
+                      <Badge variant="neutral" size="sm">⚪ Cancelado</Badge>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </DataTable>
+      </Card>
     </div>
   );
 };

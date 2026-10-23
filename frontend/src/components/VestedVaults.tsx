@@ -3,7 +3,7 @@ import styles from './VestedVaults.module.css';
 import { useQuery } from '@tanstack/react-query';
 import { publicClient, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
 import { UI_STRINGS } from '../constants/strings.js';
-import { TokenAmountInput } from './common/TokenAmountInput.js';
+import { Card, Button, Badge, TokenAmountInput } from './common/index.js';
 import { queryKeys } from '../constants/queryKeys.js';
 
 export interface UserPosition {
@@ -75,15 +75,14 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
   const discountedPrice = (principalNum * (1 - discountBps / 10000)).toFixed(2);
 
   return (
-    <div className="met-grid-subtle margin-bottom-xl">
-      {/* Buy Bond Card */}
-      <div className="glass-panel acp-proposal-card">
-        <h3 className={styles.cardH3}>{UI_STRINGS.VESTED_VAULTS.TITLE}</h3>
-        <p className={styles.cardP}>
-          {UI_STRINGS.VESTED_VAULTS.SUBTITLE}
-        </p>
-
-        <div className="acp-control-stack">
+    <div className={styles.container}>
+      {/* 🏛️ Tarjeta 1: Suscripción de Bonos con Descuento */}
+      <Card
+        variant="surface"
+        headerTitle={UI_STRINGS.VESTED_VAULTS.TITLE}
+        headerSubtitle={UI_STRINGS.VESTED_VAULTS.SUBTITLE}
+      >
+        <div className={styles.formStack}>
           <div>
             <TokenAmountInput
               label={UI_STRINGS.VESTED_VAULTS.LABEL_PRINCIPAL}
@@ -97,13 +96,16 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
             />
           </div>
 
-          <div>
-            <label className={styles.label}>{UI_STRINGS.VESTED_VAULTS.LABEL_LOCK_YEARS}</label>
+          <div className={styles.fieldGroup}>
+            <label htmlFor="bonds-years-select" className={styles.label}>
+              {UI_STRINGS.VESTED_VAULTS.LABEL_LOCK_YEARS}
+            </label>
             <select
+              id="bonds-years-select"
               data-testid="bonds-years-select"
               value={bondLockYears}
               onChange={(e) => setBondLockYears(e.target.value)}
-              className={styles.inputDark}
+              className={styles.select}
             >
               <option value="1">{UI_STRINGS.VESTED_VAULTS.YEAR_1}</option>
               <option value="2">{UI_STRINGS.VESTED_VAULTS.YEAR_2}</option>
@@ -113,9 +115,11 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
             </select>
           </div>
 
-          <div>
-            <div className="acp-banner-flex margin-bottom-xs">
-              <label className={`${styles.label} opacity-80`}>{UI_STRINGS.VESTED_VAULTS.LABEL_REFERRER}</label>
+          <div className={styles.fieldGroup}>
+            <div className={styles.labelRow}>
+              <label htmlFor="bonds-referrer-input" className={styles.label}>
+                {UI_STRINGS.VESTED_VAULTS.LABEL_REFERRER}
+              </label>
               {onOpenReferral && (
                 <button
                   type="button"
@@ -127,37 +131,50 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
               )}
             </div>
             <input
+              id="bonds-referrer-input"
               data-testid="bonds-referrer-input"
               type="text"
               placeholder={UI_STRINGS.VESTED_VAULTS.REFERRER_PLACEHOLDER}
               value={bondReferrer}
               onChange={(e) => setBondReferrer(e.target.value)}
-              className={styles.inputDark}
+              className={styles.input}
             />
           </div>
 
-          {/* Discount Summary Box */}
+          {/* Resumen de Descuento */}
           <div className={styles.discountBox}>
-            <div className="acp-banner-flex margin-bottom-xs">
+            <div className={styles.discountRow}>
               <span>{UI_STRINGS.VESTED_VAULTS.DISCOUNT_SUMMARY_TITLE}</span>
-              <strong data-testid="bonds-discount-badge" className="stk-val-purple">{discountPct}% OFF</strong>
+              <span data-testid="bonds-discount-badge" style={{ color: '#c084fc', fontWeight: 700 }}>
+                {discountPct}% OFF
+              </span>
             </div>
-            <div className="acp-banner-flex">
+            <div className={styles.discountRow}>
               <span>{UI_STRINGS.VESTED_VAULTS.LABEL_PRICE_TO_PAY}</span>
-              <strong data-testid="bonds-price-today" className="stk-val-green">${discountedPrice} {UI_STRINGS.COMMON.SYMBOL_USDC}</strong>
+              <span data-testid="bonds-price-today" style={{ color: 'var(--color-emerald-light)', fontWeight: 700 }}>
+                ${discountedPrice} {UI_STRINGS.COMMON.SYMBOL_USDC}
+              </span>
             </div>
           </div>
 
-          <button data-testid="bonds-buy-btn" className={`btn-primary ${styles.buyBtn}`} onClick={onBuyBond}>
+          <Button
+            data-testid="bonds-buy-btn"
+            variant="primary"
+            size="md"
+            className={styles.submitBtn}
+            onClick={onBuyBond}
+          >
             {UI_STRINGS.VESTED_VAULTS.BTN_BUY_BOND}
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
 
-      {/* Position NFTs Gallery Card */}
-      <div className="glass-panel acp-proposal-card">
-        <h3 className={styles.cardH3}>{UI_STRINGS.VESTED_VAULTS.TABLE_TITLE} ({userPositions.length})</h3>
-
+      {/* 🎴 Tarjeta 2: Posiciones de Bonos NFT del Usuario */}
+      <Card
+        variant="surface"
+        headerTitle={`${UI_STRINGS.VESTED_VAULTS.TABLE_TITLE} (${userPositions.length})`}
+        headerSubtitle="Posiciones activas, maduradas y opciones de liquidación temprana (Ragequit)"
+      >
         {userPositions.length === 0 ? (
           <div className={styles.emptyGallery}>
             {UI_STRINGS.VESTED_VAULTS.TABLE_EMPTY}
@@ -167,7 +184,13 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
             {userPositions.map((pos) => (
               <div
                 key={pos.id}
-                className={`${styles.posCard} ${pos.isRagequitted || pos.isMaturedClaimed ? styles.posCardClaimed : (pos.canClaim ? styles.posCardCanclaim : styles.posCardNormal)}`}
+                className={
+                  pos.isRagequitted || pos.isMaturedClaimed
+                    ? styles.posCardClaimed
+                    : pos.canClaim
+                    ? styles.posCardCanclaim
+                    : styles.posCard
+                }
               >
                 <div>
                   <div className={styles.posTitle}>
@@ -181,27 +204,43 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
                   </div>
                 </div>
 
-                <div className="acp-flex-row-gap5">
-                  {pos.isRagequitted && <span className={styles.badgeRq}>{UI_STRINGS.VESTED_VAULTS.BADGE_RAGEQUITTED}</span>}
-                  {pos.isMaturedClaimed && <span className={styles.badgeCl}>{UI_STRINGS.VESTED_VAULTS.BADGE_CLAIMED}</span>}
+                <div className={styles.actionsGroup}>
+                  {pos.isRagequitted && (
+                    <Badge variant="crimson" size="sm">
+                      {UI_STRINGS.VESTED_VAULTS.BADGE_RAGEQUITTED}
+                    </Badge>
+                  )}
+                  {pos.isMaturedClaimed && (
+                    <Badge variant="blue" size="sm">
+                      {UI_STRINGS.VESTED_VAULTS.BADGE_CLAIMED}
+                    </Badge>
+                  )}
 
                   {pos.canClaim && (
-                    <button className={`btn-primary ${styles.claimBtn}`} onClick={() => onClaimMatured(pos.id)}>
+                    <Button
+                      variant="emerald"
+                      size="sm"
+                      onClick={() => onClaimMatured(pos.id)}
+                    >
                       {UI_STRINGS.VESTED_VAULTS.BTN_CLAIM_MATURED}
-                    </button>
+                    </Button>
                   )}
 
                   {!pos.isRagequitted && !pos.isMaturedClaimed && (
-                    <button className={`btn-secondary ${styles.rqBtn}`} onClick={() => onRagequit(pos.id)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onRagequit(pos.id)}
+                    >
                       {UI_STRINGS.VESTED_VAULTS.BTN_RAGEQUIT}
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 };
