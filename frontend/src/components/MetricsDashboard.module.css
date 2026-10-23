@@ -177,4 +177,13 @@
   .title {
     font-size: 1.05rem;
   }
+
+  .kpiGrid,
+  .tokenomicsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .kpiGrid > div:last-child {
+    grid-column: span 1;
+  }
 }

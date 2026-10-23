@@ -80,6 +80,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
 }
 
 .discountRow strong {
@@ -149,6 +151,8 @@
   font-size: 0.8125rem;
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .posDate {

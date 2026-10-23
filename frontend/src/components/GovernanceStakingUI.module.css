@@ -99,3 +99,13 @@
     border-radius: var(--radius-md);
   }
 }
+
+@media (max-width: 480px) {
+  .kpiRow {
+    grid-template-columns: 1fr;
+  }
+
+  .kpiRow > div:last-child {
+    grid-column: span 1;
+  }
+}

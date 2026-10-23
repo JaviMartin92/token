@@ -263,7 +263,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
         headerTitle={UI_STRINGS.METRICS.TABLE_ASSETS_TITLE}
         headerSubtitle="Auditoría matemática de activos colaterales y bóvedas generadoras de rendimiento"
       >
-        <DataTable headers={tableHeaders} minWidth="650px">
+        <DataTable headers={tableHeaders} minWidth="100%">
           <tr>
             <td data-label="Activo">
               <div className={styles.assetCell}>

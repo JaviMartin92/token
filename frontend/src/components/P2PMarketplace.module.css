@@ -3,6 +3,9 @@
   flex-direction: column;
   gap: var(--space-6);
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* 💎 Banner de Aceleración de Rendimiento */
@@ -144,6 +147,8 @@
   font-weight: 600;
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 /* 🧭 Pestañas de Filtro del Mercado (Sin scrollbars antiestéticas) */
@@ -240,6 +245,21 @@
 
   .filterBox {
     width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     padding: 3px;
+    gap: 2px;
+    box-sizing: border-box;
+  }
+
+  .filterBtn {
+    padding: 6px 2px;
+    font-size: 0.7rem;
+    text-align: center;
+    white-space: normal;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }

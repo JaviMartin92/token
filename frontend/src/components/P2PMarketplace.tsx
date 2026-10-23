@@ -466,7 +466,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
         <DataTable
           headers={tableHeaders}
           emptyState={UI_STRINGS.P2P_MARKETPLACE.TABLE_MARKET_EMPTY}
-          minWidth="800px"
+          minWidth="100%"
         >
           {filteredLoans.map((loan) => {
             const isBorrower = loan.borrower.toLowerCase() === userAddress.toLowerCase();

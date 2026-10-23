@@ -420,3 +420,53 @@
 .btn-danger:hover:not(:disabled) {
   background-color: #dc2626;
 }
+
+/* ==========================================================================
+   🪟 MODALES INSTITUCIONALES ACCESIBLES Y FULL RESPONSIVE
+   ========================================================================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background-color: rgba(10, 15, 29, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  box-sizing: border-box;
+  overflow-y: auto;
+  width: 100vw;
+  max-width: 100vw;
+}
+
+.modal-container {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-elevated);
+  padding: var(--space-5);
+}
+
+.modal-container-wide {
+  max-width: 840px;
+}
+
+@media (max-width: 640px) {
+  .modal-overlay {
+    padding: var(--space-2);
+  }
+
+  .modal-container {
+    max-height: 95vh;
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+  }
+}

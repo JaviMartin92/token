@@ -295,18 +295,32 @@
   }
 
   .metricPill {
-    padding: 6px 8px;
+    padding: 6px 4px;
     text-align: center;
     align-items: center;
     border-radius: var(--radius-sm);
+    min-width: 0;
+    overflow: hidden;
   }
 
   .metricLabel {
     font-size: 0.6rem;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .metricValue {
     font-size: 0.8125rem;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  @media (max-width: 360px) {
+    .metricsGroup {
+      grid-template-columns: 1fr;
+    }
   }
 
   /* Barra de navegación móvil: Segmented Control 100% ancho, 0 scroll */
