@@ -60,23 +60,28 @@
   font-size: 0.875rem;
 }
 
-/* 📱 ADAPTACIÓN RESPONSIVA TOTAL PARA SMARTPHONES (<= 768px)
+/* 📱 ADAPTACIÓN RESPONSIVA TOTAL PARA TABLETS Y SMARTPHONES (<= 960px)
    Elimina completamente el scroll horizontal transformando filas en tarjetas legibles */
-@media (max-width: 768px) {
+@media (max-width: 960px) {
   .tableWrapper {
     overflow-x: visible;
     border: none;
     background: transparent;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .table {
     display: block;
     width: 100% !important;
     min-width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
   }
 
   .headerRow {
-    display: none; /* Las cabeceras se ocultan en móvil para dar paso a las etiquetas contextuales */
+    display: none; /* Las cabeceras se ocultan en móvil/tablet para dar paso a las etiquetas contextuales */
   }
 
   .tbody {
@@ -84,6 +89,8 @@
     flex-direction: column;
     gap: var(--space-3);
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .tbody tr {
@@ -139,20 +146,22 @@
     max-width: 45%;
   }
 
-  .tbody td:not([data-label="Acciones"]) > :last-child {
+  .tbody td:not([data-label="Acciones"]):not([data-label="Acción"]) > :last-child {
     text-align: right;
     flex: 1;
     min-width: 0;
   }
 
-  .tbody td[data-label="Acciones"] {
+  .tbody td[data-label="Acciones"],
+  .tbody td[data-label="Acción"] {
     flex-direction: column;
     align-items: stretch;
     border-bottom: none;
     padding-top: var(--space-3);
   }
 
-  .tbody td[data-label="Acciones"]::before {
+  .tbody td[data-label="Acciones"]::before,
+  .tbody td[data-label="Acción"]::before {
     display: none;
   }
 
@@ -161,5 +170,8 @@
     text-align: center;
     border-bottom: none;
     width: 100%;
+    box-sizing: border-box;
+    font-size: clamp(0.78rem, 2.5vw, 0.875rem);
+    padding: var(--space-6) var(--space-3);
   }
 }

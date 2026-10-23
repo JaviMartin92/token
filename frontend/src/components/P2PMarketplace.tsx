@@ -424,34 +424,41 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
         headerTitle={`${UI_STRINGS.P2P_MARKETPLACE.TABLE_MARKET_TITLE} (${filteredLoans.length})`}
         headerSubtitle={UI_STRINGS.P2P_MARKETPLACE.SUBTITLE}
         headerAction={
+          <Badge variant="blue" size="sm">
+            {filteredLoans.length} {filteredLoans.length === 1 ? 'oferta' : 'ofertas'}
+          </Badge>
+        }
+      >
+        {/* 🧭 Filtros de Estado del Mercado P2P (Full Responsive 100% Ancho) */}
+        <div className={styles.filterContainer}>
           <div className={styles.filterBox}>
             <button
               type="button"
               onClick={() => setFilterTab('all')}
               className={`${styles.filterBtn} ${filterTab === 'all' ? styles.filterBtnActive : ''}`}
             >
-              {UI_STRINGS.P2P_MARKETPLACE.TAB_ALL_OFFERS} ({loansList.length})
+              Todas ({loansList.length})
             </button>
             <button
               type="button"
               onClick={() => setFilterTab('created')}
               className={`${styles.filterBtn} ${filterTab === 'created' ? styles.filterBtnActive : ''}`}
             >
-              {UI_STRINGS.P2P_MARKETPLACE.TAB_AVAILABLE} ({loansList.filter((l) => l.state === 0).length})
+              Disponibles ({loansList.filter((l) => l.state === 0).length})
             </button>
             <button
               type="button"
               onClick={() => setFilterTab('active')}
               className={`${styles.filterBtn} ${filterTab === 'active' ? styles.filterBtnActive : ''}`}
             >
-              {UI_STRINGS.P2P_MARKETPLACE.TAB_FUNDED} ({loansList.filter((l) => l.state === 1).length})
+              Financiados ({loansList.filter((l) => l.state === 1).length})
             </button>
             <button
               type="button"
               onClick={() => setFilterTab('my')}
               className={`${styles.filterBtn} ${filterTab === 'my' ? styles.filterBtnActive : ''}`}
             >
-              {UI_STRINGS.P2P_MARKETPLACE.TAB_MY_LOANS} ({loansList.filter((l) => ((l.lender || '').toLowerCase() === (userAddress || '').toLowerCase() || (l.borrower || '').toLowerCase() === (userAddress || '').toLowerCase()) && (l.state === 0 || l.state === 1)).length})
+              Mis Préstamos ({loansList.filter((l) => ((l.lender || '').toLowerCase() === (userAddress || '').toLowerCase() || (l.borrower || '').toLowerCase() === (userAddress || '').toLowerCase()) && (l.state === 0 || l.state === 1)).length})
             </button>
             <button
               type="button"
@@ -461,8 +468,8 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
               📜 Historial ({loansList.filter((l) => l.state === 2 || l.state === 3 || l.state === 4).length})
             </button>
           </div>
-        }
-      >
+        </div>
+
         <DataTable
           headers={tableHeaders}
           emptyState={UI_STRINGS.P2P_MARKETPLACE.TABLE_MARKET_EMPTY}
@@ -521,7 +528,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                     <span className={styles.tableMuted}>-</span>
                   )}
                 </td>
-                <td data-label="Acción">
+                <td data-label="Acciones" className={styles.actionsTd}>
                   <div className={styles.actionsCell}>
                     {loan.state === 0 && !isBorrower && onAcceptLoanById && (
                       <Button

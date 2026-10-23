@@ -163,11 +163,14 @@
   cursor: pointer;
 }
 
-/* 🧭 Barra de Navegación Institucional */
+/* 🧭 Barra de Navegación Institucional (100% Ancho Full Responsive) */
 .navBar {
   border-top: 1px solid var(--border-subtle);
   background-color: rgba(17, 24, 39, 0.4);
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .navContainer {
@@ -176,14 +179,17 @@
   align-items: center;
   padding: 0 var(--space-6);
   max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
   gap: var(--space-3);
+  box-sizing: border-box;
 }
 
 .navTabs {
   display: flex;
   align-items: center;
   gap: var(--space-1);
+  min-width: 0;
 }
 
 .navTab {
@@ -200,6 +206,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .navTab:hover {
@@ -224,6 +232,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  flex-shrink: 0;
 }
 
 .referralBtn {
@@ -250,6 +259,37 @@
   color: var(--text-tertiary);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* 💻 ADAPTACIÓN TABLETS / LAPTOPS COMPACTAS (< 1200px) */
+@media (max-width: 1200px) {
+  .blockDate {
+    display: none;
+  }
+
+  .navContainer {
+    padding: 0 var(--space-4);
+  }
+}
+
+@media (max-width: 950px) {
+  .tabDesktopText {
+    display: none;
+  }
+
+  .tabMobileText {
+    display: inline;
+  }
+
+  .navTab {
+    padding: var(--space-3) var(--space-2);
+    font-size: 0.8125rem;
+  }
+
+  .referralBtn {
+    padding: 5px 8px;
+    font-size: 0.75rem;
+  }
 }
 
 /* 📱 ADAPTACIÓN SMARTPHONE / MÓVIL (< 768px) */
@@ -317,28 +357,38 @@
     text-overflow: ellipsis;
   }
 
-  @media (max-width: 360px) {
-    .metricsGroup {
-      grid-template-columns: minmax(0, 1fr);
-    }
+  /* Barra de navegación móvil: Segmented Control 100% ancho dividido al 33.33% exacto, 0 scroll */
+  .navBar {
+    width: 100%;
+    overflow-x: hidden;
   }
 
-  /* Barra de navegación móvil: Segmented Control 100% ancho, 0 scroll */
   .navContainer {
     padding: 0;
     width: 100%;
+    max-width: 100%;
+    margin: 0;
   }
 
   .navTabs {
     width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0;
+    margin: 0;
+    padding: 0;
   }
 
   .navTab {
-    flex: 1;
-    padding: var(--space-3) var(--space-1);
-    font-size: 0.8125rem;
+    width: 100%;
+    min-width: 0;
+    padding: var(--space-3) 2px;
+    font-size: clamp(0.72rem, 2.8vw, 0.82rem);
     min-height: 44px; /* Área táctil accesible */
+    text-align: center;
+    justify-content: center;
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
   .tabDesktopText {
@@ -346,10 +396,27 @@
   }
 
   .tabMobileText {
-    display: inline;
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
   }
 
   .navActions {
     display: none; /* Acciones secundarias no saturan la barra de navegación móvil */
+  }
+}
+
+/* 📱 ADAPTACIÓN PANTALLAS ULTRA COMPACTAS (<= 360px) */
+@media (max-width: 360px) {
+  .metricsGroup {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .navTab {
+    font-size: 0.6875rem;
+    padding: var(--space-2) 1px;
   }
 }
