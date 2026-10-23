@@ -63,10 +63,10 @@
   min-height: 44px;
 }
 
-/* 🌾 Estrategias Institucionales (Admin) */
+/* 🌾 Estrategias Institucionales (Admin - 4 Columnas Fraccionales) */
 .strategyGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-4);
   width: 100%;
   margin-top: var(--space-4);

@@ -152,6 +152,7 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
         const morphoAllocationUsd = Math.max(0, porBreakdown.stables - p2pAllocationUsd);
         const btcAllocationUsd = porBreakdown.wbtc;
         const ethAllocationUsd = porBreakdown.weth;
+        const alphaAllocationUsd = porBreakdown.alphaStaking ?? 0;
 
         return (
           <Card
@@ -221,6 +222,26 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
                     <span className={styles.strategyVal}>
                       ${ethAllocationUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (WETH)
                     </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* ALPHA Token Strategy */}
+              <div className={styles.strategyCard}>
+                <div className={styles.strategyHeader}>
+                  <span>🥩 ALPHA (stALPHA / Sub-Reserva)</span>
+                  <Badge variant="purple" size="sm">Flywheel & Staking</Badge>
+                </div>
+                <div className={styles.strategyList}>
+                  <div className={styles.strategyRow}>
+                    <span>Bóveda en Staking:</span>
+                    <span className={styles.strategyVal}>
+                      ${alphaAllocationUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (ALPHA)
+                    </span>
+                  </div>
+                  <div className={styles.strategyRow}>
+                    <span>Rendimiento Flywheel:</span>
+                    <span className={styles.strategyVal}>Comisiones & Quema</span>
                   </div>
                 </div>
               </div>
