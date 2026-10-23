@@ -1,8 +1,9 @@
 .container {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: var(--space-6);
   width: 100%;
+  max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
 }
@@ -10,8 +11,9 @@
 .kpiRow {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-3);
+  gap: var(--space-4);
   width: 100%;
+  max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
   margin-bottom: var(--space-4);
@@ -21,20 +23,44 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .buttonRow {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   margin-top: var(--space-2);
 }
 
+.actionBtn {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal !important;
+  text-align: center;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.35;
+  font-size: clamp(0.8125rem, 1.8vw, 0.875rem);
+  padding: var(--space-2) var(--space-3);
+  box-sizing: border-box;
+}
+
 .description {
-  font-size: 0.8125rem;
+  font-size: clamp(0.75rem, 1.8vw, 0.8125rem);
   color: var(--text-secondary);
   line-height: 1.5;
   margin-bottom: var(--space-4);
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .optionsCard {
@@ -45,6 +71,10 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   margin-bottom: var(--space-4);
 }
 
@@ -53,64 +83,90 @@
   align-items: flex-start;
   gap: var(--space-3);
   cursor: pointer;
-  padding: var(--space-2);
+  padding: var(--space-3);
   border-radius: var(--radius-sm);
-  transition: background-color var(--transition-fast);
+  border: 1px solid transparent;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .radioOption:hover {
   background-color: var(--bg-surface-hover);
+  border-color: var(--border-subtle);
 }
 
 .radioInput {
   margin-top: 3px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .radioText {
-  font-size: 0.8125rem;
+  font-size: clamp(0.75rem, 1.8vw, 0.8125rem);
   color: var(--text-primary);
-  line-height: 1.4;
+  line-height: 1.45;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
 }
 
-/* 📱 ADAPTACIÓN RESPONSIVA TOTAL SMARTPHONES (<= 768px) */
-@media (max-width: 768px) {
-  .container {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-4);
-  }
-
+/* 📱 ADAPTACIÓN RESPONSIVA TABLETS (<= 860px) */
+@media (max-width: 860px) {
   .kpiRow {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-2);
+    gap: var(--space-3);
   }
 
   .kpiRow > div:last-child {
     grid-column: span 2;
   }
-
-  .buttonRow {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-3);
-  }
-
-  .buttonRow button {
-    width: 100%;
-    min-height: 48px;
-  }
-
-  .radioOption {
-    padding: var(--space-3);
-    border-radius: var(--radius-md);
-  }
 }
 
-@media (max-width: 480px) {
+/* 📱 ADAPTACIÓN RESPONSIVA SMARTPHONES (<= 640px) */
+@media (max-width: 640px) {
+  .container {
+    gap: var(--space-4);
+  }
+
   .kpiRow {
     grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
   }
 
   .kpiRow > div:last-child {
     grid-column: span 1;
+  }
+
+  .buttonRow {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+  }
+
+  .actionBtn {
+    min-height: 48px;
+    font-size: clamp(0.8125rem, 3.5vw, 0.875rem);
+  }
+
+  .optionsCard {
+    padding: var(--space-3);
+  }
+
+  .radioOption {
+    padding: var(--space-2);
+  }
+}
+
+/* 📱 PANTALLAS ULTRA COMPACTAS (<= 380px) */
+@media (max-width: 380px) {
+  .optionsCard {
+    padding: var(--space-2);
+  }
+
+  .actionBtn {
+    font-size: 0.75rem;
+    padding: var(--space-2);
   }
 }

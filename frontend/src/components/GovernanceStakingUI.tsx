@@ -102,6 +102,7 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
               data-testid="staking-stake-btn"
               variant="primary"
               size="md"
+              className={styles.actionBtn}
               onClick={onStake}
             >
               {UI_STRINGS.STAKING.BTN_STAKE}
@@ -111,6 +112,7 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
               data-testid="staking-unstake-btn"
               variant="outline"
               size="md"
+              className={styles.actionBtn}
               onClick={onUnstake}
             >
               {UI_STRINGS.STAKING.BTN_UNSTAKE}
@@ -170,6 +172,7 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
             data-testid="yield-claim-btn"
             variant="emerald"
             size="md"
+            className={styles.actionBtn}
             onClick={onClaimYield}
           >
             {UI_STRINGS.STAKING.BTN_CLAIM_YIELD}
@@ -179,6 +182,7 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
             data-testid="yield-gasless-btn"
             variant="outline"
             size="md"
+            className={styles.actionBtn}
             onClick={onGaslessClaim}
           >
             {UI_STRINGS.STAKING.BTN_GASLESS_CLAIM}
