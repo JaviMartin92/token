@@ -42,6 +42,7 @@
 
 .submitBtn {
   width: 100%;
+  min-height: 44px;
 }
 
 /* 🌾 Estrategias Institucionales (Admin) */
@@ -91,10 +92,29 @@
   color: var(--text-primary);
 }
 
+/* 📱 ADAPTACIÓN RESPONSIVA TOTAL SMARTPHONES (<= 768px) */
 @media (max-width: 768px) {
+  .container {
+    gap: var(--space-4);
+  }
+
+  .balancesGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+  }
+
   .operationsGrid,
-  .balancesGrid,
   .strategyGrid {
     grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  .actionCard {
+    padding: var(--space-4);
+  }
+
+  .submitBtn {
+    min-height: 48px;
   }
 }

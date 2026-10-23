@@ -466,9 +466,9 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
 
             return (
               <tr key={loan.id}>
-                <td className={styles.tableBold}>#{loan.id}</td>
-                <td>{getStatusBadge(loan.state)}</td>
-                <td>
+                <td data-label="ID Préstamo" className={styles.tableBold}>#{loan.id}</td>
+                <td data-label="Estado">{getStatusBadge(loan.state)}</td>
+                <td data-label="Colateral">
                   {loan.positionTokenId > 0 ? (
                     <Badge variant="purple" size="sm">NFT #{loan.positionTokenId}</Badge>
                   ) : loan.collateralSymbol === 'USDC' ? (
@@ -481,14 +481,14 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                     <Badge variant="emerald" size="sm">🥩 {loan.collateralAmount} ALPHA</Badge>
                   )}
                 </td>
-                <td className={styles.tableBold}>
+                <td data-label="Monto" className={styles.tableBold}>
                   ${loan.borrowAmount} {UI_STRINGS.COMMON.SYMBOL_USDC}
                 </td>
-                <td style={{ color: 'var(--color-emerald-light)', fontWeight: 700 }}>
+                <td data-label="Tasa APR" style={{ color: 'var(--color-emerald-light)', fontWeight: 700 }}>
                   {loan.interestRateApr}% APR
                 </td>
-                <td>{loan.durationDays} días</td>
-                <td className={styles.tableMuted}>
+                <td data-label="Plazo">{loan.durationDays} días</td>
+                <td data-label="Prestatario" className={styles.tableMuted}>
                   {isBorrower ? (
                     <span style={{ color: 'var(--color-amber-light)', fontWeight: 600 }}>
                       Tú ({loan.state === 1 ? 'Prestatario' : 'Solicitante'})
@@ -501,7 +501,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                     `${loan.borrower.slice(0, 6)}...${loan.borrower.slice(-4)}`
                   )}
                 </td>
-                <td>
+                <td data-label="Health Factor">
                   {loan.state === 1 ? (
                     <span style={{
                       fontWeight: 700,
@@ -513,7 +513,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                     <span className={styles.tableMuted}>-</span>
                   )}
                 </td>
-                <td>
+                <td data-label="Acción">
                   <div className={styles.actionsCell}>
                     {loan.state === 0 && !isBorrower && onAcceptLoanById && (
                       <Button

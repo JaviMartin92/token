@@ -7,6 +7,7 @@
   box-shadow: var(--shadow-sm);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  width: 100%;
 }
 
 .topBar {
@@ -27,8 +28,8 @@
 }
 
 .brandLogo {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: var(--radius-md);
   background: linear-gradient(135deg, var(--color-blue) 0%, #1e40af 100%);
   display: flex;
@@ -36,8 +37,9 @@
   justify-content: center;
   font-weight: 800;
   color: #ffffff;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   border: 1px solid var(--border-subtle);
+  flex-shrink: 0;
 }
 
 .brandText {
@@ -65,7 +67,7 @@
   margin: 0;
 }
 
-/* 📊 Métricas Globales en Header */
+/* 📊 Métricas Globales */
 .metricsGroup {
   display: flex;
   align-items: center;
@@ -100,31 +102,25 @@
   color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .metricValue {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--text-primary);
+  white-space: nowrap;
 }
 
-.metricEmerald {
-  color: var(--color-emerald-light);
-}
-
-.metricBlue {
-  color: var(--color-blue-light);
-}
-
-.metricPurple {
-  color: #c084fc;
-}
+.metricEmerald { color: var(--color-emerald-light); }
+.metricBlue { color: var(--color-blue-light); }
+.metricPurple { color: #c084fc; }
 
 /* 👛 Billetera & Controles */
 .walletGroup {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .walletBadge {
@@ -154,10 +150,24 @@
   background-color: var(--text-disabled);
 }
 
-/* 🧭 Fila de Navegación */
+.mobileReferralBtn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+/* 🧭 Barra de Navegación Institucional */
 .navBar {
   border-top: 1px solid var(--border-subtle);
   background-color: rgba(17, 24, 39, 0.4);
+  width: 100%;
 }
 
 .navContainer {
@@ -168,8 +178,6 @@
   max-width: 1400px;
   margin: 0 auto;
   gap: var(--space-3);
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 .navTabs {
@@ -189,6 +197,9 @@
   cursor: pointer;
   transition: color var(--transition-fast), border-color var(--transition-fast);
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .navTab:hover {
@@ -199,6 +210,14 @@
   composes: navTab;
   color: var(--text-primary);
   border-bottom-color: var(--color-emerald);
+}
+
+.tabMobileText {
+  display: none;
+}
+
+.tabDesktopText {
+  display: inline;
 }
 
 .navActions {
@@ -233,13 +252,90 @@
   white-space: nowrap;
 }
 
-@media (max-width: 900px) {
+/* 📱 ADAPTACIÓN SMARTPHONE / MÓVIL (< 768px) */
+@media (max-width: 768px) {
   .topBar {
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-2);
   }
+
+  .brandTitle {
+    font-size: 1rem;
+  }
+
+  .subtitle {
+    display: none; /* Oculta subtítulo largo en móvil para no saturar la pantalla */
+  }
+
+  .envBadge {
+    display: none;
+  }
+
+  .walletGroup {
+    gap: var(--space-1);
+  }
+
+  .walletBadge {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+  }
+
+  .mobileReferralBtn {
+    display: flex;
+  }
+
+  /* Ticker fluido de métricas: 3 columnas perfectamente cuadradas */
   .metricsGroup {
     order: 3;
     width: 100%;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-2);
+    margin-top: var(--space-1);
+  }
+
+  .metricPill {
+    padding: 6px 8px;
+    text-align: center;
+    align-items: center;
+    border-radius: var(--radius-sm);
+  }
+
+  .metricLabel {
+    font-size: 0.6rem;
+  }
+
+  .metricValue {
+    font-size: 0.8125rem;
+  }
+
+  /* Barra de navegación móvil: Segmented Control 100% ancho, 0 scroll */
+  .navContainer {
+    padding: 0;
+    width: 100%;
+  }
+
+  .navTabs {
+    width: 100%;
+    gap: 0;
+  }
+
+  .navTab {
+    flex: 1;
+    padding: var(--space-3) var(--space-1);
+    font-size: 0.8125rem;
+    min-height: 44px; /* Área táctil accesible */
+  }
+
+  .tabDesktopText {
+    display: none;
+  }
+
+  .tabMobileText {
+    display: inline;
+  }
+
+  .navActions {
+    display: none; /* Acciones secundarias no saturan la barra de navegación móvil */
   }
 }

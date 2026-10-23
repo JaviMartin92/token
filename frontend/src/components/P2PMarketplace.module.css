@@ -146,20 +146,26 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* 🧭 Pestañas de Filtro del Mercado */
+/* 🧭 Pestañas de Filtro del Mercado (Sin scrollbars antiestéticas) */
 .filterBox {
   display: flex;
-  gap: 2px;
+  gap: 4px;
   background-color: var(--bg-surface-elevated);
-  padding: 3px;
+  padding: 4px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.filterBox::-webkit-scrollbar {
+  display: none;
 }
 
 .filterBtn {
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: var(--radius-sm);
   border: none;
   background: transparent;
@@ -169,6 +175,8 @@
   cursor: pointer;
   transition: all var(--transition-fast);
   white-space: nowrap;
+  flex-shrink: 0;
+  min-height: 38px;
 }
 
 .filterBtn:hover {
@@ -201,8 +209,39 @@
   flex-wrap: wrap;
 }
 
-@media (max-width: 900px) {
+/* 📱 ADAPTACIÓN RESPONSIVA TOTAL SMARTPHONES (<= 768px) */
+@media (max-width: 768px) {
+  .container {
+    gap: var(--space-4);
+  }
+
+  .boosterBanner {
+    padding: var(--space-3);
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .operationsGrid {
     grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  .twoColRow {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .actionsCell {
+    width: 100%;
+  }
+
+  .actionsCell button {
+    width: 100%;
+    min-height: 44px; /* Ergonomía táctil para móviles */
+  }
+
+  .filterBox {
+    width: 100%;
+    padding: 3px;
   }
 }

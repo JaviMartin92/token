@@ -49,9 +49,78 @@
   vertical-align: middle;
 }
 
+.tbody td[data-label]::before {
+  display: none;
+}
+
 .emptyCell {
   padding: var(--space-8);
   text-align: center;
   color: var(--text-tertiary);
   font-size: 0.875rem;
+}
+
+/* 📱 ADAPTACIÓN RESPONSIVA TOTAL PARA SMARTPHONES (<= 768px)
+   Elimina completamente el scroll horizontal transformando filas en tarjetas legibles */
+@media (max-width: 768px) {
+  .tableWrapper {
+    overflow-x: visible;
+    border: none;
+    background: transparent;
+  }
+
+  .table {
+    display: block;
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+
+  .headerRow {
+    display: none; /* Las cabeceras se ocultan en móvil para dar paso a las etiquetas contextuales */
+  }
+
+  .tbody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    width: 100%;
+  }
+
+  .tbody tr {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+    gap: var(--space-2);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.8125rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .tbody td:last-child {
+    border-bottom: none;
+  }
+
+  .tbody td[data-label]::before {
+    display: inline-block;
+    content: attr(data-label);
+    font-weight: 600;
+    font-size: 0.6875rem;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-right: var(--space-2);
+    flex-shrink: 0;
+  }
 }

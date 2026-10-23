@@ -59,6 +59,7 @@
 .surplusIcon {
   font-size: 1.5rem;
   line-height: 1;
+  flex-shrink: 0;
 }
 
 .surplusHeading {
@@ -123,9 +124,57 @@
   color: var(--color-emerald-light);
 }
 
+/* 📱 ADAPTACIÓN RESPONSIVA TOTAL SMARTPHONES (<= 768px) */
 @media (max-width: 768px) {
-  .kpiGrid,
+  .container {
+    gap: var(--space-4);
+  }
+
+  .headerRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+
+  .headerRow button {
+    width: 100%;
+  }
+
+  .kpiGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-2);
+  }
+
+  .kpiGrid > div:last-child {
+    grid-column: span 2;
+  }
+
   .tokenomicsGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-2);
+  }
+
+  .surplusBanner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: var(--space-3);
+    gap: var(--space-3);
+  }
+
+  .surplusText {
+    font-size: 0.75rem;
+  }
+
+  .surplusNote {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-3);
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 1.05rem;
   }
 }

@@ -1,6 +1,6 @@
 .container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: var(--space-6);
   width: 100%;
 }
@@ -54,6 +54,7 @@
   font-family: var(--font-sans);
   font-size: 0.875rem;
   box-sizing: border-box;
+  min-height: 44px;
   transition: border-color var(--transition-fast);
 }
 
@@ -89,6 +90,7 @@
 .submitBtn {
   width: 100%;
   margin-top: var(--space-2);
+  min-height: 48px;
 }
 
 /* 🎴 Galería de Bonos NFT */
@@ -105,6 +107,12 @@
   gap: var(--space-3);
   max-height: 480px;
   overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.galleryStack::-webkit-scrollbar {
+  display: none;
 }
 
 .posCard {
@@ -156,12 +164,27 @@
   flex-wrap: wrap;
 }
 
+/* 📱 ADAPTACIÓN RESPONSIVA TOTAL SMARTPHONES (<= 768px) */
 @media (max-width: 768px) {
   .container {
     grid-template-columns: 1fr;
+    gap: var(--space-4);
   }
+
   .posCard {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: var(--space-3);
+    padding: var(--space-3);
+  }
+
+  .actionsGroup {
+    width: 100%;
+    display: flex;
+  }
+
+  .actionsGroup button {
+    flex: 1;
+    min-height: 44px;
   }
 }

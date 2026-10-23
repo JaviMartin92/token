@@ -52,15 +52,18 @@
 
 .valueRow {
   margin: var(--space-1) 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .value {
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
+  word-break: break-word;
 }
 
 .subtext {
@@ -101,4 +104,24 @@
 
 .crimson .value {
   color: var(--color-crimson-light);
+}
+
+/* 📱 ADAPTACIÓN RESPONSIVA TOTAL SMARTPHONES (<= 640px) */
+@media (max-width: 640px) {
+  .statCard {
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+  }
+
+  .title {
+    font-size: 0.6875rem;
+  }
+
+  .value {
+    font-size: 1.125rem;
+  }
+
+  .subtext {
+    font-size: 0.6875rem;
+  }
 }

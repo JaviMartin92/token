@@ -67,3 +67,15 @@
     padding: var(--space-3) var(--space-4);
   }
 }
+
+@media (max-width: 480px) {
+  .body {
+    padding: var(--space-3);
+  }
+  .header {
+    padding: var(--space-2) var(--space-3);
+  }
+  .title {
+    font-size: 0.9375rem;
+  }
+}

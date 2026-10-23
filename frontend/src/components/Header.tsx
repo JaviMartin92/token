@@ -53,14 +53,16 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className={styles.header}>
-      {/* 🏛️ Barra Superior: Marca, Métricas Clave y Billetera */}
+      {/* 🏛️ Barra Superior: Marca, Billetera y Controles */}
       <div className={styles.topBar}>
         <div className={styles.brandGroup}>
-          <div className={styles.brandLogo}>α</div>
+          <div className={styles.brandLogo} aria-hidden="true">α</div>
           <div className={styles.brandText}>
             <div className={styles.titleRow}>
               <h1 className={styles.brandTitle}>{UI_STRINGS.HEADER.TITLE}</h1>
-              <Badge variant="blue" size="sm">{UI_STRINGS.HEADER.BADGE_ENV_PROD}</Badge>
+              <Badge variant="blue" size="sm" className={styles.envBadge}>
+                {UI_STRINGS.HEADER.BADGE_ENV_PROD}
+              </Badge>
               {circuitBreakerFrozen && (
                 <Badge variant="crimson" size="sm" dot>
                   ⚡ {UI_STRINGS.ADMIN.BREAKER_STATUS_FROZEN}
@@ -71,35 +73,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* 📊 Métricas Globales */}
-        <div className={styles.metricsGroup}>
-          <div
-            onClick={onOpenApyModal}
-            className={styles.metricPillInteractive}
-            role="button"
-            tabIndex={0}
-            title={UI_STRINGS.MODALS.APY_BREAKDOWN.TITLE}
-          >
-            <span className={styles.metricLabel}>{UI_STRINGS.HEADER.LABEL_APY_BREAKDOWN_TOOLTIP}</span>
-            <span className={`${styles.metricValue} ${styles.metricPurple}`}>{alphaApy} APR ℹ️</span>
-          </div>
-
-          <div className={styles.metricPill}>
-            <span className={styles.metricLabel}>{UI_STRINGS.HEADER.LABEL_POR_RATIO}</span>
-            <span data-testid="header-por-ratio" className={`${styles.metricValue} ${styles.metricEmerald}`}>
-              {porRatio}
-            </span>
-          </div>
-
-          <div className={styles.metricPill}>
-            <span className={styles.metricLabel}>{UI_STRINGS.HEADER.LABEL_NAV}</span>
-            <span data-testid="header-nav-value" className={`${styles.metricValue} ${styles.metricBlue}`}>
-              {navValue}
-            </span>
-          </div>
-        </div>
-
-        {/* 👛 Billetera & Estado */}
+        {/* 👛 Billetera & Controles */}
         <div className={styles.walletGroup}>
           <div className={styles.walletBadge}>
             <span
@@ -130,10 +104,47 @@ export const Header: React.FC<HeaderProps> = ({
               {UI_STRINGS.HEADER.BTN_CONNECT}
             </Button>
           )}
+
+          <button
+            type="button"
+            onClick={onOpenReferral}
+            className={styles.mobileReferralBtn}
+            title={UI_STRINGS.COMMON.BTN_INVITE_FRIENDS}
+          >
+            🤝
+          </button>
+        </div>
+
+        {/* 📊 Métricas Globales (Pills Fluidas en Ticker) */}
+        <div className={styles.metricsGroup}>
+          <div
+            onClick={onOpenApyModal}
+            className={styles.metricPillInteractive}
+            role="button"
+            tabIndex={0}
+            title={UI_STRINGS.MODALS.APY_BREAKDOWN.TITLE}
+          >
+            <span className={styles.metricLabel}>{UI_STRINGS.HEADER.LABEL_APY_BREAKDOWN_TOOLTIP}</span>
+            <span className={`${styles.metricValue} ${styles.metricPurple}`}>{alphaApy} APR ℹ️</span>
+          </div>
+
+          <div className={styles.metricPill}>
+            <span className={styles.metricLabel}>{UI_STRINGS.HEADER.LABEL_POR_RATIO}</span>
+            <span data-testid="header-por-ratio" className={`${styles.metricValue} ${styles.metricEmerald}`}>
+              {porRatio}
+            </span>
+          </div>
+
+          <div className={styles.metricPill}>
+            <span className={styles.metricLabel}>{UI_STRINGS.HEADER.LABEL_NAV}</span>
+            <span data-testid="header-nav-value" className={`${styles.metricValue} ${styles.metricBlue}`}>
+              {navValue}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* 🧭 Barra de Navegación Institucional */}
+      {/* 🧭 Barra de Navegación Institucional (100% Ancho sin Scrollbar) */}
       <nav className={styles.navBar} aria-label="Navegación principal">
         <div className={styles.navContainer}>
           <div className={styles.navTabs}>
@@ -143,7 +154,8 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => setActiveTab('client')}
               className={activeTab === 'client' ? styles.navTabActive : styles.navTab}
             >
-              {UI_STRINGS.COMMON.TAB_PORTAL_CLIENT}
+              <span className={styles.tabDesktopText}>{UI_STRINGS.COMMON.TAB_PORTAL_CLIENT}</span>
+              <span className={styles.tabMobileText}>🏛️ Tesorería</span>
             </button>
             <button
               type="button"
@@ -151,7 +163,8 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => setActiveTab('metrics')}
               className={activeTab === 'metrics' ? styles.navTabActive : styles.navTab}
             >
-              {UI_STRINGS.COMMON.TAB_METRICS_ANALYTICS}
+              <span className={styles.tabDesktopText}>{UI_STRINGS.COMMON.TAB_METRICS_ANALYTICS}</span>
+              <span className={styles.tabMobileText}>📊 Solvencia</span>
             </button>
             <button
               type="button"
@@ -159,7 +172,8 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => setActiveTab('governance')}
               className={activeTab === 'governance' ? styles.navTabActive : styles.navTab}
             >
-              {UI_STRINGS.COMMON.TAB_GOVERNANCE_OPERATIONS}
+              <span className={styles.tabDesktopText}>{UI_STRINGS.COMMON.TAB_GOVERNANCE_OPERATIONS}</span>
+              <span className={styles.tabMobileText}>⚖️ Gobernanza</span>
             </button>
           </div>
 

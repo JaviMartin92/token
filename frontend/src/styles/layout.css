@@ -22,6 +22,18 @@
   }
 }
 
+@media (max-width: 480px) {
+  .app-container {
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-3);
+  }
+  .glass-panel,
+  .card {
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+  }
+}
+
 /* 🔒 Telemetría Oculta para Pruebas E2E / Automatizadas */
 .telemetry-hidden-container {
   position: absolute;

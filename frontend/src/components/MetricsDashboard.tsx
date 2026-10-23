@@ -261,78 +261,78 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
       >
         <DataTable headers={tableHeaders} minWidth="650px">
           <tr>
-            <td>
+            <td data-label="Activo">
               <div className={styles.assetCell}>
                 <span>💵</span>
                 <span>USDC / Stablecoins</span>
               </div>
             </td>
-            <td className={styles.boldNum}>{stablesActualPct.toFixed(2)}%</td>
-            <td>{(targetWeights?.stables || 50).toFixed(2)}% Target</td>
-            <td data-testid="por-row-usdc-val" className={styles.boldNum}>
+            <td data-label="Asignación Actual" className={styles.boldNum}>{stablesActualPct.toFixed(2)}%</td>
+            <td data-label="Ponderación Objetivo">{(targetWeights?.stables || 50).toFixed(2)}% Target</td>
+            <td data-label="Valoración en USD" data-testid="por-row-usdc-val" className={styles.boldNum}>
               ${stablesUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
             </td>
-            <td className={styles.mutedText}>{UI_STRINGS.METRICS.MORPHO_USDC_SOURCE} / Créditos P2P</td>
+            <td data-label="Fuente Rendimiento" className={styles.mutedText}>{UI_STRINGS.METRICS.MORPHO_USDC_SOURCE} / Créditos P2P</td>
           </tr>
 
           <tr>
-            <td>
+            <td data-label="Activo">
               <div className={styles.assetCell}>
                 <span>🪙</span>
                 <span>Wrapped Bitcoin (WBTC)</span>
               </div>
             </td>
-            <td className={styles.boldNum}>{btcActualPct.toFixed(2)}%</td>
-            <td>{(targetWeights?.wbtc || 25).toFixed(2)}% Target</td>
-            <td data-testid="por-row-wbtc-val" className={styles.boldNum}>
+            <td data-label="Asignación Actual" className={styles.boldNum}>{btcActualPct.toFixed(2)}%</td>
+            <td data-label="Ponderación Objetivo">{(targetWeights?.wbtc || 25).toFixed(2)}% Target</td>
+            <td data-label="Valoración en USD" data-testid="por-row-wbtc-val" className={styles.boldNum}>
               ${btcUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
             </td>
-            <td className={styles.mutedText}>{UI_STRINGS.METRICS.LOMBARD_LBTC_SOURCE} / Oráculo Chainlink</td>
+            <td data-label="Fuente Rendimiento" className={styles.mutedText}>{UI_STRINGS.METRICS.LOMBARD_LBTC_SOURCE} / Oráculo Chainlink</td>
           </tr>
 
           <tr>
-            <td>
+            <td data-label="Activo">
               <div className={styles.assetCell}>
                 <span>🔷</span>
                 <span>Wrapped Ethereum (WETH)</span>
               </div>
             </td>
-            <td className={styles.boldNum}>{ethActualPct.toFixed(2)}%</td>
-            <td>{(targetWeights?.weth || 12.5).toFixed(2)}% Target</td>
-            <td data-testid="por-row-weth-val" className={styles.boldNum}>
+            <td data-label="Asignación Actual" className={styles.boldNum}>{ethActualPct.toFixed(2)}%</td>
+            <td data-label="Ponderación Objetivo">{(targetWeights?.weth || 12.5).toFixed(2)}% Target</td>
+            <td data-label="Valoración en USD" data-testid="por-row-weth-val" className={styles.boldNum}>
               ${ethUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
             </td>
-            <td className={styles.mutedText}>{UI_STRINGS.METRICS.LIDO_WSTETH_SOURCE} / Oráculo Chainlink</td>
+            <td data-label="Fuente Rendimiento" className={styles.mutedText}>{UI_STRINGS.METRICS.LIDO_WSTETH_SOURCE} / Oráculo Chainlink</td>
           </tr>
 
           <tr>
-            <td>
+            <td data-label="Activo">
               <div className={styles.assetCell}>
                 <span>🏛️</span>
                 <span>Sub-Reserva ALPHA Staking (POL)</span>
               </div>
             </td>
-            <td className={styles.boldNum}>{alphaActualPct.toFixed(2)}%</td>
-            <td>{(targetWeights?.alts || 12.5).toFixed(2)}% Target</td>
-            <td data-testid="por-row-alpha-val" className={styles.boldNum}>
+            <td data-label="Asignación Actual" className={styles.boldNum}>{alphaActualPct.toFixed(2)}%</td>
+            <td data-label="Ponderación Objetivo">{(targetWeights?.alts || 12.5).toFixed(2)}% Target</td>
+            <td data-label="Valoración en USD" data-testid="por-row-alpha-val" className={styles.boldNum}>
               ${treasuryStakedUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
             </td>
-            <td className={styles.mutedText}>Auto-Staking Gobernanza DAO / Real Yield</td>
+            <td data-label="Fuente Rendimiento" className={styles.mutedText}>Auto-Staking Gobernanza DAO / Real Yield</td>
           </tr>
 
           <tr className={styles.totalRow}>
-            <td>
+            <td data-label="Total">
               <div className={styles.assetCell}>
                 <span>📊</span>
                 <span>Total Cartera de Tesorería</span>
               </div>
             </td>
-            <td className={styles.boldNum}>100.00%</td>
-            <td className={styles.boldNum}>100.00% Target</td>
-            <td className={styles.boldNum}>
+            <td data-label="Asignación Total" className={styles.boldNum}>100.00%</td>
+            <td data-label="Objetivo Total" className={styles.boldNum}>100.00% Target</td>
+            <td data-label="Valoración Total" className={styles.boldNum}>
               ${totalPortfolioUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
             </td>
-            <td className={styles.mutedText}>Respaldo On-Chain Verificado</td>
+            <td data-label="Auditoría" className={styles.mutedText}>Respaldo On-Chain Verificado</td>
           </tr>
         </DataTable>
 
