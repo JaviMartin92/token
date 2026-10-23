@@ -44,8 +44,8 @@ docker rm -f alpha-frontend 2>$null | Out-Null
 Remove-Item -Recurse -Force "${ROOT_DIR}\frontend\dist" 2>$null | Out-Null
 Remove-Item -Recurse -Force "${ROOT_DIR}\frontend\node_modules\.vite" 2>$null | Out-Null
 
-docker run --rm -v "${ROOT_DIR}:/app" -w /app/frontend node:22-alpine npm install
-docker run --rm -v "${ROOT_DIR}:/app" -w /app/frontend node:22-alpine npm run build:sandbox
+docker run --rm -e NPM_CONFIG_UPDATE_NOTIFIER=false -v "${ROOT_DIR}:/app" -w /app/frontend node:22-alpine npm install --no-update-notifier
+docker run --rm -e NPM_CONFIG_UPDATE_NOTIFIER=false -v "${ROOT_DIR}:/app" -w /app/frontend node:22-alpine npm run build:sandbox --no-update-notifier
 docker run -d --name alpha-frontend -p 5173:5173 --add-host=host.docker.internal:host-gateway -v "${ROOT_DIR}:/app" -w /app/frontend node:22-alpine node server.cjs | Out-Null
 
 Write-Host "=======================================================" -ForegroundColor Green
