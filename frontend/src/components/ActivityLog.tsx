@@ -1,5 +1,6 @@
 import React from 'react';
 import { UI_STRINGS } from '../constants/strings.js';
+import { Card } from './common/index.js';
 
 interface ActivityLogProps {
   logs: string[];
@@ -7,10 +8,13 @@ interface ActivityLogProps {
 
 export const ActivityLog: React.FC<ActivityLogProps> = ({ logs }) => {
   return (
-    <div className="glass-panel activity-log-card">
-      <h4 className="activity-log-header">
-        {UI_STRINGS.MODALS.ACTIVITY_LOG.TITLE}
-      </h4>
+    <Card
+      variant="surface"
+      collapsible
+      defaultExpanded={false}
+      headerTitle={`📜 ${UI_STRINGS.MODALS.ACTIVITY_LOG.TITLE}`}
+      headerSubtitle="Registro cronológico en tiempo real de llamadas Web3, oráculos y transacciones"
+    >
       <div data-testid="activity-log-container" className="activity-log-box">
         {logs.length === 0 ? (
           <span className="activity-log-empty">{UI_STRINGS.MODALS.ACTIVITY_LOG.EMPTY}</span>
@@ -29,6 +33,6 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ logs }) => {
           })
         )}
       </div>
-    </div>
+    </Card>
   );
 };

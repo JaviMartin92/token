@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import styles from './AdminControlPanel.module.css';
 import { CONTRACT_ADDRESSES } from '../utils/web3.js';
 import { UI_STRINGS } from '../constants/strings.js';
+import { Card, Badge, Button } from './common/index.js';
 
 interface AdminControlPanelProps {
   chainId?: number;
@@ -61,7 +62,6 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
     setIsExecutingBuyback(true);
     setBuybackStatus(null);
     try {
-      // In Sandbox mode, trigger discount buyback simulation
       await new Promise((resolve) => setTimeout(resolve, 800));
       setBuybackStatus(`✅ Recompra ejecutada: ${buybackUsdcAmount} USDC invertidos en DEX. Tokens ALPHA adquiridos con descuento y quemados on-chain. NAV/ALPHA incrementado.`);
     } catch (err: any) {
@@ -94,246 +94,330 @@ Descripción: "${proposalDescription}"
   };
 
   return (
-    <div className="acp-container">
-      <div className={`glass-panel ${isSandbox ? 'acp-banner-devnet' : 'acp-banner-prod'}`}>
-        <div className="acp-banner-flex">
-          <div>
-            <div className={isSandbox ? 'acp-title-sandbox' : 'acp-title-prod'}>
-              {isSandbox ? UI_STRINGS.ADMIN.TITLE_SANDBOX : `🏛️ ${UI_STRINGS.ADMIN.TITLE_PROD} (Chain ID ${chainId || 1})`}
-            </div>
-            <div className="acp-banner-subtitle">
-              {isSandbox ? (
-                <>{UI_STRINGS.ADMIN.SUBTITLE_SANDBOX}</>
-              ) : (
-                <><strong>MiCA Recital 22 Compliant</strong>: {UI_STRINGS.ADMIN.SUBTITLE_PROD} Toda alteración de parámetros requiere una propuesta formal en <code>GovernorAlphaCentauri.sol</code> con un timelock obligatorio de 72 horas en <code>TimelockController.sol</code>.</>
-              )}
-            </div>
-          </div>
+    <div className={styles.container}>
+      {/* 🧭 Selector de Entorno: Sandbox Local vs Producción DAO */}
+      <div className={styles.modeCard}>
+        <div className={styles.modeInfo}>
+          <h2 className={styles.modeTitle}>
+            <span>{isSandbox ? '🧪' : '🏛️'}</span>
+            <span>{isSandbox ? UI_STRINGS.ADMIN.TITLE_SANDBOX : `${UI_STRINGS.ADMIN.TITLE_PROD} (Chain ID ${chainId || 1})`}</span>
+            <Badge variant={isSandbox ? 'blue' : 'amber'} size="sm">
+              {isSandbox ? 'Entorno Local' : 'Timelock 72h'}
+            </Badge>
+          </h2>
+          <p className={styles.modeDesc}>
+            {isSandbox ? (
+              <>{UI_STRINGS.ADMIN.SUBTITLE_SANDBOX}</>
+            ) : (
+              <>
+                <strong>Cumplimiento MiCA Recital 22</strong>: {UI_STRINGS.ADMIN.SUBTITLE_PROD} Toda alteración de parámetros requiere propuesta formal en <code>GovernorAlphaCentauri.sol</code> con timelock de 72 horas.
+              </>
+            )}
+          </p>
+        </div>
 
-          <div className="acp-toggle-box">
-            <span className="acp-toggle-label">{UI_STRINGS.ADMIN.LABEL_TOGGLE_VIEW}</span>
-            <button
-              className={`btn-primary ${isSandbox ? 'acp-toggle-btn-sandbox-active' : 'acp-toggle-btn-sandbox-inactive'}`}
-              onClick={() => setOverrideMode('sandbox')}
-            >
-              {UI_STRINGS.ADMIN.BTN_TOGGLE_SANDBOX}
-            </button>
-            <button
-              className={`btn-primary ${!isSandbox ? styles.toggleBtnProdActive : styles.toggleBtnProdInactive}`}
-              onClick={() => setOverrideMode('production')}
-            >
-              {UI_STRINGS.ADMIN.BTN_TOGGLE_PROD}
-            </button>
-          </div>
+        <div className={styles.modeToggleBox}>
+          <button
+            type="button"
+            className={`${styles.modeToggleBtn} ${isSandbox ? styles.modeToggleBtnActiveSandbox : ''}`}
+            onClick={() => setOverrideMode('sandbox')}
+          >
+            {UI_STRINGS.ADMIN.BTN_TOGGLE_SANDBOX}
+          </button>
+          <button
+            type="button"
+            className={`${styles.modeToggleBtn} ${!isSandbox ? styles.modeToggleBtnActiveProd : ''}`}
+            onClick={() => setOverrideMode('production')}
+          >
+            {UI_STRINGS.ADMIN.BTN_TOGGLE_PROD}
+          </button>
         </div>
       </div>
 
       {isSandbox ? (
-        <div className="admin-grid">
-          <div className="glass-panel admin-card">
-            <h3 className="admin-title-oracle">⚙️ {UI_STRINGS.ADMIN.CARD_ORACLE_TITLE} (Sandbox)</h3>
+        <div className={styles.gridAdmin}>
+          {/* Tarjeta 1: Oráculo y Ponderación de Reservas */}
+          <Card
+            variant="surface"
+            collapsible
+            defaultExpanded={true}
+            headerTitle={`⚙️ ${UI_STRINGS.ADMIN.CARD_ORACLE_TITLE} (Sandbox)`}
+            headerSubtitle="Simula precios del oráculo y ajusta la composición de la cartera"
+          >
             <div className={styles.controlStack}>
-              <div>
-                <label className={styles.labelSm}>{UI_STRINGS.ADMIN.LABEL_ORACLE_PRICE}</label>
-                <div className="acp-flex-row-gap5">
+              <div className={styles.formGroup}>
+                <label className={styles.label}>{UI_STRINGS.ADMIN.LABEL_ORACLE_PRICE}</label>
+                <div className={styles.inputRow}>
                   <input
                     data-testid="admin-oracle-price-input"
                     type="number"
                     step="0.01"
                     value={oraclePrice}
                     onChange={(e) => setOraclePrice(e.target.value)}
-                    className="admin-input-dark acp-flex-1"
+                    className={styles.input}
                   />
-                  <button data-testid="admin-oracle-update-btn" className={`btn-primary ${styles.btnIndigo}`} onClick={onUpdateOracle}>
+                  <Button
+                    data-testid="admin-oracle-update-btn"
+                    variant="primary"
+                    size="sm"
+                    onClick={onUpdateOracle}
+                  >
                     {UI_STRINGS.ADMIN.BTN_UPDATE_ORACLE}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
-              <div className="admin-section-divider">
-                <label className={styles.labelSm}>{UI_STRINGS.ADMIN.CARD_WEIGHTS_TITLE}</label>
-                <div className="admin-grid-4col">
-                  <div>
-                    <span className="admin-label-compact">{UI_STRINGS.COMMON.SYMBOL_USDC}</span>
-                    <input data-testid="admin-weight-usdc-input" type="number" value={newStablesWeight} onChange={(e) => setNewStablesWeight(e.target.value)} className="admin-input-compact" />
+              <div className={styles.formGroup}>
+                <label className={styles.label}>{UI_STRINGS.ADMIN.CARD_WEIGHTS_TITLE}</label>
+                <div className={styles.weightsGrid}>
+                  <div className={styles.weightItem}>
+                    <span className={styles.weightSymbol}>{UI_STRINGS.COMMON.SYMBOL_USDC}</span>
+                    <input
+                      data-testid="admin-weight-usdc-input"
+                      type="number"
+                      value={newStablesWeight}
+                      onChange={(e) => setNewStablesWeight(e.target.value)}
+                      className={styles.weightInput}
+                    />
                   </div>
-                  <div>
-                    <span className="admin-label-compact">{UI_STRINGS.COMMON.SYMBOL_WBTC}</span>
-                    <input data-testid="admin-weight-wbtc-input" type="number" value={newWbtcWeight} onChange={(e) => setNewWbtcWeight(e.target.value)} className="admin-input-compact" />
+                  <div className={styles.weightItem}>
+                    <span className={styles.weightSymbol}>{UI_STRINGS.COMMON.SYMBOL_WBTC}</span>
+                    <input
+                      data-testid="admin-weight-wbtc-input"
+                      type="number"
+                      value={newWbtcWeight}
+                      onChange={(e) => setNewWbtcWeight(e.target.value)}
+                      className={styles.weightInput}
+                    />
                   </div>
-                  <div>
-                    <span className="admin-label-compact">{UI_STRINGS.COMMON.SYMBOL_WETH}</span>
-                    <input data-testid="admin-weight-weth-input" type="number" value={newWethWeight} onChange={(e) => setNewWethWeight(e.target.value)} className="admin-input-compact" />
+                  <div className={styles.weightItem}>
+                    <span className={styles.weightSymbol}>{UI_STRINGS.COMMON.SYMBOL_WETH}</span>
+                    <input
+                      data-testid="admin-weight-weth-input"
+                      type="number"
+                      value={newWethWeight}
+                      onChange={(e) => setNewWethWeight(e.target.value)}
+                      className={styles.weightInput}
+                    />
                   </div>
-                  <div>
-                    <span className="admin-label-compact">{UI_STRINGS.COMMON.SYMBOL_ALPHA}</span>
-                    <input data-testid="admin-weight-alpha-input" type="number" value={newAltsWeight} onChange={(e) => setNewAltsWeight(e.target.value)} className="admin-input-compact" />
+                  <div className={styles.weightItem}>
+                    <span className={styles.weightSymbol}>{UI_STRINGS.COMMON.SYMBOL_ALPHA}</span>
+                    <input
+                      data-testid="admin-weight-alpha-input"
+                      type="number"
+                      value={newAltsWeight}
+                      onChange={(e) => setNewAltsWeight(e.target.value)}
+                      className={styles.weightInput}
+                    />
                   </div>
                 </div>
-                <button data-testid="admin-rebalance-btn" className={`btn-primary ${styles.btnIndigoFull}`} onClick={onAdjustWeights}>
+
+                <Button
+                  data-testid="admin-rebalance-btn"
+                  variant="primary"
+                  size="md"
+                  onClick={onAdjustWeights}
+                >
                   {UI_STRINGS.ADMIN.BTN_ADJUST_WEIGHTS}
-                </button>
+                </Button>
               </div>
             </div>
-          </div>
+          </Card>
 
-          <div className="glass-panel admin-card">
-            <h3 className="admin-title-breaker">⚡ {UI_STRINGS.ADMIN.CARD_BREAKER_TITLE} (Sandbox)</h3>
+          {/* Tarjeta 2: Disyuntor de Emergencia (Circuit Breaker) */}
+          <Card
+            variant="surface"
+            collapsible
+            defaultExpanded={true}
+            headerTitle={`⚡ ${UI_STRINGS.ADMIN.CARD_BREAKER_TITLE} (Sandbox)`}
+            headerSubtitle="Protección frente a desanclajes extremos o manipulaciones de precios"
+          >
             <div className={styles.controlStack}>
-              <div>
-                <label className={styles.labelSm}>
-                  {UI_STRINGS.ADMIN.LABEL_BREAKER_STATE} <strong>{circuitBreakerFrozen ? UI_STRINGS.COMMON.STATUS_FROZEN_FULL : UI_STRINGS.COMMON.STATUS_NORMAL}</strong>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  {UI_STRINGS.ADMIN.LABEL_BREAKER_STATE}:{' '}
+                  <Badge variant={circuitBreakerFrozen ? 'crimson' : 'emerald'} size="sm" dot>
+                    {circuitBreakerFrozen ? UI_STRINGS.COMMON.STATUS_FROZEN_FULL : UI_STRINGS.COMMON.STATUS_NORMAL}
+                  </Badge>
                 </label>
-                <div className={styles.grid2col}>
-                  <button className={`btn-secondary ${styles.btnDangerOutline}`} onClick={onSimulateDrop}>
+                <div className={styles.twoColButtons}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onSimulateDrop}
+                  >
                     📉 {UI_STRINGS.ADMIN.BTN_CHECK_DEVIATION}
-                  </button>
-                  <button data-testid="admin-reset-governance-btn" className={`btn-primary ${styles.btnGreen}`} onClick={onResetBreaker}>
+                  </Button>
+                  <Button
+                    data-testid="admin-reset-governance-btn"
+                    variant="emerald"
+                    size="sm"
+                    onClick={onResetBreaker}
+                  >
                     {UI_STRINGS.ADMIN.BTN_RESET_BREAKER}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
-              <div className="admin-section-divider">
-                <button data-testid="admin-reset-anvil-btn" className={`btn-secondary ${styles.btnWarningOutline}`} onClick={onResetBlockchain}>
-                  {UI_STRINGS.ADMIN.BTN_RESET_EVM}
-                </button>
+              <div className={styles.formGroup}>
+                <Button
+                  data-testid="admin-reset-anvil-btn"
+                  variant="secondary"
+                  size="sm"
+                  onClick={onResetBlockchain}
+                >
+                  🔄 {UI_STRINGS.ADMIN.BTN_RESET_EVM}
+                </Button>
               </div>
             </div>
-          </div>
+          </Card>
 
-          <div className="glass-panel admin-card">
-            <h3 className="admin-title-oracle">{UI_STRINGS.ADMIN.CARD_BUYBACK_TITLE}</h3>
+          {/* Tarjeta 3: Recompra con Descuento (Buyback Engine) */}
+          <Card
+            variant="surface"
+            collapsible
+            defaultExpanded={true}
+            headerTitle={UI_STRINGS.ADMIN.CARD_BUYBACK_TITLE}
+            headerSubtitle="Quema deflacionaria de participaciones adquiridas con descuento en el mercado secundario"
+          >
             <div className={styles.controlStack}>
-              <div>
-                <label className={styles.labelSm}>
-                  {UI_STRINGS.ADMIN.LABEL_BUYBACK_SAFETY} <strong>{UI_STRINGS.ADMIN.LABEL_BUYBACK_LOCKS_ACTIVE}</strong>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  {UI_STRINGS.ADMIN.LABEL_BUYBACK_SAFETY}: <strong>{UI_STRINGS.ADMIN.LABEL_BUYBACK_LOCKS_ACTIVE}</strong>
                 </label>
-                <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.7)', margin: '6px 0 10px 0', lineHeight: 1.4 }}>
+                <div className={styles.buybackLockList}>
                   {UI_STRINGS.ADMIN.BUYBACK_LOCKS_LIST.map((lock, idx) => (
-                    <React.Fragment key={idx}>{lock}<br/></React.Fragment>
+                    <div key={idx}>{lock}</div>
                   ))}
                 </div>
-                <div className="acp-flex-row-gap5">
+
+                <div className={styles.inputRow}>
                   <input
                     type="number"
                     placeholder={UI_STRINGS.ADMIN.INPUT_BUYBACK_PLACEHOLDER}
                     value={buybackUsdcAmount}
                     onChange={(e) => setBuybackUsdcAmount(e.target.value)}
-                    className="admin-input-dark acp-flex-1"
+                    className={styles.input}
                   />
-                  <button
-                    className={`btn-primary ${styles.btnIndigo}`}
+                  <Button
+                    variant="primary"
+                    size="sm"
                     onClick={handleSimulateBuyback}
                     disabled={isExecutingBuyback}
                   >
                     {isExecutingBuyback ? UI_STRINGS.ADMIN.BTN_BUYBACK_EXECUTING : UI_STRINGS.ADMIN.BTN_BUYBACK_SUBMIT}
-                  </button>
+                  </Button>
                 </div>
+
                 {buybackStatus && (
-                  <div style={{ marginTop: '8px', fontSize: '0.8rem', color: buybackStatus.includes('✅') ? '#34d399' : '#f87171' }}>
+                  <div className={buybackStatus.includes('✅') ? styles.statusSuccess : styles.statusError}>
                     {buybackStatus}
                   </div>
                 )}
               </div>
             </div>
-          </div>
+          </Card>
         </div>
       ) : (
-        <div className="acp-container">
-          <div className={`glass-panel ${styles.pureWarningCard}`}>
-            <div className={styles.pureWarningTitle}>
-              {UI_STRINGS.ADMIN.WARNING_PURE_DEFI_TITLE}
+        /* MODO PRODUCCIÓN: ADVERTENCIA Y CONSTRUCTOR DE PROPUESTAS DAO */
+        <div className={styles.container}>
+          <div className={styles.warningCard}>
+            <div className={styles.warningTitle}>
+              <span>⚠️</span>
+              <span>{UI_STRINGS.ADMIN.WARNING_PURE_DEFI_TITLE}</span>
             </div>
-            <div className={styles.pureWarningBody}>
+            <div className={styles.warningBody}>
               {UI_STRINGS.ADMIN.WARNING_PURE_DEFI_BODY}
             </div>
           </div>
 
-          <div className={`glass-panel ${styles.proposalCard}`}>
-            <h3 className={styles.proposalTitle}>
-              {UI_STRINGS.GOVERNANCE.CARD_PROPOSE_TITLE} (Proposal Builder)
-            </h3>
-            
-            <div className={styles.grid2col}>
-              <div>
-                <label className={styles.labelSm}>1. {UI_STRINGS.GOVERNANCE.LABEL_TARGET_CONTRACT}</label>
-                <select
-                  value={proposalTarget}
-                  onChange={(e) => setProposalTarget(e.target.value)}
-                  className={styles.proposalSelect}
-                >
-                  <option value="OracleHub">OracleHub.sol (Feeds & Staleness)</option>
-                  <option value="TreasuryManager">TreasuryManager.sol (Nav & Sensitivity)</option>
-                  <option value="DiscountBuybackEngine">DiscountBuybackEngine.sol (10 Candados & Budget)</option>
-                  <option value="P2PLendingMarket">P2PLendingMarket.sol (Credit Line & LTV)</option>
-                  <option value="VestedDiscountVault">VestedDiscountVault.sol (Scale & Tiers)</option>
-                </select>
+          <Card
+            variant="surface"
+            collapsible
+            defaultExpanded={true}
+            headerTitle={`${UI_STRINGS.GOVERNANCE.CARD_PROPOSE_TITLE} (Proposal Builder)`}
+            headerSubtitle="Genera transacciones codificadas y propuestas para GovernorAlphaCentauri.sol"
+          >
+            <div className={styles.proposalForm}>
+              <div className={styles.twoColInputs}>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>1. {UI_STRINGS.GOVERNANCE.LABEL_TARGET_CONTRACT}</label>
+                  <select
+                    value={proposalTarget}
+                    onChange={(e) => setProposalTarget(e.target.value)}
+                    className={styles.select}
+                  >
+                    <option value="OracleHub">OracleHub.sol (Feeds & Staleness)</option>
+                    <option value="TreasuryManager">TreasuryManager.sol (Nav & Sensitivity)</option>
+                    <option value="DiscountBuybackEngine">DiscountBuybackEngine.sol (10 Candados & Budget)</option>
+                    <option value="P2PLendingMarket">P2PLendingMarket.sol (Credit Line & LTV)</option>
+                    <option value="VestedDiscountVault">VestedDiscountVault.sol (Scale & Tiers)</option>
+                  </select>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>{UI_STRINGS.ADMIN.LABEL_ACTION_FUNCTION}</label>
+                  <select
+                    value={proposalAction}
+                    onChange={(e) => setProposalAction(e.target.value)}
+                    className={styles.select}
+                  >
+                    <option value="setTrackedAsset">setTrackedAsset(asset, primaryFeed, secFeed, decimals)</option>
+                    <option value="setOracleStalenessLimit">setOracleStalenessLimit(uint256 limitSeconds)</option>
+                    <option value="setMinDiscountBps">setMinDiscountBps(uint256 minDiscountBps)</option>
+                    <option value="setMaxDailyBudgetBps">setMaxDailyBudgetBps(uint256 maxDailyBudgetBps)</option>
+                    <option value="setCooldownPeriod">setCooldownPeriod(uint256 cooldownPeriod)</option>
+                    <option value="setSwapRouter">setSwapRouter(address router)</option>
+                    <option value="setDynamicFeeSensitivity">setDynamicFeeSensitivity(uint256 sensitivityBps)</option>
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label className={styles.labelSm}>{UI_STRINGS.ADMIN.LABEL_ACTION_FUNCTION}</label>
-                <select
-                  value={proposalAction}
-                  onChange={(e) => setProposalAction(e.target.value)}
-                  className={styles.proposalSelect}
-                >
-                  <option value="setTrackedAsset">setTrackedAsset(asset, primaryFeed, secFeed, decimals)</option>
-                  <option value="setOracleStalenessLimit">setOracleStalenessLimit(uint256 limitSeconds)</option>
-                  <option value="setMinDiscountBps">setMinDiscountBps(uint256 minDiscountBps)</option>
-                  <option value="setMaxDailyBudgetBps">setMaxDailyBudgetBps(uint256 maxDailyBudgetBps)</option>
-                  <option value="setCooldownPeriod">setCooldownPeriod(uint256 cooldownPeriod)</option>
-                  <option value="setSwapRouter">setSwapRouter(address router)</option>
-                  <option value="setDynamicFeeSensitivity">setDynamicFeeSensitivity(uint256 sensitivityBps)</option>
-                </select>
+              <div className={styles.twoColInputs}>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>{UI_STRINGS.ADMIN.LABEL_PARAM_1}</label>
+                  <input
+                    type="text"
+                    value={proposalParam1}
+                    onChange={(e) => setProposalParam1(e.target.value)}
+                    className={styles.input}
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>{UI_STRINGS.ADMIN.LABEL_PARAM_2}</label>
+                  <input
+                    type="text"
+                    value={proposalParam2}
+                    onChange={(e) => setProposalParam2(e.target.value)}
+                    className={styles.input}
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className={styles.grid2col}>
-              <div>
-                <label className={styles.labelSm}>{UI_STRINGS.ADMIN.LABEL_PARAM_1}</label>
-                <input
-                  type="text"
-                  value={proposalParam1}
-                  onChange={(e) => setProposalParam1(e.target.value)}
-                  className="admin-input-dark acp-flex-1"
+              <div className={styles.formGroup}>
+                <label className={styles.label}>{UI_STRINGS.GOVERNANCE.LABEL_DESCRIPTION}</label>
+                <textarea
+                  rows={2}
+                  value={proposalDescription}
+                  onChange={(e) => setProposalDescription(e.target.value)}
+                  className={styles.textarea}
                 />
               </div>
-              <div>
-                <label className={styles.labelSm}>{UI_STRINGS.ADMIN.LABEL_PARAM_2}</label>
-                <input
-                  type="text"
-                  value={proposalParam2}
-                  onChange={(e) => setProposalParam2(e.target.value)}
-                  className="admin-input-dark acp-flex-1"
-                />
+
+              <div className={styles.calldataBox}>
+                <span className={styles.calldataHeader}>{UI_STRINGS.GOVERNANCE.LABEL_CALLDATA}</span>
+                <code className={styles.calldataCode}>{generatedCalldata}</code>
               </div>
-            </div>
 
-            <div>
-              <label className={styles.labelSm}>{UI_STRINGS.GOVERNANCE.LABEL_DESCRIPTION}</label>
-              <textarea
-                rows={2}
-                value={proposalDescription}
-                onChange={(e) => setProposalDescription(e.target.value)}
-                className="admin-input-dark"
-              />
+              <Button
+                variant="primary"
+                size="md"
+                onClick={handleCreateDaoProposal}
+              >
+                {UI_STRINGS.GOVERNANCE.BTN_SUBMIT_PROPOSAL} (Timelock 72h)
+              </Button>
             </div>
-
-            <div className={styles.calldataBox}>
-              <div className="acp-toggle-label">{UI_STRINGS.GOVERNANCE.LABEL_CALLDATA}</div>
-              <code className={styles.calldataCode}>
-                {generatedCalldata}
-              </code>
-            </div>
-
-            <button
-              className={`btn-primary ${styles.proposalSubmitBtn}`}
-              onClick={handleCreateDaoProposal}
-            >
-              {UI_STRINGS.GOVERNANCE.BTN_SUBMIT_PROPOSAL} (Timelock 72h)
-            </button>
-          </div>
+          </Card>
         </div>
       )}
     </div>

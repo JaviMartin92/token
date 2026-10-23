@@ -1,0 +1,111 @@
+/* ==========================================================================
+   🏛️ ALPHA CENTAURI - CAJA DE ASIGNACIÓN AL PROPIETARIO / FUNDADOR
+   Institutional Design System Compliant (Zero Raw Tailwind)
+   ========================================================================== */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+/* 📊 Grid de Métricas de Vesting */
+.gridKpi {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+  width: 100%;
+}
+
+/* 👛 Panel de Control de Reclamo Fiduciario */
+.footer {
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.beneficiaryInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-width: 650px;
+}
+
+.beneficiaryRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.beneficiaryLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.beneficiaryAddr {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--color-blue-light);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.disclaimer {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  line-height: 1.45;
+  margin-top: 2px;
+}
+
+.claimBtn {
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+/* 📱 ADAPTACIÓN RESPONSIVA TOTAL */
+@media (max-width: 768px) {
+  .gridKpi {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+  }
+
+  .footer {
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--space-4);
+    gap: var(--space-3);
+  }
+
+  .claimBtn {
+    width: 100%;
+    min-height: 48px;
+    white-space: normal;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .gridKpi {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+
+  .footer {
+    padding: var(--space-3);
+  }
+
+  .beneficiaryAddr {
+    font-size: 0.8125rem;
+  }
+}
