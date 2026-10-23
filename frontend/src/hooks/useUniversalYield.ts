@@ -39,22 +39,41 @@ export function useUniversalYield(refetchInterval = 3000) {
     queryKey: ['porBreakdown'],
     queryFn: async () => {
       try {
-        const breakdown = await publicClient.readContract({
-          address: CONTRACT_ADDRESSES.TREASURY,
-          abi: ABIS.TREASURY,
-          functionName: 'getAssetBreakdown'
-        }) as any;
+        const [breakdown, stakingBreakdown, navPerShareWei] = await Promise.all([
+          publicClient.readContract({
+            address: CONTRACT_ADDRESSES.TREASURY,
+            abi: ABIS.TREASURY,
+            functionName: 'getAssetBreakdown'
+          }) as Promise<any>,
+          publicClient.readContract({
+            address: CONTRACT_ADDRESSES.STAKING,
+            abi: ABIS.STAKING,
+            functionName: 'getStakingBreakdown'
+          }) as Promise<any>,
+          publicClient.readContract({
+            address: CONTRACT_ADDRESSES.TREASURY,
+            abi: ABIS.TREASURY,
+            functionName: 'getNAVPerShare'
+          }) as Promise<bigint>
+        ]);
 
         const stablesWei = Array.isArray(breakdown) ? breakdown[0] : (breakdown?.stablesUsd || 0n);
         const wbtcWei = Array.isArray(breakdown) ? breakdown[1] : (breakdown?.wbtcUsd || 0n);
         const wethWei = Array.isArray(breakdown) ? breakdown[2] : (breakdown?.wethUsd || 0n);
-        const loansWei = Array.isArray(breakdown) ? breakdown[3] : (breakdown?.loansUsd || 0n);
+
+        const rawTuple = Array.isArray(stakingBreakdown) ? stakingBreakdown : stakingBreakdown?.breakdown;
+        const treasuryStakedWei = Array.isArray(rawTuple)
+          ? (rawTuple[2] ?? 0n)
+          : (rawTuple?.treasuryStaked ?? stakingBreakdown?.treasuryStaked ?? 0n);
+
+        const navPerShare = parseFloat(formatEther(navPerShareWei)) || 1.0;
+        const alphaStakingUSD = parseFloat(formatEther(treasuryStakedWei)) * navPerShare;
 
         return {
           stables: parseFloat(formatEther(stablesWei)),
           wbtc: parseFloat(formatEther(wbtcWei)),
           weth: parseFloat(formatEther(wethWei)),
-          alphaStaking: parseFloat(formatEther(loansWei))
+          alphaStaking: alphaStakingUSD
         };
       } catch (e) {
         return { stables: 5000, wbtc: 2500, weth: 1250, alphaStaking: 1250 };
