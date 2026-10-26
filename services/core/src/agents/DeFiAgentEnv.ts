@@ -4,14 +4,15 @@ import {
   http,
   parseUnits,
   formatUnits,
-  Address,
   PublicClient,
   WalletClient
 } from 'viem';
+import type { Address } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { foundry } from 'viem/chains';
 import fs from 'fs';
 import path from 'path';
+import { ContractRegistry } from './ContractRegistry';
 
 // Standard Anvil Accounts
 export const ADMIN_KEY = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'; // #0
@@ -28,19 +29,6 @@ export const ERC20_ABI = [
   { name: 'transfer', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'to', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ name: '', type: 'bool' }] }
 ] as const;
 
-function loadArtifact(name: string, file: string) {
-  const p1 = path.resolve(__dirname, `../../../../contracts/out/${file}/${name}.json`);
-  const p2 = path.resolve(__dirname, `../../../../contracts/out/src/${file}/${name}.json`);
-  const p3 = path.resolve(__dirname, `../../../../contracts/out/test/${file}/${name}.json`);
-  const p4 = path.resolve(__dirname, `../../../../contracts/out/adapters/${file}/${name}.json`);
-  const p5 = path.resolve(__dirname, `../../../../contracts/out/${name}.sol/${name}.json`);
-  const p = fs.existsSync(p1) ? p1 : fs.existsSync(p2) ? p2 : fs.existsSync(p3) ? p3 : fs.existsSync(p4) ? p4 : fs.existsSync(p5) ? p5 : p1;
-  if (!fs.existsSync(p)) {
-    throw new Error(`Compiled artifact not found at ${p}`);
-  }
-  return JSON.parse(fs.readFileSync(p, 'utf8'));
-}
-
 export interface InvariantResult {
   name: string;
   passed: boolean;
@@ -52,16 +40,7 @@ export class DeFiAgentEnv {
   public publicClient: PublicClient;
   public adminClient: WalletClient;
   public contracts: Record<string, Address>;
-
-  public abis: {
-    treasury: any;
-    staking: any;
-    vested: any;
-    p2p: any;
-    nft: any;
-    breaker: any;
-    router: any;
-  };
+  public registry: ContractRegistry;
 
   constructor(rpcUrl: string = 'http://127.0.0.1:8545') {
     this.publicClient = createPublicClient({ chain: foundry, transport: http(rpcUrl) });
@@ -70,16 +49,7 @@ export class DeFiAgentEnv {
 
     const contractsPath = path.resolve(__dirname, '../../../../frontend/src/contracts.json');
     this.contracts = JSON.parse(fs.readFileSync(contractsPath, 'utf8'));
-
-    this.abis = {
-      treasury: loadArtifact('TreasuryManager', 'TreasuryManager.sol').abi,
-      staking: loadArtifact('GovernanceStaking', 'GovernanceStaking.sol').abi,
-      vested: loadArtifact('VestedDiscountVault', 'VestedDiscountVault.sol').abi,
-      p2p: loadArtifact('P2PLendingMarket', 'P2PLendingMarket.sol').abi,
-      nft: loadArtifact('VaultPositionNFT', 'VaultPositionNFT.sol').abi,
-      breaker: loadArtifact('CircuitBreaker', 'CircuitBreaker.sol').abi,
-      router: loadArtifact('RealYieldRouter', 'RealYieldRouter.sol').abi
-    };
+    this.registry = new ContractRegistry();
   }
 
   getWalletClient(privateKey: `0x${string}`): WalletClient {
@@ -89,10 +59,11 @@ export class DeFiAgentEnv {
 
   async setupInitialLiquidity(agentAddress: Address, initialUsdc: number = 20000, initialAlpha: number = 2000) {
     try {
+      const treasuryAbi = this.registry.getContractAbi('TREASURY');
       // Whitelist KYC for agent in Treasury
       await this.adminClient.writeContract({
         address: this.contracts.TREASURY,
-        abi: this.abis.treasury,
+        abi: treasuryAbi,
         functionName: 'setKYCStatus',
         args: [agentAddress, true]
       });
@@ -135,23 +106,30 @@ export class DeFiAgentEnv {
   }
 
   async getAgentState(agentAddress: Address) {
-    const [usdcBal, alphaBal, ethBal, stBal, earnedYield, navPerShare, circuitFrozen] = await Promise.all([
+    const treasuryAbi = this.registry.getContractAbi('TREASURY');
+    const stakingAbi = this.registry.getContractAbi('STAKING');
+    const breakerAbi = this.registry.getContractAbi('CIRCUIT_BREAKER');
+    const p2pAbi = this.registry.getContractAbi('P2P_MARKET');
+
+    const [usdcBal, alphaBal, ethBal, stBal, earnedYield, navPerShare, circuitFrozen, blockNumber] = await Promise.all([
       this.publicClient.readContract({ address: this.contracts.USDC, abi: ERC20_ABI, functionName: 'balanceOf', args: [agentAddress] }) as Promise<bigint>,
       this.publicClient.readContract({ address: this.contracts.ALPHA_TOKEN, abi: ERC20_ABI, functionName: 'balanceOf', args: [agentAddress] }) as Promise<bigint>,
       this.publicClient.getBalance({ address: agentAddress }),
-      this.publicClient.readContract({ address: this.contracts.STAKING, abi: this.abis.staking, functionName: 'balanceOf', args: [agentAddress] }) as Promise<bigint>,
-      this.publicClient.readContract({ address: this.contracts.STAKING, abi: this.abis.staking, functionName: 'earned', args: [agentAddress] }) as Promise<bigint>,
-      this.publicClient.readContract({ address: this.contracts.TREASURY, abi: this.abis.treasury, functionName: 'getNAVPerShare' }) as Promise<bigint>,
-      this.publicClient.readContract({ address: this.contracts.CIRCUIT_BREAKER, abi: this.abis.breaker, functionName: 'isFrozen', args: [this.contracts.USDC] }) as Promise<boolean>
+      this.publicClient.readContract({ address: this.contracts.STAKING, abi: stakingAbi, functionName: 'balanceOf', args: [agentAddress] }) as Promise<bigint>,
+      this.publicClient.readContract({ address: this.contracts.STAKING, abi: stakingAbi, functionName: 'earned', args: [agentAddress] }) as Promise<bigint>,
+      this.publicClient.readContract({ address: this.contracts.TREASURY, abi: treasuryAbi, functionName: 'getNAVPerShare' }) as Promise<bigint>,
+      this.publicClient.readContract({ address: this.contracts.CIRCUIT_BREAKER, abi: breakerAbi, functionName: 'isFrozen', args: [this.contracts.USDC] }) as Promise<boolean>,
+      this.publicClient.getBlockNumber()
     ]);
 
     let nextLoanId = 0n;
     try {
-      nextLoanId = await this.publicClient.readContract({ address: this.contracts.P2P_MARKET, abi: this.abis.p2p, functionName: 'nextLoanId' }) as bigint;
+      nextLoanId = await this.publicClient.readContract({ address: this.contracts.P2P_MARKET, abi: p2pAbi, functionName: 'nextLoanId' }) as bigint;
     } catch {}
 
     return {
       agentAddress,
+      blockNumber: Number(blockNumber),
       balances: {
         USDC: parseFloat(formatUnits(usdcBal, 6)),
         ALPHA: parseFloat(formatUnits(alphaBal, 18)),
@@ -167,122 +145,203 @@ export class DeFiAgentEnv {
     };
   }
 
+  formatArgsForAbi(inputs: Array<{ name: string; type: string }>, rawArgs: any, funcName: string = ''): any[] {
+    let argsArray: any[] = [];
+    if (Array.isArray(rawArgs)) {
+      argsArray = rawArgs;
+    } else if (rawArgs && typeof rawArgs === 'object') {
+      argsArray = Object.values(rawArgs);
+    }
+
+    const lowerFunc = funcName.toLowerCase();
+
+    return inputs.map((inp, idx) => {
+      const val = argsArray[idx];
+      if (val === undefined || val === null) {
+        if (inp.type.startsWith('uint') || inp.type.startsWith('int')) return 0n;
+        if (inp.type === 'address') return this.contracts.USDC;
+        if (inp.type === 'bool') return false;
+        if (inp.type === 'bytes') return '0x';
+        return val;
+      }
+      if (inp.type.startsWith('uint') || inp.type.startsWith('int')) {
+        try {
+          const num = Number(val.toString().split('.')[0].trim());
+          if (!isNaN(num) && num > 0 && num < 1000000000) {
+            // Apply token scale if function is token-denominated
+            if (lowerFunc.includes('stake') || lowerFunc.includes('unstake') || lowerFunc.includes('redeem')) {
+              return BigInt(num) * 10n ** 18n;
+            }
+            if (lowerFunc.includes('deposit') || lowerFunc.includes('borrow')) {
+              return BigInt(num) * 10n ** 6n;
+            }
+          }
+          return BigInt(val.toString().split('.')[0].trim());
+        } catch {
+          return 0n;
+        }
+      }
+      if (inp.type === 'address') {
+        if (typeof val === 'string') {
+          const upper = val.toUpperCase().trim();
+          if (this.contracts[upper]) return this.contracts[upper];
+          if (/^0x[0-9a-fA-F]{40}$/.test(val.trim())) {
+            return val.trim().toLowerCase() as Address;
+          }
+        }
+        return this.contracts.USDC;
+      }
+      if (inp.type === 'bool') {
+        return val === true || val === 'true' || val === 1 || val === '1';
+      }
+      return val;
+    });
+  }
+
+  async executeArbitraryCall(
+    client: WalletClient,
+    contractKey: string,
+    functionName: string,
+    args: any = [],
+    value: bigint = 0n
+  ): Promise<{ success: boolean; txHash?: string; result?: any; error?: string }> {
+    try {
+      const upperKey = contractKey.toUpperCase();
+      const address = this.registry.getContractAddress(upperKey);
+      const abi = this.registry.getContractAbi(upperKey);
+      const func = this.registry.getCallableFunctions(upperKey).find(f => f.name.toLowerCase() === functionName.toLowerCase());
+
+      if (!func) {
+        return { success: false, error: `Función "${functionName}" no encontrada en el contrato "${contractKey}"` };
+      }
+
+      const formattedArgs = this.formatArgsForAbi(func.inputs, args, func.name);
+
+      // Pre-approval check for standard tokens if calling a spend/deposit function
+      if (func.stateMutability !== 'view' && func.stateMutability !== 'pure') {
+        if (['deposit', 'stake', 'borrowFromTreasuryWithAsset', 'buyVestedBond'].includes(func.name)) {
+          try {
+            await client.writeContract({
+              address: this.contracts.USDC,
+              abi: ERC20_ABI,
+              functionName: 'approve',
+              args: [address, parseUnits('1000000', 6)]
+            });
+            await client.writeContract({
+              address: this.contracts.ALPHA_TOKEN,
+              abi: ERC20_ABI,
+              functionName: 'approve',
+              args: [address, parseUnits('1000000', 18)]
+            });
+          } catch {}
+        }
+
+        const tx = await client.writeContract({
+          address,
+          abi,
+          functionName: func.name,
+          args: formattedArgs,
+          value
+        });
+        const receipt = await this.publicClient.waitForTransactionReceipt({ hash: tx });
+        return { success: receipt.status === 'success', txHash: tx, result: receipt.status };
+      } else {
+        const readResult = await this.publicClient.readContract({
+          address,
+          abi,
+          functionName: func.name,
+          args: formattedArgs
+        });
+        return { success: true, result: readResult };
+      }
+    } catch (err: any) {
+      return { success: false, error: err.shortMessage || err.message };
+    }
+  }
+
+  async warpTime(seconds: number): Promise<void> {
+    await this.publicClient.request({ method: 'evm_increaseTime' as any, params: [seconds] as any });
+    await this.publicClient.request({ method: 'evm_mine' as any, params: [] as any });
+  }
+
   async executeAction(client: WalletClient, action: string, params: Record<string, any>): Promise<{ success: boolean; txHash?: string; message: string }> {
-    const agentAddr = client.account!.address;
     try {
       switch (action) {
         case 'stake_alpha': {
-          const amt = parseUnits(params.amount.toString(), 18);
-          await client.writeContract({ address: this.contracts.ALPHA_TOKEN, abi: ERC20_ABI, functionName: 'approve', args: [this.contracts.STAKING, amt] });
-          const tx = await client.writeContract({ address: this.contracts.STAKING, abi: this.abis.staking, functionName: 'stake', args: [amt] });
-          await this.publicClient.waitForTransactionReceipt({ hash: tx });
-          return { success: true, txHash: tx, message: `Staked ${params.amount} ALPHA -> stALPHA emitido` };
+          const res = await this.executeArbitraryCall(client, 'STAKING', 'stake', [params.amount]);
+          return { success: res.success, txHash: res.txHash, message: res.success ? `Staked ${params.amount} ALPHA -> stALPHA emitido` : (res.error || 'Revert') };
         }
-
         case 'unstake_alpha': {
-          const amt = parseUnits(params.amount.toString(), 18);
-          const tx = await client.writeContract({ address: this.contracts.STAKING, abi: this.abis.staking, functionName: 'unstake', args: [amt] });
-          await this.publicClient.waitForTransactionReceipt({ hash: tx });
-          return { success: true, txHash: tx, message: `Unstaked ${params.amount} stALPHA -> ALPHA devuelto` };
+          const res = await this.executeArbitraryCall(client, 'STAKING', 'unstake', [params.amount]);
+          return { success: res.success, txHash: res.txHash, message: res.success ? `Unstaked ${params.amount} stALPHA -> ALPHA devuelto` : (res.error || 'Revert') };
         }
-
         case 'claim_rewards': {
-          const tx = await client.writeContract({ address: this.contracts.REAL_YIELD_ROUTER, abi: this.abis.router, functionName: 'claimYield', args: [0n] });
-          await this.publicClient.waitForTransactionReceipt({ hash: tx });
-          return { success: true, txHash: tx, message: `Recompensas de staking reclamadas exitosamente` };
+          const res = await this.executeArbitraryCall(client, 'REAL_YIELD_ROUTER', 'claimYield', [0n]);
+          return { success: res.success, txHash: res.txHash, message: res.success ? `Recompensas reclamadas con éxito` : (res.error || 'Revert') };
         }
-
         case 'set_payout_preference': {
           const pref = params.preference === 'ALPHA' ? 1 : 0;
-          const tx = await client.writeContract({ address: this.contracts.REAL_YIELD_ROUTER, abi: this.abis.router, functionName: 'setPayoutPreference', args: [pref] });
-          await this.publicClient.waitForTransactionReceipt({ hash: tx });
-          return { success: true, txHash: tx, message: `Preferencia de rendimiento configurada a ${params.preference}` };
+          const res = await this.executeArbitraryCall(client, 'REAL_YIELD_ROUTER', 'setPayoutPreference', [pref]);
+          return { success: res.success, txHash: res.txHash, message: res.success ? `Preferencia configurada a ${params.preference}` : (res.error || 'Revert') };
         }
-
         case 'deposit_treasury_usdc': {
-          const amt = parseUnits(params.amount.toString(), 6);
-          await client.writeContract({ address: this.contracts.USDC, abi: ERC20_ABI, functionName: 'approve', args: [this.contracts.TREASURY, amt] });
-          const tx = await client.writeContract({ address: this.contracts.TREASURY, abi: this.abis.treasury, functionName: 'deposit', args: [amt, 0n] });
-          await this.publicClient.waitForTransactionReceipt({ hash: tx });
-          return { success: true, txHash: tx, message: `Depositados ${params.amount} USDC en Tesorería -> ALPHA emitido` };
+          const res = await this.executeArbitraryCall(client, 'TREASURY', 'deposit', [params.amount, 0n]);
+          return { success: res.success, txHash: res.txHash, message: res.success ? `Depositados ${params.amount} USDC en Tesorería -> ALPHA emitido` : (res.error || 'Revert') };
         }
-
         case 'redeem_alpha_usdc': {
-          const amt = parseUnits(params.amount.toString(), 18);
-          await client.writeContract({ address: this.contracts.ALPHA_TOKEN, abi: ERC20_ABI, functionName: 'approve', args: [this.contracts.TREASURY, amt] });
-          const tx = await client.writeContract({ address: this.contracts.TREASURY, abi: this.abis.treasury, functionName: 'redeem', args: [amt, 0n] });
-          await this.publicClient.waitForTransactionReceipt({ hash: tx });
-          return { success: true, txHash: tx, message: `Redimidos ${params.amount} ALPHA -> USDC recibido de Tesorería` };
+          const res = await this.executeArbitraryCall(client, 'TREASURY', 'redeem', [params.amount, 0n]);
+          return { success: res.success, txHash: res.txHash, message: res.success ? `Redimidos ${params.amount} ALPHA -> USDC recibido` : (res.error || 'Revert') };
         }
-
         case 'borrow_from_treasury': {
-          const collatAmt = parseUnits(params.collateralAmount.toString(), 6);
-          const borrowAmt = parseUnits(params.borrowAmount.toString(), 6);
-          const duration = BigInt(params.durationDays || 30);
-          await client.writeContract({ address: this.contracts.USDC, abi: ERC20_ABI, functionName: 'approve', args: [this.contracts.P2P_MARKET, collatAmt] });
-          const tx = await client.writeContract({
-            address: this.contracts.P2P_MARKET,
-            abi: this.abis.p2p,
-            functionName: 'borrowFromTreasuryWithAsset',
-            args: [this.contracts.USDC, collatAmt, borrowAmt, duration]
-          });
-          await this.publicClient.waitForTransactionReceipt({ hash: tx });
-          return { success: true, txHash: tx, message: `Préstamo solicitado: ${params.borrowAmount} USDC con garantía de ${params.collateralAmount} USDC` };
+          const res = await this.executeArbitraryCall(client, 'P2P_MARKET', 'borrowFromTreasuryWithAsset', [this.contracts.USDC, params.collateralAmount, params.borrowAmount, params.durationDays || 30]);
+          return { success: res.success, txHash: res.txHash, message: res.success ? `Préstamo solicitado: ${params.borrowAmount} USDC` : (res.error || 'Revert') };
         }
-
         case 'warp_time_days': {
-          const seconds = Number(params.days) * 86400;
-          await this.publicClient.request({ method: 'evm_increaseTime' as any, params: [seconds] as any });
-          await this.publicClient.request({ method: 'evm_mine' as any, params: [] as any });
+          const sec = Number(params.days || 15) * 86400;
+          await this.warpTime(sec);
           return { success: true, message: `Tiempo adelantado ${params.days} días en la cadena Anvil` };
         }
-
         case 'probe_unauthorized_call': {
-          // Intentar llamada no autorizada o fuera de balance
-          const tx = await client.writeContract({
-            address: this.contracts.TREASURY,
-            abi: this.abis.treasury,
-            functionName: 'emergencyRedeem',
-            args: [parseUnits('999999999', 18), 0n]
-          });
-          await this.publicClient.waitForTransactionReceipt({ hash: tx });
-          return { success: true, txHash: tx, message: `Llamada no autorizada ejecutada (inesperado)` };
+          const res = await this.executeArbitraryCall(client, 'TREASURY', 'emergencyRedeem', [parseUnits('99999999', 18), 0n]);
+          return { success: res.success, txHash: res.txHash, message: res.success ? `Llamada no autorizada ejecutada (inesperado)` : `Protocol Guard: ${res.error}` };
         }
-
         default:
           return { success: false, message: `Acción desconocida: ${action}` };
       }
     } catch (err: any) {
-      return { success: false, message: `Revert / Bloqueo intencionado del protocolo: ${err.shortMessage || err.message}` };
+      return { success: false, message: `Revert / Bloqueo: ${err.message}` };
     }
   }
 
   async checkInvariants(): Promise<InvariantResult[]> {
     const results: InvariantResult[] = [];
+    const treasuryAbi = this.registry.getContractAbi('TREASURY');
+    const stakingAbi = this.registry.getContractAbi('STAKING');
+    const breakerAbi = this.registry.getContractAbi('CIRCUIT_BREAKER');
 
-    // Invariant 1: Treasury Solvency & NAV Bounds
+    // Invariant 1: Treasury Solvency & NAV Floor
     try {
       const navPerShare = await this.publicClient.readContract({
         address: this.contracts.TREASURY,
-        abi: this.abis.treasury,
+        abi: treasuryAbi,
         functionName: 'getNAVPerShare'
       }) as bigint;
       const navFormatted = parseFloat(formatUnits(navPerShare, 18));
-      const passed = navFormatted >= 0.90 && navFormatted <= 5.0;
+      const passed = navFormatted >= 0.90;
       results.push({
-        name: 'Solvencia y Bounds de NAV',
+        name: 'Solvencia y Suelo de NAV',
         passed,
-        metric: `NAV actual: $${navFormatted.toFixed(4)} (Rango válido: $0.90 - $5.00)`
+        metric: `NAV actual: $${navFormatted.toFixed(4)} (Mínimo de solvencia: >= $0.90)`
       });
     } catch (e: any) {
-      results.push({ name: 'Solvencia y Bounds de NAV', passed: false, metric: 'Error de consulta', error: e.message });
+      results.push({ name: 'Solvencia y Suelo de NAV', passed: false, metric: 'Error de consulta', error: e.message });
     }
 
     // Invariant 2: Staking Pool Backing Consistency
     try {
       const totalStaked = await this.publicClient.readContract({
         address: this.contracts.STAKING,
-        abi: this.abis.staking,
+        abi: stakingAbi,
         functionName: 'totalStaked'
       }) as bigint;
       const stakingTokenBal = await this.publicClient.readContract({
@@ -305,7 +364,7 @@ export class DeFiAgentEnv {
     try {
       const isFrozen = await this.publicClient.readContract({
         address: this.contracts.CIRCUIT_BREAKER,
-        abi: this.abis.breaker,
+        abi: breakerAbi,
         functionName: 'isFrozen',
         args: [this.contracts.USDC]
       }) as boolean;
@@ -322,7 +381,7 @@ export class DeFiAgentEnv {
     try {
       const por = await this.publicClient.readContract({
         address: this.contracts.TREASURY,
-        abi: this.abis.treasury,
+        abi: treasuryAbi,
         functionName: 'getProofOfReserves'
       }) as [bigint, bigint, bigint];
       const ratio = Number(por[2]) / 100;

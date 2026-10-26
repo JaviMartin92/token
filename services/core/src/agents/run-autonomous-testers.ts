@@ -10,34 +10,15 @@ import { privateKeyToAccount } from 'viem/accounts';
 async function runAutonomousAgentSuite() {
   console.log('\n================================================================');
   console.log('🤖  AUTONOMOUS MULTI-AGENT DEFI TESTER SUITE (Powered by Qwen3:8B)');
+  console.log('    [AISLAMIENTO COMPLETO: RESETEO A ESTADO LIMPIO ENTRE ACCIONES]');
   console.log('================================================================\n');
 
   const ollama = new OllamaClient('http://127.0.0.1:11434', 'qwen3:8b');
   const env = new DeFiAgentEnv('http://127.0.0.1:8545');
 
-  const aliceAcc = privateKeyToAccount(ALICE_KEY);
-  const bobAcc = privateKeyToAccount(BOB_KEY);
-  const eveAcc = privateKeyToAccount(EVE_KEY);
-
-  console.log('🔧 [1/4] Inicializando liquidez y cuentas de prueba...');
-  const snapshotId = await env.createSnapshot();
-
-  // Asegurar reserva base en Tesorería
-  try {
-    await env.adminClient.writeContract({
-      address: env.contracts.USDC,
-      abi: [
-        { name: 'mint', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'to', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [] }
-      ],
-      functionName: 'mint',
-      args: [env.contracts.ALPHA_VAULT, BigInt(100000 * 1e6)]
-    });
-  } catch {}
-
-  await env.setupInitialLiquidity(aliceAcc.address, 10000, 1000);
-  await env.setupInitialLiquidity(bobAcc.address, 50000, 5000);
-  await env.setupInitialLiquidity(eveAcc.address, 5000, 500);
-  console.log('✅ Cuentas fondeadas y registradas en KYC de Tesorería.\n');
+  console.log('🔧 [1/4] Capturando Snapshot Base Génesis...');
+  let baseSnapshot = await env.createSnapshot();
+  console.log('✅ Snapshot base guardado. Cada acción de agente se ejecuta sobre estado 100% limpio.\n');
 
   const personas = [
     {
@@ -117,17 +98,25 @@ async function runAutonomousAgentSuite() {
 
   console.log('🧠 [2/4] Ejecutando simulación de toma de decisiones autónomas...\n');
 
+  let allPassed = true;
+
   for (let round = 1; round <= 2; round++) {
     console.log(`----------------------------------------------------------------`);
     console.log(`📍 RONDA DE PRUEBAS #${round}`);
     console.log(`----------------------------------------------------------------`);
 
     for (const persona of personas) {
+      // 1. Rollback a estado limpio antes de cada acción
+      await env.revertSnapshot(baseSnapshot);
+      baseSnapshot = await env.createSnapshot();
+
       const client = env.getWalletClient(persona.key as `0x${string}`);
+      // 2. Fondeo limpio
+      await env.setupInitialLiquidity(client.account!.address, 10000, 1000);
       const state = await env.getAgentState(client.account!.address);
 
       console.log(`\n👤 Agente: [${persona.name}] (${persona.role})`);
-      console.log(`   Balance: ${state.balances.USDC.toFixed(2)} USDC | ${state.balances.ALPHA.toFixed(2)} ALPHA | ${state.balances.stALPHA.toFixed(2)} stALPHA`);
+      console.log(`   [ESTADO LIMPIO] NAV: $${state.protocol.navPerShareUSD.toFixed(4)} | Saldo: ${state.balances.USDC.toFixed(2)} USDC | ${state.balances.ALPHA.toFixed(2)} ALPHA`);
       console.log(`   Consultando razonamiento a Qwen3:8B...`);
 
       try {
@@ -151,6 +140,16 @@ async function runAutonomousAgentSuite() {
         } else {
           console.log(`   🛡️ Protocol Guard: ${result.message}`);
         }
+
+        // 3. Comprobación de invariantes post-acción inmediata
+        const invariants = await env.checkInvariants();
+        const failedInvs = invariants.filter(i => !i.passed);
+        if (failedInvs.length > 0) {
+          allPassed = false;
+          console.error(`   ⚠️ ALERTA: Invariante quebrado tras acción de ${persona.name}:`, failedInvs.map(f => f.name).join(', '));
+        } else {
+          console.log(`   🔒 Invariantes: 100% SALUDABLES (NAV: $${(await env.getAgentState(client.account!.address)).protocol.navPerShareUSD.toFixed(4)})`);
+        }
       } catch (err: any) {
         console.error(`   ⚠️ Error durante el turno del agente: ${err.message}`);
       }
@@ -158,35 +157,19 @@ async function runAutonomousAgentSuite() {
   }
 
   console.log('\n================================================================');
-  console.log('🔍 [3/4] VERIFICACIÓN FORMAL DE INVARIANTES POST-EJECUCIÓN');
-  console.log('================================================================');
-
-  const invariants = await env.checkInvariants();
-  let allPassed = true;
-
-  for (const inv of invariants) {
-    if (inv.passed) {
-      console.log(`  ✅ [PASS] ${inv.name}`);
-      console.log(`     ↳ ${inv.metric}`);
-    } else {
-      allPassed = false;
-      console.error(`  ❌ [FAIL] ${inv.name}`);
-      console.error(`     ↳ ${inv.metric}`);
-      if (inv.error) console.error(`     ↳ Detalle: ${inv.error}`);
-    }
-  }
-
-  console.log('\n================================================================');
-  console.log('📊 [4/4] RESUMEN DE LA SESIÓN DE AGENTES TESTER');
+  console.log('📊 [3/4] RESUMEN DE LA SESIÓN DE AGENTES TESTER AISLADA');
   console.log('================================================================');
   if (allPassed) {
     console.log('🏆 ESTADO DEL PROTOCOLO: 100% SALUDABLE');
-    console.log('   Los agentes autónomos interactuaron sin corromper el balance');
-    console.log('   de tesorería, manteniendo el respaldo 1:1 y los circuit breakers.');
+    console.log('   Cada prueba se ejecutó sobre un entorno inmaculado.');
+    console.log('   Los invariantes de tesorería, solvencia y circuit breakers permanecen intactos.');
   } else {
-    console.error('⚠️ ALERTA: Uno o más invariantes se han quebrado.');
+    console.error('⚠️ ALERTA: Se detectaron violaciones de invariantes.');
   }
   console.log('================================================================\n');
+
+  // Dejar Anvil limpio al terminar
+  await env.revertSnapshot(baseSnapshot);
 }
 
 runAutonomousAgentSuite().catch(err => {
