@@ -50,27 +50,99 @@ export class TeamLeadOrchestrator {
     this.saveLiveMarkdownReport();
   }
 
-  isRepetitiveAction(agentName: string, contract: string, functionName: string): { repetitive: boolean; reason?: string } {
-    const recent = this.actionHistory.slice(-6);
-    const count = recent.filter(
-      a => a.contract.toLowerCase() === contract.toLowerCase() && a.function.toLowerCase() === functionName.toLowerCase()
-    ).length;
+  getSaturatedFunctions(agentName?: string): string[] {
+    const saturated = new Set<string>();
 
-    if (count >= 2) {
-      return {
-        repetitive: true,
-        reason: `La función ${contract}::${functionName} ya ha sido ejecutada ${count} veces en las últimas llamadas. El Jefe de Equipo exige explorar contratos o funciones distintas.`
-      };
+    // 1. Funciones baneadas explícitamente por la directiva de Orion
+    for (const b of this.currentDirective.bannedFunctions) {
+      saturated.add(b.toLowerCase());
     }
 
-    if (this.currentDirective.bannedFunctions.some(b => b.toLowerCase() === `${contract}::${functionName}`.toLowerCase())) {
+    // 2. Funciones ejecutadas >= 2 veces en las últimas 10 acciones del equipo
+    const recent = this.actionHistory.slice(-10);
+    const counts = new Map<string, number>();
+    for (const a of recent) {
+      const key = `${a.contract.toLowerCase()}::${a.function.toLowerCase()}`;
+      counts.set(key, (counts.get(key) || 0) + 1);
+      if (counts.get(key)! >= 2) {
+        saturated.add(key);
+      }
+    }
+
+    // 3. La función inmediatamente anterior ejecutada por el mismo agente
+    if (agentName) {
+      const agentRecent = this.actionHistory.filter(a => a.agent === agentName).slice(-1);
+      if (agentRecent.length > 0) {
+        saturated.add(`${agentRecent[0].contract.toLowerCase()}::${agentRecent[0].function.toLowerCase()}`);
+      }
+    }
+
+    return Array.from(saturated);
+  }
+
+  isRepetitiveAction(agentName: string, contract: string, functionName: string): { repetitive: boolean; reason?: string } {
+    const key = `${contract.toLowerCase()}::${functionName.toLowerCase()}`;
+    const saturated = this.getSaturatedFunctions(agentName);
+
+    if (saturated.includes(key)) {
       return {
         repetitive: true,
-        reason: `La función ${contract}::${functionName} está temporalmente restringida por el Jefe de Equipo para forzar cobertura en otros subsistemas.`
+        reason: `La función ${contract}::${functionName} está saturada o restringida por Orion. El Jefe de Equipo exige explorar funciones o contratos diferentes.`
       };
     }
 
     return { repetitive: false };
+  }
+
+  filterManifest(rawManifest: Record<string, any>, agentName: string): Record<string, any> {
+    const saturated = this.getSaturatedFunctions(agentName);
+    const filtered: Record<string, any> = {};
+
+    for (const [contract, data] of Object.entries(rawManifest)) {
+      const remainingFunctions = (data.functions || []).filter((fStr: string) => {
+        const funcName = fStr.split('(')[0].trim().toLowerCase();
+        const key = `${contract.toLowerCase()}::${funcName}`;
+        return !saturated.includes(key);
+      });
+
+      if (remainingFunctions.length > 0) {
+        filtered[contract] = {
+          address: data.address,
+          functions: remainingFunctions
+        };
+      }
+    }
+
+    // Si todos los contratos fueron filtrados por saturación extrema, devolver el manifiesto original con al menos una opción
+    if (Object.keys(filtered).length === 0) {
+      return rawManifest;
+    }
+
+    return filtered;
+  }
+
+  getUncoveredFunctions(assignedContracts: string[], registry: any): Array<{ contract: string; function: string }> {
+    const uncovered: Array<{ contract: string; function: string }> = [];
+
+    for (const contract of assignedContracts) {
+      if (contract === 'BLOCKCHAIN') {
+        if (!this.contractCoverage.has('BLOCKCHAIN') || !this.contractCoverage.get('BLOCKCHAIN')!.has('warp_time')) {
+          uncovered.push({ contract: 'BLOCKCHAIN', function: 'warp_time' });
+        }
+        continue;
+      }
+
+      const allWriteFuncs: string[] = registry.getAllWriteFunctionNames ? registry.getAllWriteFunctionNames(contract) : [];
+      const covered = this.contractCoverage.get(contract) || new Set();
+
+      for (const fn of allWriteFuncs) {
+        if (!covered.has(fn)) {
+          uncovered.push({ contract, function: fn });
+        }
+      }
+    }
+
+    return uncovered;
   }
 
   async evaluateAndIssueDirective(allContracts: string[]): Promise<TacticalDirective> {

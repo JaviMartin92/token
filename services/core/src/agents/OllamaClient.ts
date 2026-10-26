@@ -154,7 +154,9 @@ Selecciona tu siguiente acción exploratoria y responde únicamente con el JSON:
         format: 'json',
         stream: false,
         options: {
-          temperature: 0.1,
+          temperature: 0.5,
+          repeat_penalty: 1.15,
+          top_p: 0.9,
           num_ctx: 8192,
           num_predict: 500
         }
@@ -173,13 +175,17 @@ Selecciona tu siguiente acción exploratoria y responde únicamente con el JSON:
       rawContent = rawContent.split('</think>').pop()?.trim() || rawContent;
     }
 
+    const manifestKeys = Object.keys(params.protocolManifest || {});
+    const fallbackContract = manifestKeys.length > 0 ? manifestKeys[Math.floor(Math.random() * manifestKeys.length)] : 'TREASURY';
+    const fallbackFuncList = params.protocolManifest[fallbackContract]?.functions || ['deposit'];
+    const fallbackFunc = (fallbackFuncList[Math.floor(Math.random() * fallbackFuncList.length)] || 'deposit').split('(')[0];
+
     if (!rawContent) {
-      // Fallback action if model returned empty
       return {
-        contract: 'STAKING',
-        function: 'stake',
-        args: [100],
-        hypothesis: 'Fallback: Staking de verificación tras ciclo de introspección',
+        contract: fallbackContract,
+        function: fallbackFunc,
+        args: [],
+        hypothesis: `Exploración dinámica asignada sobre ${fallbackContract}::${fallbackFunc}`,
         confidence: 0.8
       };
     }
@@ -187,8 +193,8 @@ Selecciona tu siguiente acción exploratoria y responde únicamente con el JSON:
     try {
       const parsed = JSON.parse(rawContent);
       return {
-        contract: parsed.contract || parsed.contractName || parsed.target || 'TREASURY',
-        function: parsed.function || parsed.functionName || parsed.method || 'deposit',
+        contract: parsed.contract || parsed.contractName || parsed.target || fallbackContract,
+        function: parsed.function || parsed.functionName || parsed.method || fallbackFunc,
         args: Array.isArray(parsed.args) ? parsed.args : Object.values(parsed.args || {}),
         hypothesis: parsed.hypothesis || parsed.reasoning || parsed.thought || 'Hipótesis exploratoria',
         confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.9
@@ -199,8 +205,8 @@ Selecciona tu siguiente acción exploratoria y responde únicamente con el JSON:
         try {
           const parsed = JSON.parse(jsonMatch[0]);
           return {
-            contract: parsed.contract || parsed.contractName || 'TREASURY',
-            function: parsed.function || parsed.functionName || 'deposit',
+            contract: parsed.contract || parsed.contractName || fallbackContract,
+            function: parsed.function || parsed.functionName || fallbackFunc,
             args: Array.isArray(parsed.args) ? parsed.args : Object.values(parsed.args || {}),
             hypothesis: parsed.hypothesis || parsed.reasoning || rawContent,
             confidence: parsed.confidence || 0.8
@@ -208,10 +214,10 @@ Selecciona tu siguiente acción exploratoria y responde únicamente con el JSON:
         } catch {}
       }
       return {
-        contract: 'STAKING',
-        function: 'stake',
-        args: [50],
-        hypothesis: `Parsed fallback: ${rawContent.slice(0, 50)}`,
+        contract: fallbackContract,
+        function: fallbackFunc,
+        args: [],
+        hypothesis: `Fallback sintáctico sobre ${fallbackContract}::${fallbackFunc}`,
         confidence: 0.7
       };
     }

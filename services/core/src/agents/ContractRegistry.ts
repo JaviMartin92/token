@@ -124,19 +124,36 @@ export class ContractRegistry {
       }));
   }
 
+  getAllWriteFunctionNames(contractName: string): string[] {
+    const funcs = this.getCallableFunctions(contractName);
+    return funcs
+      .filter(f => f.stateMutability !== 'view' && f.stateMutability !== 'pure')
+      .map(f => f.name);
+  }
+
   getProtocolManifest(filterContracts?: string[]): Record<string, any> {
     const manifest: Record<string, any> = {};
     const keys = filterContracts || Object.keys(this.abiMapping);
 
+    const isBoilerplate = (name: string) =>
+      ['grantRole', 'revokeRole', 'renounceRole', 'supportsInterface', 'UPGRADE_INTERFACE_VERSION'].includes(name);
+
     for (const key of keys) {
       if (!this.contracts[key] || !this.abis.has(key)) continue;
       const funcs = this.getCallableFunctions(key);
-      // Select write functions, limiting to top 6 most interesting per contract to preserve prompt context
+      const writeFuncs = funcs.filter(f => f.stateMutability !== 'view' && f.stateMutability !== 'pure');
+
+      // Sort domain-specific business logic first, boilerplate access-control functions last
+      const prioritized = [...writeFuncs].sort((a, b) => {
+        const aB = isBoilerplate(a.name) ? 1 : 0;
+        const bB = isBoilerplate(b.name) ? 1 : 0;
+        return aB - bB;
+      });
+
       manifest[key] = {
         address: this.contracts[key],
-        functions: funcs
-          .filter(f => f.stateMutability !== 'view' && f.stateMutability !== 'pure')
-          .slice(0, 7)
+        functions: prioritized
+          .slice(0, 10)
           .map(f => `${f.name}(${f.inputs.map(i => `${i.type} ${i.name}`).join(', ')})`)
       };
     }

@@ -161,8 +161,21 @@ export class DeFiAgentEnv {
         if (inp.type.startsWith('uint') || inp.type.startsWith('int')) return 0n;
         if (inp.type === 'address') return this.contracts.USDC;
         if (inp.type === 'bool') return false;
-        if (inp.type === 'bytes') return '0x';
+        if (inp.type.startsWith('bytes32')) return '0x0000000000000000000000000000000000000000000000000000000000000000';
+        if (inp.type.startsWith('bytes')) return '0x';
         return val;
+      }
+      if (inp.type.startsWith('bytes32')) {
+        if (typeof val === 'string' && val.startsWith('0x') && val.length === 66) {
+          return val as `0x${string}`;
+        }
+        return '0x0000000000000000000000000000000000000000000000000000000000000000';
+      }
+      if (inp.type === 'bytes') {
+        if (typeof val === 'string' && val.startsWith('0x')) {
+          return val as `0x${string}`;
+        }
+        return '0x';
       }
       if (inp.type.startsWith('uint') || inp.type.startsWith('int')) {
         try {
