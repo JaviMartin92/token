@@ -123,7 +123,7 @@ Rol: ${params.personaRole}
 Objetivo: ${params.personaObjective}
 
 Elige CUALQUIER contrato y función del protocolo para interactuar o avanzar el tiempo.
-DEBES responder únicamente con un objeto JSON con esta estructura exacta:
+DEBES responder directamente con el objeto JSON sin etiquetas <think> ni texto previo, empezando directamente con { y cerrando con }:
 {
   "contract": "<nombre del contrato exacto o 'BLOCKCHAIN'>",
   "function": "<nombre exacto de la función o 'warp_time'>",
@@ -154,9 +154,9 @@ Selecciona tu siguiente acción exploratoria y responde únicamente con el JSON:
         format: 'json',
         stream: false,
         options: {
-          temperature: 0.2,
+          temperature: 0.1,
           num_ctx: 8192,
-          num_predict: 1500
+          num_predict: 500
         }
       })
     });
