@@ -3,6 +3,7 @@ import {
   createWalletClient,
   http,
   parseUnits,
+  parseEther,
   formatUnits,
   PublicClient,
   WalletClient
@@ -59,6 +60,15 @@ export class DeFiAgentEnv {
 
   async setupInitialLiquidity(agentAddress: Address, initialUsdc: number = 20000, initialAlpha: number = 2000) {
     try {
+      // Ensure agent has native ETH for gas
+      const ethBal = await this.publicClient.getBalance({ address: agentAddress });
+      if (ethBal < parseEther('1')) {
+        await this.adminClient.sendTransaction({
+          to: agentAddress,
+          value: parseEther('10')
+        });
+      }
+
       const treasuryAbi = this.registry.getContractAbi('TREASURY');
       // Whitelist KYC for agent in Treasury
       await this.adminClient.writeContract({
@@ -127,6 +137,16 @@ export class DeFiAgentEnv {
       nextLoanId = await this.publicClient.readContract({ address: this.contracts.P2P_MARKET, abi: p2pAbi, functionName: 'nextLoanId' }) as bigint;
     } catch {}
 
+    let nftBonds = 0n;
+    try {
+      nftBonds = await this.publicClient.readContract({
+        address: this.contracts.POSITION_NFT,
+        abi: ERC20_ABI,
+        functionName: 'balanceOf',
+        args: [agentAddress]
+      }) as bigint;
+    } catch {}
+
     return {
       agentAddress,
       blockNumber: Number(blockNumber),
@@ -135,7 +155,8 @@ export class DeFiAgentEnv {
         ALPHA: parseFloat(formatUnits(alphaBal, 18)),
         ETH: parseFloat(formatUnits(ethBal, 18)),
         stALPHA: parseFloat(formatUnits(stBal, 18)),
-        earnedYieldUSDC: parseFloat(formatUnits(earnedYield, 6))
+        earnedYieldUSDC: parseFloat(formatUnits(earnedYield, 6)),
+        positionBondsCount: Number(nftBonds)
       },
       protocol: {
         navPerShareUSD: parseFloat(formatUnits(navPerShare, 18)),
@@ -180,12 +201,25 @@ export class DeFiAgentEnv {
       if (inp.type.startsWith('uint') || inp.type.startsWith('int')) {
         try {
           const num = Number(val.toString().split('.')[0].trim());
-          if (!isNaN(num) && num > 0 && num < 1000000000) {
+          const inpName = inp.name.toLowerCase();
+          const isCountOrDuration = inpName.includes('year') ||
+                                    inpName.includes('day') ||
+                                    inpName.includes('id') ||
+                                    inpName.includes('tokenid') ||
+                                    inpName.includes('loanid') ||
+                                    inpName.includes('time') ||
+                                    inpName.includes('deadline') ||
+                                    inpName.includes('tier') ||
+                                    inpName.includes('preference') ||
+                                    inpName.includes('bps') ||
+                                    inpName.includes('fee');
+
+          if (!isCountOrDuration && !isNaN(num) && num > 0 && num < 1000000000) {
             // Apply token scale if function is token-denominated
-            if (lowerFunc.includes('stake') || lowerFunc.includes('unstake') || lowerFunc.includes('redeem')) {
+            if (lowerFunc.includes('stake') || lowerFunc.includes('unstake') || lowerFunc.includes('redeem') || inpName.includes('alpha')) {
               return BigInt(num) * 10n ** 18n;
             }
-            if (lowerFunc.includes('deposit') || lowerFunc.includes('borrow')) {
+            if (lowerFunc.includes('deposit') || lowerFunc.includes('borrow') || lowerFunc.includes('buyback') || lowerFunc.includes('bond') || inpName.includes('usdc') || inpName.includes('stable')) {
               return BigInt(num) * 10n ** 6n;
             }
           }
@@ -232,7 +266,7 @@ export class DeFiAgentEnv {
 
       // Pre-approval check for standard tokens if calling a spend/deposit function
       if (func.stateMutability !== 'view' && func.stateMutability !== 'pure') {
-        if (['deposit', 'stake', 'borrowFromTreasuryWithAsset', 'buyVestedBond'].includes(func.name)) {
+        if (['deposit', 'stake', 'borrowFromTreasuryWithAsset', 'borrowFromTreasuryWithAlpha', 'buyVestedBond', 'executeDiscountBuyback', 'repayLoan', 'createLoanOfferWithCollateral'].includes(func.name)) {
           try {
             await client.writeContract({
               address: this.contracts.USDC,
@@ -289,7 +323,7 @@ export class DeFiAgentEnv {
           return { success: res.success, txHash: res.txHash, message: res.success ? `Unstaked ${params.amount} stALPHA -> ALPHA devuelto` : (res.error || 'Revert') };
         }
         case 'claim_rewards': {
-          const res = await this.executeArbitraryCall(client, 'REAL_YIELD_ROUTER', 'claimYield', [0n]);
+          const res = await this.executeArbitraryCall(client, 'REAL_YIELD_ROUTER', 'claimRealYield', []);
           return { success: res.success, txHash: res.txHash, message: res.success ? `Recompensas reclamadas con éxito` : (res.error || 'Revert') };
         }
         case 'set_payout_preference': {
@@ -302,12 +336,32 @@ export class DeFiAgentEnv {
           return { success: res.success, txHash: res.txHash, message: res.success ? `Depositados ${params.amount} USDC en Tesorería -> ALPHA emitido` : (res.error || 'Revert') };
         }
         case 'redeem_alpha_usdc': {
-          const res = await this.executeArbitraryCall(client, 'TREASURY', 'redeem', [params.amount, 0n]);
+          const res = await this.executeArbitraryCall(client, 'TREASURY', 'emergencyRedeem', [params.amount, 0n]);
           return { success: res.success, txHash: res.txHash, message: res.success ? `Redimidos ${params.amount} ALPHA -> USDC recibido` : (res.error || 'Revert') };
         }
+        case 'buy_vested_bond': {
+          const res = await this.executeArbitraryCall(client, 'VESTED_VAULT', 'buyVestedBond', [params.principalAmount || params.amount, params.lockYears || 1, '0x0000000000000000000000000000000000000000']);
+          return { success: res.success, txHash: res.txHash, message: res.success ? `Bono descontado adquirido por ${params.principalAmount || params.amount} USDC (${params.lockYears || 1} años)` : (res.error || 'Revert') };
+        }
+        case 'claim_matured_bond': {
+          const res = await this.executeArbitraryCall(client, 'VESTED_VAULT', 'claimMatured', [params.tokenId || 1]);
+          return { success: res.success, txHash: res.txHash, message: res.success ? `Bono maduro #${params.tokenId || 1} reclamado con éxito` : (res.error || 'Revert') };
+        }
         case 'borrow_from_treasury': {
-          const res = await this.executeArbitraryCall(client, 'P2P_MARKET', 'borrowFromTreasuryWithAsset', [this.contracts.USDC, params.collateralAmount, params.borrowAmount, params.durationDays || 30]);
-          return { success: res.success, txHash: res.txHash, message: res.success ? `Préstamo solicitado: ${params.borrowAmount} USDC` : (res.error || 'Revert') };
+          const res = await this.executeArbitraryCall(client, 'P2P_MARKET', 'borrowFromTreasuryWithAlpha', [params.collateralAmount || 1000, params.borrowAmount || 400, params.durationDays || 30]);
+          return { success: res.success, txHash: res.txHash, message: res.success ? `Préstamo solicitado: ${params.borrowAmount || 400} USDC contra ${params.collateralAmount || 1000} ALPHA` : (res.error || 'Revert') };
+        }
+        case 'repay_loan': {
+          const res = await this.executeArbitraryCall(client, 'P2P_MARKET', 'repayLoan', [params.loanId || 1]);
+          return { success: res.success, txHash: res.txHash, message: res.success ? `Préstamo #${params.loanId || 1} repagado con éxito` : (res.error || 'Revert') };
+        }
+        case 'execute_discount_buyback': {
+          const res = await this.executeArbitraryCall(client, 'DISCOUNT_BUYBACK_ENGINE', 'executeDiscountBuyback', [params.usdcToSpend || params.amount, 0n]);
+          return { success: res.success, txHash: res.txHash, message: res.success ? `Buyback ejecutado con ${params.usdcToSpend || params.amount} USDC` : (res.error || 'Revert') };
+        }
+        case 'delegate_votes': {
+          const res = await this.executeArbitraryCall(client, 'STAKING', 'delegate', [params.delegatee || client.account!.address]);
+          return { success: res.success, txHash: res.txHash, message: res.success ? `Votos delegados a ${params.delegatee || client.account!.address}` : (res.error || 'Revert') };
         }
         case 'warp_time_days': {
           const sec = Number(params.days || 15) * 86400;

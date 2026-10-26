@@ -22,6 +22,7 @@
     "campaign": "npx tsx services/core/src/agents/run-autonomous-campaign.ts",
     "campaign:2h": "npx tsx services/core/src/agents/run-autonomous-campaign.ts --duration 120",
     "campaign:3h": "npx tsx services/core/src/agents/run-autonomous-campaign.ts --duration 180",
+    "campaign:personas": "npx tsx services/core/src/agents/run-user-personas-campaign.ts",
     "test:e2e:browser": "cd frontend && npx playwright test",
     "keeper:yield": "npx tsx services/core/src/yield-oracle-keeper.ts",
     "test:backend": "npx tsx services/core/src/__tests__/backend-improvements.test.ts && npx tsx services/core/src/__tests__/yield-oracle-keeper.test.ts",
