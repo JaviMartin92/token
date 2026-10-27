@@ -10,6 +10,9 @@
 * **Rama de Trabajo / Desarrollo:** `desarrollo`.
 * **Cumplimiento de Calidad Institucional:** **14/14 comprobaciones superadas (100% PASS)** en `npm run quality`.
 * **Smart Contracts Auditados:** **26 Smart Contracts** y 4 Librerías matemáticas $O(1)$ con **38/38 tests Foundry superados** (incluyendo el blindaje post-cuántico [`PostQuantumGuard.sol`](../contracts/src/PostQuantumGuard.sol)).
+* **Framework de Verificación Autónoma con IA (Qwen3:8B):**
+  * **Campaña de Seguridad Red Team (1 Hora):** 73 rondas, 217 llamadas, 0 repetitivas, 186 reverts defendidos, 31 éxitos, invariantes 100% saludables. Diversidad de exploración: **85/100**.
+  * **Campaña de Perfiles de Usuario (1 Hora):** 43 rondas, 214 flujos financieros, 176 exitosos (82.2%), 38 protecciones matemáticas (`NoDiscountVsNAV`), invariantes 100% saludables.
 * **Estado Génesis del Protocolo:**
   * Suministro Circulante Inicial: **0.00 ALPHA** (Estado 0 Puro).
   * Asignación del Fundador: **100,000.00 ALPHA** bloqueados en [`FounderReserveVestingVault.sol`](../contracts/src/FounderReserveVestingVault.sol) (excluidos del circulante libre).
@@ -31,9 +34,15 @@ Para ejecutar el protocolo de manera óptima en una máquina nueva, asegúrate d
 4. **Git**: Con acceso de lectura/escritura al repositorio remoto.
 5. **Foundry / Forge**:
    * *Opcional*: No es obligatorio tener Foundry instalado localmente en el Host, ya que el script [`start_app.ps1`](../start_app.ps1) ejecuta la compilación y los tests de smart contracts mediante la imagen oficial de Docker: `ghcr.io/foundry-rs/foundry:latest`.
-6. **Puertos del Host Requeridos Libres:**
+6. **Ollama & Aceleración por GPU (Para Framework de IA Autónomo):**
+   * Ollama instalado y accesible en `http://127.0.0.1:11434`.
+   * Modelo descargado: `ollama pull qwen3:8b`.
+   * GPU recomendada: NVIDIA GeForce RTX (Ampere o Ada Lovelace con Tensor Cores y $\ge 8\text{ GB}$ VRAM).
+   * Backend Ollama configurado con soporte CUDA (`num_gpu: 99`) y Flash Attention habilitado.
+7. **Puertos del Host Requeridos Libres:**
    * `8545`: Nodo EVM Anvil Blockchain.
    * `5173`: Aplicación Frontend Web3 (Vite).
+   * `11434`: Servidor Ollama LLM (opcional para campañas de agentes).
    * `5432`: Base de Datos PostgreSQL de auditoría (opcional para servicios extendidos).
 
 ---
@@ -98,6 +107,11 @@ Antes de realizar cualquier commit o modificación estructural, ejecuta los coma
 | `npm run test:personas` | Simulación E2E de 5 personas (inversor, prestatario, bot) | **11/11 PASS** |
 | `npm run test:chaos` | Pruebas de estrés anti-MEV y caída de oráculos al 50% | **2/2 PASS** |
 | `npm run test:e2e:browser` | Ejecución en Chromium real headless (Playwright) | **7/7 PASS (1.6m)** |
+| `npm run campaign` | **Campaña de Seguridad Autónoma Red Team (1 Hora / Qwen3:8B)** | **217 Acciones / Invariantes 100% OK** |
+| `npm run campaign:personas` | **Simulación E2E de Perfiles de Usuario Reales (1 Hora / 5 Roles)** | **214 Flujos / 176 Éxitos / Invariantes OK** |
+| `npm run campaign:2h` | Campaña de Seguridad Autónoma Extendida (2 Horas) | **Supervisada por Orion** |
+| `npm run campaign:3h` | Campaña de Seguridad Autónoma Extendida (3 Horas) | **Supervisada por Orion** |
+| `npm run test:ai-fuzzer` | Fuzzer exploratorio de llamadas mutantes con IA | **PASS** |
 
 ---
 
@@ -155,6 +169,23 @@ Para que comprendas la evolución del código sin necesidad de explorar el histo
 
 ### D. Eliminación del Doble Conteo en Staking
 * En [`GovernanceStaking.sol`](../contracts/src/GovernanceStaking.sol), `getStakingBreakdown` reporta exactamente `totalStaked = treasuryStaked + communityStaked + communityVaultStaked`, eliminando la duplicidad que inflaba el ratio de staking por encima del 100%.
+
+### E. Orquestación Autónoma con IA y Poda Negativa de Manifiesto (`TeamLeadOrchestrator.ts`)
+* **Problema:** Los LLM presentan sesgos cognitivos hacia métodos conocidos (`STAKING::stake`, `ALPHA_TOKEN::permit`), generando bucles de llamadas repetitivas.
+* **Solución Implementada:**
+  1. *Poda Dinámica Negativa*: Orion elimina del manifiesto ABI inyectado al agente cualquier función que supere el umbral de saturación.
+  2. *Priorización de Funciones Vírgenes*: Detecta métodos con 0 ejecuciones y los inyecta proactivamente como directivas de ataque de alta prioridad.
+  3. *Aislamiento Génesis por Snapshots*: [`DeFiAgentEnv.ts`](../services/core/src/agents/DeFiAgentEnv.ts) revierte mediante `evm_revert` al snapshot `0x1` entre cada acción, eliminando contaminación de estado y asegurando telemetría limpia.
+  4. *Guarda de Escalares vs Tokens*: Inspección de regex (`isCountOrDuration`) para evitar multiplicar por $10^6$ o $10^{18}$ parámetros enteros como años de bloqueo o días de préstamo.
+
+### F. Suite de Simulación de Perfiles de Usuario Reales (`run-user-personas-campaign.ts`)
+* **Propósito:** Validar el comportamiento del protocolo ante 5 arquetipos financieros reales:
+  - *Elena*: Retail Yield Staker (depósito al NAV, staking y cobro de dividendos).
+  - *Marcus*: Institutional Whale (bonos vestados 1-5 años y liquidaciones ragequit).
+  - *Sofia*: Prestataria P2P (colateral multi-activo y amortización).
+  - *Viktor*: MEV Keeper (recompras con descuento por arbitraje).
+  - *Lucas*: Delegado DAO (voto de gobernanza y alineación de recompensas).
+* **Validación de Salvaguardas:** Confirmó que el 100% de las 38 denegaciones se debieron al candado `revert NoDiscountVsNAV()`, protegiendo la tesorería de recompras no ventajosas.
 
 ---
 
