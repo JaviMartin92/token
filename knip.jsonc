@@ -28,7 +28,8 @@
     "docker-compose",
     "certoraRun",
     "medusa",
-    "echidna"
+    "echidna",
+    "forge"
   ],
   "ignoreExportsUsedInFile": true
 }
