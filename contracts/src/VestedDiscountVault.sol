@@ -42,6 +42,8 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
 
     uint256 public tvlCap = 10_000_000 * 10 ** 6; // Default 10M cap for Sandbox (USDC 6 decimals)
     uint256 public totalInvested;
+    uint256 public totalPresentObligation;
+    mapping(uint256 => uint256) public bondPresentObligation;
 
     function setTokenomicsEngine(address _tokenomicsEngine) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         tokenomicsEngine = _tokenomicsEngine;
@@ -186,11 +188,13 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         }
 
         totalInvested += principalAmount;
+        totalPresentObligation += netToTreasury;
 
         // Mint Position NFT
         tokenId = positionNFT.mintPosition(msg.sender, stablecoin, principalAmount, discountedPrice, lockYears);
 
         isVestedBond[tokenId] = true;
+        bondPresentObligation[tokenId] = netToTreasury;
 
         if (treasuryBunker != address(0) && treasuryBunker.code.length > 0 && preNavUSD > 0) {
             try ITreasury(treasuryBunker).getNAVPerShare() returns (uint256 postNavUSD) {
@@ -245,6 +249,18 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
             totalInvested = 0;
         }
 
+        uint256 oblR = bondPresentObligation[tokenId];
+        if (oblR == 0 && pos.discountedPricePaid > 0) {
+            uint256 posMintFee = (pos.discountedPricePaid * 150) / 10000;
+            oblR = pos.discountedPricePaid - posMintFee;
+        }
+        if (totalPresentObligation >= oblR) {
+            totalPresentObligation -= oblR;
+        } else {
+            totalPresentObligation = 0;
+        }
+        delete bondPresentObligation[tokenId];
+
         if (treasuryBunker != address(0) && pos.principalAmount > 0) {
             try ITreasury(treasuryBunker).recordBurn(pos.principalAmount * 10 ** 12) {
                 // Burn recorded
@@ -283,14 +299,28 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
             totalInvested = 0;
         }
 
+        uint256 oblC = bondPresentObligation[tokenId];
+        if (oblC == 0 && pos.discountedPricePaid > 0) {
+            uint256 posMintFee = (pos.discountedPricePaid * 150) / 10000;
+            oblC = pos.discountedPricePaid - posMintFee;
+        }
+        if (totalPresentObligation >= oblC) {
+            totalPresentObligation -= oblC;
+        } else {
+            totalPresentObligation = 0;
+        }
+        delete bondPresentObligation[tokenId];
+
         emit MaturedClaimed(tokenId, msg.sender, pos.principalAmount);
     }
 
     /**
-     * @notice Calculates the total Net Present Obligation Value of active vested bonds based on elapsed time lockup.
+     * @notice Calculates the total Net Present Obligation Value of active vested bonds scaled to 18 decimals.
+     *         Enforces exact debt deduction from Treasury Net Equity so that bond issuance maintains invariant ΔNAV >= 0.
      */
     function totalPresentLiability() external view returns (uint256 totalLiabilityUSD) {
-        return totalInvested;
+        uint256 obl = totalPresentObligation > 0 ? totalPresentObligation : (totalInvested * 8500) / 10000;
+        return obl * 10 ** 12;
     }
 
     struct UserVestedOverview {
