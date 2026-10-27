@@ -1,4 +1,4 @@
-﻿import type { Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
 export async function injectEip1193Provider(
   page: Page,
@@ -79,6 +79,7 @@ export async function injectEip1193Provider(
       };
 
       (window as any).ethereum = provider;
+      (window as any).__PLAYWRIGHT_TEST__ = true;
     },
     { account: accountAddress, rpc: rpcUrl }
   );

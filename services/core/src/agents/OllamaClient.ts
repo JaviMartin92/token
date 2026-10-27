@@ -30,7 +30,7 @@ export class OllamaClient {
     availableActions: Array<{
       name: string;
       description: string;
-      parameters: Record<string, string>;
+      parameters: Record<string, any>;
     }>;
   }): Promise<AgentDecision> {
     const systemPrompt = `Eres "${params.personaName}", un agente autónomo de pruebas especial en un protocolo DeFi descentralizado.
@@ -77,7 +77,7 @@ ${JSON.stringify(params.availableActions, null, 2)}
       throw new Error(`Error en Ollama API (${response.status}): ${await response.text()}`);
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as any;
     let rawContent = data.message?.content || data.response || '';
     rawContent = rawContent.replace(/```json\s*/gi, '').replace(/```\s*$/gi, '').trim();
 
@@ -167,7 +167,7 @@ Selecciona tu siguiente acción exploratoria y responde únicamente con el JSON:
       throw new Error(`Error en Ollama API (${response.status}): ${await response.text()}`);
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as any;
     let rawContent = data.message?.content || data.response || '';
     rawContent = rawContent.replace(/```json\s*/gi, '').replace(/```\s*$/gi, '').trim();
 

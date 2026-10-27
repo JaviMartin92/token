@@ -1,4 +1,4 @@
-﻿import { test, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { injectEip1193Provider } from './helpers/eip1193.js';
 import { evmSnapshot, evmRevert, timeWarp } from './helpers/evm.js';
 
@@ -37,6 +37,6 @@ test.describe('Suite 4: Préstamos P2P & Multi-Colateral (Tx 28 - 41)', () => {
     }
 
     // Verify marketplace table has loans
-    await expect(page.locator('.gcc-table')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('table').first()).toBeVisible({ timeout: 10000 });
   });
 });

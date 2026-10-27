@@ -19,7 +19,7 @@ import { ContractRegistry } from './ContractRegistry';
 export const ADMIN_KEY = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'; // #0
 export const ALICE_KEY = '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d'; // #1 (Retail Staker)
 export const BOB_KEY = '0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a';   // #2 (Whale Borrower)
-export const MALLORY_KEY = '0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6'; // #3 (Liquidator)
+const MALLORY_KEY = '0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6'; // #3 (Liquidator)
 export const EVE_KEY = '0x47e179ec3464565e38874f239296a6e821e21e680fb301dd607147430d8cf4e0';     // #4 (Chaos Monkey)
 
 export const ERC20_ABI = [
@@ -39,7 +39,7 @@ export interface InvariantResult {
 
 export class DeFiAgentEnv {
   public publicClient: PublicClient;
-  public adminClient: WalletClient;
+  public adminClient: any;
   public contracts: Record<string, Address>;
   public registry: ContractRegistry;
 
@@ -53,7 +53,7 @@ export class DeFiAgentEnv {
     this.registry = new ContractRegistry();
   }
 
-  getWalletClient(privateKey: `0x${string}`): WalletClient {
+  getWalletClient(privateKey: `0x${string}`): any {
     const account = privateKeyToAccount(privateKey);
     return createWalletClient({ account, chain: foundry, transport: http('http://127.0.0.1:8545') });
   }
@@ -108,11 +108,11 @@ export class DeFiAgentEnv {
   }
 
   async createSnapshot(): Promise<string> {
-    return (await this.publicClient.request({ method: 'evm_snapshot' as any, params: [] })) as string;
+    return (await this.publicClient.request({ method: 'evm_snapshot' as any, params: [] as any })) as string;
   }
 
   async revertSnapshot(snapshotId: string): Promise<boolean> {
-    return (await this.publicClient.request({ method: 'evm_revert' as any, params: [snapshotId] })) as boolean;
+    return (await this.publicClient.request({ method: 'evm_revert' as any, params: [snapshotId] as any })) as boolean;
   }
 
   async getAgentState(agentAddress: Address) {
@@ -246,7 +246,7 @@ export class DeFiAgentEnv {
   }
 
   async executeArbitraryCall(
-    client: WalletClient,
+    client: any,
     contractKey: string,
     functionName: string,
     args: any = [],
@@ -311,7 +311,7 @@ export class DeFiAgentEnv {
     await this.publicClient.request({ method: 'evm_mine' as any, params: [] as any });
   }
 
-  async executeAction(client: WalletClient, action: string, params: Record<string, any>): Promise<{ success: boolean; txHash?: string; message: string }> {
+  async executeAction(client: any, action: string, params: Record<string, any>): Promise<{ success: boolean; txHash?: string; message: string }> {
     try {
       switch (action) {
         case 'stake_alpha': {

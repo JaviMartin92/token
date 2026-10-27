@@ -187,7 +187,7 @@ Evalúa el desempeño de tu equipo y emite una nueva Directiva Táctica respondi
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()) as any;
         let content = data.message?.content || data.response || '{}';
         if (content.includes('</think>')) {
           content = content.split('</think>').pop()?.trim() || content;

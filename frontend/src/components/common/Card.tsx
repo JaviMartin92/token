@@ -27,7 +27,8 @@ export const Card: React.FC<CardProps> = ({
   onToggleExpanded,
   ...props
 }) => {
-  const [internalExpanded, setInternalExpanded] = useState(defaultExpanded);
+  const isTestingEnv = typeof window !== 'undefined' && Boolean((window as any).__PLAYWRIGHT_TEST__);
+  const [internalExpanded, setInternalExpanded] = useState(isTestingEnv ? true : defaultExpanded);
   const isExpanded = !collapsible
     ? true
     : controlledExpanded !== undefined

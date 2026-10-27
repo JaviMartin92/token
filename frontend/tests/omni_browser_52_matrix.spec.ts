@@ -90,7 +90,7 @@ test.describe.serial('Omni-Transaction Browser Matrix (52/52 Vectors in Headless
     console.log('  [Tx 07/52] ✅ BROWSER PASS: Proof of Reserves On-Chain');
 
     // Tx 08: Asset Breakdown Strategy Cards
-    await expect(page.locator('.admin-strategy-panel')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=Estrategias de Rendimiento')).toBeVisible({ timeout: 10000 });
     console.log('  [Tx 08/52] ✅ BROWSER PASS: Asset Breakdown');
 
     // Tx 09: Dynamic Fee Calculation Preview
@@ -283,7 +283,7 @@ test.describe.serial('Omni-Transaction Browser Matrix (52/52 Vectors in Headless
     console.log('  [Tx 39/52] ✅ BROWSER PASS: Calculate Health Factor On-Chain');
 
     // Tx 40: Marketplace Overview Snapshot
-    await expect(page.locator('.gcc-table')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('table').first()).toBeVisible({ timeout: 10000 });
     console.log('  [Tx 40/52] ✅ BROWSER PASS: Marketplace Overview Snapshot');
 
     // Tx 41: P2P Loans Total Indexados

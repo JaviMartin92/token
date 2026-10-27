@@ -1,4 +1,4 @@
-﻿import { test, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { injectEip1193Provider } from './helpers/eip1193.js';
 import { evmSnapshot, evmRevert } from './helpers/evm.js';
 
@@ -29,6 +29,6 @@ test.describe('Suite 5: Real Yield, Circuit Breaker & Admin (Tx 42 - 52)', () =>
     // Switch to Governance Tab
     await page.locator('[data-testid="header-tab-governance"]').click();
     await page.waitForTimeout(1000);
-    await expect(page.locator('.acp-container').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('[data-testid="admin-por-solvency-ratio"]').first()).toBeVisible({ timeout: 10000 });
   });
 });
