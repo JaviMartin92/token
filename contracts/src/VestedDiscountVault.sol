@@ -309,12 +309,12 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         if (governanceStaking != address(0)) {
             try IGovStakingForVault(governanceStaking).stakedBalances(account) returns (uint256 stBal) {
                 overview.userStalphaBalance = stBal;
-                if (stBal >= 100_000 * 1e18) {
-                    overview.vipBonusBps = 300; // Tier 3: +3.00%
-                } else if (stBal >= 25_000 * 1e18) {
-                    overview.vipBonusBps = 200; // Tier 2: +2.00%
+                if (stBal >= 20_000 * 1e18) {
+                    overview.vipBonusBps = 300; // Tier 3: +3.00% (20,000+ stALPHA)
+                } else if (stBal >= 10_000 * 1e18) {
+                    overview.vipBonusBps = 200; // Tier 2: +2.00% (10,000+ stALPHA)
                 } else if (stBal >= 5_000 * 1e18) {
-                    overview.vipBonusBps = 100; // Tier 1: +1.00%
+                    overview.vipBonusBps = 100; // Tier 1: +1.00% (5,000+ stALPHA)
                 }
             } catch {
                 // Default to 0 staked balance on query revert

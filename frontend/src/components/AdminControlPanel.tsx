@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import styles from './AdminControlPanel.module.css';
-import { CONTRACT_ADDRESSES } from '../utils/web3.js';
+import { CONTRACT_ADDRESSES, publicClient, getWalletClient } from '../utils/web3.js';
 import { UI_STRINGS } from '../constants/strings.js';
 import { Card, Badge, Button } from './common/index.js';
 
 interface AdminControlPanelProps {
   chainId?: number;
+  userAddress?: string;
   oraclePrice: string;
   setOraclePrice: (val: string) => void;
   onUpdateOracle: () => void;
@@ -26,6 +27,7 @@ interface AdminControlPanelProps {
 
 export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
   chainId,
+  userAddress,
   oraclePrice,
   setOraclePrice,
   onUpdateOracle,
@@ -58,14 +60,42 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
   const [isExecutingBuyback, setIsExecutingBuyback] = useState(false);
   const [buybackStatus, setBuybackStatus] = useState<string | null>(null);
 
+  const [isSubmittingProposal, setIsSubmittingProposal] = useState(false);
+  const [proposalStatus, setProposalStatus] = useState<string | null>(null);
+
   const handleSimulateBuyback = async () => {
     setIsExecutingBuyback(true);
     setBuybackStatus(null);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      setBuybackStatus(`✅ Recompra ejecutada: ${buybackUsdcAmount} USDC invertidos en DEX. Tokens ALPHA adquiridos con descuento y quemados on-chain. NAV/ALPHA incrementado.`);
+      if (!CONTRACT_ADDRESSES.DISCOUNT_BUYBACK_ENGINE || CONTRACT_ADDRESSES.DISCOUNT_BUYBACK_ENGINE === '0x0000000000000000000000000000000000000000') {
+        throw new Error('Dirección de DiscountBuybackEngine no configurada');
+      }
+      const client = getWalletClient(userAddress);
+      const usdcUnits = BigInt(Math.floor(parseFloat(buybackUsdcAmount || '0') * 1e6));
+      if (usdcUnits <= 0n) throw new Error('Monto de USDC inválido');
+
+      const hash = await client.writeContract({
+        address: CONTRACT_ADDRESSES.DISCOUNT_BUYBACK_ENGINE as `0x${string}`,
+        abi: [
+          {
+            name: 'executeDiscountBuyback',
+            type: 'function',
+            stateMutability: 'nonpayable',
+            inputs: [
+              { name: 'usdcToSpend', type: 'uint256' },
+              { name: 'minAlphaOut', type: 'uint256' }
+            ],
+            outputs: [{ name: 'alphaBurned', type: 'uint256' }]
+          }
+        ] as const,
+        functionName: 'executeDiscountBuyback',
+        args: [usdcUnits, 1n]
+      });
+
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      setBuybackStatus(`✅ Recompra ejecutada on-chain (Tx: ${receipt.transactionHash.slice(0, 10)}...): ${buybackUsdcAmount} USDC invertidos en DEX. Tokens ALPHA adquiridos y quemados on-chain.`);
     } catch (err: any) {
-      setBuybackStatus(`❌ Error al ejecutar recompra: ${err.message || err}`);
+      setBuybackStatus(`❌ Error al ejecutar recompra: ${err.shortMessage || err.message || err}`);
     } finally {
       setIsExecutingBuyback(false);
     }
@@ -81,16 +111,58 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
     }
   }, [proposalParam1, proposalParam2]);
 
-  const handleCreateDaoProposal = () => {
-    alert(`🏛️ PROPUESTA DAO GENERADA & ENVIADA:
-    
-Objetivo: ${proposalTarget}
-Acción: ${proposalAction}
-Parámetros: [${proposalParam1}, ${proposalParam2}]
-Descripción: "${proposalDescription}"
+  const handleCreateDaoProposal = async () => {
+    setIsSubmittingProposal(true);
+    setProposalStatus(null);
+    try {
+      if (!CONTRACT_ADDRESSES.GOVERNOR || CONTRACT_ADDRESSES.GOVERNOR === '0x0000000000000000000000000000000000000000') {
+        throw new Error('Dirección de Governor no configurada');
+      }
+      const client = getWalletClient(userAddress);
 
-✅ Transacción enviada a GovernorAlphaCentauri.propose()
-⏱️ Período de Votación Abierto -> Retraso Timelock: 72 Horas`);
+      let targetAddress: `0x${string}`;
+      if (proposalTarget === 'OracleHub') {
+        targetAddress = (CONTRACT_ADDRESSES.PRICE_FEED || CONTRACT_ADDRESSES.TREASURY) as `0x${string}`;
+      } else if (proposalTarget === 'TreasuryManager') {
+        targetAddress = CONTRACT_ADDRESSES.TREASURY as `0x${string}`;
+      } else if (proposalTarget === 'DiscountBuybackEngine') {
+        targetAddress = (CONTRACT_ADDRESSES.DISCOUNT_BUYBACK_ENGINE || CONTRACT_ADDRESSES.TREASURY) as `0x${string}`;
+      } else if (proposalTarget === 'P2PLendingMarket') {
+        targetAddress = CONTRACT_ADDRESSES.P2P_MARKET as `0x${string}`;
+      } else if (proposalTarget === 'VestedDiscountVault') {
+        targetAddress = CONTRACT_ADDRESSES.VESTED_VAULT as `0x${string}`;
+      } else {
+        targetAddress = CONTRACT_ADDRESSES.TREASURY as `0x${string}`;
+      }
+
+      const callData = (generatedCalldata.startsWith('0x') ? generatedCalldata : '0x') as `0x${string}`;
+
+      const hash = await client.writeContract({
+        address: CONTRACT_ADDRESSES.GOVERNOR as `0x${string}`,
+        abi: [
+          {
+            name: 'propose',
+            type: 'function',
+            stateMutability: 'nonpayable',
+            inputs: [
+              { name: 'target', type: 'address' },
+              { name: 'value', type: 'uint256' },
+              { name: 'data', type: 'bytes' }
+            ],
+            outputs: [{ name: 'proposalId', type: 'uint256' }]
+          }
+        ] as const,
+        functionName: 'propose',
+        args: [targetAddress, 0n, callData]
+      });
+
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      setProposalStatus(`✅ Propuesta DAO creada on-chain (Tx: ${receipt.transactionHash.slice(0, 10)}...). Período de votación abierto.`);
+    } catch (err: any) {
+      setProposalStatus(`❌ Error al crear propuesta: ${err.shortMessage || err.message || err}`);
+    } finally {
+      setIsSubmittingProposal(false);
+    }
   };
 
   return (
@@ -413,9 +485,16 @@ Descripción: "${proposalDescription}"
                 variant="primary"
                 size="md"
                 onClick={handleCreateDaoProposal}
+                disabled={isSubmittingProposal}
               >
-                {UI_STRINGS.GOVERNANCE.BTN_SUBMIT_PROPOSAL} (Timelock 72h)
+                {isSubmittingProposal ? 'Enviando Propuesta...' : `${UI_STRINGS.GOVERNANCE.BTN_SUBMIT_PROPOSAL} (Timelock 72h)`}
               </Button>
+
+              {proposalStatus && (
+                <div className={proposalStatus.includes('✅') ? styles.statusSuccess : styles.statusError} style={{ marginTop: '0.75rem' }}>
+                  {proposalStatus}
+                </div>
+              )}
             </div>
           </Card>
         </div>

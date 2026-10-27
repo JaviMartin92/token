@@ -202,15 +202,15 @@ contract DiscountBuybackEngineTest is Test {
 
         // 1st buyback of 500 USDC succeeds
         uint256 expectedAlpha = (uint256(500 * 10 ** 12) * 10 ** 18) / uint256(90 * 10 ** 16);
-        uint256 minAlphaOut = (expectedAlpha * 9850) / 10000;
+        uint256 minAlphaOut = (expectedAlpha * 9900) / 10000;
         buybackEngine.executeDiscountBuyback(500 * 10 ** 6, minAlphaOut);
 
         // Immediate 2nd buyback must revert with cooldown active
-        vm.expectRevert(abi.encodeWithSelector(IProtocolErrors.CooldownActive.selector, block.timestamp + 3600));
+        vm.expectRevert(abi.encodeWithSelector(IProtocolErrors.CooldownActive.selector, block.timestamp + 14400));
         buybackEngine.executeDiscountBuyback(500 * 10 ** 6, minAlphaOut);
 
-        // Warp time forward by 1 hour (3600s) -> now it succeeds!
-        vm.warp(block.timestamp + 3601);
+        // Warp time forward by 4 hours (14400s) -> now it succeeds!
+        vm.warp(block.timestamp + 14401);
         buybackEngine.executeDiscountBuyback(500 * 10 ** 6, minAlphaOut);
         vm.stopPrank();
     }
@@ -223,7 +223,7 @@ contract DiscountBuybackEngineTest is Test {
         circuitBreaker.triggerFreeze(address(usdc));
 
         uint256 expectedAlpha = (uint256(500 * 10 ** 12) * 10 ** 18) / uint256(90 * 10 ** 16);
-        uint256 minAlphaOut = (expectedAlpha * 9850) / 10000;
+        uint256 minAlphaOut = (expectedAlpha * 9900) / 10000;
 
         vm.expectRevert(abi.encodeWithSelector(IProtocolErrors.CircuitBreakerActive.selector, address(usdc)));
         buybackEngine.executeDiscountBuyback(500 * 10 ** 6, minAlphaOut);
@@ -235,10 +235,10 @@ contract DiscountBuybackEngineTest is Test {
         alphaFeed.setPrice(90000000);
 
         // Raise minPoRRatioBps to 11000 (110%) while actual PoR is ~100%
-        buybackEngine.setParameters(500, 250, 3600, 11000, 100);
+        buybackEngine.setParameters(500, 250, 14400, 11000, 100);
 
         uint256 expectedAlpha = (uint256(500 * 10 ** 12) * 10 ** 18) / uint256(90 * 10 ** 16);
-        uint256 minAlphaOut = (expectedAlpha * 9850) / 10000;
+        uint256 minAlphaOut = (expectedAlpha * 9900) / 10000;
 
         vm.expectRevert(abi.encodeWithSelector(IProtocolErrors.Undercollateralized.selector, 10000, 11000));
         buybackEngine.executeDiscountBuyback(500 * 10 ** 6, minAlphaOut);
@@ -268,7 +268,7 @@ contract DiscountBuybackEngineTest is Test {
 
         uint256 usdcToSpend = 500 * 10 ** 6; // 500 USDC
         uint256 expectedAlpha = (uint256(usdcToSpend * 10 ** 12) * 10 ** 18) / uint256(90 * 10 ** 16);
-        uint256 minAlphaOut = (expectedAlpha * 9850) / 10000;
+        uint256 minAlphaOut = (expectedAlpha * 9900) / 10000;
 
         uint256 alphaBurned = buybackEngine.executeDiscountBuyback(usdcToSpend, minAlphaOut);
 

@@ -42,10 +42,10 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
     targetWeights
   } = web3Data;
 
-  const twStables = targetWeights?.stables ?? 60.00;
-  const twWbtc = targetWeights?.wbtc ?? 26.67;
-  const twWeth = targetWeights?.weth ?? 13.33;
-  const twAlts = targetWeights?.alts ?? 0.00;
+  const twStables = targetWeights?.stables ?? 50.00;
+  const twWbtc = targetWeights?.wbtc ?? 25.00;
+  const twWeth = targetWeights?.weth ?? 12.50;
+  const twAlts = targetWeights?.alts ?? 12.50;
 
   // Map porBreakdown to the reserveBreakdown shape
   const reserveBreakdown = porBreakdown ? {

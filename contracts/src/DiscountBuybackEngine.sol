@@ -72,9 +72,9 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
 
     // --- Gas Optimized Packed Storage Layout (Fits in 1 single 32-byte storage slot) ---
     uint32 public minDiscountBps = 500; // 5.00% minimum discount vs NAV
-    uint32 public maxSlippageBps = 150; // 1.50% max allowable slippage
+    uint32 public maxSlippageBps = 100; // 1.00% max allowable slippage (Candado 5)
     uint32 public maxDailyBudgetBps = 250; // 2.50% of liquid vault reserves per 24h
-    uint32 public cooldownPeriod = 1 hours; // 3600 seconds
+    uint32 public cooldownPeriod = 4 hours; // 14400 seconds (4 hours cooldown, Candado 6)
     uint32 public minPoRRatioBps = 10000; // 100.00% minimum collateral ratio
     uint32 public maxTradeImpactBps = 100; // 1.00% max of vault liquid balance per trade
     uint24 public poolFee = 3000; // 0.30% Uniswap v3 fee tier default

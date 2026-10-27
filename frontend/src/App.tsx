@@ -347,6 +347,7 @@ export default function App() {
           <>
             <AdminControlPanel
               chainId={global.chainId}
+              userAddress={global.userAddress || ''}
               oraclePrice={admin.oraclePrice}
               setOraclePrice={admin.setOraclePrice}
               onUpdateOracle={admin.handleUpdateOracle}

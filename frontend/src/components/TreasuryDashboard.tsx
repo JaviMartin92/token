@@ -27,7 +27,7 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
   porAssets: _porAssets = '100,000.00',
   porLiabilities: _porLiabilities = '100,000.00',
   porRatio: _porRatio = '100.00%',
-  porBreakdown = { stables: 50000, wbtc: 25000, weth: 15000, alphaStaking: 10000 },
+  porBreakdown = { stables: 50000, wbtc: 25000, weth: 12500, alphaStaking: 12500 },
   usdcBalance,
   sharesBalance,
   depositAmount,

@@ -1,13 +1,13 @@
 # AUDITORÍA DETALLADA DE INTERFAZ DE USUARIO (106 CAMPOS POR PASO)
 
-Generado el: 2026-10-27T10:24:11.818Z
+Generado el: 2026-10-27T18:13:15.131Z
 
 ======================================================================
 📊 INFORME DE ESTADO DE UI - PASO [0]: [PASO 0 (GENESIS BASELINE)]
 ======================================================================
 [HEADER & GLOBAL]
-- header-por-ratio: 100.01%
-- header-nav-value: $1.2937 USDC
+- header-por-ratio: 100.05%
+- header-nav-value: $1.0534 USDC
 - header-wallet-status: 0xf39F...2266
 - header-role-admin: [No visible / N/A]
 - header-role-user: [No visible / N/A]
@@ -19,33 +19,33 @@ Generado el: 2026-10-27T10:24:11.818Z
 - analytics-liabilities-usd: [No visible / N/A]
 - analytics-gross-cashflow: [No visible / N/A]
 - analytics-apy-weighted: [No visible / N/A]
-- por-collateral-ratio: 100.01%
-- por-assets-total: $82,172.25 USD
-- por-liabilities-total: $82,167.00 USD
-- por-row-usdc-val: $44,082.53 USD
-- por-row-wbtc-val: $18,393.15 USD
-- por-row-weth-val: $9,196.58 USD
-- por-row-alpha-val: $10,087.19 USD
+- por-collateral-ratio: 100.05%
+- por-assets-total: $11,005.25 USD
+- por-liabilities-total: $11,000.00 USD
+- por-row-usdc-val: $4,969.63 USD
+- por-row-wbtc-val: $2,623.75 USD
+- por-row-weth-val: $1,311.88 USD
+- por-row-alpha-val: $1,305.26 USD
 - treasury-faucet-btn: 🚰 🚰 Solicitar 10,000 USDC Mock
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 12,800.00 USDC
-- treasury-shares-balance: 4,965.58 ALPHA
+- treasury-usdc-balance: 0.00 USDC
+- treasury-shares-balance: 0.00 ALPHA
 - treasury-deposit-input: [No visible / N/A]
 - treasury-deposit-btn: Suscribir ALPHA (Mint)
 - treasury-redeem-input: [No visible / N/A]
 - treasury-redeem-btn: Reembolsar USDC (Redeem)
-- staking-stalpha-balance: 11,880.00 stALPHA
+- staking-stalpha-balance: 0.00 stALPHA
 - staking-real-yield: $0.00 USD
-- staking-total-burned: 99.3796 ALPHA
-- staking-circulating-supply: 63,518.69 ALPHA
-- staking-community-staked: 11,880.00 stALPHA
+- staking-total-burned: 6.258 ALPHA
+- staking-circulating-supply: 10,447.50 ALPHA
+- staking-community-staked: 0.00 stALPHA
 - staking-vaults-staked: 0.00 stALPHA
-- staking-reserves-staked: 7,797.16 stALPHA
-- staking-global-staked: 19,677.16 ALPHA (27.59%)
+- staking-reserves-staked: 1,239.09 stALPHA
+- staking-global-staked: 1,239.09 ALPHA (10.60%)
 - staking-backing-nav: [No visible / N/A]
-- staking-deflation-destroyed: 99.3796 ALPHA
+- staking-deflation-destroyed: 6.258 ALPHA
 - staking-amount-input: 1000
 - staking-stake-btn: 🔒 Bloquear ALPHA en Staking
 - staking-unstake-btn: 🔓 Confirmar Retiro (Unstake)
@@ -60,14 +60,14 @@ Generado el: 2026-10-27T10:24:11.818Z
 - bonds-ragequit-btn: [No visible / N/A]
 
 [MÁRKETPLACE P2P & COLATERAL]
-- escrow-total-lent: $10500.00 USD
+- escrow-total-lent: $2100.00 USD
 - escrow-total-collateral: [No visible / N/A]
 - escrow-coverage-ratio: [No visible / N/A]
-- p2p-treasury-nft-id-input: -- Selecciona una opción -- NFT #1 (Principal: $1,000.00 USDC) NFT #2 (Principal: $1,00...
+- p2p-treasury-nft-id-input: -- Selecciona una opción -- -- No tienes NFTs de posición disponibles --
 - p2p-treasury-amount-input: 500
 - p2p-treasury-duration-input: 30
 - p2p-treasury-request-btn: 🏛️ Solicitar Crédito a la Tesorería (NFT)
-- p2p-offer-nft-id-input: -- Selecciona una opción -- NFT #1 (Principal: $1,000.00 USDC — Bloqueo: 3 Años) NFT #2...
+- p2p-offer-nft-id-input: -- Selecciona una opción -- -- No tienes NFTs de posición disponibles --
 - p2p-offer-amount-input: 500
 - p2p-offer-interest-input: 1000
 - p2p-offer-duration-input: 30
@@ -108,8 +108,8 @@ Generado el: 2026-10-27T10:24:11.818Z
 📊 INFORME DE ESTADO DE UI - PASO [2]: [PASO 2 (POST-FAUCET)]
 ======================================================================
 [HEADER & GLOBAL]
-- header-por-ratio: 100.01%
-- header-nav-value: $1.2937 USDC
+- header-por-ratio: 100.05%
+- header-nav-value: $1.0534 USDC
 - header-wallet-status: 0xf39F...2266
 - header-role-admin: [No visible / N/A]
 - header-role-user: [No visible / N/A]
@@ -121,33 +121,33 @@ Generado el: 2026-10-27T10:24:11.818Z
 - analytics-liabilities-usd: [No visible / N/A]
 - analytics-gross-cashflow: [No visible / N/A]
 - analytics-apy-weighted: [No visible / N/A]
-- por-collateral-ratio: 100.01%
-- por-assets-total: $82,172.25 USD
-- por-liabilities-total: $82,167.00 USD
-- por-row-usdc-val: $44,082.53 USD
-- por-row-wbtc-val: $18,393.15 USD
-- por-row-weth-val: $9,196.58 USD
-- por-row-alpha-val: $10,087.19 USD
+- por-collateral-ratio: 100.05%
+- por-assets-total: $11,005.25 USD
+- por-liabilities-total: $11,000.00 USD
+- por-row-usdc-val: $4,969.63 USD
+- por-row-wbtc-val: $2,623.75 USD
+- por-row-weth-val: $1,311.88 USD
+- por-row-alpha-val: $1,305.26 USD
 - treasury-faucet-btn: 🚰 🚰 Solicitar 10,000 USDC Mock
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 22,800.00 USDC
-- treasury-shares-balance: 4,965.58 ALPHA
+- treasury-usdc-balance: 10,000.00 USDC
+- treasury-shares-balance: 0.00 ALPHA
 - treasury-deposit-input: [No visible / N/A]
 - treasury-deposit-btn: Suscribir ALPHA (Mint)
 - treasury-redeem-input: [No visible / N/A]
 - treasury-redeem-btn: Reembolsar USDC (Redeem)
-- staking-stalpha-balance: 11,880.00 stALPHA
+- staking-stalpha-balance: 0.00 stALPHA
 - staking-real-yield: $0.00 USD
-- staking-total-burned: 99.3796 ALPHA
-- staking-circulating-supply: 63,518.69 ALPHA
-- staking-community-staked: 11,880.00 stALPHA
+- staking-total-burned: 6.258 ALPHA
+- staking-circulating-supply: 10,447.50 ALPHA
+- staking-community-staked: 0.00 stALPHA
 - staking-vaults-staked: 0.00 stALPHA
-- staking-reserves-staked: 7,797.16 stALPHA
-- staking-global-staked: 19,677.16 ALPHA (27.59%)
+- staking-reserves-staked: 1,239.09 stALPHA
+- staking-global-staked: 1,239.09 ALPHA (10.60%)
 - staking-backing-nav: [No visible / N/A]
-- staking-deflation-destroyed: 99.3796 ALPHA
+- staking-deflation-destroyed: 6.258 ALPHA
 - staking-amount-input: 1000
 - staking-stake-btn: 🔒 Bloquear ALPHA en Staking
 - staking-unstake-btn: 🔓 Confirmar Retiro (Unstake)
@@ -162,14 +162,14 @@ Generado el: 2026-10-27T10:24:11.818Z
 - bonds-ragequit-btn: [No visible / N/A]
 
 [MÁRKETPLACE P2P & COLATERAL]
-- escrow-total-lent: $10500.00 USD
+- escrow-total-lent: $2100.00 USD
 - escrow-total-collateral: [No visible / N/A]
 - escrow-coverage-ratio: [No visible / N/A]
-- p2p-treasury-nft-id-input: -- Selecciona una opción -- NFT #1 (Principal: $1,000.00 USDC) NFT #2 (Principal: $1,00...
+- p2p-treasury-nft-id-input: -- Selecciona una opción -- -- No tienes NFTs de posición disponibles --
 - p2p-treasury-amount-input: 500
 - p2p-treasury-duration-input: 30
 - p2p-treasury-request-btn: 🏛️ Solicitar Crédito a la Tesorería (NFT)
-- p2p-offer-nft-id-input: -- Selecciona una opción -- NFT #1 (Principal: $1,000.00 USDC — Bloqueo: 3 Años) NFT #2...
+- p2p-offer-nft-id-input: -- Selecciona una opción -- -- No tienes NFTs de posición disponibles --
 - p2p-offer-amount-input: 500
 - p2p-offer-interest-input: 1000
 - p2p-offer-duration-input: 30
@@ -211,7 +211,7 @@ Generado el: 2026-10-27T10:24:11.818Z
 ======================================================================
 [HEADER & GLOBAL]
 - header-por-ratio: 100.00%
-- header-nav-value: $1.2942 USDC
+- header-nav-value: $1.0602 USDC
 - header-wallet-status: 0xf39F...2266
 - header-role-admin: [No visible / N/A]
 - header-role-user: [No visible / N/A]
@@ -224,32 +224,32 @@ Generado el: 2026-10-27T10:24:11.818Z
 - analytics-gross-cashflow: [No visible / N/A]
 - analytics-apy-weighted: [No visible / N/A]
 - por-collateral-ratio: 100.00%
-- por-assets-total: $87,172.25 USD
-- por-liabilities-total: $87,172.25 USD
-- por-row-usdc-val: $47,222.15 USD
-- por-row-wbtc-val: $19,633.40 USD
-- por-row-weth-val: $9,816.70 USD
-- por-row-alpha-val: $10,704.99 USD
+- por-assets-total: $16,005.25 USD
+- por-liabilities-total: $16,005.25 USD
+- por-row-usdc-val: $8,133.25 USD
+- por-row-wbtc-val: $3,848.00 USD
+- por-row-weth-val: $1,924.00 USD
+- por-row-alpha-val: $1,919.68 USD
 - treasury-faucet-btn: 🚰 🚰 Solicitar 10,000 USDC Mock
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 17,800.00 USDC
-- treasury-shares-balance: 8,800.40 ALPHA
+- treasury-usdc-balance: 5,000.00 USDC
+- treasury-shares-balance: 4,648.82 ALPHA
 - treasury-deposit-input: [No visible / N/A]
 - treasury-deposit-btn: Suscribir ALPHA (Mint)
 - treasury-redeem-input: [No visible / N/A]
 - treasury-redeem-btn: Reembolsar USDC (Redeem)
-- staking-stalpha-balance: 11,880.00 stALPHA
+- staking-stalpha-balance: 0.00 stALPHA
 - staking-real-yield: $0.00 USD
-- staking-total-burned: 101.7753 ALPHA
-- staking-circulating-supply: 67,353.52 ALPHA
-- staking-community-staked: 11,880.00 stALPHA
+- staking-total-burned: 9.1449 ALPHA
+- staking-circulating-supply: 15,096.32 ALPHA
+- staking-community-staked: 0.00 stALPHA
 - staking-vaults-staked: 0.00 stALPHA
-- staking-reserves-staked: 8,271.51 stALPHA
-- staking-global-staked: 20,151.51 ALPHA (26.64%)
+- staking-reserves-staked: 1,810.68 stALPHA
+- staking-global-staked: 1,810.68 ALPHA (10.70%)
 - staking-backing-nav: [No visible / N/A]
-- staking-deflation-destroyed: 101.7753 ALPHA
+- staking-deflation-destroyed: 9.1449 ALPHA
 - staking-amount-input: 1000
 - staking-stake-btn: 🔒 Bloquear ALPHA en Staking
 - staking-unstake-btn: 🔓 Confirmar Retiro (Unstake)
@@ -264,14 +264,14 @@ Generado el: 2026-10-27T10:24:11.818Z
 - bonds-ragequit-btn: [No visible / N/A]
 
 [MÁRKETPLACE P2P & COLATERAL]
-- escrow-total-lent: $10500.00 USD
+- escrow-total-lent: $2100.00 USD
 - escrow-total-collateral: [No visible / N/A]
 - escrow-coverage-ratio: [No visible / N/A]
-- p2p-treasury-nft-id-input: -- Selecciona una opción -- NFT #1 (Principal: $1,000.00 USDC) NFT #2 (Principal: $1,00...
+- p2p-treasury-nft-id-input: -- Selecciona una opción -- -- No tienes NFTs de posición disponibles --
 - p2p-treasury-amount-input: 500
 - p2p-treasury-duration-input: 30
 - p2p-treasury-request-btn: 🏛️ Solicitar Crédito a la Tesorería (NFT)
-- p2p-offer-nft-id-input: -- Selecciona una opción -- NFT #1 (Principal: $1,000.00 USDC — Bloqueo: 3 Años) NFT #2...
+- p2p-offer-nft-id-input: -- Selecciona una opción -- -- No tienes NFTs de posición disponibles --
 - p2p-offer-amount-input: 500
 - p2p-offer-interest-input: 1000
 - p2p-offer-duration-input: 30
@@ -312,8 +312,8 @@ Generado el: 2026-10-27T10:24:11.818Z
 📊 INFORME DE ESTADO DE UI - PASO [4]: [PASO 4 (POST-STAKING)]
 ======================================================================
 [HEADER & GLOBAL]
-- header-por-ratio: 100.04%
-- header-nav-value: $1.2948 USDC
+- header-por-ratio: 100.20%
+- header-nav-value: $1.0623 USDC
 - header-wallet-status: 0xf39F...2266
 - header-role-admin: [No visible / N/A]
 - header-role-user: [No visible / N/A]
@@ -325,33 +325,33 @@ Generado el: 2026-10-27T10:24:11.818Z
 - analytics-liabilities-usd: [No visible / N/A]
 - analytics-gross-cashflow: [No visible / N/A]
 - analytics-apy-weighted: [No visible / N/A]
-- por-collateral-ratio: 100.04%
-- por-assets-total: $87,172.25 USD
-- por-liabilities-total: $87,133.42 USD
-- por-row-usdc-val: $47,222.15 USD
-- por-row-wbtc-val: $19,633.40 USD
-- por-row-weth-val: $9,816.70 USD
-- por-row-alpha-val: $10,709.95 USD
+- por-collateral-ratio: 100.20%
+- por-assets-total: $16,005.25 USD
+- por-liabilities-total: $15,973.44 USD
+- por-row-usdc-val: $8,133.25 USD
+- por-row-wbtc-val: $3,848.00 USD
+- por-row-weth-val: $1,924.00 USD
+- por-row-alpha-val: $1,923.49 USD
 - treasury-faucet-btn: 🚰 🚰 Solicitar 10,000 USDC Mock
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 17,800.00 USDC
-- treasury-shares-balance: 5,800.40 ALPHA
+- treasury-usdc-balance: 5,000.00 USDC
+- treasury-shares-balance: 1,648.82 ALPHA
 - treasury-deposit-input: [No visible / N/A]
 - treasury-deposit-btn: Suscribir ALPHA (Mint)
 - treasury-redeem-input: [No visible / N/A]
 - treasury-redeem-btn: Reembolsar USDC (Redeem)
-- staking-stalpha-balance: 14,850.00 stALPHA
+- staking-stalpha-balance: 2,970.00 stALPHA
 - staking-real-yield: $0.00 USD
-- staking-total-burned: 116.7753 ALPHA
-- staking-circulating-supply: 67,323.52 ALPHA
-- staking-community-staked: 14,850.00 stALPHA
+- staking-total-burned: 24.1449 ALPHA
+- staking-circulating-supply: 15,066.32 ALPHA
+- staking-community-staked: 2,970.00 stALPHA
 - staking-vaults-staked: 0.00 stALPHA
-- staking-reserves-staked: 8,271.51 stALPHA
-- staking-global-staked: 23,121.51 ALPHA (30.58%)
+- staking-reserves-staked: 1,810.68 stALPHA
+- staking-global-staked: 4,780.68 ALPHA (28.32%)
 - staking-backing-nav: [No visible / N/A]
-- staking-deflation-destroyed: 116.7753 ALPHA
+- staking-deflation-destroyed: 24.1449 ALPHA
 - staking-amount-input: 3000
 - staking-stake-btn: 🔒 Bloquear ALPHA en Staking
 - staking-unstake-btn: 🔓 Confirmar Retiro (Unstake)
@@ -366,14 +366,14 @@ Generado el: 2026-10-27T10:24:11.818Z
 - bonds-ragequit-btn: [No visible / N/A]
 
 [MÁRKETPLACE P2P & COLATERAL]
-- escrow-total-lent: $10500.00 USD
+- escrow-total-lent: $2100.00 USD
 - escrow-total-collateral: [No visible / N/A]
 - escrow-coverage-ratio: [No visible / N/A]
-- p2p-treasury-nft-id-input: -- Selecciona una opción -- NFT #1 (Principal: $1,000.00 USDC) NFT #2 (Principal: $1,00...
+- p2p-treasury-nft-id-input: -- Selecciona una opción -- -- No tienes NFTs de posición disponibles --
 - p2p-treasury-amount-input: 500
 - p2p-treasury-duration-input: 30
 - p2p-treasury-request-btn: 🏛️ Solicitar Crédito a la Tesorería (NFT)
-- p2p-offer-nft-id-input: -- Selecciona una opción -- NFT #1 (Principal: $1,000.00 USDC — Bloqueo: 3 Años) NFT #2...
+- p2p-offer-nft-id-input: -- Selecciona una opción -- -- No tienes NFTs de posición disponibles --
 - p2p-offer-amount-input: 500
 - p2p-offer-interest-input: 1000
 - p2p-offer-duration-input: 30
@@ -414,8 +414,8 @@ Generado el: 2026-10-27T10:24:11.818Z
 📊 INFORME DE ESTADO DE UI - PASO [5]: [PASO 5 (PREFERENCIA DE COBRO OPCIÓN A)]
 ======================================================================
 [HEADER & GLOBAL]
-- header-por-ratio: 100.04%
-- header-nav-value: $1.2948 USDC
+- header-por-ratio: 100.20%
+- header-nav-value: $1.0623 USDC
 - header-wallet-status: 0xf39F...2266
 - header-role-admin: [No visible / N/A]
 - header-role-user: [No visible / N/A]
@@ -427,33 +427,33 @@ Generado el: 2026-10-27T10:24:11.818Z
 - analytics-liabilities-usd: [No visible / N/A]
 - analytics-gross-cashflow: [No visible / N/A]
 - analytics-apy-weighted: [No visible / N/A]
-- por-collateral-ratio: 100.04%
-- por-assets-total: $87,172.25 USD
-- por-liabilities-total: $87,133.42 USD
-- por-row-usdc-val: $47,222.15 USD
-- por-row-wbtc-val: $19,633.40 USD
-- por-row-weth-val: $9,816.70 USD
-- por-row-alpha-val: $10,709.95 USD
+- por-collateral-ratio: 100.20%
+- por-assets-total: $16,005.25 USD
+- por-liabilities-total: $15,973.44 USD
+- por-row-usdc-val: $8,133.25 USD
+- por-row-wbtc-val: $3,848.00 USD
+- por-row-weth-val: $1,924.00 USD
+- por-row-alpha-val: $1,923.49 USD
 - treasury-faucet-btn: 🚰 🚰 Solicitar 10,000 USDC Mock
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 17,800.00 USDC
-- treasury-shares-balance: 5,800.40 ALPHA
+- treasury-usdc-balance: 5,000.00 USDC
+- treasury-shares-balance: 1,648.82 ALPHA
 - treasury-deposit-input: [No visible / N/A]
 - treasury-deposit-btn: Suscribir ALPHA (Mint)
 - treasury-redeem-input: [No visible / N/A]
 - treasury-redeem-btn: Reembolsar USDC (Redeem)
-- staking-stalpha-balance: 14,850.00 stALPHA
+- staking-stalpha-balance: 2,970.00 stALPHA
 - staking-real-yield: $0.00 USD
-- staking-total-burned: 116.7753 ALPHA
-- staking-circulating-supply: 67,323.52 ALPHA
-- staking-community-staked: 14,850.00 stALPHA
+- staking-total-burned: 24.1449 ALPHA
+- staking-circulating-supply: 15,066.32 ALPHA
+- staking-community-staked: 2,970.00 stALPHA
 - staking-vaults-staked: 0.00 stALPHA
-- staking-reserves-staked: 8,271.51 stALPHA
-- staking-global-staked: 23,121.51 ALPHA (30.58%)
+- staking-reserves-staked: 1,810.68 stALPHA
+- staking-global-staked: 4,780.68 ALPHA (28.32%)
 - staking-backing-nav: [No visible / N/A]
-- staking-deflation-destroyed: 116.7753 ALPHA
+- staking-deflation-destroyed: 24.1449 ALPHA
 - staking-amount-input: 3000
 - staking-stake-btn: 🔒 Bloquear ALPHA en Staking
 - staking-unstake-btn: 🔓 Confirmar Retiro (Unstake)
@@ -468,14 +468,14 @@ Generado el: 2026-10-27T10:24:11.818Z
 - bonds-ragequit-btn: [No visible / N/A]
 
 [MÁRKETPLACE P2P & COLATERAL]
-- escrow-total-lent: $10500.00 USD
+- escrow-total-lent: $2100.00 USD
 - escrow-total-collateral: [No visible / N/A]
 - escrow-coverage-ratio: [No visible / N/A]
-- p2p-treasury-nft-id-input: -- Selecciona una opción -- NFT #1 (Principal: $1,000.00 USDC) NFT #2 (Principal: $1,00...
+- p2p-treasury-nft-id-input: -- Selecciona una opción -- -- No tienes NFTs de posición disponibles --
 - p2p-treasury-amount-input: 500
 - p2p-treasury-duration-input: 30
 - p2p-treasury-request-btn: 🏛️ Solicitar Crédito a la Tesorería (NFT)
-- p2p-offer-nft-id-input: -- Selecciona una opción -- NFT #1 (Principal: $1,000.00 USDC — Bloqueo: 3 Años) NFT #2...
+- p2p-offer-nft-id-input: -- Selecciona una opción -- -- No tienes NFTs de posición disponibles --
 - p2p-offer-amount-input: 500
 - p2p-offer-interest-input: 1000
 - p2p-offer-duration-input: 30
@@ -516,8 +516,8 @@ Generado el: 2026-10-27T10:24:11.818Z
 📊 INFORME DE ESTADO DE UI - PASO [6]: [PASO 6 (POST-BONO A)]
 ======================================================================
 [HEADER & GLOBAL]
-- header-por-ratio: 101.01%
-- header-nav-value: $1.3074 USDC
+- header-por-ratio: 105.48%
+- header-nav-value: $1.1183 USDC
 - header-wallet-status: 0xf39F...2266
 - header-role-admin: [No visible / N/A]
 - header-role-user: [No visible / N/A]
@@ -529,33 +529,33 @@ Generado el: 2026-10-27T10:24:11.818Z
 - analytics-liabilities-usd: [No visible / N/A]
 - analytics-gross-cashflow: [No visible / N/A]
 - analytics-apy-weighted: [No visible / N/A]
-- por-collateral-ratio: 101.01%
-- por-assets-total: $88,015.87 USD
-- por-liabilities-total: $87,133.42 USD
-- por-row-usdc-val: $48,065.78 USD
-- por-row-wbtc-val: $19,633.40 USD
-- por-row-weth-val: $9,816.70 USD
-- por-row-alpha-val: $10,814.17 USD
+- por-collateral-ratio: 105.48%
+- por-assets-total: $16,848.87 USD
+- por-liabilities-total: $15,973.44 USD
+- por-row-usdc-val: $8,976.88 USD
+- por-row-wbtc-val: $3,848.00 USD
+- por-row-weth-val: $1,924.00 USD
+- por-row-alpha-val: $2,024.88 USD
 - treasury-faucet-btn: 🚰 🚰 Solicitar 10,000 USDC Mock
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 16,950.00 USDC
-- treasury-shares-balance: 5,800.40 ALPHA
+- treasury-usdc-balance: 4,150.00 USDC
+- treasury-shares-balance: 1,648.82 ALPHA
 - treasury-deposit-input: [No visible / N/A]
 - treasury-deposit-btn: Suscribir ALPHA (Mint)
 - treasury-redeem-input: [No visible / N/A]
 - treasury-redeem-btn: Reembolsar USDC (Redeem)
-- staking-stalpha-balance: 14,850.00 stALPHA
+- staking-stalpha-balance: 2,970.00 stALPHA
 - staking-real-yield: $0.00 USD
-- staking-total-burned: 116.7753 ALPHA
-- staking-circulating-supply: 67,323.52 ALPHA
-- staking-community-staked: 14,850.00 stALPHA
+- staking-total-burned: 24.1449 ALPHA
+- staking-circulating-supply: 15,066.32 ALPHA
+- staking-community-staked: 2,970.00 stALPHA
 - staking-vaults-staked: 0.00 stALPHA
-- staking-reserves-staked: 8,271.51 stALPHA
-- staking-global-staked: 23,121.51 ALPHA (30.58%)
+- staking-reserves-staked: 1,810.68 stALPHA
+- staking-global-staked: 4,780.68 ALPHA (28.32%)
 - staking-backing-nav: [No visible / N/A]
-- staking-deflation-destroyed: 116.7753 ALPHA
+- staking-deflation-destroyed: 24.1449 ALPHA
 - staking-amount-input: 3000
 - staking-stake-btn: 🔒 Bloquear ALPHA en Staking
 - staking-unstake-btn: 🔓 Confirmar Retiro (Unstake)
@@ -570,14 +570,14 @@ Generado el: 2026-10-27T10:24:11.818Z
 - bonds-ragequit-btn: [No visible / N/A]
 
 [MÁRKETPLACE P2P & COLATERAL]
-- escrow-total-lent: $10500.00 USD
+- escrow-total-lent: $2100.00 USD
 - escrow-total-collateral: [No visible / N/A]
 - escrow-coverage-ratio: [No visible / N/A]
-- p2p-treasury-nft-id-input: -- Selecciona una opción -- NFT #1 (Principal: $1,000.00 USDC) NFT #2 (Principal: $1,00...
+- p2p-treasury-nft-id-input: -- Selecciona una opción -- NFT #1 (Principal: $1,000.00 USDC)
 - p2p-treasury-amount-input: 500
 - p2p-treasury-duration-input: 30
 - p2p-treasury-request-btn: 🏛️ Solicitar Crédito a la Tesorería (NFT)
-- p2p-offer-nft-id-input: -- Selecciona una opción -- NFT #1 (Principal: $1,000.00 USDC — Bloqueo: 3 Años) NFT #2...
+- p2p-offer-nft-id-input: -- Selecciona una opción -- NFT #1 (Principal: $1,000.00 USDC — Bloqueo: 3 Años)
 - p2p-offer-amount-input: 500
 - p2p-offer-interest-input: 1000
 - p2p-offer-duration-input: 30
@@ -618,8 +618,8 @@ Generado el: 2026-10-27T10:24:11.818Z
 📊 INFORME DE ESTADO DE UI - PASO [7]: [PASO 7 (POST-BONO B)]
 ======================================================================
 [HEADER & GLOBAL]
-- header-por-ratio: 102.09%
-- header-nav-value: $1.3214 USDC
+- header-por-ratio: 111.38%
+- header-nav-value: $1.1809 USDC
 - header-wallet-status: 0xf39F...2266
 - header-role-admin: [No visible / N/A]
 - header-role-user: [No visible / N/A]
@@ -631,33 +631,33 @@ Generado el: 2026-10-27T10:24:11.818Z
 - analytics-liabilities-usd: [No visible / N/A]
 - analytics-gross-cashflow: [No visible / N/A]
 - analytics-apy-weighted: [No visible / N/A]
-- por-collateral-ratio: 102.09%
-- por-assets-total: $88,958.75 USD
-- por-liabilities-total: $87,133.42 USD
-- por-row-usdc-val: $49,008.65 USD
-- por-row-wbtc-val: $19,633.40 USD
-- por-row-weth-val: $9,816.70 USD
-- por-row-alpha-val: $10,929.97 USD
+- por-collateral-ratio: 111.38%
+- por-assets-total: $17,791.75 USD
+- por-liabilities-total: $15,973.44 USD
+- por-row-usdc-val: $9,919.75 USD
+- por-row-wbtc-val: $3,848.00 USD
+- por-row-weth-val: $1,924.00 USD
+- por-row-alpha-val: $2,138.23 USD
 - treasury-faucet-btn: 🚰 🚰 Solicitar 10,000 USDC Mock
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
-- treasury-usdc-balance: 16,000.00 USDC
-- treasury-shares-balance: 5,800.40 ALPHA
+- treasury-usdc-balance: 3,200.00 USDC
+- treasury-shares-balance: 1,648.82 ALPHA
 - treasury-deposit-input: [No visible / N/A]
 - treasury-deposit-btn: Suscribir ALPHA (Mint)
 - treasury-redeem-input: [No visible / N/A]
 - treasury-redeem-btn: Reembolsar USDC (Redeem)
-- staking-stalpha-balance: 14,850.00 stALPHA
+- staking-stalpha-balance: 2,970.00 stALPHA
 - staking-real-yield: $0.00 USD
-- staking-total-burned: 116.7753 ALPHA
-- staking-circulating-supply: 67,323.52 ALPHA
-- staking-community-staked: 14,850.00 stALPHA
+- staking-total-burned: 24.1449 ALPHA
+- staking-circulating-supply: 15,066.32 ALPHA
+- staking-community-staked: 2,970.00 stALPHA
 - staking-vaults-staked: 0.00 stALPHA
-- staking-reserves-staked: 8,271.51 stALPHA
-- staking-global-staked: 23,121.51 ALPHA (30.58%)
+- staking-reserves-staked: 1,810.68 stALPHA
+- staking-global-staked: 4,780.68 ALPHA (28.32%)
 - staking-backing-nav: [No visible / N/A]
-- staking-deflation-destroyed: 116.7753 ALPHA
+- staking-deflation-destroyed: 24.1449 ALPHA
 - staking-amount-input: 3000
 - staking-stake-btn: 🔒 Bloquear ALPHA en Staking
 - staking-unstake-btn: 🔓 Confirmar Retiro (Unstake)
@@ -672,7 +672,7 @@ Generado el: 2026-10-27T10:24:11.818Z
 - bonds-ragequit-btn: [No visible / N/A]
 
 [MÁRKETPLACE P2P & COLATERAL]
-- escrow-total-lent: $10500.00 USD
+- escrow-total-lent: $2100.00 USD
 - escrow-total-collateral: [No visible / N/A]
 - escrow-coverage-ratio: [No visible / N/A]
 - p2p-treasury-nft-id-input: -- Selecciona una opción -- NFT #1 (Principal: $1,000.00 USDC) NFT #2 (Principal: $1,00...

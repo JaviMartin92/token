@@ -40,11 +40,11 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
       const totalLiabilitiesUSD = 70175.44; // AlphaToken.totalSupply() * NAV
 
       const porRatio = (totalAssetsUSD / totalLiabilitiesUSD) * 100;
-      const targetWeights = { stables: 60.00, wbtc: 26.67, weth: 13.33 };
+      const targetWeights = { stables: 50.00, wbtc: 25.00, weth: 12.50, alts: 12.50 };
 
       expect(totalAssetsUSD).toBe(100000.00);
       expect(porRatio).toBeCloseTo(142.50, 1);
-      expect(targetWeights.stables + targetWeights.wbtc + targetWeights.weth).toBeCloseTo(100.00, 2);
+      expect(targetWeights.stables + targetWeights.wbtc + targetWeights.weth + targetWeights.alts).toBeCloseTo(100.00, 2);
       expect(alphaSubReserveUSD).toBeGreaterThan(0);
     });
   });

@@ -127,15 +127,15 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
       const progress = (pointsCount - 1 - i) / (pointsCount - 1 || 1);
       const curveFactor = 0.85 + 0.15 * Math.sin(progress * Math.PI * 0.5);
 
-      const targetReserves = realReservesUsd > 0 ? realReservesUsd : 120000;
+      const targetReserves = realReservesUsd;
       const ptReserves = Math.round(targetReserves * curveFactor);
 
       const ptStables = Math.round(ptReserves * targetStablesPct);
       const ptBtc = Math.round(ptReserves * targetBtcPct);
       const ptEth = Math.round(ptReserves * targetEthPct);
 
-      const ptCashflow = Math.round((realGrossCashflowUsd > 0 ? realGrossCashflowUsd : 45000) * (0.8 + 0.2 * progress));
-      const ptYield = Math.round((realYieldPayoutUsd > 0 ? realYieldPayoutUsd : 3200) * (0.8 + 0.2 * progress));
+      const ptCashflow = Math.round(realGrossCashflowUsd * (0.8 + 0.2 * progress));
+      const ptYield = Math.round(realYieldPayoutUsd * (0.8 + 0.2 * progress));
       const ptApy = parseFloat((realWeightedApy * (0.95 + 0.05 * Math.sin(i))).toFixed(2));
       const ptPor = parseFloat((realPorRatioVal * (0.98 + 0.02 * Math.cos(i))).toFixed(2));
 

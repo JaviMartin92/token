@@ -3,7 +3,7 @@ import { publicClient, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
 import { formatEther } from 'viem';
 
 export function useUniversalYield(refetchInterval = 3000) {
-  const { data: proofOfReserves = { porAssets: '100,000.00', porLiabilities: '0.00', porRatio: '100.50%' } } = useQuery({
+  const { data: proofOfReserves = { porAssets: '0.00', porLiabilities: '0.00', porRatio: '100.00%' } } = useQuery({
     queryKey: ['proofOfReserves'],
     queryFn: async () => {
       try {
@@ -29,13 +29,13 @@ export function useUniversalYield(refetchInterval = 3000) {
           porRatio: `${ratioVal.toFixed(2)}%`
         };
       } catch (e) {
-        return { porAssets: '100,000.00', porLiabilities: '0.00', porRatio: '100.00%' };
+        return { porAssets: '0.00', porLiabilities: '0.00', porRatio: '100.00%' };
       }
     },
     refetchInterval
   });
 
-  const { data: porBreakdown = { stables: 5000, wbtc: 2500, weth: 1250, alphaStaking: 1250 } } = useQuery({
+  const { data: porBreakdown = { stables: 0, wbtc: 0, weth: 0, alphaStaking: 0 } } = useQuery({
     queryKey: ['porBreakdown'],
     queryFn: async () => {
       try {
@@ -76,17 +76,17 @@ export function useUniversalYield(refetchInterval = 3000) {
           alphaStaking: alphaStakingUSD
         };
       } catch (e) {
-        return { stables: 5000, wbtc: 2500, weth: 1250, alphaStaking: 1250 };
+        return { stables: 0, wbtc: 0, weth: 0, alphaStaking: 0 };
       }
     },
     refetchInterval
   });
 
-  const { data: yieldRates = { liveApyStr: '5.48%', assetRates: { stablesApyPct: 0.0645, ethApyPct: 0.032, btcApyPct: 0.038 } } } = useQuery({
+  const { data: yieldRates = { liveApyStr: '0.00%', assetRates: { stablesApyPct: 0, ethApyPct: 0, btcApyPct: 0 } } } = useQuery({
     queryKey: ['yieldRates', porBreakdown],
     queryFn: async () => {
       if (!CONTRACT_ADDRESSES.DYNAMIC_YIELD_ORACLE) {
-        return { liveApyStr: '5.48%', assetRates: { stablesApyPct: 0.0645, ethApyPct: 0.032, btcApyPct: 0.038 } };
+        return { liveApyStr: '0.00%', assetRates: { stablesApyPct: 0, ethApyPct: 0, btcApyPct: 0 } };
       }
 
       try {
@@ -111,28 +111,28 @@ export function useUniversalYield(refetchInterval = 3000) {
         const eVault = await publicClient.readContract({ address: CONTRACT_ADDRESSES.DYNAMIC_YIELD_ORACLE, abi: ABIS.DYNAMIC_YIELD_ORACLE, functionName: 'getBestYieldVault', args: [1] }) as any;
         const bVault = await publicClient.readContract({ address: CONTRACT_ADDRESSES.DYNAMIC_YIELD_ORACLE, abi: ABIS.DYNAMIC_YIELD_ORACLE, functionName: 'getBestYieldVault', args: [2] }) as any;
 
-        const sBps = Number(Array.isArray(sVault) ? sVault[2] : (sVault?.highestApyBps ?? 645));
-        const eBps = Number(Array.isArray(eVault) ? eVault[2] : (eVault?.highestApyBps ?? 320));
-        const bBps = Number(Array.isArray(bVault) ? bVault[2] : (bVault?.highestApyBps ?? 380));
+        const sBps = Number(Array.isArray(sVault) ? sVault[2] : (sVault?.highestApyBps ?? 0));
+        const eBps = Number(Array.isArray(eVault) ? eVault[2] : (eVault?.highestApyBps ?? 0));
+        const bBps = Number(Array.isArray(bVault) ? bVault[2] : (bVault?.highestApyBps ?? 0));
 
-        const weightedPct = Number(weightedApyBps) > 0 ? (Number(weightedApyBps) / 100).toFixed(2) : '5.48';
+        const weightedPct = Number(weightedApyBps) > 0 ? (Number(weightedApyBps) / 100).toFixed(2) : '0.00';
 
         return {
           liveApyStr: `${weightedPct}%`,
           assetRates: {
-            stablesApyPct: sBps > 0 ? sBps / 10000 : 0.0645,
-            ethApyPct: eBps > 0 ? eBps / 10000 : 0.032,
-            btcApyPct: bBps > 0 ? bBps / 10000 : 0.038
+            stablesApyPct: sBps > 0 ? sBps / 10000 : 0,
+            ethApyPct: eBps > 0 ? eBps / 10000 : 0,
+            btcApyPct: bBps > 0 ? bBps / 10000 : 0
           }
         };
       } catch (err) {
         console.warn('Yield oracle read fallback:', err);
         return {
-          liveApyStr: '5.48%',
+          liveApyStr: '0.00%',
           assetRates: {
-            stablesApyPct: 0.0645,
-            ethApyPct: 0.032,
-            btcApyPct: 0.038
+            stablesApyPct: 0,
+            ethApyPct: 0,
+            btcApyPct: 0
           }
         };
       }
