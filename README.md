@@ -147,6 +147,16 @@ npm run test:ai-fuzzer
 
 ### 🚀 Lanzamiento y Despliegue Ultrarrápido
 
+#### 🐧 En Linux, Google AI Studio, Argon y Cloud Sandboxes (Sin Docker):
+> Para instrucciones detalladas y resolución de problemas específicos en Google AI Studio con Argon, consulta la [**Guía Institucional para Argon en AI Studio**](file:///c:/Users/javil/Desktop/token/docs/ARGON_AI_STUDIO_GUIDE.md).
+
+```bash
+chmod +x start_app.sh && ./start_app.sh
+# O alternativamente vía npm:
+npm run start:linux
+```
+
+#### 🪟 En Windows con Docker Desktop:
 - **Despliegue Completo (Cold Start)**:
   ```powershell
   .\start_app.ps1
@@ -199,8 +209,9 @@ npm run test:ai-fuzzer
 │       │   │   └── OllamaClient.ts              # Cliente de inferencia local con aceleración GPU
 │       │   ├── deploy.ts    # Despliegue automatizado de 26 contratos y configuración timelock
 │       │   └── BlockIndexer.ts # Indexador de bloques con detección de reorgs
-├── docs/                    # Documentación técnica institucional (Whitepaper, Arquitectura, IA Framework)
-├── start_app.ps1            # Script de lanzamiento completo PowerShell
+├── docs/                    # Documentación técnica institucional (Whitepaper, Arquitectura, IA Framework, Argon Guide)
+├── start_app.sh             # Script de lanzamiento nativo Linux / Google AI Studio (Argon)
+├── start_app.ps1            # Script de lanzamiento completo PowerShell para Windows
 └── start_app.bat            # Ejecutable Batch para Windows
 ```
 

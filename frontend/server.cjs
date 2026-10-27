@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = 5173;
-const ANVIL_HOST = process.env.ANVIL_HOST || 'host.docker.internal';
+const ANVIL_HOST = process.env.ANVIL_HOST || (fs.existsSync('/.dockerenv') ? 'host.docker.internal' : '127.0.0.1');
 const ANVIL_PORT = 8545;
 const DIST_DIR = path.resolve(__dirname, 'dist');
 

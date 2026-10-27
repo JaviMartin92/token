@@ -67,6 +67,17 @@ cp .env.example .env
 *(Nota: Al ejecutar `start_app.ps1`, el script regenera y actualiza automáticamente las direcciones de los contratos en `.env` y en `frontend/src/contracts.json`).*
 
 ### Paso 3: Despliegue Ultrarrápido a Estado 0 (Un Solo Clic)
+
+#### 🐧 En Linux, Google AI Studio (Argon) y Cloud Sandboxes (Sin Docker):
+> Para una guía exhaustiva sobre la ejecución en el sandbox de AI Studio, consulta [`docs/ARGON_AI_STUDIO_GUIDE.md`](file:///c:/Users/javil/Desktop/token/docs/ARGON_AI_STUDIO_GUIDE.md).
+
+```bash
+chmod +x start_app.sh && ./start_app.sh
+# O alternativamente:
+npm run start:linux
+```
+
+#### 🪟 En Windows con Docker Desktop:
 En **Windows PowerShell**:
 ```powershell
 .\start_app.ps1
