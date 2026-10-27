@@ -86,6 +86,30 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
           />
         </div>
 
+        {/* ℹ️ Transparencia de Valor Liquidativo (NAV) */}
+        <div style={{
+          marginTop: 'var(--space-3)',
+          marginBottom: 'var(--space-2)',
+          padding: 'var(--space-3) var(--space-4)',
+          background: 'var(--bg-surface-elevated)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-md)',
+          fontSize: '0.8125rem',
+          color: 'var(--text-secondary)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 'var(--space-2)'
+        }}>
+          <div>
+            💎 <strong>Transparencia Contable NAV:</strong> Cada cuota está respaldada estrictamente por el <em>Patrimonio Neto libre de pasivos</em> (Activos en Reservas menos Deuda de Bonos Vestados), protegiéndote contra dilución.
+          </div>
+          <span style={{ color: 'var(--color-blue-light)', fontWeight: 600 }}>
+            Ver Desglose Completo en Pestaña Métricas ➔
+          </span>
+        </div>
+
         {/* ⚡ Operaciones: Suscripción (Mint) y Reembolso (Redeem) */}
         <div className={styles.operationsGrid}>
           {/* Tarjeta de Depósito / Mint */}

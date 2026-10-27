@@ -324,6 +324,8 @@ export default function App() {
             porAssets={universalYield.porAssets}
             porLiabilities={universalYield.porLiabilities}
             porRatio={universalYield.porRatio}
+            vestedDebt={universalYield.vestedDebt}
+            netEquity={universalYield.netEquity}
             porBreakdown={universalYield.porBreakdown}
             usdcBalance={portfolio.usdcBalance}
             sharesBalance={portfolio.sharesBalance}

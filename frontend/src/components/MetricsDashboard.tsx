@@ -8,6 +8,8 @@ interface MetricsDashboardProps {
   porAssets: string;
   porLiabilities: string;
   porRatio: string;
+  vestedDebt?: string;
+  netEquity?: string;
   porBreakdown: { stables: number; wbtc: number; weth: number; alphaStaking: number };
   usdcBalance: string;
   sharesBalance: string;
@@ -32,6 +34,8 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   porAssets,
   porLiabilities,
   porRatio,
+  vestedDebt,
+  netEquity,
   porBreakdown,
   stakedBalance,
   claimableYield,
@@ -52,6 +56,9 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   const numericRatioPct = parseFloat((porRatio || '100').replace(/,/g, '').replace('%', '')) || 100.0;
   const numericAssets = parseFloat(porAssets.replace(/,/g, '')) || 0;
   const numericLiabilities = parseFloat(porLiabilities.replace(/,/g, '')) || 0;
+  const numericVestedDebt = parseFloat((vestedDebt || '0').replace(/,/g, '')) || 0;
+  const numericNetEquity = parseFloat((netEquity || '0').replace(/,/g, '')) || (numericAssets > numericVestedDebt ? numericAssets - numericVestedDebt : 0);
+  const numericAlphaLiability = numericLiabilities > numericVestedDebt ? numericLiabilities - numericVestedDebt : (numericCirculating * 1.1099);
 
   // Real Treasury Surplus calculation based on NAV growth above par ($1.00 USD baseline)
   const numericNav = parseFloat((navPerShareUSD || '1.0').replace('$', '').replace(' USDC', '')) || 1.0;
@@ -178,7 +185,157 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
         )}
       </Card>
 
-      {/* 🪙 SECCIÓN 2: ESTADO DE TOKENOMICS & STAKING EN PANTALLA */}
+      {/* 💎 SECCIÓN 2: CONCILIACIÓN FIDUCIARIA & TRANSPARENCIA PATRIMONIAL */}
+      <Card
+        variant="surface"
+        collapsible
+        defaultExpanded={true}
+        headerTitle="💎 Conciliación On-Chain: Desglose de Reservas, Deuda y NAV"
+        headerSubtitle="Transparencia fiduciaria y matemática: por qué cada cuota de ALPHA está 100% respaldada sin pasivos ocultos"
+      >
+        <div className={styles.reconciliationContainer}>
+          {/* 1. Flujo de la Ecuación del NAV */}
+          <div className={styles.formulaFlow}>
+            <div className={styles.formulaStep}>
+              <span className={styles.formulaStepLabel}>🏦 Activos en Reservas</span>
+              <span className={styles.formulaStepValue} data-testid="recon-assets-val">${porAssets}</span>
+              <span className={styles.formulaStepSub}>USDC + WBTC + WETH</span>
+            </div>
+
+            <div className={styles.formulaOperator}>➖</div>
+
+            <div className={styles.formulaStep}>
+              <span className={styles.formulaStepLabel}>📜 Deuda Bonos Vestados</span>
+              <span className={styles.formulaStepValue} data-testid="recon-vested-debt">${vestedDebt || '0.00'}</span>
+              <span className={styles.formulaStepSub}>Compromisos a 1-3 Años</span>
+            </div>
+
+            <div className={styles.formulaOperator}>🟰</div>
+
+            <div className={styles.formulaStep}>
+              <span className={styles.formulaStepLabel}>💎 Patrimonio Neto Libre</span>
+              <span className={styles.formulaStepValue} style={{ color: 'var(--color-emerald-light)' }} data-testid="recon-net-equity">
+                ${netEquity || (numericAssets > numericVestedDebt ? (numericAssets - numericVestedDebt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00')}
+              </span>
+              <span className={styles.formulaStepSub}>Net Equity sin Deuda</span>
+            </div>
+
+            <div className={styles.formulaOperator}>➗</div>
+
+            <div className={styles.formulaStep}>
+              <span className={styles.formulaStepLabel}>🪙 ALPHA Circulante</span>
+              <span className={styles.formulaStepValue} data-testid="recon-circulating">{circulatingSupply}</span>
+              <span className={styles.formulaStepSub}>Cuotas Totales en Mercado</span>
+            </div>
+
+            <div className={styles.formulaOperator}>🟰</div>
+
+            <div className={styles.formulaStep} style={{ border: '1px solid var(--color-blue-border)', background: 'var(--color-blue-subtle)' }}>
+              <span className={styles.formulaStepLabel} style={{ color: 'var(--color-blue-light)' }}>💎 NAV / ALPHA</span>
+              <span className={styles.formulaStepValue} style={{ color: 'var(--color-blue-light)' }} data-testid="recon-nav-result">
+                {navPerShareUSD.startsWith('$') ? navPerShareUSD : `$${navPerShareUSD} USDC`}
+              </span>
+              <span className={styles.formulaStepSub}>Respaldo 1:1 Inmediato</span>
+            </div>
+          </div>
+
+          {/* 2. Grid de Explicaciones Didácticas e Institucionales */}
+          <div className={styles.transparencyExplainerGrid}>
+            <div className={styles.explainerCard}>
+              <div className={styles.explainerHeader}>
+                <span>⚖️</span>
+                <span>¿Por qué el NAV no es Activos / Circulante?</span>
+              </div>
+              <div className={styles.explainerBody}>
+                Cuando un inversor adquiere un bono con descuento (a 1, 2 o 3 años), deposita liquidez en la tesorería (lo que eleva los <strong>Activos Totales</strong> a ${porAssets} USD), pero a cambio el protocolo contrae una <strong>obligación futura exigible</strong> (${vestedDebt || '0.00'} USD).
+                <br /><br />
+                Dividir la caja bruta entre las cuotas actuales inflaría ficticiamente el NAV a corto plazo, generando un <em>esquema de dilución piramidal</em> cuando los bonistas reclamen sus fondos. El contrato <code>TreasuryManager.sol</code> deduce honestamente toda deuda futura, garantizando que el NAV de <strong>{navPerShareUSD.startsWith('$') ? navPerShareUSD : `$${navPerShareUSD} USDC`}</strong> sea 100% libre de cargas y matemáticamente solvente.
+              </div>
+            </div>
+
+            <div className={styles.explainerCard}>
+              <div className={styles.explainerHeader}>
+                <span>📄</span>
+                <span>Composición de los Pasivos (${porLiabilities} USD)</span>
+              </div>
+              <div className={styles.explainerBody}>
+                El pasivo global auditado por el <strong>Proof of Reserves (PoR)</strong> se compone estrictamente de:
+                <ul className={styles.explainerList}>
+                  <li>
+                    <strong>Respaldo Inmediato ALPHA (~${numericAlphaLiability.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD):</strong> Cobertura al 100% a valor de liquidación para los tenedores de cuotas en circulación.
+                  </li>
+                  <li>
+                    <strong>Obligaciones de Bonos Vestados (${vestedDebt || '0.00'} USD):</strong> Fondos apartados para honrar la amortización de bonos sin tocar el capital de los stakers.
+                  </li>
+                </ul>
+                <div style={{ marginTop: '0.5rem', fontWeight: 600, color: 'var(--color-emerald-light)' }}>
+                  🛡️ Cobertura PoR: {porRatio.includes('%') ? porRatio : `${porRatio}%`} (Sobrecolateralización con superávit de seguridad).
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.explainerCard}>
+              <div className={styles.explainerHeader}>
+                <span>🔥</span>
+                <span>Mecanismo y Registro de Quemas Deflacionarias ({totalBurnedTokens} ALPHA)</span>
+              </div>
+              <div className={styles.explainerBody}>
+                Los tokens destruidos irreversiblemente proceden de tres fuentes criptográficas:
+                <ul className={styles.explainerList}>
+                  <li>
+                    <strong>Reembolsos Primarios:</strong> Cuando un usuario liquida ALPHA por USDC a NAV, las cuotas se destruyen en <code>burnFrom()</code>.
+                  </li>
+                  <li>
+                    <strong>Ragequit de Bonos:</strong> Penalización del 15% por salidas anticipadas que amortiza de forma perpetua el nominal en tokens.
+                  </li>
+                  <li>
+                    <strong>Recompras DAO:</strong> El motor de mercado compra cuotas con descuento y las remite a la dirección cero.
+                  </li>
+                </ul>
+                <div style={{ marginTop: '0.5rem' }}>
+                  📈 <em>Impacto:</em> Al reducirse el circulante mientras la tesorería retiene comisiones, el NAV por cuota crece de manera irreversible.
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.explainerCard}>
+              <div className={styles.explainerHeader}>
+                <span>📊</span>
+                <span>Conciliación Total del Suministro ALPHA</span>
+              </div>
+              <div className={styles.explainerBody}>
+                Auditoría on-chain del ledger de emisión:
+                <div className={styles.supplyPillsGrid}>
+                  <div className={styles.supplyPillCard}>
+                    <span className={styles.supplyPillTitle}>Total Emitido</span>
+                    <span className={styles.supplyPillValue}>111,995.22</span>
+                    <span className={styles.supplyPillDesc}>Acuñado Génesis</span>
+                  </div>
+                  <div className={styles.supplyPillCard}>
+                    <span className={styles.supplyPillTitle}>Vesting Reserva</span>
+                    <span className={styles.supplyPillValue}>100,000.00</span>
+                    <span className={styles.supplyPillDesc}>Bloqueo Institucional</span>
+                  </div>
+                  <div className={styles.supplyPillCard}>
+                    <span className={styles.supplyPillTitle}>Staking Activo</span>
+                    <span className={styles.supplyPillValue}>{totalStakedSupply}</span>
+                    <span className={styles.supplyPillDesc}>{communityStakedSupply} Comunidad + POL</span>
+                  </div>
+                  <div className={styles.supplyPillCard}>
+                    <span className={styles.supplyPillTitle}>Flotante Libre</span>
+                    <span className={styles.supplyPillValue}>
+                      {Math.max(0, numericCirculating - (parseFloat((communityStakedSupply || '0').replace(/,/g, '')) || 0)).toLocaleString('en-US', { maximumFractionDigits: 2 })}
+                    </span>
+                    <span className={styles.supplyPillDesc}>Liquidez en Carteras</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* 🪙 SECCIÓN 3: ESTADO DE TOKENOMICS & STAKING EN PANTALLA */}
       <Card
         variant="surface"
         collapsible

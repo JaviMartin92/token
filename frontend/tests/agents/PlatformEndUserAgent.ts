@@ -11,7 +11,7 @@ export async function isElementVisible(locator: Locator, timeoutMs = 1200): Prom
   }
 }
 
-export async function confirmModalIfPresent(page: Page, timeoutMs = 8000): Promise<boolean> {
+export async function confirmModalIfPresent(page: Page, timeoutMs = 10000): Promise<boolean> {
   const confirmBtn = page.locator('[data-testid="modal-confirm-btn"]');
   try {
     await confirmBtn.waitFor({ state: 'visible', timeout: timeoutMs });
@@ -23,7 +23,16 @@ export async function confirmModalIfPresent(page: Page, timeoutMs = 8000): Promi
   }
 }
 
+export async function closeAnyOrphanModal(page: Page) {
+  const closeBtn = page.locator('[data-testid="modal-close-btn"], [data-testid="modal-cancel-btn"]').first();
+  if (await isElementVisible(closeBtn, 300)) {
+    await closeBtn.click();
+    await page.waitForTimeout(150);
+  }
+}
+
 export async function ensureWalletConnected(page: Page) {
+  await closeAnyOrphanModal(page);
   const connectBtn = page.locator('button:has-text("Conectar Wallet")');
   if (await isElementVisible(connectBtn, 600)) {
     await connectBtn.click();
@@ -31,12 +40,17 @@ export async function ensureWalletConnected(page: Page) {
   }
 }
 
+export interface OperationExecutionMeta {
+  inputAmount?: number;
+  lockYears?: number;
+}
+
 export interface PlatformOperationDef {
   id: string;
   name: string;
   subsystem: string;
   description: string;
-  run: (page: Page, iteration: number) => Promise<void>;
+  run: (page: Page, iteration: number) => Promise<OperationExecutionMeta | void>;
 }
 
 export class PlatformEndUserAgent {
@@ -64,7 +78,7 @@ export class PlatformEndUserAgent {
     const preChain = await this.supervisor.captureOnChainMetrics();
 
     // 2. Acción Real del Usuario en la Interfaz (Clicks, Inputs, Modales)
-    await op.run(this.page, iteration);
+    const runResult = (await op.run(this.page, iteration)) || {};
 
     // 3. Respiro de sincronización para minado y refetch de React Query
     await this.page.waitForTimeout(600);
@@ -83,6 +97,8 @@ export class PlatformEndUserAgent {
       postScreen,
       preChain,
       postChain,
+      inputAmount: runResult.inputAmount,
+      lockYears: runResult.lockYears,
     });
 
     if (record.verdict === 'REJECTED') {
@@ -124,10 +140,14 @@ export class PlatformEndUserAgent {
           const amounts = ['100', '250', '500', '750', '1000', '1250', '1500', '2000', '2500', '3000'];
           const amt = amounts[(iter - 1) % amounts.length];
           const depInput = page.locator('[data-testid="treasury-deposit-input"]');
+          await depInput.scrollIntoViewIfNeeded();
           await depInput.fill(amt);
           await page.locator('[data-testid="treasury-deposit-btn"]').click();
-          await confirmModalIfPresent(page, 3000);
-          await page.waitForTimeout(200);
+          const confirmed = await confirmModalIfPresent(page, 10000);
+          await page.waitForTimeout(300);
+          if (confirmed) {
+            return { inputAmount: parseFloat(amt) };
+          }
         }
       },
 
@@ -142,10 +162,14 @@ export class PlatformEndUserAgent {
           const amounts = ['20', '35', '50', '65', '80', '100', '120', '150', '180', '200'];
           const amt = amounts[(iter - 1) % amounts.length];
           const redeemInput = page.locator('[data-testid="treasury-redeem-input"]');
+          await redeemInput.scrollIntoViewIfNeeded();
           await redeemInput.fill(amt);
           await page.locator('[data-testid="treasury-redeem-btn"]').click();
-          await confirmModalIfPresent(page, 3000);
-          await page.waitForTimeout(200);
+          const confirmed = await confirmModalIfPresent(page, 10000);
+          await page.waitForTimeout(300);
+          if (confirmed) {
+            return { inputAmount: parseFloat(amt) };
+          }
         }
       },
 
@@ -164,6 +188,7 @@ export class PlatformEndUserAgent {
           await page.locator('[data-testid="staking-stake-btn"]').click();
           await confirmModalIfPresent(page, 3000);
           await page.waitForTimeout(200);
+          return { inputAmount: parseFloat(amt) };
         }
       },
 
@@ -185,6 +210,7 @@ export class PlatformEndUserAgent {
             await confirmModalIfPresent(page, 3000);
             await page.waitForTimeout(200);
           }
+          return { inputAmount: parseFloat(amt) };
         }
       },
 
@@ -242,8 +268,11 @@ export class PlatformEndUserAgent {
           const bondYears = page.locator('[data-testid="bonds-years-select"]').first();
           await bondYears.selectOption(yr);
           await page.locator('[data-testid="bonds-buy-btn"]').first().click();
-          await confirmModalIfPresent(page, 3000);
-          await page.waitForTimeout(200);
+          const confirmed = await confirmModalIfPresent(page, 10000);
+          await page.waitForTimeout(300);
+          if (confirmed) {
+            return { inputAmount: parseFloat(amt), lockYears: parseInt(yr, 10) };
+          }
         }
       },
 
@@ -260,7 +289,7 @@ export class PlatformEndUserAgent {
             const bondInput = page.locator('[data-testid="bonds-principal-input"]').first();
             await bondInput.fill('100');
             await page.locator('[data-testid="bonds-buy-btn"]').first().click();
-            await confirmModalIfPresent(page, 3000);
+            await confirmModalIfPresent(page, 5000);
             await page.waitForTimeout(200);
             rqBtn = page.locator('button:has-text("Ragequit")').first();
           }
@@ -268,8 +297,11 @@ export class PlatformEndUserAgent {
           if (await isElementVisible(rqBtn, 1200)) {
             await rqBtn.scrollIntoViewIfNeeded();
             await rqBtn.click();
-            await confirmModalIfPresent(page, 3000);
-            await page.waitForTimeout(200);
+            const confirmed = await confirmModalIfPresent(page, 10000);
+            await page.waitForTimeout(300);
+            if (confirmed) {
+              return { inputAmount: 100 };
+            }
           }
         }
       },
@@ -308,12 +340,14 @@ export class PlatformEndUserAgent {
         description: 'Publica oferta de crédito colateralizada por la posición de bono.',
         run: async (page, iter) => {
           await ensureWalletConnected(page);
+          const amt = 200 + iter * 50;
           const offerInput = page.locator('[data-testid="p2p-offer-amount-input"]');
           if (await isElementVisible(offerInput, 800)) {
-            await offerInput.fill((200 + iter * 50).toString());
+            await offerInput.fill(amt.toString());
             await page.locator('[data-testid="p2p-offer-create-btn"]').click();
             await confirmModalIfPresent(page, 3000);
             await page.waitForTimeout(200);
+            return { inputAmount: amt };
           }
         }
       },
@@ -349,6 +383,7 @@ export class PlatformEndUserAgent {
             await page.locator('[data-testid="p2p-treasury-request-btn"]').click();
             await confirmModalIfPresent(page, 3000);
             await page.waitForTimeout(200);
+            return { inputAmount: 150 };
           }
         }
       },

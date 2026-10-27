@@ -199,3 +199,180 @@
     grid-column: span 1;
   }
 }
+
+/* 💎 Transparencia Fiduciaria & Conciliación Patrimonial */
+.reconciliationContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+}
+
+.formulaFlow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  overflow-x: auto;
+}
+
+.formulaStep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-width: 130px;
+  flex: 1;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.formulaStepLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-1);
+}
+
+.formulaStepValue {
+  font-size: 1.125rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.formulaStepSub {
+  font-size: 0.6875rem;
+  color: var(--text-secondary);
+  margin-top: var(--space-1);
+}
+
+.formulaOperator {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: var(--color-emerald-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-1);
+  user-select: none;
+}
+
+.transparencyExplainerGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.explainerCard {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.explainerHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.explainerBody {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.explainerBody strong {
+  color: var(--text-primary);
+}
+
+.explainerList {
+  margin: var(--space-2) 0 0 var(--space-4);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.explainerList li {
+  line-height: 1.5;
+}
+
+.supplyPillsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.supplyPillCard {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.supplyPillTitle {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.supplyPillValue {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.supplyPillDesc {
+  font-size: 0.6875rem;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 900px) {
+  .transparencyExplainerGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .formulaFlow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .formulaOperator {
+    transform: rotate(90deg);
+    padding: var(--space-1) 0;
+  }
+
+  .supplyPillsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .supplyPillsGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  }
+}

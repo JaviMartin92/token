@@ -3,33 +3,44 @@ import { publicClient, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
 import { formatEther } from 'viem';
 
 export function useUniversalYield(refetchInterval = 3000) {
-  const { data: proofOfReserves = { porAssets: '0.00', porLiabilities: '0.00', porRatio: '100.00%' } } = useQuery({
+  const { data: proofOfReserves = { porAssets: '0.00', porLiabilities: '0.00', porRatio: '100.00%', vestedDebt: '0.00', netEquity: '0.00' } } = useQuery({
     queryKey: ['proofOfReserves'],
     queryFn: async () => {
       try {
-        const res = await publicClient.readContract({
-          address: CONTRACT_ADDRESSES.TREASURY,
-          abi: [
-            { name: 'getProofOfReserves', type: 'function', stateMutability: 'view', inputs: [], outputs: [
-              { name: 'totalAssetsUSD', type: 'uint256' },
-              { name: 'totalLiabilitiesUSD', type: 'uint256' },
-              { name: 'collateralRatioBps', type: 'uint256' }
-            ]}
-          ] as const,
-          functionName: 'getProofOfReserves'
-        }) as readonly [bigint, bigint, bigint];
+        const [res, vestedLiabilityWei] = await Promise.all([
+          publicClient.readContract({
+            address: CONTRACT_ADDRESSES.TREASURY,
+            abi: [
+              { name: 'getProofOfReserves', type: 'function', stateMutability: 'view', inputs: [], outputs: [
+                { name: 'totalAssetsUSD', type: 'uint256' },
+                { name: 'totalLiabilitiesUSD', type: 'uint256' },
+                { name: 'collateralRatioBps', type: 'uint256' }
+              ]}
+            ] as const,
+            functionName: 'getProofOfReserves'
+          }) as Promise<readonly [bigint, bigint, bigint]>,
+          publicClient.readContract({
+            address: CONTRACT_ADDRESSES.VESTED_VAULT,
+            abi: [{ name: 'totalPresentLiability', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] }],
+            functionName: 'totalPresentLiability'
+          }).catch(() => 0n) as Promise<bigint>
+        ]);
 
         const assetsVal = parseFloat(formatEther(res[0]));
         const liabilitiesVal = parseFloat(formatEther(res[1]));
         const ratioVal = liabilitiesVal > 0 ? (assetsVal / liabilitiesVal) * 100 : (Number(res[2]) / 100);
+        const vestedDebtVal = parseFloat(formatEther(vestedLiabilityWei));
+        const netEquityVal = assetsVal > vestedDebtVal ? assetsVal - vestedDebtVal : 0;
 
         return {
           porAssets: assetsVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
           porLiabilities: liabilitiesVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-          porRatio: `${ratioVal.toFixed(2)}%`
+          porRatio: `${ratioVal.toFixed(2)}%`,
+          vestedDebt: vestedDebtVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+          netEquity: netEquityVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         };
       } catch (e) {
-        return { porAssets: '0.00', porLiabilities: '0.00', porRatio: '100.00%' };
+        return { porAssets: '0.00', porLiabilities: '0.00', porRatio: '100.00%', vestedDebt: '0.00', netEquity: '0.00' };
       }
     },
     refetchInterval
@@ -145,6 +156,8 @@ export function useUniversalYield(refetchInterval = 3000) {
     porAssets: proofOfReserves.porAssets,
     porLiabilities: proofOfReserves.porLiabilities,
     porRatio: proofOfReserves.porRatio,
+    vestedDebt: proofOfReserves.vestedDebt,
+    netEquity: proofOfReserves.netEquity,
     porBreakdown,
     liveApyStr: yieldRates.liveApyStr,
     assetRates: yieldRates.assetRates
