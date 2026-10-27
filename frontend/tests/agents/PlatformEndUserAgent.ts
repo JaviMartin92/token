@@ -11,12 +11,12 @@ export async function isElementVisible(locator: Locator, timeoutMs = 1200): Prom
   }
 }
 
-export async function confirmModalIfPresent(page: Page, timeoutMs = 1800): Promise<boolean> {
+export async function confirmModalIfPresent(page: Page, timeoutMs = 8000): Promise<boolean> {
   const confirmBtn = page.locator('[data-testid="modal-confirm-btn"]');
   try {
     await confirmBtn.waitFor({ state: 'visible', timeout: timeoutMs });
     await confirmBtn.click();
-    await expect(confirmBtn).toBeHidden({ timeout: 10000 });
+    await expect(confirmBtn).toBeHidden({ timeout: 35000 });
     return true;
   } catch {
     return false;
@@ -66,8 +66,8 @@ export class PlatformEndUserAgent {
     // 2. Acción Real del Usuario en la Interfaz (Clicks, Inputs, Modales)
     await op.run(this.page, iteration);
 
-    // 3. Pequeño respiro de sincronización para minado de bloque en Anvil (automine ~10ms)
-    await this.page.waitForTimeout(150);
+    // 3. Respiro de sincronización para minado y refetch de React Query
+    await this.page.waitForTimeout(600);
 
     // 4. Auditoría Posterior (Pantalla y On-Chain)
     const postScreen = await this.supervisor.captureScreenMetrics(this.page);

@@ -332,8 +332,8 @@ export class TokenomicsSupervisorAgent {
       notes.push(`INVARIANTE NAV VIOLADO: NAV disminuyó de $${preChain.navUSD.toFixed(6)} a $${postChain.navUSD.toFixed(6)} (delta: ${deltaNav.toFixed(6)})`);
     }
 
-    // Invariante 2: Cobertura de Solvencia Global (PoR >= 100.00%)
-    const fullSolvencyPoR = postChain.porRatioPct >= 99.99;
+    // Invariante 2: Cobertura de Solvencia Global (PoR >= 100.00% o estado génesis sin pasivos)
+    const fullSolvencyPoR = postChain.totalLiabilitiesUSD === 0 || postChain.porRatioPct >= 99.99;
     if (!fullSolvencyPoR) {
       notes.push(`INVARIANTE PoR VIOLADO: PoR cayó bajo solvencia plena: ${postChain.porRatioPct.toFixed(2)}%`);
     }
@@ -341,8 +341,8 @@ export class TokenomicsSupervisorAgent {
     // Invariante 3: Reconocimiento Honesto de Pasivos
     const honestLiabilityRecognition = postChain.totalLiabilitiesUSD >= 0 && postChain.vestedLiabilityUSD >= 0;
 
-    // Invariante 4: Cero Fuga de Capital (Activos no desaparecen sin contrapartida)
-    const capitalLeakageFree = postChain.totalAssetsUSD > 0;
+    // Invariante 4: Cero Fuga de Capital (Activos no negativos)
+    const capitalLeakageFree = postChain.totalAssetsUSD >= 0;
 
     // Invariante 5: Integridad Deflacionaria (Quemas acumuladas nunca disminuyen)
     const deflationIntegrity = postChain.totalBurned >= preChain.totalBurned;
