@@ -1,11 +1,14 @@
 import React from 'react';
 import styles from './NotificationToast.module.css';
+import { getExplorerTxUrl } from '../utils/web3.js';
 
 export interface ToastMessage {
   id: string;
   type: 'info' | 'success' | 'warning' | 'error';
   title: string;
   message: string;
+  txHash?: string;
+  chainId?: number;
 }
 
 interface NotificationToastProps {
@@ -29,20 +32,32 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
   };
 
   return (
-    <div className="toast-container">
+    <div className="toast-container" role="region" aria-label="Notificaciones del sistema">
       {toasts.map((toast) => (
         <div
           key={toast.id}
           className={`toast-item toast-${toast.type}`}
         >
-          <span className={styles.toastIcon}>{getIcon(toast.type)}</span>
+          <span className={styles.toastIcon} aria-hidden="true">{getIcon(toast.type)}</span>
           <div className={styles.toastContentBox}>
             <div className={styles.toastTitleText}>{toast.title}</div>
             <div className={styles.toastMsgText}>{toast.message}</div>
+            {toast.txHash && (
+              <a
+                href={getExplorerTxUrl(toast.txHash, toast.chainId)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.explorerLink}
+              >
+                Ver en Arbiscan ↗
+              </a>
+            )}
           </div>
           <button
+            type="button"
             className="toast-close-btn"
             onClick={() => onDismiss(toast.id)}
+            aria-label="Cerrar notificación"
           >
             ✕
           </button>

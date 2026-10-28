@@ -1,4 +1,5 @@
 import { createPublicClient, createWalletClient, custom, http } from 'viem';
+import { arbitrum, arbitrumSepolia, foundry } from 'viem/chains';
 import { VALIDATED_CONTRACT_ADDRESSES } from '../config/contracts.js';
 import { ENV } from '../config/env.js';
 
@@ -7,20 +8,33 @@ const ANVIL_URL = typeof window !== 'undefined' ? `${window.location.origin}/rpc
 // Deployed contract addresses (validated via Zod)
 export const CONTRACT_ADDRESSES = VALIDATED_CONTRACT_ADDRESSES;
 
-const anvilChain = {
-  id: ENV.VITE_CHAIN_ID,
-  name: 'Anvil Localhost',
-  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-  rpcUrls: {
-    default: { http: [ANVIL_URL] },
-    public: { http: [ANVIL_URL] }
-  }
+export const resolveActiveChain = () => {
+  if (ENV.VITE_CHAIN_ID === 42161) return arbitrum;
+  if (ENV.VITE_CHAIN_ID === 421614) return arbitrumSepolia;
+  return {
+    ...foundry,
+    id: ENV.VITE_CHAIN_ID,
+    name: 'Anvil Localhost',
+    rpcUrls: {
+      default: { http: [ANVIL_URL] },
+      public: { http: [ANVIL_URL] }
+    }
+  };
 };
 
+export const activeChain = resolveActiveChain();
+
 export const publicClient = createPublicClient({
-  chain: anvilChain,
+  chain: activeChain,
   transport: http(ANVIL_URL)
 });
+
+export const getExplorerTxUrl = (txHash: string, chainId: number = ENV.VITE_CHAIN_ID): string => {
+  if (chainId === 42161) return `https://arbiscan.io/tx/${txHash}`;
+  if (chainId === 421614) return `https://sepolia.arbiscan.io/tx/${txHash}`;
+  if (chainId === 1) return `https://etherscan.io/tx/${txHash}`;
+  return `https://arbiscan.io/tx/${txHash}`;
+};
 
 export const getWalletClient = (userAddress?: string) => {
   if (typeof window === 'undefined' || !(window as any).ethereum) {
@@ -29,7 +43,7 @@ export const getWalletClient = (userAddress?: string) => {
   const account = (userAddress && userAddress.startsWith('0x') ? (userAddress as `0x${string}`) : '0x0000000000000000000000000000000000000000');
   return createWalletClient({
     account,
-    chain: anvilChain,
+    chain: activeChain,
     transport: custom((window as any).ethereum)
   });
 };

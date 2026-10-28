@@ -10,7 +10,11 @@ const PROTOCOL_CUSTOM_ERRORS_ABI = [
   { type: 'error', name: 'InvalidAmount', inputs: [] },
   { type: 'error', name: 'TransferFailed', inputs: [] },
 
-  // Treasury & Reserves
+  // Guarded Launch & Treasury Invariants
+  { type: 'error', name: 'TVLCapExceeded', inputs: [{ name: 'currentTVL', type: 'uint256' }, { name: 'maxCap', type: 'uint256' }] },
+  { type: 'error', name: 'InvariantNAVDecreased', inputs: [{ name: 'preNav', type: 'uint256' }, { name: 'postNav', type: 'uint256' }] },
+  { type: 'error', name: 'InvariantSolvencyDecreased', inputs: [{ name: 'preSolvency', type: 'uint256' }, { name: 'postSolvency', type: 'uint256' }] },
+  { type: 'error', name: 'SlippageExceeded', inputs: [{ name: 'minExpected', type: 'uint256' }, { name: 'actual', type: 'uint256' }] },
   { type: 'error', name: 'InsufficientLiquidity', inputs: [] },
   { type: 'error', name: 'ExcessiveSlippage', inputs: [] },
   { type: 'error', name: 'SameBlockDepositRedeemCooldown', inputs: [] },
@@ -44,6 +48,10 @@ const PROTOCOL_CUSTOM_ERRORS_ABI = [
   { type: 'error', name: 'MaxDebtExceeded', inputs: [] },
 
   // Timelock & Governance
+  { type: 'error', name: 'ProposalThresholdNotMet', inputs: [{ name: 'votes', type: 'uint256' }, { name: 'threshold', type: 'uint256' }] },
+  { type: 'error', name: 'QuorumNotReached', inputs: [{ name: 'votes', type: 'uint256' }, { name: 'quorum', type: 'uint256' }] },
+  { type: 'error', name: 'ProposalNotQueued', inputs: [] },
+  { type: 'error', name: 'TimelockNotElapsed', inputs: [] },
   { type: 'error', name: 'TimelockPending', inputs: [] },
   { type: 'error', name: 'TimelockExpired', inputs: [] },
   { type: 'error', name: 'ProposalNotActive', inputs: [] },
@@ -126,6 +134,42 @@ export function decodeWeb3Error(err: any): DecodedWeb3Error {
   // 4. Pattern matching on string revert messages
   const msg = err.shortMessage || err.message || err.toString();
 
+  if (msg.includes('TVLCapExceeded') || msg.includes('tvl cap')) {
+    return {
+      title: 'Tope de TVL Alcanzado ($100,000 USD)',
+      message: 'El protocolo se encuentra en fase de Guarded Launch y ha alcanzado su tope máximo de TVL.',
+      actionableHint: 'La DAO puede votar incrementar el tope mediante propuesta de gobernanza.',
+      isUserRejection: false
+    };
+  }
+
+  if (msg.includes('InvariantSolvencyDecreased')) {
+    return {
+      title: 'Protección de Solvencia del Protocolo',
+      message: 'La operación provocaría una reducción en el ratio de solvencia de la tesorería (PoR).',
+      actionableHint: 'La tesorería protege matemáticamente el 100% de respaldo fiduciario.',
+      isUserRejection: false
+    };
+  }
+
+  if (msg.includes('InvariantNAVDecreased')) {
+    return {
+      title: 'Protección Anti-Dilución NAV',
+      message: 'El valor patrimonial neto por cuota no puede disminuir.',
+      actionableHint: 'Las suscripciones y reembolsos se emiten estrictamente a NAV justo.',
+      isUserRejection: false
+    };
+  }
+
+  if (msg.includes('ProposalThresholdNotMet')) {
+    return {
+      title: 'Umbral de Gobernanza No Alcanzado',
+      message: 'Se requieren al menos 25,000 stALPHA en staking para presentar propuestas a la DAO.',
+      actionableHint: 'Haz staking de tokens ALPHA en la sección de Gobernanza para participar.',
+      isUserRejection: false
+    };
+  }
+
   if (msg.includes('Same-block deposit/redeem cooldown') || msg.includes('SameBlockDepositRedeemCooldown')) {
     return {
       title: 'Protección Anti-Arbitraje Flash Loan',
@@ -173,6 +217,47 @@ export function decodeWeb3Error(err: any): DecodedWeb3Error {
 
 function mapSolidityErrorToMessage(errorName: string): DecodedWeb3Error {
   switch (errorName) {
+    case 'TVLCapExceeded':
+      return {
+        title: 'Tope de TVL Alcanzado ($100,000 USD)',
+        message: 'El protocolo se encuentra en fase de Guarded Launch y ha alcanzado su capacidad máxima permitida.',
+        actionableHint: 'La DAO puede votar aumentar el tope a través de una propuesta de gobernanza.',
+        isUserRejection: false
+      };
+    case 'InvariantSolvencyDecreased':
+      return {
+        title: 'Protección de Solvencia PoR',
+        message: 'La transacción no puede ejecutarse porque reduciría la solvencia fiduciaria de la tesorería.',
+        actionableHint: 'El protocolo preserva un respaldo de reservas estrictamente >= 100.00%.',
+        isUserRejection: false
+      };
+    case 'InvariantNAVDecreased':
+      return {
+        title: 'Protección Anti-Dilución NAV',
+        message: 'La operación provocaría una caída en el valor contable por cuota de ALPHA.',
+        actionableHint: 'Todas las emisiones y reembolsos se realizan a valor liquidativo par.',
+        isUserRejection: false
+      };
+    case 'SlippageExceeded':
+      return {
+        title: 'Slippage Excedido',
+        message: 'La cantidad mínima esperada no fue alcanzada debido a la variación de mercado.',
+        actionableHint: 'Ajusta la tolerancia de slippage o intenta una operación más pequeña.',
+        isUserRejection: false
+      };
+    case 'ProposalThresholdNotMet':
+      return {
+        title: 'Umbral Anti-Spam Insuficiente',
+        message: 'No posees los 25,000 stALPHA requeridos para registrar una propuesta en la DAO.',
+        actionableHint: 'Incrementa tu posición en staking de gobernanza para proponer.',
+        isUserRejection: false
+      };
+    case 'QuorumNotReached':
+      return {
+        title: 'Quórum Mínimo No Alcanzado',
+        message: 'La propuesta no alcanzó el quórum mínimo de 80,000 votos stALPHA para ser aprobada.',
+        isUserRejection: false
+      };
     case 'InsufficientLiquidity':
       return {
         title: 'Liquidez Insuficiente en Bóveda',

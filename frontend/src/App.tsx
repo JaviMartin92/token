@@ -76,10 +76,10 @@ export default function App() {
   const [logs, setLogs] = useState<string[]>([]);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const addToast = (type: 'info' | 'success' | 'warning' | 'error', title: string, message: string) => {
+  const addToast = (type: 'info' | 'success' | 'warning' | 'error', title: string, message: string, txHash?: string) => {
     const id = Math.random().toString(36).substr(2, 9);
-    setToasts((prev) => [...prev, { id, type, title, message }]);
-    setTimeout(() => { setToasts((prev) => prev.filter((t) => t.id !== id)); }, 5000);
+    setToasts((prev) => [...prev, { id, type, title, message, txHash, chainId: global.chainId }]);
+    setTimeout(() => { setToasts((prev) => prev.filter((t) => t.id !== id)); }, 6000);
   };
 
   const addLog = (msg: string) => {

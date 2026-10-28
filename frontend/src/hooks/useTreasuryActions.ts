@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { publicClient, getWalletClient, getFreshNonce, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
 import { parseUnits, parseEther, formatEther } from 'viem';
 import { UI_STRINGS } from '../constants/strings.js';
+import { simulatePreflightTransaction } from '../utils/preflightSimulation.js';
 import { parseWeb3Error } from '../utils/web3ErrorDecoder.js';
 
 interface TreasuryActionsParams {
   activeKey: string;
   userAddress: string;
   addLog: (msg: string) => void;
-  addToast: (type: 'info' | 'success' | 'warning' | 'error', title: string, message: string) => void;
+  addToast: (type: 'info' | 'success' | 'warning' | 'error', title: string, message: string, txHash?: string) => void;
   fetchData: () => Promise<void>;
   requestConfirmation?: (options: any, onConfirm: () => Promise<void>) => void;
   navPerShareNum: number;
@@ -60,20 +61,46 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
     if (!depositAmount) return;
     try {
       addLog(UI_STRINGS.TOASTS_AND_LOGS.DEPOSIT_START);
-      addToast('info', 'Depósito Tesorería', `Aprobando ${depositAmount} USDC...`);
       const amountWei = parseUnits(depositAmount, 6);  // USDC = 6 decimals
       const client = getWalletClient(userAddress || activeKey);
       const account = await getEffectiveAccount(client);
 
-      const appHash = await client.writeContract({
+      // Gas optimization: check allowance first
+      const currentAllowance = (await publicClient.readContract({
         address: CONTRACT_ADDRESSES.USDC,
         abi: ABIS.ERC20,
-        functionName: 'approve',
-        args: [CONTRACT_ADDRESSES.TREASURY, amountWei],
-        account
-      });
-      await publicClient.waitForTransactionReceipt({ hash: appHash });
+        functionName: 'allowance',
+        args: [account, CONTRACT_ADDRESSES.TREASURY]
+      })) as bigint;
 
+      if (currentAllowance < amountWei) {
+        addLog(`Aprobando ${depositAmount} USDC para contrato de Tesorería...`);
+        addToast('info', 'Aprobación USDC', `Autorizando ${depositAmount} USDC en tu billetera...`);
+        const appHash = await client.writeContract({
+          address: CONTRACT_ADDRESSES.USDC,
+          abi: ABIS.ERC20,
+          functionName: 'approve',
+          args: [CONTRACT_ADDRESSES.TREASURY, amountWei],
+          account
+        });
+        await publicClient.waitForTransactionReceipt({ hash: appHash });
+      }
+
+      // Preflight Zero-Revert Simulation
+      const preflight = await simulatePreflightTransaction(
+        CONTRACT_ADDRESSES.TREASURY,
+        ABIS.TREASURY,
+        'deposit',
+        [amountWei, 0n],
+        account
+      );
+      if (!preflight.canExecute && preflight.error) {
+        addLog(`[Error Preflight] Depósito rechazado: ${preflight.error.message}`);
+        addToast('error', preflight.error.title, preflight.error.message);
+        return;
+      }
+
+      addToast('info', 'Depósito Tesorería', `Confirmando suscripción de ${depositAmount} USDC...`);
       const depHash = await client.writeContract({
         address: CONTRACT_ADDRESSES.TREASURY,
         abi: ABIS.TREASURY,
@@ -83,7 +110,7 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
       });
       await publicClient.waitForTransactionReceipt({ hash: depHash });
       addLog(UI_STRINGS.TOASTS_AND_LOGS.DEPOSIT_SUCCESS);
-      addToast('success', 'Éxito Depósito', UI_STRINGS.TOASTS_AND_LOGS.DEPOSIT_SUCCESS);
+      addToast('success', 'Éxito Depósito', UI_STRINGS.TOASTS_AND_LOGS.DEPOSIT_SUCCESS, depHash);
       setDepositAmount('');
       await fetchData();
     } catch (err: any) {
@@ -166,20 +193,46 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
     if (!redeemAmount) return;
     try {
       addLog(UI_STRINGS.TOASTS_AND_LOGS.REDEEM_START);
-      addToast('info', 'Rescate Tesorería', 'Enviando transacción...');
-      const amountWei = parseEther(redeemAmount);
+      const amountWei = parseUnits(redeemAmount, 18); // ALPHA = 18 decimals
       const client = getWalletClient(userAddress || activeKey);
       const account = await getEffectiveAccount(client);
 
-      const appHash = await client.writeContract({
+      // Gas optimization: check allowance first
+      const currentAllowance = (await publicClient.readContract({
         address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
         abi: ABIS.ERC20,
-        functionName: 'approve',
-        args: [CONTRACT_ADDRESSES.TREASURY, amountWei],
-        account
-      });
-      await publicClient.waitForTransactionReceipt({ hash: appHash });
+        functionName: 'allowance',
+        args: [account, CONTRACT_ADDRESSES.TREASURY]
+      })) as bigint;
 
+      if (currentAllowance < amountWei) {
+        addLog(`Aprobando ${redeemAmount} ALPHA para contrato de Tesorería...`);
+        addToast('info', 'Aprobación ALPHA', `Autorizando ${redeemAmount} ALPHA en tu billetera...`);
+        const appHash = await client.writeContract({
+          address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
+          abi: ABIS.ERC20,
+          functionName: 'approve',
+          args: [CONTRACT_ADDRESSES.TREASURY, amountWei],
+          account
+        });
+        await publicClient.waitForTransactionReceipt({ hash: appHash });
+      }
+
+      // Preflight Zero-Revert Simulation
+      const preflight = await simulatePreflightTransaction(
+        CONTRACT_ADDRESSES.TREASURY,
+        ABIS.TREASURY,
+        'redeem',
+        [amountWei, 0n],
+        account
+      );
+      if (!preflight.canExecute && preflight.error) {
+        addLog(`[Error Preflight] Rescate rechazado: ${preflight.error.message}`);
+        addToast('error', preflight.error.title, preflight.error.message);
+        return;
+      }
+
+      addToast('info', 'Rescate Tesorería', `Confirmando rescate de ${redeemAmount} ALPHA...`);
       const tx = await client.writeContract({
         address: CONTRACT_ADDRESSES.TREASURY,
         abi: ABIS.TREASURY,
@@ -189,7 +242,7 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
       addLog(UI_STRINGS.TOASTS_AND_LOGS.REDEEM_SUCCESS);
-      addToast('success', 'Rescate Completado', UI_STRINGS.TOASTS_AND_LOGS.REDEEM_SUCCESS);
+      addToast('success', 'Rescate Completado', UI_STRINGS.TOASTS_AND_LOGS.REDEEM_SUCCESS, tx);
       setRedeemAmount('');
       await fetchData();
     } catch (err: any) {

@@ -210,7 +210,16 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
   }, [web3Data.userAddress, web3Data.activeKey]);
 
   useEffect(() => {
-    fetchProposals();
+    let isMounted = true;
+    const load = async () => {
+      if (isMounted) {
+        await fetchProposals();
+      }
+    };
+    load();
+    return () => {
+      isMounted = false;
+    };
   }, [fetchProposals]);
 
   // ---------------------------------------------------------------------------
@@ -227,12 +236,13 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
         args: [BigInt(proposalId), support]
       });
       await publicClient.waitForTransactionReceipt({ hash });
-      alert(`✅ Voto emitido con éxito en la propuesta #${proposalId}. Tx: ${hash}`);
+      web3Data.addToast?.('success', 'Voto Registrado', `Voto emitido con éxito en la propuesta #${proposalId}.`, hash);
+      web3Data.addLog?.(`✅ Voto emitido en propuesta #${proposalId}. Tx: ${hash}`);
       await fetchProposals();
       if (web3Data.fetchData) await web3Data.fetchData();
     } catch (err: any) {
       console.error('Error al emitir voto:', err);
-      alert(`⚠️ Error al emitir voto: ${err.shortMessage || err.message || err}`);
+      web3Data.addToast?.('error', 'Error al Votar', err.shortMessage || err.message || 'Fallo en voto');
     } finally {
       setActionInProgressId(null);
     }
@@ -249,12 +259,13 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
         args: [BigInt(proposalId)]
       });
       await publicClient.waitForTransactionReceipt({ hash });
-      alert(`⏱️ Propuesta #${proposalId} encolada exitosamente en el Timelock (72 horas de retraso obligatorio). Tx: ${hash}`);
+      web3Data.addToast?.('info', 'Propuesta Encolada', `Propuesta #${proposalId} encolada en Timelock (72h).`, hash);
+      web3Data.addLog?.(`⏱️ Propuesta #${proposalId} encolada en Timelock. Tx: ${hash}`);
       await fetchProposals();
       if (web3Data.fetchData) await web3Data.fetchData();
     } catch (err: any) {
       console.error('Error al encolar en timelock:', err);
-      alert(`⚠️ Error al encolar en Timelock: ${err.shortMessage || err.message || err}`);
+      web3Data.addToast?.('error', 'Error Timelock', err.shortMessage || err.message || 'Fallo al encolar');
     } finally {
       setActionInProgressId(null);
     }
@@ -271,12 +282,13 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
         args: [BigInt(proposalId)]
       });
       await publicClient.waitForTransactionReceipt({ hash });
-      alert(`⚡ Propuesta #${proposalId} ejecutada de forma irreversible en la blockchain. Tx: ${hash}`);
+      web3Data.addToast?.('success', 'Propuesta Ejecutada', `Propuesta #${proposalId} ejecutada on-chain.`, hash);
+      web3Data.addLog?.(`⚡ Propuesta #${proposalId} ejecutada on-chain. Tx: ${hash}`);
       await fetchProposals();
       if (web3Data.fetchData) await web3Data.fetchData();
     } catch (err: any) {
       console.error('Error al ejecutar propuesta:', err);
-      alert(`⚠️ Error al ejecutar propuesta: ${err.shortMessage || err.message || err}`);
+      web3Data.addToast?.('error', 'Error de Ejecución', err.shortMessage || err.message || 'Fallo al ejecutar');
     } finally {
       setActionInProgressId(null);
     }
@@ -455,11 +467,11 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
   // ---------------------------------------------------------------------------
   const handleSubmitProposal = async () => {
     if (!canPropose) {
-      alert(`⚠️ Umbral anti-spam no alcanzado: Posees ${userStakedBalanceNum} stALPHA. Se requieren al menos ${PROPOSAL_THRESHOLD.toLocaleString()} stALPHA en staking para presentar propuestas.`);
+      web3Data.addToast?.('warning', 'Umbral Insuficiente', `Posees ${userStakedBalanceNum} stALPHA. Se requieren al menos ${PROPOSAL_THRESHOLD.toLocaleString()} stALPHA para presentar propuestas.`);
       return;
     }
     if (!generatedCalldata || generatedCalldata === '0x') {
-      alert('⚠️ Los datos calldata codificados están vacíos o son inválidos.');
+      web3Data.addToast?.('error', 'Calldata Inválido', 'Los datos calldata codificados están vacíos o son inválidos.');
       return;
     }
 

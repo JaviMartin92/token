@@ -2,3 +2,15 @@
 .toastContentBox { flex: 1; }
 .toastTitleText { font-weight: 700; font-size: 0.88rem; color: #fff; margin-bottom: 0.15rem; }
 .toastMsgText { font-size: 0.78rem; color: rgba(255, 255, 255, 0.85); line-height: 1.35; }
+.explorerLink {
+  display: inline-block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #38bdf8;
+  text-decoration: underline;
+  font-weight: 600;
+  transition: color 0.15s ease;
+}
+.explorerLink:hover {
+  color: #7dd3fc;
+}

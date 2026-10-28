@@ -46,7 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
     } catch (e: any) {
       console.warn('[Wallet] Conexión:', e?.message || e);
       if (typeof window !== 'undefined' && !(window as any).ethereum) {
-        alert('No se detectó ninguna extensión de billetera Web3 (ej. MetaMask / Rabby / Coinbase Wallet). Instala una extensión para conectar tu billetera.');
+        console.warn('[Wallet] No Web3 provider detected in window.ethereum');
       }
     }
   };
@@ -122,6 +122,12 @@ export const Header: React.FC<HeaderProps> = ({
         <div className={styles.metricsGroup}>
           <div
             onClick={onOpenApyModal}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onOpenApyModal();
+              }
+            }}
             className={styles.metricPillInteractive}
             role="button"
             tabIndex={0}

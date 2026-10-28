@@ -3,12 +3,13 @@ import { publicClient, getWalletClient, CONTRACT_ADDRESSES, ABIS } from '../util
 import { parseUnits } from 'viem';
 import type { TxConfirmDetails } from '../components/TransactionConfirmModal.js';
 import { UI_STRINGS } from '../constants/strings.js';
+import { simulatePreflightTransaction } from '../utils/preflightSimulation.js';
 
 interface VestedVaultActionsParams {
   activeKey: string;
   userAddress?: string;
   addLog: (msg: string) => void;
-  addToast: (type: 'info' | 'success' | 'warning' | 'error', title: string, message: string) => void;
+  addToast: (type: 'info' | 'success' | 'warning' | 'error', title: string, message: string, txHash?: string) => void;
   fetchData: () => Promise<void>;
   requestConfirmation?: (details: TxConfirmDetails, action: () => Promise<void>) => void;
 }
@@ -21,20 +22,46 @@ export function useVestedVaultActions({ activeKey, userAddress, addLog, addToast
   const executeBuyBond = async () => {
     if (!bondPrincipal) return;
     try {
-      addLog(`Adquiriendo Bono Vestado a ${bondLockYears} años por $${bondPrincipal}...`);
-      addToast('info', 'Compra Bono', 'Aprobando pago USDC...');
+      addLog(`Adquiriendo Bono Vestado a ${bondLockYears} años por ${bondPrincipal}...`);
       const principalWei = parseUnits(bondPrincipal, 6);  // USDC = 6 decimals
       const refAddr = bondReferrer ? (bondReferrer as `0x${string}`) : '0x0000000000000000000000000000000000000000';
       const client = getWalletClient(activeKey);
+      const userAddr = (userAddress || activeKey) as `0x${string}`;
 
-      const appHash = await client.writeContract({
+      // Gas optimization: check allowance first
+      const currentAllowance = (await publicClient.readContract({
         address: CONTRACT_ADDRESSES.USDC,
         abi: ABIS.ERC20,
-        functionName: 'approve',
-        args: [CONTRACT_ADDRESSES.VESTED_VAULT, principalWei]  // Exact approval
-      });
-      await publicClient.waitForTransactionReceipt({ hash: appHash });
+        functionName: 'allowance',
+        args: [userAddr, CONTRACT_ADDRESSES.VESTED_VAULT]
+      })) as bigint;
 
+      if (currentAllowance < principalWei) {
+        addToast('info', 'Aprobación USDC', 'Autorizando USDC para Bono con Descuento...');
+        const appHash = await client.writeContract({
+          address: CONTRACT_ADDRESSES.USDC,
+          abi: ABIS.ERC20,
+          functionName: 'approve',
+          args: [CONTRACT_ADDRESSES.VESTED_VAULT, principalWei]
+        });
+        await publicClient.waitForTransactionReceipt({ hash: appHash });
+      }
+
+      // Preflight simulation
+      const preflight = await simulatePreflightTransaction(
+        CONTRACT_ADDRESSES.VESTED_VAULT,
+        ABIS.VESTED_VAULT,
+        'buyVestedBond',
+        [principalWei, BigInt(bondLockYears), refAddr],
+        userAddr
+      );
+      if (!preflight.canExecute && preflight.error) {
+        addLog(`[Error Preflight] Compra de bono rechazada: ${preflight.error.message}`);
+        addToast('error', preflight.error.title, preflight.error.message);
+        return;
+      }
+
+      addToast('info', 'Compra de Bono', 'Confirmando emisión de NFT...');
       const tx = await client.writeContract({
         address: CONTRACT_ADDRESSES.VESTED_VAULT,
         abi: ABIS.VESTED_VAULT,
@@ -43,7 +70,7 @@ export function useVestedVaultActions({ activeKey, userAddress, addLog, addToast
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
       addLog(UI_STRINGS.TOASTS_AND_LOGS.BOND_BUY_SUCCESS);
-      addToast('success', 'Bono Adquirido', UI_STRINGS.TOASTS_AND_LOGS.BOND_BUY_SUCCESS);
+      addToast('success', 'Bono Adquirido', UI_STRINGS.TOASTS_AND_LOGS.BOND_BUY_SUCCESS, tx);
       setBondPrincipal('1000');
       await fetchData();
     } catch (err: any) {

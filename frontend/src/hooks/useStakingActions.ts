@@ -3,6 +3,7 @@ import { parseEther } from 'viem';
 import { CONTRACT_ADDRESSES, ABIS, publicClient, getWalletClient } from '../utils/web3.js';
 import type { TxConfirmDetails } from '../components/TransactionConfirmModal.js';
 import { UI_STRINGS } from '../constants/strings.js';
+import { simulatePreflightTransaction } from '../utils/preflightSimulation.js';
 
 interface UseStakingActionsProps {
   activeKey: string;
@@ -11,12 +12,13 @@ interface UseStakingActionsProps {
   payoutPref?: number;
   fetchData: () => Promise<void>;
   addLog: (msg: string) => void;
-  addToast: (type: 'success' | 'error' | 'info', title: string, message: string) => void;
+  addToast: (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string, txHash?: string) => void;
   requestConfirmation?: (details: TxConfirmDetails, action: () => Promise<void>) => void;
 }
 
 export function useStakingActions({
   activeKey,
+  userAddress,
   fetchData,
   addLog,
   addToast,
@@ -30,14 +32,40 @@ export function useStakingActions({
       addLog(`Iniciando staking de ${stakeAmount} ALPHA (Comisión de entrada 1.00%)...`);
       const client = getWalletClient(activeKey);
       const amountWei = parseEther(stakeAmount);
+      const userAddr = (userAddress || activeKey) as `0x${string}`;
 
-      const appHash = await client.writeContract({
+      // Gas optimization: check allowance first
+      const currentAllowance = (await publicClient.readContract({
         address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
         abi: ABIS.ERC20,
-        functionName: 'approve',
-        args: [CONTRACT_ADDRESSES.STAKING, amountWei]
-      });
-      await publicClient.waitForTransactionReceipt({ hash: appHash });
+        functionName: 'allowance',
+        args: [userAddr, CONTRACT_ADDRESSES.STAKING]
+      })) as bigint;
+
+      if (currentAllowance < amountWei) {
+        addToast('info', 'Aprobación ALPHA', `Autorizando ${stakeAmount} ALPHA para Staking...`);
+        const appHash = await client.writeContract({
+          address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
+          abi: ABIS.ERC20,
+          functionName: 'approve',
+          args: [CONTRACT_ADDRESSES.STAKING, amountWei]
+        });
+        await publicClient.waitForTransactionReceipt({ hash: appHash });
+      }
+
+      // Preflight simulation
+      const preflight = await simulatePreflightTransaction(
+        CONTRACT_ADDRESSES.STAKING,
+        ABIS.STAKING,
+        'stake',
+        [amountWei],
+        userAddr
+      );
+      if (!preflight.canExecute && preflight.error) {
+        addLog(`[Error Preflight] Staking rechazado: ${preflight.error.message}`);
+        addToast('error', preflight.error.title, preflight.error.message);
+        return;
+      }
 
       const tx = await client.writeContract({
         address: CONTRACT_ADDRESSES.STAKING,
@@ -47,7 +75,7 @@ export function useStakingActions({
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
       addLog(`¡Staking exitoso de ${stakeAmount} ALPHA! (99% en stake, 0.5% quemado, 0.5% a Community Vault).`);
-      addToast('success', 'Staking Exitoso', UI_STRINGS.TOASTS_AND_LOGS.STAKE_SUCCESS);
+      addToast('success', 'Staking Exitoso', UI_STRINGS.TOASTS_AND_LOGS.STAKE_SUCCESS, tx);
       await fetchData();
     } catch (err: any) {
       addLog(`[Error] Staking falló: ${err.message || err}`);
