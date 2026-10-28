@@ -1,5 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
+  "ignore": ["scripts/simulate_1year_horizon.ts"],
   "workspaces": {
     "frontend": {
       "entry": ["src/main.tsx"],
@@ -9,6 +10,7 @@
       "entry": [
         "core/src/deploy.ts",
         "core/src/index.ts",
+        "core/src/seed_governance_proposal.ts",
         "core/src/frontend-alignment-test.ts",
         "core/src/__tests__/**/*.ts"
       ],

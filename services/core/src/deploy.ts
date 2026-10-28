@@ -305,16 +305,16 @@ async function main() {
   });
   await publicClient.waitForTransactionReceipt({ hash: initTx });
 
-  // Configure Guarded Launch Safety TVL Cap ($100,000 USD limit)
+  // Configure Guarded Launch Safety TVL Cap (Sandbox uses $50M for testing simulations; Mainnet uses $100K)
   const hSetCap = await walletClient.writeContract({
     address: treasuryAddr,
     abi: tmImplArtifact.abi,
     functionName: 'setTvlCap',
-    args: [parseEther('100000')],
+    args: [parseEther('50000000')],
     account
   });
   await publicClient.waitForTransactionReceipt({ hash: hSetCap });
-  console.log('[+] Configured Guarded Launch Safety TVL Cap: $100,000 USD.');
+  console.log('[+] Configured Sandbox Safety TVL Cap: $50,000,000 USD.');
 
   const idTreasury = keccak256(toHex('TREASURY_MANAGER'));
   const hTreasury = await walletClient.writeContract({

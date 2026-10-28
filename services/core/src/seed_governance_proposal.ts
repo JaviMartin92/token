@@ -8,8 +8,9 @@ const contractsJson = JSON.parse(
 );
 
 const ANVIL_URL = process.env.ANVIL_URL || 'http://127.0.0.1:8545';
-const OPERATOR_KEY = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
-const account = privateKeyToAccount(OPERATOR_KEY);
+// Use Anvil Account #2 (0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC) which has 10,000 ETH prefunded on Anvil
+const DELEGATE_KEY = '0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a';
+const delegateAccount = privateKeyToAccount(DELEGATE_KEY);
 
 const localChain = {
   id: 31337,
@@ -23,8 +24,8 @@ const publicClient = createPublicClient({
   transport: http(ANVIL_URL)
 });
 
-const walletClient = createWalletClient({
-  account,
+const delegateWallet = createWalletClient({
+  account: delegateAccount,
   chain: localChain,
   transport: http(ANVIL_URL)
 });
@@ -32,45 +33,73 @@ const walletClient = createWalletClient({
 async function main() {
   console.log('[*] Seeding Governance Staking & Initial Proposal on Anvil...');
 
+  const usdcAddr = contractsJson.USDC as `0x${string}`;
   const alphaToken = contractsJson.ALPHA_TOKEN as `0x${string}`;
   const stakingAddr = contractsJson.STAKING as `0x${string}`;
   const governorAddr = contractsJson.GOVERNOR as `0x${string}`;
   const treasuryAddr = contractsJson.TREASURY as `0x${string}`;
 
-  // 1. Mint 100,000 ALPHA to Account #0
-  console.log('[*] Minting 100,000 ALPHA to Account #0...');
-  const txMint = await walletClient.writeContract({
-    address: alphaToken,
+  // 1. Fund Delegate #9 with 50,000 USDC mock
+  console.log('[*] Minting 50,000 USDC to Delegate #9...');
+  const txMintUSDC = await delegateWallet.writeContract({
+    address: usdcAddr,
     abi: [{ name: 'mint', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'to', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [] }],
     functionName: 'mint',
-    args: [account.address, parseEther('100000')]
+    args: [delegateAccount.address, 50_000n * 10n ** 6n]
   });
-  await publicClient.waitForTransactionReceipt({ hash: txMint });
+  await publicClient.waitForTransactionReceipt({ hash: txMintUSDC });
 
-  // 2. Approve GovernanceStaking to spend 50,000 ALPHA
-  console.log('[*] Approving ALPHA to GovernanceStaking...');
-  const txApprove = await walletClient.writeContract({
+  // 2. Approve Treasury to deposit USDC
+  const txApproveUSDC = await delegateWallet.writeContract({
+    address: usdcAddr,
+    abi: [{ name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ name: '', type: 'bool' }] }],
+    functionName: 'approve',
+    args: [treasuryAddr, 50_000n * 10n ** 6n]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: txApproveUSDC });
+
+  // 3. Deposit 50,000 USDC into TreasuryManager to receive fully-backed ALPHA shares (preserving NAV >= $1.00 and PoR = 100%)
+  console.log('[*] Depositing 50,000 USDC into TreasuryManager to mint backed ALPHA...');
+  const txDeposit = await delegateWallet.writeContract({
+    address: treasuryAddr,
+    abi: [{ name: 'deposit', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'stableAmount', type: 'uint256' }, { name: 'minSharesOut', type: 'uint256' }], outputs: [{ name: 'sharesMinted', type: 'uint256' }] }],
+    functionName: 'deposit',
+    args: [50_000n * 10n ** 6n, 0n]
+  });
+  await publicClient.waitForTransactionReceipt({ hash: txDeposit });
+
+  // Check ALPHA balance of delegate
+  const alphaBalance = await publicClient.readContract({
+    address: alphaToken,
+    abi: [{ name: 'balanceOf', type: 'function', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [{ name: '', type: 'uint256' }] }],
+    functionName: 'balanceOf',
+    args: [delegateAccount.address]
+  }) as bigint;
+
+  // 4. Approve GovernanceStaking to stake ALPHA
+  console.log(`[*] Approving ${alphaBalance} ALPHA to GovernanceStaking...`);
+  const txApprove = await delegateWallet.writeContract({
     address: alphaToken,
     abi: [{ name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ name: '', type: 'bool' }] }],
     functionName: 'approve',
-    args: [stakingAddr, parseEther('50000')]
+    args: [stakingAddr, alphaBalance]
   });
   await publicClient.waitForTransactionReceipt({ hash: txApprove });
 
-  // 3. Stake 50,000 ALPHA into GovernanceStaking
-  console.log('[*] Staking 50,000 ALPHA into GovernanceStaking (50,000 stALPHA)...');
-  const txStake = await walletClient.writeContract({
+  // 5. Stake ALPHA into GovernanceStaking to acquire stALPHA voting power
+  console.log('[*] Staking ALPHA into GovernanceStaking for stALPHA voting power...');
+  const txStake = await delegateWallet.writeContract({
     address: stakingAddr,
     abi: [{ name: 'stake', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'amount', type: 'uint256' }], outputs: [] }],
     functionName: 'stake',
-    args: [parseEther('50000')]
+    args: [alphaBalance]
   });
   await publicClient.waitForTransactionReceipt({ hash: txStake });
 
-  // 4. Advance 1 block on Anvil for checkpoint snapshot
+  // 6. Advance 1 block on Anvil for checkpoint snapshot
   await publicClient.request({ method: 'evm_mine' as any });
 
-  // 5. Submit Proposal #1 to GovernorAlphaCentauri
+  // 7. Submit Proposal #1 to GovernorAlphaCentauri
   console.log('[*] Submitting Proposal #1 to GovernorAlphaCentauri...');
   const weightsCalldata = encodeFunctionData({
     abi: [{
@@ -89,7 +118,7 @@ async function main() {
     args: [5000n, 2500n, 1250n, 1250n]
   });
 
-  const txPropose = await walletClient.writeContract({
+  const txPropose = await delegateWallet.writeContract({
     address: governorAddr,
     abi: [{
       name: 'propose',
@@ -114,7 +143,7 @@ async function main() {
   await publicClient.waitForTransactionReceipt({ hash: txPropose });
   console.log('[+] Proposal #1 created successfully on GovernorAlphaCentauri!');
 
-  // 6. Advance 2 blocks to open voting period
+  // 8. Advance 2 blocks to open voting period
   await publicClient.request({ method: 'evm_mine' as any });
   await publicClient.request({ method: 'evm_mine' as any });
   console.log('[+] Advanced blocks: Voting period is now ACTIVE on proposal #1.');
