@@ -11,6 +11,7 @@ import "./CommunityYieldVault.sol";
 import "./interfaces/ISwapRouter.sol";
 import "./interfaces/IProtocolErrors.sol";
 import "./interfaces/IOracleHub.sol";
+import "./interfaces/ITreasury.sol";
 
 interface ICircuitBreakerRouter {
     function isFrozen(address asset) external view returns (bool);
@@ -18,19 +19,15 @@ interface ICircuitBreakerRouter {
 
 /**
  * @title RealYieldRouter
- * @notice Universal Fee Router enforcing Pure DeFi MiCA Compliance:
- *         - 50%: Strategic Reserve (Treasury.sol - Subida inmediata de NAV)
- *         - 50%: Community Yield Vault (Liquid USDC for stALPHA stakers real-time dividend claims)
+ * @notice Universal Fee Router enforcing Pure DeFi MiCA Compliance & Universal Multi-Asset Real Yield Basket:
+ *         - Fee Routing: 50% Strategic Reserve, 50% Community Real Yield (Liquid USDC).
+ *         - Universal Payout Basket: 50% USDC + 25% WBTC + 12.5% WETH + 12.5% ALPHA (at current NAV).
  */
 contract RealYieldRouter is AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
-    enum PayoutPreference {
-        OPTION_A_STABLECOIN,
-        OPTION_B_RESERVE_ASSET
-    }
 
     address public immutable stablecoin;
-    address public immutable reserveAsset; // e.g. WBTC/WETH
+    address public immutable reserveAsset; // Backward-compatibility
     address public immutable swapRouter;
     GovernanceStaking public immutable stakingPool;
 
@@ -42,11 +39,21 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
     uint256 public slippageToleranceBps = 100; // default 1%
     uint24 public reserveFeeTier = 3000; // 0.30% Uniswap v3 fee tier default
 
-    mapping(address => PayoutPreference) public userPreferences;
+    address public wbtc;
+    address public weth;
+    address public alphaToken;
+
     mapping(address => bool) public authorizedYieldCallers;
 
-    event PayoutPreferenceSet(address indexed user, PayoutPreference preference);
-    event YieldClaimed(address indexed user, uint256 yieldAmount, PayoutPreference preference, uint256 payoutAmount);
+    event BasketAssetsUpdated(address indexed wbtc, address indexed weth, address indexed alphaToken);
+    event RealYieldBasketClaimed(
+        address indexed user,
+        uint256 totalYieldUSD,
+        uint256 usdcPaid,
+        uint256 wbtcPaid,
+        uint256 wethPaid,
+        uint256 alphaPaid
+    );
     event UniversalFeeRouted(
         address indexed feeToken, uint256 totalAmount, uint256 toTreasury, uint256 toCommunityYieldUsdc
     );
@@ -70,6 +77,7 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
     ) {
         stablecoin = _stablecoin;
         reserveAsset = _reserveAsset;
+        wbtc = _reserveAsset;
         swapRouter = _swapRouter;
         stakingPool = GovernanceStaking(_stakingPool);
 
@@ -84,6 +92,16 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
     {
         treasuryBunker = _treasuryBunker;
         communityYieldVault = _communityYieldVault;
+    }
+
+    function setBasketAssets(address _wbtc, address _weth, address _alphaToken)
+        external
+        onlyRole(ProtocolRoles.ADMIN_ROLE)
+    {
+        wbtc = _wbtc;
+        weth = _weth;
+        alphaToken = _alphaToken;
+        emit BasketAssetsUpdated(_wbtc, _weth, _alphaToken);
     }
 
     function setCircuitBreaker(address _circuitBreaker) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
@@ -118,21 +136,20 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
         slippageToleranceBps = _slippageBps;
     }
 
-    function setPayoutPreference(PayoutPreference preference) external {
-        userPreferences[msg.sender] = preference;
-        emit PayoutPreferenceSet(msg.sender, preference);
+    function _isAssetFrozen(address asset) internal view returns (bool) {
+        if (circuitBreaker == address(0) || asset == address(0)) return false;
+        try ICircuitBreakerRouter(circuitBreaker).isFrozen(asset) returns (bool frozen) {
+            return frozen;
+        } catch {
+            return false;
+        }
     }
 
     /**
      * @notice Routes incoming fees according to 50 / 50 Liquid USDC Specification:
      *         50% Strategic Reserve, 50% Community Real Yield (Liquid USDC).
      */
-    function notifyYield(
-        uint256 /* amount */
-    )
-        external
-        onlyAuthorizedYield
-    {
+    function notifyYield(uint256 /* amount */) external onlyAuthorizedYield {
         routeUniversalFee(stablecoin);
     }
 
@@ -149,27 +166,19 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
         if (toTreasury > 0 && treasuryBunker != address(0)) {
             IERC20(feeToken).safeTransfer(treasuryBunker, toTreasury);
             if (feeToken == stablecoin) {
-                try ITreasury(treasuryBunker).notifyReserveFee(toTreasury) {
-                    // Fee notification successful
-                } catch {
-                    // Ignore revert if treasury doesn't support notification hook
-                }
+                try ITreasury(treasuryBunker).notifyReserveFee(toTreasury) {} catch {}
             }
         }
 
         if (communityShare > 0) {
             if (communityYieldVault != address(0)) {
                 IERC20(feeToken).approve(communityYieldVault, communityShare);
-                try CommunityYieldVault(communityYieldVault).depositYield(communityShare) {
-                    // Yield deposited successfully
-                } catch {
+                try CommunityYieldVault(communityYieldVault).depositYield(communityShare) {} catch {
                     IERC20(feeToken).safeTransfer(communityYieldVault, communityShare);
                 }
             } else if (address(stakingPool) != address(0) && feeToken == stablecoin) {
                 IERC20(feeToken).approve(address(stakingPool), communityShare);
-                try stakingPool.notifyRewardAmount(communityShare) {
-                    // Reward notification successful
-                } catch {
+                try stakingPool.notifyRewardAmount(communityShare) {} catch {
                     IERC20(feeToken).safeTransfer(address(stakingPool), communityShare);
                 }
             }
@@ -178,73 +187,113 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
         }
     }
 
-    function claimRealYield() external nonReentrant returns (uint256 payoutAmount) {
-        PayoutPreference pref = userPreferences[msg.sender];
+    /**
+     * @notice Universal Multi-Asset Real Yield Basket Claim (Exclusive & Mandatory):
+     *         Distributes 100% of accumulated yield across the 4 portfolio pillars:
+     *         - 50.00% in Liquid USDC
+     *         - 25.00% in WBTC (swapped via Chainlink oracle pricing)
+     *         - 12.50% in WETH (swapped via Chainlink oracle pricing)
+     *         - 12.50% in ALPHA (minted at current NAV directly into protocol reserves)
+     */
+    function claimRealYield()
+        external
+        nonReentrant
+        returns (uint256 payoutAmount, uint256 wbtcPaid, uint256 wethPaid, uint256 alphaPaid)
+    {
         uint256 yieldAmount = stakingPool.claimRewardFor(msg.sender);
         if (yieldAmount == 0) revert IProtocolErrors.ZeroAmount();
 
-        if (pref == PayoutPreference.OPTION_A_STABLECOIN) {
-            payoutAmount = yieldAmount;
-            IERC20(stablecoin).safeTransfer(msg.sender, payoutAmount);
-        } else {
-            // Option B: Reserve Asset (Check Circuit Breaker first)
-            bool isFrozen = false;
-            if (circuitBreaker != address(0)) {
-                try ICircuitBreakerRouter(circuitBreaker).isFrozen(stablecoin) returns (bool f1) {
-                    if (f1) isFrozen = true;
-                } catch {
-                    // Ignore revert
-                }
-                try ICircuitBreakerRouter(circuitBreaker).isFrozen(reserveAsset) returns (bool f2) {
-                    if (f2) isFrozen = true;
-                } catch {
-                    // Ignore revert
-                }
-            }
+        uint256 usdcShare = (yieldAmount * 5000) / 10000;
+        uint256 wbtcShare = (yieldAmount * 2500) / 10000;
+        uint256 wethShare = (yieldAmount * 1250) / 10000;
+        uint256 alphaShare = yieldAmount - usdcShare - wbtcShare - wethShare;
 
-            if (swapRouter != address(0) && !isFrozen) {
-                uint256 minReserve = 0;
-                if (oracleHub != address(0)) {
-                    uint256 reservePrice18 = IOracleHub(oracleHub).getPriceBase18(reserveAsset);
-                    uint8 reserveDec = 8;
-                    (bool success, bytes memory data) = reserveAsset.staticcall(abi.encodeWithSignature("decimals()"));
-                    if (success && data.length > 0) {
-                        reserveDec = abi.decode(data, (uint8));
+        uint256 usdcPayout = usdcShare;
+
+        // 1. WBTC Allocation (25.00%)
+        if (wbtc != address(0) && swapRouter != address(0) && !_isAssetFrozen(wbtc)) {
+            uint256 minWbtc = 0;
+            if (oracleHub != address(0)) {
+                try IOracleHub(oracleHub).getPriceBase18(wbtc) returns (uint256 price18) {
+                    if (price18 > 0) {
+                        uint256 expected = (wbtcShare * 1e12 * 1e8) / price18;
+                        minWbtc = (expected * (10000 - slippageToleranceBps)) / 10000;
                     }
-                    // yieldAmount has 6 decimals (stablecoin).
-                    // USD value (18 dec) = yieldAmount * 10**12
-                    // reserveAmount = (USD value * 10**reserveDec) / reservePrice18
-                    uint256 expectedReserve = (yieldAmount * 10 ** 12 * 10 ** reserveDec) / reservePrice18;
-                    minReserve = (expectedReserve * (10000 - slippageToleranceBps)) / 10000;
-                }
-
-                IERC20(stablecoin).approve(swapRouter, yieldAmount);
-                try ISwapRouter(swapRouter)
-                    .exactInputSingle(
-                        ISwapRouter.ExactInputSingleParams({
-                        tokenIn: stablecoin,
-                        tokenOut: reserveAsset,
-                        fee: reserveFeeTier,
-                        recipient: msg.sender,
-                        deadline: block.timestamp + 15 minutes,
-                        amountIn: yieldAmount,
-                        amountOutMinimum: minReserve,
-                        sqrtPriceLimitX96: 0
-                    })
-                    ) returns (
-                    uint256 tokensBought
-                ) {
-                    payoutAmount = tokensBought;
-                } catch {
-                    payoutAmount = yieldAmount;
-                    IERC20(stablecoin).safeTransfer(msg.sender, payoutAmount);
-                }
-            } else {
-                payoutAmount = yieldAmount;
-                IERC20(stablecoin).safeTransfer(msg.sender, payoutAmount);
+                } catch {}
             }
+            IERC20(stablecoin).approve(swapRouter, wbtcShare);
+            try ISwapRouter(swapRouter).exactInputSingle(
+                ISwapRouter.ExactInputSingleParams({
+                    tokenIn: stablecoin,
+                    tokenOut: wbtc,
+                    fee: reserveFeeTier,
+                    recipient: msg.sender,
+                    deadline: block.timestamp + 15 minutes,
+                    amountIn: wbtcShare,
+                    amountOutMinimum: minWbtc,
+                    sqrtPriceLimitX96: 0
+                })
+            ) returns (uint256 bought) {
+                wbtcPaid = bought;
+            } catch {
+                usdcPayout += wbtcShare; // Fallback to USDC
+            }
+        } else {
+            usdcPayout += wbtcShare;
         }
 
-        emit YieldClaimed(msg.sender, yieldAmount, pref, payoutAmount);
+        // 2. WETH Allocation (12.50%)
+        if (weth != address(0) && swapRouter != address(0) && !_isAssetFrozen(weth)) {
+            uint256 minWeth = 0;
+            if (oracleHub != address(0)) {
+                try IOracleHub(oracleHub).getPriceBase18(weth) returns (uint256 price18) {
+                    if (price18 > 0) {
+                        uint256 expected = (wethShare * 1e12 * 1e18) / price18;
+                        minWeth = (expected * (10000 - slippageToleranceBps)) / 10000;
+                    }
+                } catch {}
+            }
+            IERC20(stablecoin).approve(swapRouter, wethShare);
+            try ISwapRouter(swapRouter).exactInputSingle(
+                ISwapRouter.ExactInputSingleParams({
+                    tokenIn: stablecoin,
+                    tokenOut: weth,
+                    fee: reserveFeeTier,
+                    recipient: msg.sender,
+                    deadline: block.timestamp + 15 minutes,
+                    amountIn: wethShare,
+                    amountOutMinimum: minWeth,
+                    sqrtPriceLimitX96: 0
+                })
+            ) returns (uint256 bought) {
+                wethPaid = bought;
+            } catch {
+                usdcPayout += wethShare; // Fallback to USDC
+            }
+        } else {
+            usdcPayout += wethShare;
+        }
+
+        // 3. ALPHA Allocation (12.50% at current NAV)
+        if (treasuryBunker != address(0) && alphaToken != address(0)) {
+            IERC20(stablecoin).approve(treasuryBunker, alphaShare);
+            try ITreasury(treasuryBunker).mintCorporateFeeShares(alphaShare) returns (uint256 mintedShares) {
+                alphaPaid = mintedShares;
+                IERC20(alphaToken).safeTransfer(msg.sender, mintedShares);
+            } catch {
+                usdcPayout += alphaShare; // Fallback to USDC
+            }
+        } else {
+            usdcPayout += alphaShare;
+        }
+
+        // 4. Transfer USDC (50% Base + any fallback)
+        if (usdcPayout > 0) {
+            IERC20(stablecoin).safeTransfer(msg.sender, usdcPayout);
+        }
+
+        payoutAmount = usdcPayout;
+
+        emit RealYieldBasketClaimed(msg.sender, yieldAmount, usdcPayout, wbtcPaid, wethPaid, alphaPaid);
     }
 }

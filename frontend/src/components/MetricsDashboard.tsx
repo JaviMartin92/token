@@ -58,7 +58,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   const numericLiabilities = parseFloat(porLiabilities.replace(/,/g, '')) || 0;
   const numericVestedDebt = parseFloat((vestedDebt || '0').replace(/,/g, '')) || 0;
   const numericNetEquity = parseFloat((netEquity || '0').replace(/,/g, '')) || (numericAssets > numericVestedDebt ? numericAssets - numericVestedDebt : 0);
-  const numericAlphaLiability = numericLiabilities > numericVestedDebt ? numericLiabilities - numericVestedDebt : (numericCirculating * 1.1099);
+  const numericAlphaLiability = numericLiabilities > numericVestedDebt ? numericLiabilities - numericVestedDebt : 0;
 
   // Real Treasury Surplus calculation based on NAV growth above par ($1.00 USD baseline)
   const numericNav = parseFloat((navPerShareUSD || '1.0').replace('$', '').replace(' USDC', '')) || 1.0;
@@ -215,7 +215,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
             <div className={styles.formulaStep}>
               <span className={styles.formulaStepLabel}>💎 Patrimonio Neto Libre</span>
               <span className={styles.formulaStepValue} style={{ color: 'var(--color-emerald-light)' }} data-testid="recon-net-equity">
-                ${netEquity || (numericAssets > numericVestedDebt ? (numericAssets - numericVestedDebt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00')}
+                ${numericNetEquity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
               <span className={styles.formulaStepSub}>Net Equity sin Deuda</span>
             </div>

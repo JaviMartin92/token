@@ -1,7 +1,4 @@
 # Alpha Centauri High-Performance Launcher Script (Windows PowerShell)
-param (
-  [switch]$Fast
-)
 
 # Garantizar deteccion de Node.js en Windows si la sesion no refresco PATH
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
@@ -11,7 +8,7 @@ if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
 }
 
 Write-Host "=======================================================" -ForegroundColor Cyan
-Write-Host " INICIANDO DESPLIEGUE ULTRARRAPIDO A ESTADO 0...       " -ForegroundColor Cyan
+Write-Host " INICIANDO DESPLIEGUE COMPLETO A ESTADO 0...           " -ForegroundColor Cyan
 Write-Host "=======================================================" -ForegroundColor Cyan
 
 # Verificar si Docker Daemon esta activo
@@ -22,7 +19,7 @@ if ($LASTEXITCODE -ne 0) {
   exit 1
 }
 
-$ROOT_DIR = Get-Location
+$ROOT_DIR = (Get-Location).Path
 
 # 1. Reset instantaneo de Anvil Blockchain a Estado 0 (Purga completa de memoria)
 Write-Host "[1/3] Reiniciando memoria de Anvil Blockchain a Estado 0 (Fresh Genesis)..." -ForegroundColor Yellow
@@ -37,15 +34,35 @@ $env:BACKEND_OPERATOR_PRIVATE_KEY="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbe
 $env:ANVIL_URL="http://127.0.0.1:8545"
 
 npx tsx services/core/src/deploy.ts
+npx tsx services/core/src/seed_governance_proposal.ts
 
 # 3. Re-compilar Bundle Frontend con las nuevas direcciones y Servir
-Write-Host "[3/3] Purgando Cache y Re-compilando Bundle Frontend a Estado 0..." -ForegroundColor Yellow
+Write-Host "[3/3] Compilando Bundle Frontend a Estado 0 de Alta Velocidad..." -ForegroundColor Yellow
 docker rm -f alpha-frontend 2>$null | Out-Null
 Remove-Item -Recurse -Force "${ROOT_DIR}\frontend\dist" 2>$null | Out-Null
-Remove-Item -Recurse -Force "${ROOT_DIR}\frontend\node_modules\.vite" 2>$null | Out-Null
 
-docker run --rm -e NPM_CONFIG_UPDATE_NOTIFIER=false -v "${ROOT_DIR}:/app" -w /app/frontend node:22-alpine npm install --no-update-notifier
-docker run --rm -e NPM_CONFIG_UPDATE_NOTIFIER=false -v "${ROOT_DIR}:/app" -w /app/frontend node:22-alpine npm run build:sandbox --no-update-notifier
+# Instalar dependencias solo si no existen previamente en disco
+if (-not (Test-Path "${ROOT_DIR}\frontend\node_modules")) {
+  Write-Host "[*] Instalando dependencias de frontend por primera vez..." -ForegroundColor Cyan
+  if (Get-Command npm -ErrorAction SilentlyContinue) {
+    Push-Location "${ROOT_DIR}\frontend"
+    npm install --no-update-notifier
+    Pop-Location
+  } else {
+    docker run --rm -e NPM_CONFIG_UPDATE_NOTIFIER=false -v "${ROOT_DIR}:/app" -w /app/frontend node:22-alpine npm install --no-update-notifier
+  }
+}
+
+# Compilación nativa ultrarrápida si Node/npm está disponible en Windows (~3s), con fallback a Docker
+if (Get-Command npm -ErrorAction SilentlyContinue) {
+  Push-Location "${ROOT_DIR}\frontend"
+  npm run build:sandbox
+  Pop-Location
+} else {
+  docker run --rm -e NPM_CONFIG_UPDATE_NOTIFIER=false -v "${ROOT_DIR}:/app" -w /app/frontend node:22-alpine npm run build:sandbox --no-update-notifier
+}
+
+# Iniciar contenedor de servicio frontend con proxy RPC
 docker run -d --name alpha-frontend -p 5173:5173 --add-host=host.docker.internal:host-gateway -v "${ROOT_DIR}:/app" -w /app/frontend node:22-alpine node server.cjs | Out-Null
 
 Write-Host "=======================================================" -ForegroundColor Green

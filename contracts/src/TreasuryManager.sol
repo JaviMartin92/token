@@ -101,6 +101,8 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
         uint256 totalAssetsUSD, uint256 totalLiabilitiesUSD, uint256 collateralRatioBps, uint256 timestamp
     );
     event Rebalanced(uint256 timestamp);
+    event TvlCapUpdated(uint256 oldCap, uint256 newCap);
+    event TreasuryGrantDisbursed(address indexed recipient, uint256 amount, string purpose);
 
     constructor(ProtocolAddressProvider _addressProvider) {
         if (address(_addressProvider) == address(0)) revert ZeroAddressProvider();
@@ -120,7 +122,7 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
 
         redemptionToken = _redemptionToken;
         redemptionTokenDecimals = _redemptionTokenDecimals;
-        tvlCap = 50_000_000 * (10 ** _redemptionTokenDecimals);
+        tvlCap = 50_000_000 * 1e18; // Base 18 USD (configurable via Timelock DAO proposal)
         slippageToleranceBps = 100; // 1% default
 
         currentWeights = AssetWeights({stablecoins: 5000, wbtc: 2500, weth: 1250, alphaProtocolStaking: 1250});
@@ -186,6 +188,7 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
 
     function setTvlCap(uint256 newCap) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (newCap == 0) revert ZeroAmount();
+        emit TvlCapUpdated(tvlCap, newCap);
         tvlCap = newCap;
     }
 
@@ -346,12 +349,16 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
      */
     function deposit(uint256 stableAmount, uint256 minSharesOut) public nonReentrant returns (uint256 sharesMinted) {
         if (stableAmount == 0) revert ZeroAmount();
+        uint256 grossDepositUSD = stableAmount * (10 ** (18 - redemptionTokenDecimals));
+        if (tvlCap > 0 && getTotalNavUSD() + grossDepositUSD > tvlCap) {
+            revert TVLCapExceeded(getTotalNavUSD() + grossDepositUSD, tvlCap);
+        }
         lastDepositBlock[msg.sender] = block.number;
 
         (uint256 preAssetsUSD,, uint256 preRatioBps) = getProofOfReserves();
-        uint256 netCirculating = getNetCirculatingShares();
-        uint256 preNavUSD =
-            (netCirculating == 0) ? 1e18 : Math.mulDiv(preAssetsUSD, 1e18, netCirculating, Math.Rounding.Floor);
+        uint256 preNavUSD = getNAVPerShare();
+
+
 
         AlphaVault vault = AlphaVault(addressProvider.getAddress(addressProvider.ID_ALPHA_VAULT()));
         address routerAddr = addressProvider.getAddress(addressProvider.ID_REAL_YIELD_ROUTER());
@@ -464,8 +471,9 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
 
         (uint256 preAssetsUSD,, uint256 preRatioBps) = getProofOfReserves();
         uint256 netCirculating = getNetCirculatingShares();
-        uint256 preNavUSD =
-            (netCirculating == 0) ? 1e18 : Math.mulDiv(preAssetsUSD, 1e18, netCirculating, Math.Rounding.Floor);
+        uint256 preNavUSD = getNAVPerShare();
+
+
 
         TreasuryFeeLib.RedeemCalculation memory calc =
             TreasuryFeeLib.calculateRedemption(sharesAmount, preAssetsUSD, netCirculating, redemptionTokenDecimals);
@@ -581,15 +589,13 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
         }
 
         uint256 depositValueUSD = stableAmount * (10 ** (18 - redemptionTokenDecimals));
-        uint256 navBefore = getTotalNavUSD();
-        AlphaToken token = AlphaToken(addressProvider.getAddress(addressProvider.ID_ALPHA_TOKEN()));
-        uint256 currentShares = token.totalSupply();
-
-        if (currentShares == 0 || navBefore == 0) {
-            sharesMinted = depositValueUSD;
-        } else {
-            sharesMinted = Math.mulDiv(depositValueUSD, currentShares, navBefore, Math.Rounding.Floor);
+        uint256 navPerShare = getNAVPerShare();
+        if (navPerShare == 0) {
+            navPerShare = 1e18;
         }
+        sharesMinted = Math.mulDiv(depositValueUSD, 1e18, navPerShare, Math.Rounding.Floor);
+
+        AlphaToken token = AlphaToken(addressProvider.getAddress(addressProvider.ID_ALPHA_TOKEN()));
 
         token.mint(msg.sender, sharesMinted);
         return sharesMinted;
@@ -639,6 +645,28 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
         }
 
         vault.transferFunds(redemptionToken, recipient, amount);
+    }
+
+    /**
+     * @notice Disburses USDC funds to external destination (e.g. Code4rena audit escrow, community grant).
+     *         Callable ONLY by TimelockController via passed on-chain DAO proposal.
+     */
+    function withdrawUSDC(address recipient, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
+        if (recipient == address(0)) revert ZeroAddressProvider();
+        if (amount == 0) revert ZeroAmount();
+
+        AlphaVault vault = AlphaVault(addressProvider.getAlphaVault());
+        uint256 available = vault.getBalance(redemptionToken);
+        if (available < amount) {
+            TreasuryLiquidityLib.ensureLiquidBuffer(
+                vault, redemptionToken, activeYieldAdapters, amount, address(this)
+            );
+            available = vault.getBalance(redemptionToken);
+            if (available < amount) revert InsufficientLiquidity();
+        }
+
+        vault.transferFunds(redemptionToken, recipient, amount);
+        emit TreasuryGrantDisbursed(recipient, amount, "DAO Proposal Grant / Audit Escrow");
     }
 
     // Reserved storage gap to prevent storage collisions in future UUPS upgrades

@@ -65,10 +65,10 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
   const realEthUsd = porBreakdown.weth > 0 ? porBreakdown.weth : Math.round(realReservesUsd * targetEthPct);
 
   // Flujo de Caja Real
-  const realBondCashflow = userPositions.reduce((sum, pos) => sum + (pos.isRagequitted ? 0 : parseFloat(pos.principal || '0')), 0);
-  const realLoanCashflow = loansList.reduce((sum, loan) => sum + (loan.state === 1 ? parseFloat(loan.borrowAmount || '0') : 0), 0);
+  const realBondCashflow = userPositions.reduce((sum, pos) => sum + (pos.isRagequitted ? 0 : parseFloat((pos.principal || '0').replace(/,/g, ''))), 0);
+  const realLoanCashflow = loansList.reduce((sum, loan) => sum + (loan.state === 1 ? parseFloat((loan.borrowAmount || '0').replace(/,/g, '')) : 0), 0);
   const realGrossCashflowUsd = Math.round(realBondCashflow + realLoanCashflow);
-  const realLoanInterest = loansList.reduce((sum, loan) => sum + (loan.state === 1 ? (parseFloat(loan.borrowAmount || "0") * (loan.interestRateBps / 10000)) : 0), 0);
+  const realLoanInterest = loansList.reduce((sum, loan) => sum + (loan.state === 1 ? (parseFloat((loan.borrowAmount || "0").replace(/,/g, '')) * (loan.interestRateBps / 10000)) : 0), 0);
   const realYieldPayoutUsd = Math.round(realClaimableYield + realLoanInterest);
 
   const onChainApyNum = parseFloat((liveApyStr || '0').replace('%', '')) || 0;

@@ -173,10 +173,10 @@ export function useStakingActions({
         inputAmount: yieldAmountStr,
         inputSymbol: 'Yield Acumulado On-Chain',
         expectedOutput: outputStr,
-        expectedOutputSymbol: payoutPref === 0 ? 'USDC (Opción A)' : 'WBTC/WETH (Opción B)',
+        expectedOutputSymbol: 'Cesta Multiactivo (USDC, WBTC, WETH, ALPHA)',
         details: [
           ...(claimableUsdNum && claimableUsdNum > 0 ? [{ label: 'Monto Total Dividendos Devengados', value: `$${claimableUsdNum.toFixed(2)} USD`, badge: 'Real Yield' }] : []),
-          { label: 'Opción de Cobro Seleccionada', value: payoutPref === 0 ? 'Opción A (USDC Directo)' : 'Opción B (Activos de Reserva WBTC/WETH)' },
+          { label: 'Modo de Distribución', value: 'Cesta Universal (50% USDC, 25% WBTC, 12.5% WETH, 12.5% ALPHA)' },
           { label: 'Comisión de Distribución', value: '0.00% (Transferencia Directa de Contrato)' }
         ],
         confirmButtonText: '✍️ Confirmar Cobro de Yield',
@@ -231,24 +231,7 @@ export function useStakingActions({
   };
 
   const handleSetPayoutPreference = async (pref: number) => {
-    try {
-      addLog(`Actualizando preferencia de pago a Opción ${pref === 0 ? 'A (USDC Directo)' : 'B (Activos de Reserva)'}...`);
-      const client = getWalletClient(activeKey);
-      const tx = await client.writeContract({
-        address: CONTRACT_ADDRESSES.REAL_YIELD_ROUTER,
-        abi: ABIS.REAL_YIELD_ROUTER,
-        functionName: 'setPayoutPreference',
-        args: [pref]
-      });
-      await publicClient.waitForTransactionReceipt({ hash: tx });
-      addLog(`¡Preferencia de pago actualizada on-chain!`);
-      setPayoutPref(pref);
-      addToast('success', 'Preferencia Guardada', `Modo de cobro actualizado a Opción ${pref === 0 ? 'A' : 'B'}`);
-      await fetchData();
-    } catch (err: any) {
-      addLog(`[Error] No se pudo guardar preferencia: ${err.message || err}`);
-      addToast('error', 'Error Preferencia', err.message || 'Fallo');
-    }
+    setPayoutPref(pref);
   };
 
   return {

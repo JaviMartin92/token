@@ -20,7 +20,8 @@ interface ITimelock {
 
 /**
  * @title GovernorAlphaCentauri
- * @notice On-chain DAO Governor with 72-hour timelock execution and immutable veto on system vaults.
+ * @notice On-chain DAO Governor with 72-hour timelock execution, anti-spam proposal threshold,
+ *         minimum quorum requirements, and immutable veto on system vaults.
  */
 contract GovernorAlphaCentauri is AccessControl {
     IGovernanceStakingVotes public immutable stakingToken;
@@ -32,8 +33,11 @@ contract GovernorAlphaCentauri is AccessControl {
     address public treasuryManager;
 
     uint256 public constant VOTING_DELAY = 1; // 1 block voting delay
-    uint256 public constant VOTING_PERIOD = 50400; // ~7 days in blocks
-    uint256 public constant QUORUM_VOTES = 10000e18; // 10,000 stALPHA quorum
+    uint256 public constant VOTING_PERIOD = 50400; // ~7 days in blocks (Arbitrum / EVM standard)
+    
+    // Institutional Anti-Spam & Quorum Governance Parameters
+    uint256 public proposalThreshold = 25000e18; // Minimum 25,000 stALPHA to submit a proposal
+    uint256 public quorumVotes = 80000e18; // Minimum 80,000 stALPHA (~4% of circulating voting power)
 
     enum ProposalState {
         Pending,
@@ -49,22 +53,23 @@ contract GovernorAlphaCentauri is AccessControl {
     struct Proposal {
         uint256 id;
         address proposer;
-        bool canceled;
-        bool executed;
-        address target;
-        uint256 value;
-        bytes data;
         uint256 startBlock;
         uint256 endBlock;
         uint256 forVotes;
         uint256 againstVotes;
         uint256 abstainVotes;
         uint256 eta;
+        bool canceled;
+        bool executed;
         bytes32 timelockTxHash;
     }
 
     uint256 public proposalCount;
     mapping(uint256 => Proposal) public proposals;
+    mapping(uint256 => address) public proposalTargets;
+    mapping(uint256 => uint256) public proposalValues;
+    mapping(uint256 => bytes) public proposalCalldatas;
+    mapping(uint256 => string) public proposalDescriptions;
     mapping(uint256 => mapping(address => bool)) public hasVoted;
 
     event ProposalCreated(
@@ -73,6 +78,7 @@ contract GovernorAlphaCentauri is AccessControl {
         address target,
         uint256 value,
         bytes data,
+        string description,
         uint256 startBlock,
         uint256 endBlock
     );
@@ -80,6 +86,8 @@ contract GovernorAlphaCentauri is AccessControl {
     event ProposalCanceled(uint256 indexed id);
     event ProposalQueued(uint256 indexed id, bytes32 txHash, uint256 eta);
     event ProposalExecuted(uint256 indexed id);
+    event ProposalThresholdUpdated(uint256 newThreshold);
+    event QuorumVotesUpdated(uint256 newQuorum);
 
     constructor(
         address _stakingToken,
@@ -126,9 +134,17 @@ contract GovernorAlphaCentauri is AccessControl {
     error ProposalAlreadyExecuted();
     error Unauthorized();
 
-    function propose(address target, uint256 value, bytes calldata data) external returns (uint256 proposalId) {
+    /**
+     * @notice Creates an on-chain DAO proposal. Requires proposer to hold at least proposalThreshold stALPHA.
+     */
+    function propose(
+        address target,
+        uint256 value,
+        bytes calldata data,
+        string memory description
+    ) public returns (uint256 proposalId) {
         uint256 voterVotes = _getVotes(msg.sender, block.number - 1);
-        if (voterVotes < 100e18) revert ProposerVotesBelowThreshold(voterVotes, 100e18);
+        if (voterVotes < proposalThreshold) revert ProposerVotesBelowThreshold(voterVotes, proposalThreshold);
 
         unchecked {
             proposalId = ++proposalCount;
@@ -139,9 +155,6 @@ contract GovernorAlphaCentauri is AccessControl {
         proposals[proposalId] = Proposal({
             id: proposalId,
             proposer: msg.sender,
-            target: target,
-            value: value,
-            data: data,
             startBlock: startBlock,
             endBlock: endBlock,
             forVotes: 0,
@@ -153,7 +166,19 @@ contract GovernorAlphaCentauri is AccessControl {
             timelockTxHash: bytes32(0)
         });
 
-        emit ProposalCreated(proposalId, msg.sender, target, value, data, startBlock, endBlock);
+        proposalTargets[proposalId] = target;
+        proposalValues[proposalId] = value;
+        proposalCalldatas[proposalId] = data;
+        proposalDescriptions[proposalId] = description;
+
+        emit ProposalCreated(proposalId, msg.sender, target, value, data, description, startBlock, endBlock);
+    }
+
+    /**
+     * @notice Legacy propose overload without explicit description.
+     */
+    function propose(address target, uint256 value, bytes calldata data) external returns (uint256 proposalId) {
+        return propose(target, value, data, "");
     }
 
     function castVote(uint256 proposalId, uint8 support) external returns (uint256 weight) {
@@ -189,7 +214,7 @@ contract GovernorAlphaCentauri is AccessControl {
         Proposal storage p = proposals[proposalId];
         if (p.executed) revert ProposalAlreadyExecuted();
         if (p.canceled) revert IProtocolErrors.InvalidParameters();
-        if (msg.sender != p.proposer && _getVotes(p.proposer, block.number - 1) >= 100e18) {
+        if (msg.sender != p.proposer && _getVotes(p.proposer, block.number - 1) >= proposalThreshold) {
             revert Unauthorized();
         }
 
@@ -204,7 +229,7 @@ contract GovernorAlphaCentauri is AccessControl {
         if (block.number < p.startBlock) return ProposalState.Pending;
         if (block.number <= p.endBlock) return ProposalState.Active;
         uint256 totalVotes = p.forVotes + p.abstainVotes;
-        if (p.forVotes <= p.againstVotes || totalVotes < QUORUM_VOTES) return ProposalState.Defeated;
+        if (p.forVotes <= p.againstVotes || totalVotes < quorumVotes) return ProposalState.Defeated;
         if (p.timelockTxHash == bytes32(0)) return ProposalState.Succeeded;
         return ProposalState.Queued;
     }
@@ -213,7 +238,11 @@ contract GovernorAlphaCentauri is AccessControl {
         if (state(proposalId) != ProposalState.Succeeded) revert ProposalNotSucceeded();
         Proposal storage p = proposals[proposalId];
 
-        txHash = ITimelock(timelock).queueTransaction(p.target, p.value, p.data);
+        address target = proposalTargets[proposalId];
+        uint256 value = proposalValues[proposalId];
+        bytes memory data = proposalCalldatas[proposalId];
+
+        txHash = ITimelock(timelock).queueTransaction(target, value, data);
         p.timelockTxHash = txHash;
         p.eta = block.timestamp + ITimelock(timelock).delay();
         emit ProposalQueued(proposalId, txHash, p.eta);
@@ -224,8 +253,37 @@ contract GovernorAlphaCentauri is AccessControl {
         Proposal storage p = proposals[proposalId];
         p.executed = true;
 
-        bytes memory res = ITimelock(timelock).executeTransaction(p.target, p.value, p.data, p.eta);
+        address target = proposalTargets[proposalId];
+        uint256 value = proposalValues[proposalId];
+        bytes memory data = proposalCalldatas[proposalId];
+
+        bytes memory res = ITimelock(timelock).executeTransaction(target, value, data, p.eta);
         emit ProposalExecuted(proposalId);
         return res;
+    }
+
+    function getProposalActions(uint256 proposalId)
+        external
+        view
+        returns (address target, uint256 value, bytes memory data, string memory description)
+    {
+        return (
+            proposalTargets[proposalId],
+            proposalValues[proposalId],
+            proposalCalldatas[proposalId],
+            proposalDescriptions[proposalId]
+        );
+    }
+
+    function setProposalThreshold(uint256 newThreshold) external {
+        if (msg.sender != timelock && !hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) revert Unauthorized();
+        proposalThreshold = newThreshold;
+        emit ProposalThresholdUpdated(newThreshold);
+    }
+
+    function setQuorumVotes(uint256 newQuorum) external {
+        if (msg.sender != timelock && !hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) revert Unauthorized();
+        quorumVotes = newQuorum;
+        emit QuorumVotesUpdated(newQuorum);
     }
 }

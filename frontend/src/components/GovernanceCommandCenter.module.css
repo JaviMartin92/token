@@ -498,3 +498,345 @@
     padding: var(--space-4);
   }
 }
+
+
+/* ==========================================================================
+   📜 GOBERNANZA DAO ON-CHAIN (PROPUESTAS, VOTACIÓN & ANTI-SPAM)
+   ========================================================================== */
+
+.antiSpamBanner {
+  background-color: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.8125rem;
+  color: var(--color-amber-light);
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.antiSpamSuccess {
+  background-color: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.8125rem;
+  color: var(--color-emerald-light);
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.proposalsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+.proposalCard {
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  transition: border-color var(--transition-fast);
+}
+
+.proposalCard:hover {
+  border-color: var(--border-default);
+}
+
+.proposalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.proposalTitleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+  min-width: 260px;
+}
+
+.proposalIdTag {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-blue-light);
+  text-transform: uppercase;
+}
+
+.proposalTitle {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.proposalMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  flex-wrap: wrap;
+}
+
+.proposalMetaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.proposalTargetBox {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  word-break: break-all;
+}
+
+.proposalVotesGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.voteTallyCard {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.voteTallyLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+}
+
+.voteTallyValFor {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-emerald-light);
+  font-family: var(--font-mono);
+}
+
+.voteTallyValAgainst {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-crimson-light);
+  font-family: var(--font-mono);
+}
+
+.voteTallyValAbstain {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+/* Quorum Progress Bar */
+.quorumContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+}
+
+.quorumHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.quorumMetText {
+  color: var(--color-emerald-light);
+  font-weight: 600;
+}
+
+.quorumPendingText {
+  color: var(--color-amber-light);
+  font-weight: 600;
+}
+
+.quorumProgressBar {
+  width: 100%;
+  height: 8px;
+  background-color: var(--bg-surface);
+  border-radius: 9999px;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+}
+
+.quorumProgressFill {
+  height: 100%;
+  background-color: var(--color-amber-light);
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+.quorumProgressFillMet {
+  height: 100%;
+  background-color: var(--color-emerald-light);
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+/* Actions Row */
+.proposalActionsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.voteButtonGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.noProposalsBox {
+  background-color: var(--bg-surface-elevated);
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 0.875rem;
+}
+
+/* Template Selector in Guided Creator */
+.templateSelector {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.templateBtn {
+  padding: 10px 14px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.templateBtn:hover {
+  background-color: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.templateBtnActive {
+  composes: templateBtn;
+  background-color: var(--bg-surface-elevated);
+  border-color: var(--color-blue-light);
+  color: var(--color-blue-light);
+  box-shadow: 0 0 0 1px var(--color-blue-light);
+}
+
+.calldataPreview {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.calldataHeader {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  letter-spacing: 0.05em;
+}
+
+.calldataCode {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-blue-light);
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.rulesGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.ruleItem {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ruleTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.ruleDesc {
+  font-size: 0.6875rem;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+  .proposalVotesGrid,
+  .templateSelector,
+  .rulesGrid {
+    grid-template-columns: 1fr;
+  }
+}

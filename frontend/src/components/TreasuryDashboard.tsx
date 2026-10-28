@@ -65,6 +65,47 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
           </Button>
         }
       >
+        {/* 🛡️ Guarded Genesis Cap Progress Bar */}
+        <div style={{
+          marginBottom: 'var(--space-3)',
+          padding: 'var(--space-3) var(--space-4)',
+          background: 'rgba(245, 158, 11, 0.08)',
+          border: '1px solid rgba(245, 158, 11, 0.3)',
+          borderRadius: 'var(--radius-md)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 'var(--space-2)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Badge variant="amber" size="sm" dot>🛡️ Guarded Launch Phase 1</Badge>
+              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                Tope de TVL de Seguridad (Anti-Exploit Cap)
+              </span>
+            </div>
+            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f59e0b' }}>
+              ${_porAssets} / $100,000.00 USD ({Math.min(100, Math.round((parseFloat(_porAssets.replace(/,/g, '')) / 100000) * 100))}% del Cap)
+            </span>
+          </div>
+          <div style={{
+            width: '100%',
+            height: '6px',
+            background: 'var(--bg-surface-elevated)',
+            borderRadius: '3px',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              width: `${Math.min(100, (parseFloat(_porAssets.replace(/,/g, '')) / 100000) * 100)}%`,
+              height: '100%',
+              background: 'linear-gradient(90deg, #f59e0b, #10b981)',
+              borderRadius: '3px'
+            }} />
+          </div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+            🔒 El protocolo limita autónomamente la exposición del capital hasta que la DAO vote financiar la auditoría externa formal mediante el Escrow on-chain.
+          </div>
+        </div>
+
         {/* 👛 Saldos Disponibles del Usuario */}
         <div className={styles.balancesGrid}>
           <StatCard

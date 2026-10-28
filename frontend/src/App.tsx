@@ -52,7 +52,6 @@ const VestedVaults = lazyWithRetry(() => import('./components/VestedVaults.js').
 const P2PMarketplace = lazyWithRetry(() => import('./components/P2PMarketplace.js').then(m => ({ default: m.P2PMarketplace })));
 const GovernanceStakingUI = lazyWithRetry(() => import('./components/GovernanceStakingUI.js').then(m => ({ default: m.GovernanceStakingUI })));
 const MetricsDashboard = lazyWithRetry(() => import('./components/MetricsDashboard.js').then(m => ({ default: m.MetricsDashboard })));
-const AdminControlPanel = lazyWithRetry(() => import('./components/AdminControlPanel.js').then(m => ({ default: m.AdminControlPanel })));
 const GovernanceCommandCenter = lazyWithRetry(() => import('./components/GovernanceCommandCenter.js').then(m => ({ default: m.GovernanceCommandCenter })));
 const FounderVestingCard = lazyWithRetry(() => import('./components/FounderVestingCard.js').then(m => ({ default: m.FounderVestingCard })));
 const ActivityLog = lazyWithRetry(() => import('./components/ActivityLog.js').then(m => ({ default: m.ActivityLog })));
@@ -172,7 +171,7 @@ export default function App() {
   }, 0);
 
   const grossCashflowUsd = portfolio.userPositions.reduce((acc, pos) => {
-    return acc + (!pos.isRagequitted ? parseFloat(pos.principal || '0') || 0 : 0);
+    return acc + (!pos.isRagequitted ? parseFloat((pos.principal || '0').replace(/,/g, '')) || 0 : 0);
   }, 0);
 
   // Re-build a dummy web3 structure to pass to GovernanceCommandCenter which heavily relies on it.
@@ -182,7 +181,10 @@ export default function App() {
     ...universalYield,
     ...stakingMetrics,
     ...p2pMarket,
-    ...portfolio
+    ...portfolio,
+    fetchData: handleFetchData,
+    addToast,
+    addLog
   };
 
   return (
@@ -347,27 +349,6 @@ export default function App() {
           />
         ) : (
           <>
-            <AdminControlPanel
-              chainId={global.chainId}
-              userAddress={global.userAddress || ''}
-              oraclePrice={admin.oraclePrice}
-              setOraclePrice={admin.setOraclePrice}
-              onUpdateOracle={admin.handleUpdateOracle}
-              newStablesWeight={admin.newStablesWeight}
-              setNewStablesWeight={admin.setNewStablesWeight}
-              newWbtcWeight={admin.newWbtcWeight}
-              setNewWbtcWeight={admin.setNewWbtcWeight}
-              newWethWeight={admin.newWethWeight}
-              setNewWethWeight={admin.setNewWethWeight}
-              newAltsWeight={admin.newAltsWeight}
-              setNewAltsWeight={admin.setNewAltsWeight}
-              onAdjustWeights={admin.handleAdjustWeights}
-              circuitBreakerFrozen={treasuryMetrics.circuitBreakerFrozen}
-              onSimulateDrop={admin.handleSimulateDrop}
-              onResetBreaker={admin.handleResetBreaker}
-              onResetBlockchain={admin.handleResetBlockchain}
-            />
-
             <FounderVestingCard
               userAddress={global.userAddress || ''}
               addLog={addLog}
@@ -377,7 +358,7 @@ export default function App() {
             <GovernanceCommandCenter
               web3Data={web3DataDummy}
               adminActions={admin}
-              isAdmin={global.isSandbox && global.walletConnected}
+              isAdmin={global.walletConnected}
             />
 
             <ActivityLog logs={logs} />

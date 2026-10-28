@@ -100,6 +100,8 @@ export const ABIS = {
     ], outputs: [{ name: '', type: 'uint256' }] },
     { name: 'getNAVPerShare', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
     { name: 'tvlCap', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
+    { name: 'setTvlCap', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'newCap', type: 'uint256' }], outputs: [] },
+    { name: 'withdrawUSDC', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'recipient', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [] },
     { name: 'priceFeeds', type: 'function', stateMutability: 'view', inputs: [{ name: 'asset', type: 'address' }], outputs: [{ name: '', type: 'address' }] }
   ] as const,
   VESTED_VAULT: [
@@ -205,9 +207,11 @@ export const ABIS = {
     ]}
   ] as const,
   REAL_YIELD_ROUTER: [
-    { name: 'setPayoutPreference', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'preference', type: 'uint8' }], outputs: [] },
+    { name: 'setBasketAssets', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: '_wbtc', type: 'address' }, { name: '_weth', type: 'address' }, { name: '_alphaToken', type: 'address' }], outputs: [] },
     { name: 'claimRealYield', type: 'function', stateMutability: 'nonpayable', inputs: [], outputs: [{ name: 'payoutAmount', type: 'uint256' }] },
-    { name: 'userPreferences', type: 'function', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [{ name: '', type: 'uint8' }] }
+    { name: 'wbtc', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'address' }] },
+    { name: 'weth', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'address' }] },
+    { name: 'alphaToken', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'address' }] }
   ] as const,
   DYNAMIC_YIELD_ORACLE: [
     { name: 'calculateWeightedYieldBps', type: 'function', stateMutability: 'view', inputs: [
@@ -282,5 +286,57 @@ export const ABIS = {
       { name: 'canClaim', type: 'bool' }
     ]},
     { name: 'claimVestedAlpha', type: 'function', stateMutability: 'nonpayable', inputs: [], outputs: [{ name: 'claimedAmount', type: 'uint256' }] }
+  ],
+  GOVERNOR: [
+    { name: 'propose', type: 'function', stateMutability: 'nonpayable', inputs: [
+      { name: 'target', type: 'address' },
+      { name: 'value', type: 'uint256' },
+      { name: 'data', type: 'bytes' },
+      { name: 'description', type: 'string' }
+    ], outputs: [{ name: 'proposalId', type: 'uint256' }] },
+    { name: 'castVote', type: 'function', stateMutability: 'nonpayable', inputs: [
+      { name: 'proposalId', type: 'uint256' },
+      { name: 'support', type: 'uint8' }
+    ], outputs: [{ name: 'weight', type: 'uint256' }] },
+    { name: 'castVoteWithReason', type: 'function', stateMutability: 'nonpayable', inputs: [
+      { name: 'proposalId', type: 'uint256' },
+      { name: 'support', type: 'uint8' },
+      { name: 'reason', type: 'string' }
+    ], outputs: [{ name: 'weight', type: 'uint256' }] },
+    { name: 'queue', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'proposalId', type: 'uint256' }], outputs: [{ name: 'txHash', type: 'bytes32' }] },
+    { name: 'execute', type: 'function', stateMutability: 'payable', inputs: [{ name: 'proposalId', type: 'uint256' }], outputs: [{ name: '', type: 'bytes' }] },
+    { name: 'cancel', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'proposalId', type: 'uint256' }], outputs: [] },
+    { name: 'proposalCount', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
+    { name: 'proposals', type: 'function', stateMutability: 'view', inputs: [{ name: 'proposalId', type: 'uint256' }], outputs: [
+      { name: 'id', type: 'uint256' },
+      { name: 'proposer', type: 'address' },
+      { name: 'startBlock', type: 'uint256' },
+      { name: 'endBlock', type: 'uint256' },
+      { name: 'forVotes', type: 'uint256' },
+      { name: 'againstVotes', type: 'uint256' },
+      { name: 'abstainVotes', type: 'uint256' },
+      { name: 'eta', type: 'uint256' },
+      { name: 'canceled', type: 'bool' },
+      { name: 'executed', type: 'bool' },
+      { name: 'timelockTxHash', type: 'bytes32' }
+    ] },
+    { name: 'proposalDescriptions', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'uint256' }], outputs: [{ name: '', type: 'string' }] },
+    { name: 'proposalTargets', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'uint256' }], outputs: [{ name: '', type: 'address' }] },
+    { name: 'proposalValues', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'uint256' }], outputs: [{ name: '', type: 'uint256' }] },
+    { name: 'proposalCalldatas', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'uint256' }], outputs: [{ name: '', type: 'bytes' }] },
+    { name: 'getProposalActions', type: 'function', stateMutability: 'view', inputs: [{ name: 'proposalId', type: 'uint256' }], outputs: [
+      { name: 'target', type: 'address' },
+      { name: 'value', type: 'uint256' },
+      { name: 'data', type: 'bytes' },
+      { name: 'description', type: 'string' }
+    ] },
+    { name: 'state', type: 'function', stateMutability: 'view', inputs: [{ name: 'proposalId', type: 'uint256' }], outputs: [{ name: '', type: 'uint8' }] },
+    { name: 'proposalThreshold', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
+    { name: 'quorumVotes', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
+    { name: 'hasVoted', type: 'function', stateMutability: 'view', inputs: [{ name: 'proposalId', type: 'uint256' }, { name: 'account', type: 'address' }], outputs: [{ name: '', type: 'bool' }] },
+    { name: 'getVotes', type: 'function', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }, { name: 'blockNumber', type: 'uint256' }], outputs: [{ name: '', type: 'uint256' }] }
+  ] as const,
+  TIMELOCK: [
+    { name: 'delay', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] }
   ] as const
 };

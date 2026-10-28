@@ -8,8 +8,9 @@
 
 * **Rama Principal de Producción:** `main` (Audited, Stable & Mainnet-Ready).
 * **Rama de Trabajo / Desarrollo:** `desarrollo`.
-* **Cumplimiento de Calidad Institucional:** **14/14 comprobaciones superadas (100% PASS)** en `npm run quality`.
-* **Smart Contracts Auditados:** **26 Smart Contracts** y 4 Librerías matemáticas $O(1)$ con **38/38 tests Foundry superados** (incluyendo el blindaje post-cuántico [`PostQuantumGuard.sol`](../contracts/src/PostQuantumGuard.sol)).
+* **Cumplimiento de Calidad Institucional:** **14/14 comprobaciones superadas (100% PASS)** en `npm run quality` y **150+ tests globales del monorepo**.
+* **Smart Contracts Auditados:** **26 Smart Contracts** y 4 Librerías matemáticas $O(1)$ con **47/47 tests Foundry superados** (12 suites completas, incluyendo el blindaje post-cuántico [`PostQuantumGuard.sol`](../contracts/src/PostQuantumGuard.sol) y pruebas de lanzamiento protegido [`GuardedLaunch.t.sol`](../contracts/test/GuardedLaunch.t.sol)).
+* **Guía Maestra de Despliegue en Mainnet:** Documentada paso a paso en [`docs/MAINNET_DEPLOYMENT_GUIDE.md`](MAINNET_DEPLOYMENT_GUIDE.md).
 * **Framework de Verificación Autónoma con IA (Qwen3:8B):**
   * **Campaña de Seguridad Red Team (1 Hora):** 73 rondas, 217 llamadas, 0 repetitivas, 186 reverts defendidos, 31 éxitos, invariantes 100% saludables. Diversidad de exploración: **85/100**.
   * **Campaña de Perfiles de Usuario (1 Hora):** 43 rondas, 214 flujos financieros, 176 exitosos (82.2%), 38 protecciones matemáticas (`NoDiscountVsNAV`), invariantes 100% saludables.
@@ -197,6 +198,19 @@ Para que comprendas la evolución del código sin necesidad de explorar el histo
   - *Viktor*: MEV Keeper (recompras con descuento por arbitraje).
   - *Lucas*: Delegado DAO (voto de gobernanza y alineación de recompensas).
 * **Validación de Salvaguardas:** Confirmó que el 100% de las 38 denegaciones se debieron al candado `revert NoDiscountVsNAV()`, protegiendo la tesorería de recompras no ventajosas.
+
+### G. Lanzamiento Protegido con Tope de TVL (`GuardedLaunch.t.sol` / `TreasuryManager.sol`)
+* **Decisión:** Para eliminar el riesgo de drenaje masivo de capital antes de completar auditorías formales públicas, la tesorería incorpora un tope estricto programático (`tvlCap = 100_000 * 1e18`).
+* **Mecanismo:** La función `deposit` revierte atómicamente con `revert TVLCapExceeded()` si el NAV más el depósito entrante supera el límite.
+* **Pure DeFi:** La función `setTvlCap` solo puede ser llamada por `DEFAULT_ADMIN_ROLE` (exclusivamente el `TimelockController` gobernado por la DAO con retardo de 72 horas).
+
+### H. Financiación On-Chain de Auditoría Comunitaria (`withdrawUSDC`)
+* **Decisión:** Mantener el protocolo 100% descentralizado (MiCA Recital 22) evitando intermediarios legales o entidades centralizadas para contratar auditores.
+* **Mecanismo:** La DAO utiliza la función `TreasuryManager.withdrawUSDC(recipient, amount)` para desembolsar fondos directamente a los smart contracts de depósito en garantía (*escrow*) de plataformas como Code4rena, Cantina o Sherlock. La Plantilla 5 del `GovernanceCommandCenter` incluye un botón de 1-click para pre-llenar esta propuesta.
+
+### I. Optimización de Lanzamiento en Windows y Sembrado Génesis (`start_app.ps1`)
+* **Optimización:** Se eliminó la lentitud extrema causada por `docker run npm install` sobre el volumen montado NTFS de Windows. La construcción del bundle de Vite se realiza nativamente en el host en ~400ms.
+* **Propuesta Génesis Activa:** Al iniciar la aplicación, el script `services/core/src/seed_governance_proposal.ts` acuña stALPHA y somete la primera propuesta on-chain para que la interfaz muestre el módulo de gobernanza completamente funcional desde el primer segundo.
 
 ---
 

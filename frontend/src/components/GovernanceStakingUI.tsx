@@ -23,7 +23,7 @@ interface GovernanceStakingUIProps {
   onUnstake: () => void;
   onClaimYield: () => void;
   onGaslessClaim: () => void;
-  onSetPayoutPreference: (pref: number) => void;
+  onSetPayoutPreference?: (pref: number) => void;
 }
 
 export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
@@ -33,13 +33,13 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
   totalBurnedTokens = '0.00',
   stakeAmount,
   setStakeAmount,
-  payoutPref,
-  setPayoutPref,
+
+
   onStake,
   onUnstake,
   onClaimYield,
   onGaslessClaim,
-  onSetPayoutPreference
+
 }) => {
   return (
     <div className={styles.container}>
@@ -121,50 +121,39 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
         </div>
       </Card>
 
-      {/* 🔀 Tarjeta 2: Real Yield Router & Preferencia Payout */}
+      {/* 💎 Tarjeta 2: Cesta Universal de Rendimiento Real */}
       <Card
         variant="surface"
         collapsible
         defaultExpanded={false}
-        headerTitle="🔀 Real Yield Router & Preferencia Payout"
-        headerSubtitle="Configuración institucional del destino de rendimientos y reclamos gasless"
+        headerTitle="💎 Cesta Universal de Rendimiento Real (100% Pro-Rata)"
+        headerSubtitle="Distribución atómica e instantánea de los 4 activos de tesorería en una sola transacción"
       >
         <p className={styles.description}>
           {UI_STRINGS.STAKING.CARD_YIELD_DESC}
         </p>
 
         <div className={styles.optionsCard}>
-          <label className={styles.radioOption}>
-            <input
-              type="radio"
-              name="payoutPref"
-              checked={payoutPref === 0}
-              onChange={() => {
-                setPayoutPref(0);
-                onSetPayoutPreference(0);
-              }}
-              className={styles.radioInput}
-            />
+          <div className={styles.radioOption} style={{ cursor: 'default' }}>
             <span className={styles.radioText}>
-              <strong>Opción A:</strong> {UI_STRINGS.STAKING.PREF_OPTION_A}
+              <strong>💵 50.00% USDC:</strong> {UI_STRINGS.STAKING.BASKET_USDC}
             </span>
-          </label>
-
-          <label className={styles.radioOption}>
-            <input
-              type="radio"
-              name="payoutPref"
-              checked={payoutPref === 1}
-              onChange={() => {
-                setPayoutPref(1);
-                onSetPayoutPreference(1);
-              }}
-              className={styles.radioInput}
-            />
+          </div>
+          <div className={styles.radioOption} style={{ cursor: 'default' }}>
             <span className={styles.radioText}>
-              <strong>Opción B:</strong> {UI_STRINGS.STAKING.PREF_OPTION_B}
+              <strong>🪙 25.00% WBTC:</strong> {UI_STRINGS.STAKING.BASKET_WBTC}
             </span>
-          </label>
+          </div>
+          <div className={styles.radioOption} style={{ cursor: 'default' }}>
+            <span className={styles.radioText}>
+              <strong>🔷 12.50% WETH:</strong> {UI_STRINGS.STAKING.BASKET_WETH}
+            </span>
+          </div>
+          <div className={styles.radioOption} style={{ cursor: 'default' }}>
+            <span className={styles.radioText}>
+              <strong>🏛️ 12.50% ALPHA:</strong> {UI_STRINGS.STAKING.BASKET_ALPHA}
+            </span>
+          </div>
         </div>
 
         <div className={styles.buttonRow}>

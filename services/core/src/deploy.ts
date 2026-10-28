@@ -305,6 +305,17 @@ async function main() {
   });
   await publicClient.waitForTransactionReceipt({ hash: initTx });
 
+  // Configure Guarded Launch Safety TVL Cap ($100,000 USD limit)
+  const hSetCap = await walletClient.writeContract({
+    address: treasuryAddr,
+    abi: tmImplArtifact.abi,
+    functionName: 'setTvlCap',
+    args: [parseEther('100000')],
+    account
+  });
+  await publicClient.waitForTransactionReceipt({ hash: hSetCap });
+  console.log('[+] Configured Guarded Launch Safety TVL Cap: $100,000 USD.');
+
   const idTreasury = keccak256(toHex('TREASURY_MANAGER'));
   const hTreasury = await walletClient.writeContract({
     address: apAddr,
@@ -503,6 +514,39 @@ async function main() {
     account
   });
   await publicClient.waitForTransactionReceipt({ hash: setRyBreakerTx });
+
+  // Register RealYieldRouter in ProtocolAddressProvider so TreasuryManager recognizes it for mintCorporateFeeShares
+  const idRealYieldRouter = keccak256(toHex('REAL_YIELD_ROUTER'));
+  const hRyRouter = await walletClient.writeContract({
+    address: apAddr,
+    abi: apArtifact.abi,
+    functionName: 'setAddress',
+    args: [idRealYieldRouter, ryRouterAddr],
+    account
+  });
+  await publicClient.waitForTransactionReceipt({ hash: hRyRouter });
+  console.log(`[+] Registered REAL_YIELD_ROUTER in ProtocolAddressProvider.`);
+
+  // Configure Multi-Asset Basket (WBTC, WETH, ALPHA) and OracleHub on RealYieldRouter
+  const setBasketTx = await walletClient.writeContract({
+    address: ryRouterAddr,
+    abi: routerYieldArtifact.abi,
+    functionName: 'setBasketAssets',
+    args: [wbtcAddr, wethAddr, alphaTokenAddr],
+    account
+  });
+  await publicClient.waitForTransactionReceipt({ hash: setBasketTx });
+  console.log(`[+] Configured Universal Multi-Asset Basket (WBTC, WETH, ALPHA) on RealYieldRouter.`);
+
+  const setOracleTx = await walletClient.writeContract({
+    address: ryRouterAddr,
+    abi: routerYieldArtifact.abi,
+    functionName: 'setOracleConfig',
+    args: [oracleAddr, 100n],
+    account
+  });
+  await publicClient.waitForTransactionReceipt({ hash: setOracleTx });
+  console.log(`[+] Configured OracleHub on RealYieldRouter for dynamic basket pricing.`);
 
   const setCommunityVaultHash = await walletClient.writeContract({
     address: stakingAddr,
@@ -897,7 +941,8 @@ async function main() {
   // ─────────────────────────────────────────────────────────────────────────────
 
   // Write addresses to root .env file & frontend contracts.json
-  const envPath = path.resolve(process.cwd(), '.env');
+  const rootDir = path.resolve(__dirname, '../../..');
+  const envPath = path.resolve(rootDir, '.env');
   let envContent = '';
   if (fs.existsSync(envPath)) {
     envContent = fs.readFileSync(envPath, 'utf8');
@@ -940,7 +985,7 @@ async function main() {
   fs.writeFileSync(envPath, envContent.trim() + '\n', 'utf8');
 
   // Also write JSON artifact for frontend dynamic import
-  const jsonPath = path.resolve(process.cwd(), 'frontend/src/contracts.json');
+  const jsonPath = path.resolve(rootDir, 'frontend/src/contracts.json');
   const addressesJson = {
     USDC: usdcAddr,
     USDT: usdtAddr,
