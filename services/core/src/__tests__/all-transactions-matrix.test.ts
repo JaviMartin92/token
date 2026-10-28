@@ -129,6 +129,7 @@ async function runOmniTransactionMatrix() {
 
   // Tx 03: Redeem ALPHA -> Withdraw USDC
   try {
+    await publicClient.request({ method: 'evm_mine' as any });
     const redeemShares = parseUnits('100', 18);
     await user1Client.writeContract({ address: contracts.ALPHA_TOKEN, abi: ERC20_ABI, functionName: 'approve', args: [contracts.TREASURY, redeemShares] });
     const usdcBefore = await publicClient.readContract({ address: contracts.USDC, abi: ERC20_ABI, functionName: 'balanceOf', args: [user1Acc.address] });
