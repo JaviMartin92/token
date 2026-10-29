@@ -112,8 +112,8 @@ contract GovernorAlphaCentauriTest is Test {
         vm.stopPrank();
 
         assertEq(proposalId, 1);
-        (uint256 id, address proposer, uint256 startBlock, uint256 endBlock,,,,,,,) = governor.proposals(1);
-        (address target, uint256 val, bytes memory d, string memory desc) = governor.getProposalActions(1);
+        (uint256 id, address proposer,,,,,,,,,) = governor.proposals(1);
+        (address target,,, string memory desc) = governor.getProposalActions(1);
 
         assertEq(id, 1);
         assertEq(proposer, minProposer);

@@ -3,7 +3,6 @@
   "ignore": ["scripts/simulate_1year_horizon.ts"],
   "workspaces": {
     "frontend": {
-      "entry": ["src/main.tsx"],
       "project": ["src/**/*.{ts,tsx}"]
     },
     "services": {
@@ -11,20 +10,16 @@
         "core/src/deploy.ts",
         "core/src/index.ts",
         "core/src/seed_governance_proposal.ts",
-        "core/src/frontend-alignment-test.ts",
         "core/src/__tests__/**/*.ts"
       ],
       "project": ["core/src/**/*.ts"]
     }
   },
   "ignoreDependencies": [
-    "@playwright/test",
-    "vitest",
     "@prisma/client",
     "ioredis",
     "dotenv",
-    "ts-node",
-    "solhint"
+    "ts-node"
   ],
   "ignoreBinaries": [
     "docker-compose",

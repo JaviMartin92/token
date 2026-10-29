@@ -8,10 +8,11 @@ const ioredis_1 = __importDefault(require("ioredis"));
 const database_js_1 = require("./database.js");
 const ledger_js_1 = require("./ledger.js");
 const client_1 = require("@prisma/client");
+const strings_js_1 = require("./constants/strings.js");
 dotenv_1.default.config();
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 async function main() {
-    console.log('[*] Starting Alpha Centauri Core Management Service...');
+    console.log(strings_js_1.BACKEND_STRINGS.SERVICES.CORE_START);
     // 1. Database Connection
     await (0, database_js_1.connectDb)();
     // 2. Redis Subscription Setup
@@ -19,21 +20,21 @@ async function main() {
     const channel = 'alpha_centauri_events';
     redis.subscribe(channel, (err) => {
         if (err) {
-            console.error('[!] Failed to subscribe to Redis events channel:', err);
+            console.error(strings_js_1.BACKEND_STRINGS.SERVICES.REDIS_SUB_ERROR, err);
         }
         else {
-            console.log(`[+] Subscribed to real-time events channel: "${channel}"`);
+            console.log(strings_js_1.BACKEND_STRINGS.SERVICES.REDIS_SUB_SUCCESS(channel));
         }
     });
     redis.on('message', async (chan, msg) => {
         if (chan === channel) {
             try {
                 const event = JSON.parse(msg);
-                console.log(`[Event Received] ${event.type} - Tx: ${event.txHash}`);
+                console.log(strings_js_1.BACKEND_STRINGS.SERVICES.EVENT_RECEIVED(event.type, event.txHash));
                 await handleBlockchainEvent(event);
             }
             catch (error) {
-                console.error('[!] Error processing event message:', error);
+                console.error(strings_js_1.BACKEND_STRINGS.SERVICES.EVENT_PROCESS_ERROR, error);
             }
         }
     });
@@ -48,7 +49,7 @@ async function handleBlockchainEvent(event) {
             const { user, sharesBurned, assetAmountOut, feeCharged } = event.payload;
             // Calculate total assets redeemed in USD/USDC equivalent
             const burnedVal = (parseFloat(assetAmountOut) + parseFloat(feeCharged)).toString();
-            await (0, ledger_js_1.recordLedgerTransaction)(`User ${user} redeemed shares at NAV`, client_1.ReferenceType.REDEMPTION, txHash, [
+            await (0, ledger_js_1.recordLedgerTransaction)(strings_js_1.BACKEND_STRINGS.LEDGER.USER_REDEEM_DESC(user), client_1.ReferenceType.REDEMPTION, txHash, [
                 {
                     accountCode: 'USER_EQUITY',
                     debit: burnedVal,
@@ -72,7 +73,7 @@ async function handleBlockchainEvent(event) {
         }
         case 'CORPORATE_CONTRIBUTION_INJECTED': {
             const { amount, auditRef } = event.payload;
-            await (0, ledger_js_1.recordLedgerTransaction)(`Corporate contribution received: Ref ${auditRef}`, client_1.ReferenceType.CORP_INJECTION, txHash, [
+            await (0, ledger_js_1.recordLedgerTransaction)(strings_js_1.BACKEND_STRINGS.LEDGER.CORP_INJECTION_DESC(auditRef), client_1.ReferenceType.CORP_INJECTION, txHash, [
                 {
                     accountCode: 'TREASURY_LIQUID_USDC',
                     debit: amount,
@@ -93,7 +94,7 @@ async function handleBlockchainEvent(event) {
             const half = (parseFloat(tokensBought) / 2).toString();
             const otherHalf = (parseFloat(tokensBought) - parseFloat(half)).toString();
             // Double-entry record for the TWAP trade (representing assets movements)
-            await (0, ledger_js_1.recordLedgerTransaction)(`TWAP Buyback Step Executed for Order ${orderId}`, client_1.ReferenceType.REBALANCE, txHash, [
+            await (0, ledger_js_1.recordLedgerTransaction)(strings_js_1.BACKEND_STRINGS.LEDGER.TWAP_BUYBACK_DESC(orderId), client_1.ReferenceType.REBALANCE, txHash, [
                 {
                     accountCode: 'TREASURY_STAKED_NATIVE',
                     debit: half,
@@ -117,15 +118,15 @@ async function handleBlockchainEvent(event) {
         }
         case 'CIRCUIT_BREAKER_TRIGGERED': {
             const { asset, dropPercentage } = event.payload;
-            console.warn(`[WARNING] Circuit breaker triggered for asset ${asset} due to ${dropPercentage}% drop!`);
+            console.warn(strings_js_1.BACKEND_STRINGS.SERVICES.CIRCUIT_BREAKER_TRIGGERED(asset, dropPercentage));
             // Update internal status...
             break;
         }
         default:
-            console.log(`[Info] Unhandled event category: ${event.type}`);
+            console.log(strings_js_1.BACKEND_STRINGS.SERVICES.EVENT_UNHANDLED(event.type));
     }
 }
 main().catch((error) => {
-    console.error('[!] Core runtime crash:', error);
+    console.error(strings_js_1.BACKEND_STRINGS.SERVICES.CORE_CRASH, error);
 });
 //# sourceMappingURL=index.js.map

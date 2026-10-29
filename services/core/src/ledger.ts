@@ -55,23 +55,3 @@ export async function recordLedgerTransaction(
   });
 }
 
-/**
- * Validates and aggregates all trial balances to verify ledger integrity.
- */
-async function getTrialBalance() {
-  const entries = await prisma.ledgerEntry.findMany();
-  const balances: Record<string, { debits: number; credits: number; net: number }> = {};
-
-  for (const entry of entries) {
-    if (!balances[entry.accountCode]) {
-      balances[entry.accountCode] = { debits: 0, credits: 0, net: 0 };
-    }
-    const d = entry.debit.toNumber();
-    const c = entry.credit.toNumber();
-    balances[entry.accountCode].debits += d;
-    balances[entry.accountCode].credits += c;
-    balances[entry.accountCode].net += (d - c);
-  }
-
-  return balances;
-}

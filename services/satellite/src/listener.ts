@@ -41,19 +41,18 @@ export function startEventListener() {
       if (CONFIG.TREASURY_ADDRESS !== '0x0000000000000000000000000000000000000000') {
         const redemptionLogs = await client.getLogs({
           address: CONFIG.TREASURY_ADDRESS,
-          event: parseAbiItem('event Redeemed(address indexed user, uint256 sharesBurned, uint256 assetAmountOut, uint256 feeCharged)'),
+          event: parseAbiItem('event Redeemed(address indexed user, uint256 sharesAmount, uint256 usdcReturned)'),
           fromBlock,
           toBlock
         });
 
         for (const log of redemptionLogs) {
-          const { user, sharesBurned, assetAmountOut, feeCharged } = log.args;
+          const { user, sharesAmount, usdcReturned } = log.args;
           if (user) {
             publishEvent('TREASURY_REDEEMED', log.transactionHash, {
               user,
-              sharesBurned: sharesBurned?.toString(),
-              assetAmountOut: assetAmountOut?.toString(),
-              feeCharged: feeCharged?.toString(),
+              sharesBurned: sharesAmount?.toString(),
+              assetAmountOut: usdcReturned?.toString(),
             });
           }
         }
@@ -80,18 +79,18 @@ export function startEventListener() {
 
         const twapLogs = await client.getLogs({
           address: CONFIG.CORPORATE_CONTRIBUTION_ADDRESS,
-          event: parseAbiItem('event TwapStepExecuted(uint256 indexed orderId, uint256 tokensBought, uint256 costUsdc)'),
+          event: parseAbiItem('event TwapStepExecuted(uint256 indexed orderId, uint256 tokensBought, uint256 usdcSpent)'),
           fromBlock,
           toBlock
         });
 
         for (const log of twapLogs) {
-          const { orderId, tokensBought, costUsdc } = log.args;
+          const { orderId, tokensBought, usdcSpent } = log.args;
           if (orderId !== undefined) {
             publishEvent('TWAP_STEP_EXECUTED', log.transactionHash, {
               orderId: orderId?.toString(),
               tokensBought: tokensBought?.toString(),
-              costUsdc: costUsdc?.toString(),
+              costUsdc: usdcSpent?.toString(),
             });
           }
         }

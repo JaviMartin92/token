@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import Redis from 'ioredis';
-import { connectDb, prisma } from './database.js';
+import { connectDb } from './database.js';
 import { recordLedgerTransaction } from './ledger.js';
 import { ReferenceType } from '@prisma/client';
 import { BACKEND_STRINGS } from './constants/strings.js';

@@ -114,7 +114,7 @@ export const TransactionConfirmModal: React.FC<TransactionConfirmModalProps> = (
               className={`${styles.itemRow} ${item.isHighlight ? styles.itemHighlight : styles.itemNormal}`}
             >
               <span className="opacity-70">{item.label}:</span>
-              <div className="acp-flex-row-gap5">
+              <div className={styles.valueWithBadge}>
                 <span className={item.isHighlight ? styles.itemValHighlight : styles.itemValNormal}>{item.value}</span>
                 {item.badge && (
                   <span className={styles.itemBadge}>

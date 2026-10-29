@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.recordLedgerTransaction = recordLedgerTransaction;
-exports.getTrialBalance = getTrialBalance;
 const database_js_1 = require("./database.js");
 /**
  * Creates an audit-compliant double-entry ledger transaction.
@@ -38,23 +37,5 @@ async function recordLedgerTransaction(description, referenceType, referenceId, 
             entries: true,
         },
     });
-}
-/**
- * Validates and aggregates all trial balances to verify ledger integrity.
- */
-async function getTrialBalance() {
-    const entries = await database_js_1.prisma.ledgerEntry.findMany();
-    const balances = {};
-    for (const entry of entries) {
-        if (!balances[entry.accountCode]) {
-            balances[entry.accountCode] = { debits: 0, credits: 0, net: 0 };
-        }
-        const d = entry.debit.toNumber();
-        const c = entry.credit.toNumber();
-        balances[entry.accountCode].debits += d;
-        balances[entry.accountCode].credits += c;
-        balances[entry.accountCode].net += (d - c);
-    }
-    return balances;
 }
 //# sourceMappingURL=ledger.js.map

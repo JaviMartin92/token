@@ -57,7 +57,9 @@ export async function runTwapScheduler() {
         }
 
         try {
-          const contractOrderId = 0n; // In mock/integration testing, use first order index
+          // Resolve contract order ID dynamically from DB record (or fallback to 0n in mock mode)
+          const parsedId = Number(order.id);
+          const contractOrderId = !Number.isNaN(parsedId) ? BigInt(parsedId) : 0n;
 
           // Dispatch transaction to smart contract
           const hash = await walletClient.writeContract({

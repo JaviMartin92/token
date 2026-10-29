@@ -13,7 +13,7 @@ contract DeployTestnetMocks is Script {
         require(block.chainid != 1 && block.chainid != 8453, "Cannot deploy faucet on mainnet");
 
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address deployerAddress = vm.addr(deployerPrivateKey);
+        console.log("Deployer address:", vm.addr(deployerPrivateKey));
 
         vm.startBroadcast(deployerPrivateKey);
 

@@ -10,7 +10,7 @@ interface ITreasury {
     }
 
     event WeightsAdjusted(AssetWeights newWeights);
-    event Redeemed(address indexed user, uint256 sharesBurned, uint256 assetAmountOut, uint256 feeCharged);
+    event Redeemed(address indexed user, uint256 sharesAmount, uint256 usdcReturned);
     event Rebalanced(uint256 timestamp);
 
     /**

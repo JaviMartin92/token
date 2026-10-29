@@ -25,11 +25,3 @@ export declare function recordLedgerTransaction(description: string, referenceTy
     referenceType: import(".prisma/client").$Enums.ReferenceType;
     referenceId: string | null;
 }>;
-/**
- * Validates and aggregates all trial balances to verify ledger integrity.
- */
-export declare function getTrialBalance(): Promise<Record<string, {
-    debits: number;
-    credits: number;
-    net: number;
-}>>;

@@ -24,7 +24,6 @@
     "gas-struct-packing": "warn",
     "no-global-import": "off",
     "import-path-check": "off",
-    "use-natspec": "off",
     "gas-strict-inequalities": "off",
     "function-max-lines": "off",
     "immutable-vars-naming": "off",

@@ -87,10 +87,10 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({
 
         {/* Link Input Section */}
         <div className="margin-bottom-lg">
-          <label className="acp-label-sm font-semibold margin-bottom-xs">
+          <label className={`${styles.inputLabel} font-semibold margin-bottom-xs`}>
             {UI_STRINGS.MODALS.REFERRAL.LINK_LABEL}
           </label>
-          <div className="acp-flex-row-gap5">
+          <div className={styles.inputRow}>
             <input
               data-testid="referral-link-input"
               type="text"
@@ -110,7 +110,7 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({
 
         {/* Social Share Buttons */}
         <div>
-          <label className="acp-label-sm font-semibold text-center margin-bottom-sm">
+          <label className={`${styles.inputLabel} font-semibold text-center margin-bottom-sm`}>
             {UI_STRINGS.MODALS.REFERRAL.SOCIAL_SHARE_TITLE}
           </label>
           <div className={styles.socialGrid}>
