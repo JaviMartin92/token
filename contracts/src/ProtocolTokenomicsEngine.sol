@@ -7,6 +7,7 @@ import "./interfaces/IProtocolErrors.sol";
 
 /**
  * @title ProtocolTokenomicsEngine
+ * @author Alpha Centauri Architecture Team
  * @notice Centralized Master Math & Tokenomics Engine for Alpha Centauri Protocol.
  * @dev Enforces 100% mathematical consistency, decimal conversions, fee splits,
  *      bond discounts, LTV capacity, interest calculations, and Proof-of-Reserves solvency.
@@ -33,13 +34,56 @@ contract ProtocolTokenomicsEngine is AccessControl {
     uint256 public maxAprBps = 5000; // 50.00% Max APR
     uint256 public treasuryBorrowAprBps = 800; // 8.00% Fixed Treasury Borrow APR default
 
+    // Events
     event ParametersUpdated(string parameterGroup);
     event TreasuryBorrowAprUpdated(uint256 newAprBps);
 
+    /**
+     * @notice Initializes Tokenomics Engine with admin role
+     * @param initialOwner Protocol governance / timelock address
+     */
     constructor(address initialOwner) {
-        address admin = (initialOwner != address(0)) ? initialOwner : msg.sender;
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
+        if (initialOwner == address(0)) revert IProtocolErrors.ZeroAddress();
+        _grantRole(DEFAULT_ADMIN_ROLE, initialOwner);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, initialOwner);
+    }
+
+    /**
+     * @notice Updates the protocol fee schedule subject to strict safety caps
+     */
+    function setFeeParameters(
+        uint256 _depositFeeBps,
+        uint256 _redeemFeeBps,
+        uint256 _originationFeeBps,
+        uint256 _interestSpreadBps,
+        uint256 _ragequitPenaltyBps,
+        uint256 _mintFeeBps,
+        uint256 _referralFeeBps,
+        uint256 _stakingEntryFeeBps
+    ) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (
+            _depositFeeBps > 500 ||
+            _redeemFeeBps > 500 ||
+            _originationFeeBps > 500 ||
+            _interestSpreadBps > 3000 ||
+            _ragequitPenaltyBps > 3000 ||
+            _mintFeeBps > 500 ||
+            _referralFeeBps > 500 ||
+            _stakingEntryFeeBps > 500
+        ) {
+            revert IProtocolErrors.InvalidParameters();
+        }
+
+        depositFeeBps = _depositFeeBps;
+        redeemFeeBps = _redeemFeeBps;
+        originationFeeBps = _originationFeeBps;
+        interestSpreadBps = _interestSpreadBps;
+        ragequitPenaltyBps = _ragequitPenaltyBps;
+        mintFeeBps = _mintFeeBps;
+        referralFeeBps = _referralFeeBps;
+        stakingEntryFeeBps = _stakingEntryFeeBps;
+
+        emit ParametersUpdated("FEES");
     }
 
     // =========================================================================
@@ -61,6 +105,7 @@ contract ProtocolTokenomicsEngine is AccessControl {
         returns (DepositCalculation memory calc)
     {
         if (actualDepositedUsdc == 0) return calc;
+        if (redemptionTokenDecimals > 18) revert IProtocolErrors.InvalidParameters();
 
         calc.feeAmountUsdc = isRouterCall ? 0 : (actualDepositedUsdc * depositFeeBps) / BPS_DENOMINATOR;
         calc.netDepositedUsdc = actualDepositedUsdc - calc.feeAmountUsdc;
@@ -107,6 +152,7 @@ contract ProtocolTokenomicsEngine is AccessControl {
     ) external view returns (RedemptionCalculation memory calc) {
         if (sharesAmount == 0) revert IProtocolErrors.ZeroAmount();
         if (totalSharesSupply == 0) revert IProtocolErrors.ZeroTotalSupply();
+        if (redemptionTokenDecimals > 18) revert IProtocolErrors.InvalidParameters();
 
         calc.grossAssetValueUSD18 = (sharesAmount * totalNavUSD18) / totalSharesSupply;
         calc.feeChargedUSD18 = (calc.grossAssetValueUSD18 * redeemFeeBps) / BPS_DENOMINATOR;
@@ -212,7 +258,7 @@ contract ProtocolTokenomicsEngine is AccessControl {
         uint256 aprBps,
         uint256 durationDays
     ) external view returns (LoanCalculation memory calc) {
-        if (collateralValueUsd == 0) revert IProtocolErrors.ZeroAmount();
+        if (collateralValueUsd == 0 || requestedBorrowAmountUsd == 0) revert IProtocolErrors.ZeroAmount();
         if (aprBps > maxAprBps) revert IProtocolErrors.InvalidParameters();
 
         calc.maxBorrowAmount = (collateralValueUsd * maxLtvBps) / BPS_DENOMINATOR;

@@ -19,9 +19,11 @@ interface ICircuitBreakerRouter {
 
 /**
  * @title RealYieldRouter
+ * @author Alpha Centauri Architecture Team
  * @notice Universal Fee Router enforcing Pure DeFi MiCA Compliance & Universal Multi-Asset Real Yield Basket:
  *         - Fee Routing: 50% Strategic Reserve, 50% Community Real Yield (Liquid USDC).
  *         - Universal Payout Basket: 50% USDC + 25% WBTC + 12.5% WETH + 12.5% ALPHA (at current NAV).
+ * @dev Employs SafeERC20 zero-reset approvals to ensure full compatibility with USDT and non-standard tokens.
  */
 contract RealYieldRouter is AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -45,6 +47,7 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
 
     mapping(address => bool) public authorizedYieldCallers;
 
+    // --- Events ---
     event BasketAssetsUpdated(address indexed wbtc, address indexed weth, address indexed alphaToken);
     event RealYieldBasketClaimed(
         address indexed user,
@@ -57,6 +60,9 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
     event UniversalFeeRouted(
         address indexed feeToken, uint256 totalAmount, uint256 toTreasury, uint256 toCommunityYieldUsdc
     );
+    event ProtocolVaultsUpdated(address indexed treasuryBunker, address indexed communityYieldVault);
+    event OracleConfigUpdated(address indexed oracleHub, uint256 slippageBps);
+    event AuthorizedYieldCallerUpdated(address indexed caller, bool authorized);
     event ReserveFeeTierUpdated(uint24 oldTier, uint24 newTier);
     event CircuitBreakerUpdated(address oldBreaker, address newBreaker);
     event TokensSwept(address indexed token, address indexed to, uint256 amount);
@@ -68,6 +74,9 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
         _;
     }
 
+    /**
+     * @notice Initializes the fee router with core asset addresses and staking pool
+     */
     constructor(
         address _stablecoin,
         address _reserveAsset,
@@ -75,25 +84,37 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
         address _stakingPool,
         address _initialOwner
     ) {
+        if (_stablecoin == address(0) || _stakingPool == address(0) || _initialOwner == address(0)) {
+            revert IProtocolErrors.ZeroAddress();
+        }
+
         stablecoin = _stablecoin;
         reserveAsset = _reserveAsset;
         wbtc = _reserveAsset;
         swapRouter = _swapRouter;
         stakingPool = GovernanceStaking(_stakingPool);
 
-        address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
+        _grantRole(DEFAULT_ADMIN_ROLE, _initialOwner);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, _initialOwner);
     }
 
+    /**
+     * @notice Configures protocol vault destinations
+     * @param _treasuryBunker Address of the Treasury bunker vault
+     * @param _communityYieldVault Address of the Community Yield vault
+     */
     function setProtocolVaults(address _treasuryBunker, address _communityYieldVault)
         external
         onlyRole(ProtocolRoles.ADMIN_ROLE)
     {
         treasuryBunker = _treasuryBunker;
         communityYieldVault = _communityYieldVault;
+        emit ProtocolVaultsUpdated(_treasuryBunker, _communityYieldVault);
     }
 
+    /**
+     * @notice Sets addresses of the multi-asset real yield payout basket
+     */
     function setBasketAssets(address _wbtc, address _weth, address _alphaToken)
         external
         onlyRole(ProtocolRoles.ADMIN_ROLE)
@@ -104,12 +125,18 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
         emit BasketAssetsUpdated(_wbtc, _weth, _alphaToken);
     }
 
+    /**
+     * @notice Configures the circuit breaker contract
+     */
     function setCircuitBreaker(address _circuitBreaker) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         address old = circuitBreaker;
         circuitBreaker = _circuitBreaker;
         emit CircuitBreakerUpdated(old, _circuitBreaker);
     }
 
+    /**
+     * @notice Configures Uniswap v3 fee tier for reserve swaps
+     */
     function setReserveFeeTier(uint24 _feeTier) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         if (_feeTier != 100 && _feeTier != 500 && _feeTier != 3000 && _feeTier != 10000) {
             revert IProtocolErrors.InvalidParameters();
@@ -119,6 +146,9 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
         emit ReserveFeeTierUpdated(old, _feeTier);
     }
 
+    /**
+     * @notice Rescues accidentally sent tokens
+     */
     function sweepTokens(address token, address to) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         if (token == address(0) || to == address(0)) revert IProtocolErrors.ZeroAddress();
         uint256 bal = IERC20(token).balanceOf(address(this));
@@ -127,13 +157,23 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
         emit TokensSwept(token, to, bal);
     }
 
+    /**
+     * @notice Authorizes or revokes an external contract to trigger yield routing
+     */
     function setAuthorizedYieldCaller(address caller, bool authorized) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (caller == address(0)) revert IProtocolErrors.ZeroAddress();
         authorizedYieldCallers[caller] = authorized;
+        emit AuthorizedYieldCallerUpdated(caller, authorized);
     }
 
+    /**
+     * @notice Configures the oracle hub and max slippage tolerance (max 10% / 1000 bps)
+     */
     function setOracleConfig(address _oracleHub, uint256 _slippageBps) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (_slippageBps > 1000) revert IProtocolErrors.InvalidParameters();
         oracleHub = _oracleHub;
         slippageToleranceBps = _slippageBps;
+        emit OracleConfigUpdated(_oracleHub, _slippageBps);
     }
 
     function _isAssetFrozen(address asset) internal view returns (bool) {
@@ -172,12 +212,14 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
 
         if (communityShare > 0) {
             if (communityYieldVault != address(0)) {
-                IERC20(feeToken).approve(communityYieldVault, communityShare);
+                IERC20(feeToken).safeApprove(communityYieldVault, 0);
+                IERC20(feeToken).safeApprove(communityYieldVault, communityShare);
                 try CommunityYieldVault(communityYieldVault).depositYield(communityShare) {} catch {
                     IERC20(feeToken).safeTransfer(communityYieldVault, communityShare);
                 }
             } else if (address(stakingPool) != address(0) && feeToken == stablecoin) {
-                IERC20(feeToken).approve(address(stakingPool), communityShare);
+                IERC20(feeToken).safeApprove(address(stakingPool), 0);
+                IERC20(feeToken).safeApprove(address(stakingPool), communityShare);
                 try stakingPool.notifyRewardAmount(communityShare) {} catch {
                     IERC20(feeToken).safeTransfer(address(stakingPool), communityShare);
                 }
@@ -221,7 +263,8 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
                     }
                 } catch {}
             }
-            IERC20(stablecoin).approve(swapRouter, wbtcShare);
+            IERC20(stablecoin).safeApprove(swapRouter, 0);
+            IERC20(stablecoin).safeApprove(swapRouter, wbtcShare);
             try ISwapRouter(swapRouter).exactInputSingle(
                 ISwapRouter.ExactInputSingleParams({
                     tokenIn: stablecoin,
@@ -253,7 +296,8 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
                     }
                 } catch {}
             }
-            IERC20(stablecoin).approve(swapRouter, wethShare);
+            IERC20(stablecoin).safeApprove(swapRouter, 0);
+            IERC20(stablecoin).safeApprove(swapRouter, wethShare);
             try ISwapRouter(swapRouter).exactInputSingle(
                 ISwapRouter.ExactInputSingleParams({
                     tokenIn: stablecoin,
@@ -276,7 +320,8 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
 
         // 3. ALPHA Allocation (12.50% at current NAV)
         if (treasuryBunker != address(0) && alphaToken != address(0)) {
-            IERC20(stablecoin).approve(treasuryBunker, alphaShare);
+            IERC20(stablecoin).safeApprove(treasuryBunker, 0);
+            IERC20(stablecoin).safeApprove(treasuryBunker, alphaShare);
             try ITreasury(treasuryBunker).mintCorporateFeeShares(alphaShare) returns (uint256 mintedShares) {
                 alphaPaid = mintedShares;
                 IERC20(alphaToken).safeTransfer(msg.sender, mintedShares);

@@ -15,15 +15,17 @@ import "./interfaces/IProtocolErrors.sol";
 
 /**
  * @title TreasuryReserveManager
- * @notice Production Reserve Execution Manager connecting Treasury.sol to:
+ * @author Alpha Centauri Architecture Team
+ * @notice Production Reserve Execution Manager connecting Treasury to:
  *         1. 1inch V5 Aggregator for zero-slippage / lowest fee DEX swaps (USDC -> WBTC / WETH).
- *         2. Lido wstETH for 60% Liquid Ethereum Staking (4.20% APY).
- *         3. Lombard LBTC for 60% Liquid Bitcoin Staking (3.80% APY).
- *         4. Morpho Blue MetaMorpho Vaults for 80% Stablecoin Yield (6.45% APY).
- *         5. P2P Lending Market for 20% Direct Treasury Credit Line (8.00% APR).
+ *         2. Lido wstETH for Liquid Ethereum Staking.
+ *         3. Lombard LBTC for Liquid Bitcoin Staking.
+ *         4. Morpho Blue MetaMorpho Vaults for Stablecoin Yield (6.45% APY).
+ *         5. P2P Lending Market for Direct Treasury Credit Line (8.00% APR).
  */
 contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
+
     address public treasury;
     address public usdcToken;
     address public wbtcToken;
@@ -37,21 +39,28 @@ contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
     address public lombardLBTC = 0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd; // LBTC Arbitrum
     address public morphoUsdcVault = 0x488102554708C23C0227d8D86f4A2fAffbb27357;
 
-    function setOracleRouter(address _oracleRouter) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
-        oracleRouter = _oracleRouter;
-    }
-
     uint256 public totalRebalancedVolume;
     uint256 public lastProductionRebalanceTimestamp;
 
+    // --- Events ---
     event ProductionRebalanceExecuted(
         uint256 totalUsdcAllocated, uint256 liquidLoansPool, uint256 morphoVaultDeposit, uint256 timestamp
     );
+    event ProductionAddressesUpdated(address oneInch, address lido, address lombard, address morpho);
+    event OracleRouterUpdated(address indexed oracleRouter);
+    event TokensSwept(address indexed token, address indexed to, uint256 amount);
 
+    /**
+     * @notice Initializes TreasuryReserveManager with core tokens and governance
+     */
     constructor(address _treasury, address _usdcToken, address _wbtcToken, address _wethToken, address _initialOwner) {
-        address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
+        if (_treasury == address(0) || _usdcToken == address(0) || _initialOwner == address(0)) {
+            revert IProtocolErrors.ZeroAddress();
+        }
+
+        _grantRole(DEFAULT_ADMIN_ROLE, _initialOwner);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, _initialOwner);
+
         treasury = _treasury;
         usdcToken = _usdcToken;
         wbtcToken = _wbtcToken;
@@ -59,6 +68,17 @@ contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
         lastProductionRebalanceTimestamp = block.timestamp;
     }
 
+    /**
+     * @notice Configures the oracle router address
+     */
+    function setOracleRouter(address _oracleRouter) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        oracleRouter = _oracleRouter;
+        emit OracleRouterUpdated(_oracleRouter);
+    }
+
+    /**
+     * @notice Updates external DeFi protocol addresses on Arbitrum
+     */
     function setProductionAddresses(address _oneInch, address _lido, address _lombard, address _morpho)
         external
         onlyRole(ProtocolRoles.ADMIN_ROLE)
@@ -67,10 +87,23 @@ contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
         lidoWstETH = _lido;
         lombardLBTC = _lombard;
         morphoUsdcVault = _morpho;
+        emit ProductionAddressesUpdated(_oneInch, _lido, _lombard, _morpho);
     }
 
     /**
-     * @notice Executes 1-click production rebalance allocating 20% to liquid P2P reserve line and 80% to Morpho Blue
+     * @notice Sweeps accidentally sent tokens
+     */
+    function sweepTokens(address token, address to) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (token == address(0) || to == address(0)) revert IProtocolErrors.ZeroAddress();
+        uint256 bal = IERC20(token).balanceOf(address(this));
+        if (bal == 0) revert IProtocolErrors.InvalidAmount();
+        IERC20(token).safeTransfer(to, bal);
+        emit TokensSwept(token, to, bal);
+    }
+
+    /**
+     * @notice Executes 1-click production rebalance allocating 10% to liquid P2P reserve line and 90% to Morpho Blue
+     * @param usdcAmount Total USDC amount to deploy
      */
     function executeProductionRebalance(uint256 usdcAmount) external nonReentrant returns (bool) {
         if (usdcAmount == 0) revert IProtocolErrors.ZeroAmount();
@@ -83,8 +116,9 @@ contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
         IERC20(usdcToken).safeTransfer(treasury, liquidReserve10);
 
         // Deposit 90% to Morpho Blue Vault if configured
-        if (morphoUsdcVault.code.length > 0) {
-            IERC20(usdcToken).approve(morphoUsdcVault, morphoVault90);
+        if (morphoUsdcVault != address(0) && morphoUsdcVault.code.length > 0) {
+            IERC20(usdcToken).safeApprove(morphoUsdcVault, 0);
+            IERC20(usdcToken).safeApprove(morphoUsdcVault, morphoVault90);
             try IMorphoVault(morphoUsdcVault).deposit(morphoVault90, treasury) {
                 // Morpho deposit successful
             } catch {

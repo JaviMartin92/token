@@ -16,17 +16,24 @@ interface ISequencerUptimeFeed {
 
 /**
  * @title OracleHub
- * @notice Centralized Oracle manager for fetching asset prices and checking staleness.
- *         Supports primary Chainlink feeds, secondary Pyth/Fallback feeds, and L2 Sequencer Uptime verification.
- * @dev Invariant: Ensures asset price valuations > 0 and fresh within oracleStalenessLimit.
+ * @author Alpha Centauri Architecture Team
+ * @notice Centralized institutional oracle hub for collateral valuation and treasury NAV pricing.
+ *         Supports primary Chainlink feeds, secondary fallback feeds with divergence guards,
+ *         and Arbitrum L2 Sequencer Uptime verification with automated post-restart grace period.
+ * @dev Invariants:
+ *      1. Valuation is always fresh within `oracleStalenessLimit`.
+ *      2. Prices must be strictly positive and from completed rounds (`answeredInRound >= roundId`).
+ *      3. Secondary fallback is rejected if price diverges > 5% (500 bps) from last primary.
+ *      4. If Arbitrum sequencer is down or in grace period, state-modifying pricing calls revert.
  */
 contract OracleHub is AccessControl {
-    // Domain Custom Errors
+    // --- Domain Custom Errors ---
     error SequencerDown();
     error GracePeriodNotElapsed();
     error AssetNotTracked();
     error PriceDivergenceExceeded(uint256 diffBps, uint256 maxBps);
 
+    // --- State Variables & Immutables ---
     ProtocolAddressProvider public immutable addressProvider;
 
     address[] public trackedAssets;
@@ -40,22 +47,30 @@ contract OracleHub is AccessControl {
     uint256 public constant MAX_DIVERGENCE_BPS = 500; // 5% max allowed divergence between primary and secondary
     uint256 public oracleStalenessLimit = 3600; // 1 hour default
 
+    // --- Events ---
     event OracleStalenessUpdated(uint256 newLimit);
     event AssetFeedUpdated(address indexed asset, address indexed feed, address indexed secondaryFeed, uint8 decimals);
+    event AssetFeedRemoved(address indexed asset);
     event SequencerUptimeFeedUpdated(address indexed feed);
 
+    /**
+     * @notice Initializes OracleHub with address provider and initial administrator
+     * @param _addressProvider Address provider registry
+     * @param initialAdmin Protocol timelock or governance administrator
+     */
     constructor(ProtocolAddressProvider _addressProvider, address initialAdmin) {
-        if (address(_addressProvider) == address(0)) revert IProtocolErrors.ZeroAddressProvider();
+        if (address(_addressProvider) == address(0) || initialAdmin == address(0)) {
+            revert IProtocolErrors.ZeroAddress();
+        }
         addressProvider = _addressProvider;
-        address admin = (initialAdmin != address(0)) ? initialAdmin : msg.sender;
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
-        _grantRole(ProtocolRoles.ORACLE_MANAGER_ROLE, admin);
+        _grantRole(DEFAULT_ADMIN_ROLE, initialAdmin);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, initialAdmin);
+        _grantRole(ProtocolRoles.ORACLE_MANAGER_ROLE, initialAdmin);
     }
 
     /**
      * @notice Updates the oracle price feed staleness limit.
-     * @param limit New staleness limit in seconds.
+     * @param limit New staleness limit in seconds (max 1 day).
      */
     function setOracleStalenessLimit(uint256 limit) external onlyRole(ProtocolRoles.ORACLE_MANAGER_ROLE) {
         if (limit == 0 || limit > 1 days) revert IProtocolErrors.InvalidParameters();
@@ -64,8 +79,8 @@ contract OracleHub is AccessControl {
     }
 
     /**
-     * @notice Sets the L2 Sequencer Uptime Feed address.
-     * @param feed Sequencer uptime feed contract address.
+     * @notice Sets the Arbitrum L2 Sequencer Uptime Feed address.
+     * @param feed Sequencer uptime feed contract address (or address(0) to disable).
      */
     function setSequencerUptimeFeed(address feed) external onlyRole(ProtocolRoles.ORACLE_MANAGER_ROLE) {
         sequencerUptimeFeed = feed;
@@ -77,13 +92,14 @@ contract OracleHub is AccessControl {
      * @param asset Target asset address.
      * @param feed Primary Chainlink price feed address.
      * @param secondaryFeed Secondary Pyth/Fallback feed address (optional, zero if none).
-     * @param decimals_ Underlying asset decimals.
+     * @param decimals_ Underlying asset decimals (1 to 30).
      */
     function setTrackedAsset(address asset, address feed, address secondaryFeed, uint8 decimals_)
         public
         onlyRole(ProtocolRoles.ORACLE_MANAGER_ROLE)
     {
         if (asset == address(0) || feed == address(0)) revert IProtocolErrors.ZeroAddress();
+        if (decimals_ == 0 || decimals_ > 30) revert IProtocolErrors.InvalidParameters();
 
         if (priceFeeds[asset] == address(0)) {
             trackedAssets.push(asset);
@@ -95,13 +111,40 @@ contract OracleHub is AccessControl {
     }
 
     /**
+     * @notice Removes an asset from the tracked registry
+     * @param asset Asset address to delist
+     */
+    function removeTrackedAsset(address asset) external onlyRole(ProtocolRoles.ORACLE_MANAGER_ROLE) {
+        if (asset == address(0)) revert IProtocolErrors.ZeroAddress();
+        if (priceFeeds[asset] == address(0)) revert AssetNotTracked();
+
+        delete priceFeeds[asset];
+        delete secondaryPriceFeeds[asset];
+        delete assetDecimals[asset];
+        delete lastValidPrimaryPrice18[asset];
+
+        uint256 len = trackedAssets.length;
+        for (uint256 i = 0; i < len; i++) {
+            if (trackedAssets[i] == asset) {
+                trackedAssets[i] = trackedAssets[len - 1];
+                trackedAssets.pop();
+                break;
+            }
+        }
+        emit AssetFeedRemoved(asset);
+    }
+
+    /**
      * @notice Returns true if the L2 Sequencer is down or currently within the 1-hour post-restart grace period.
      */
     function isSequencerGracePeriod() public view returns (bool) {
         if (sequencerUptimeFeed == address(0)) return false;
         try ISequencerUptimeFeed(sequencerUptimeFeed).latestRoundData() returns (
-            uint80, int256 answer, uint256 startedAt, uint256, uint80
+            uint80 roundId, int256 answer, uint256 startedAt, uint256, uint80 answeredInRound
         ) {
+            if (roundId == 0 || startedAt == 0 || startedAt > block.timestamp || answeredInRound < roundId) {
+                return true;
+            }
             if (answer != 0) return true; // Sequencer is down
             return (block.timestamp - startedAt < GRACE_PERIOD_TIME); // In grace period
         } catch {
@@ -114,8 +157,11 @@ contract OracleHub is AccessControl {
      */
     function checkSequencerActive() public view {
         if (sequencerUptimeFeed != address(0)) {
-            (, int256 answer,,,) = ISequencerUptimeFeed(sequencerUptimeFeed).latestRoundData();
-            if (answer != 0) revert SequencerDown();
+            (uint80 roundId, int256 answer, uint256 startedAt,, uint80 answeredInRound) =
+                ISequencerUptimeFeed(sequencerUptimeFeed).latestRoundData();
+            if (roundId == 0 || startedAt == 0 || startedAt > block.timestamp || answeredInRound < roundId || answer != 0) {
+                revert SequencerDown();
+            }
         }
     }
 
@@ -124,19 +170,34 @@ contract OracleHub is AccessControl {
      */
     function checkSequencerUptime() public view {
         if (sequencerUptimeFeed != address(0)) {
-            (, int256 answer, uint256 startedAt,,) = ISequencerUptimeFeed(sequencerUptimeFeed).latestRoundData();
-            bool isSequencerUp = answer == 0;
-            if (!isSequencerUp) revert SequencerDown();
+            (uint80 roundId, int256 answer, uint256 startedAt,, uint80 answeredInRound) =
+                ISequencerUptimeFeed(sequencerUptimeFeed).latestRoundData();
+            if (roundId == 0 || startedAt == 0 || startedAt > block.timestamp || answeredInRound < roundId) {
+                revert SequencerDown();
+            }
+            if (answer != 0) revert SequencerDown();
             uint256 timeSinceUp = block.timestamp - startedAt;
             if (timeSinceUp < GRACE_PERIOD_TIME) revert GracePeriodNotElapsed();
         }
     }
 
+    /**
+     * @notice Caches the latest valid primary price for an asset for subsequent divergence checks
+     * @param asset Target asset address
+     */
     function updatePrimaryPriceCache(address asset) public {
         address primaryFeed = priceFeeds[asset];
         if (primaryFeed != address(0)) {
-            try IAggregatorV3(primaryFeed).latestRoundData() returns (uint80, int256 p, uint256, uint256 u, uint80) {
-                if (p > 0 && block.timestamp >= u && block.timestamp - u <= oracleStalenessLimit) {
+            try IAggregatorV3(primaryFeed).latestRoundData() returns (
+                uint80 roundId, int256 p, uint256, uint256 u, uint80 answeredInRound
+            ) {
+                if (
+                    p > 0 &&
+                    u > 0 &&
+                    block.timestamp >= u &&
+                    block.timestamp - u <= oracleStalenessLimit &&
+                    answeredInRound >= roundId
+                ) {
                     uint8 pDec = IAggregatorV3(primaryFeed).decimals();
                     lastValidPrimaryPrice18[asset] = (uint256(p) * 10 ** 18) / (10 ** pDec);
                 }
@@ -158,8 +219,16 @@ contract OracleHub is AccessControl {
         uint256 updatedAt;
         bool primaryValid = false;
 
-        try IAggregatorV3(primaryFeed).latestRoundData() returns (uint80, int256 p, uint256, uint256 u, uint80) {
-            if (p > 0 && block.timestamp >= u && block.timestamp - u <= oracleStalenessLimit) {
+        try IAggregatorV3(primaryFeed).latestRoundData() returns (
+            uint80 roundId, int256 p, uint256, uint256 u, uint80 answeredInRound
+        ) {
+            if (
+                p > 0 &&
+                u > 0 &&
+                block.timestamp >= u &&
+                block.timestamp - u <= oracleStalenessLimit &&
+                answeredInRound >= roundId
+            ) {
                 price = p;
                 updatedAt = u;
                 primaryValid = true;
@@ -174,14 +243,19 @@ contract OracleHub is AccessControl {
         } else {
             address activeFeed = secondaryPriceFeeds[asset];
             if (activeFeed == address(0)) revert IProtocolErrors.PriceFeedNotSet();
-            (, price,, updatedAt,) = IAggregatorV3(activeFeed).latestRoundData();
-            if (price <= 0) revert IProtocolErrors.InvalidPrice();
-            if (block.timestamp < updatedAt || block.timestamp - updatedAt > oracleStalenessLimit) {
-                revert IProtocolErrors.StalePriceFeed(updatedAt, oracleStalenessLimit);
+
+            (uint80 sRoundId, int256 sPrice,, uint256 sUpdatedAt, uint80 sAnsweredInRound) =
+                IAggregatorV3(activeFeed).latestRoundData();
+
+            if (sPrice <= 0 || sUpdatedAt == 0 || block.timestamp < sUpdatedAt || sAnsweredInRound < sRoundId) {
+                revert IProtocolErrors.InvalidPrice();
+            }
+            if (block.timestamp - sUpdatedAt > oracleStalenessLimit) {
+                revert IProtocolErrors.StalePriceFeed(sUpdatedAt, oracleStalenessLimit);
             }
 
             uint8 sDec = IAggregatorV3(activeFeed).decimals();
-            priceBase18 = (uint256(price) * 10 ** 18) / (10 ** sDec);
+            priceBase18 = (uint256(sPrice) * 10 ** 18) / (10 ** sDec);
 
             // AC-04: Divergence verification against last known primary price
             uint256 lastPrimary = lastValidPrimaryPrice18[asset];

@@ -11,22 +11,26 @@ import "./interfaces/IProtocolErrors.sol";
 
 /**
  * @title FounderReserveVestingVault
- * @notice Dedicated vesting vault for the protocol founder / owner.
- *         Releases are strictly tied to treasury reserve solvency:
+ * @notice Dedicated vesting vault for the protocol founder / core contributors.
+ *         Releases are strictly tied to treasury reserve solvency (pure DeFi incentives alignment):
  *         - Claims only allowed when Solvency Ratio > 100% (Assets > Liabilities)
  *         - Capped at maximum 10% of the reserve surplus (Assets - Liabilities) converted to ALPHA at NAV
  *         - Minimum 72-hour cooldown between successive claims
+ *         - Total hard cap of 100,000 ALPHA
  */
 contract FounderReserveVestingVault is AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    // Custom Errors
+    // --- Domain Custom Errors ---
     error NoReserveSurplus(uint256 totalAssetsUSD, uint256 totalLiabilitiesUSD);
     error CooldownActive(uint256 nextAvailableTimestamp);
     error ExceedsRemainingAllocation(uint256 attempted, uint256 remaining);
     error AllocationExhausted();
     error UnauthorizedBeneficiary();
+    error TreasuryNotConfigured();
+    error InsufficientVaultBalance(uint256 requested, uint256 available);
 
+    // --- Immutables & State Variables ---
     IERC20 public immutable alphaToken;
     address public treasuryManager;
     address public beneficiary;
@@ -38,6 +42,7 @@ contract FounderReserveVestingVault is AccessControl, ReentrancyGuard {
     uint256 public totalClaimed;
     uint256 public lastClaimTimestamp;
 
+    // --- Events ---
     event AlphaClaimed(
         address indexed beneficiary,
         uint256 amountAlpha,
@@ -47,29 +52,50 @@ contract FounderReserveVestingVault is AccessControl, ReentrancyGuard {
     event BeneficiaryUpdated(address indexed oldBeneficiary, address indexed newBeneficiary);
     event TreasuryManagerUpdated(address indexed oldTreasury, address indexed newTreasury);
 
+    /**
+     * @notice Initializes the vesting vault with immutables and governance parameters
+     * @param _alphaToken Address of the ALPHA token
+     * @param _treasuryManager Address of the TreasuryManager contract
+     * @param _beneficiary Recipient address for claimed tokens
+     * @param _initialAdmin Protocol timelock or admin address
+     */
     constructor(
         address _alphaToken,
         address _treasuryManager,
         address _beneficiary,
         address _initialAdmin
     ) {
-        if (_alphaToken == address(0) || _beneficiary == address(0)) revert IProtocolErrors.ZeroAddress();
+        if (
+            _alphaToken == address(0) ||
+            _treasuryManager == address(0) ||
+            _beneficiary == address(0) ||
+            _initialAdmin == address(0)
+        ) {
+            revert IProtocolErrors.ZeroAddress();
+        }
 
-        address admin = (_initialAdmin != address(0)) ? _initialAdmin : msg.sender;
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
+        _grantRole(DEFAULT_ADMIN_ROLE, _initialAdmin);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, _initialAdmin);
 
         alphaToken = IERC20(_alphaToken);
         treasuryManager = _treasuryManager;
         beneficiary = _beneficiary;
     }
 
+    /**
+     * @notice Updates the TreasuryManager contract address
+     * @param _treasuryManager New treasury address
+     */
     function setTreasuryManager(address _treasuryManager) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         if (_treasuryManager == address(0)) revert IProtocolErrors.ZeroAddress();
         emit TreasuryManagerUpdated(treasuryManager, _treasuryManager);
         treasuryManager = _treasuryManager;
     }
 
+    /**
+     * @notice Updates the beneficiary address
+     * @param _newBeneficiary New beneficiary address
+     */
     function setBeneficiary(address _newBeneficiary) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         if (_newBeneficiary == address(0)) revert IProtocolErrors.ZeroAddress();
         emit BeneficiaryUpdated(beneficiary, _newBeneficiary);
@@ -140,6 +166,14 @@ contract FounderReserveVestingVault is AccessControl, ReentrancyGuard {
             revert UnauthorizedBeneficiary();
         }
 
+        if (totalClaimed >= TOTAL_ALLOCATION) {
+            revert AllocationExhausted();
+        }
+
+        if (treasuryManager == address(0)) {
+            revert TreasuryNotConfigured();
+        }
+
         (
             uint256 claimableAlpha,
             uint256 surplusUSD,
@@ -156,6 +190,11 @@ contract FounderReserveVestingVault is AccessControl, ReentrancyGuard {
         }
 
         claimedAmount = claimableAlpha;
+        uint256 vaultBal = alphaToken.balanceOf(address(this));
+        if (vaultBal < claimedAmount) {
+            revert InsufficientVaultBalance(claimedAmount, vaultBal);
+        }
+
         totalClaimed += claimedAmount;
         lastClaimTimestamp = block.timestamp;
 

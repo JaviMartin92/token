@@ -18,12 +18,16 @@ interface IGovStakingForVault {
 
 /**
  * @title VestedDiscountVault
- * @notice Time-vested discount vault that allows purchasing assets with dynamic discounts based on lock duration.
+ * @author Alpha Centauri Architecture Team
+ * @notice Time-vested discount vault that allows purchasing bond positions with dynamic
+ *         discounts based on lock duration (1 to 5 years).
+ * @dev Positions are minted as ERC-721 NFTs. Early exits (ragequit) incur a 15% penalty.
+ *      Tracks present debt obligations to guarantee treasury invariant ΔNAV >= 0.
  */
 contract VestedDiscountVault is AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    // Domain Custom Errors
+    // --- Domain Custom Errors ---
     error InactivePosition();
     error CircuitBreakerActive();
     error TvlCapExceeded(uint256 attempted, uint256 cap);
@@ -39,19 +43,12 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
     address public govToken;
     address public circuitBreaker;
     address public tokenomicsEngine;
+    address public governanceStaking;
 
     uint256 public tvlCap = 10_000_000 * 10 ** 6; // Default 10M cap for Sandbox (USDC 6 decimals)
     uint256 public totalInvested;
     uint256 public totalPresentObligation;
     mapping(uint256 => uint256) public bondPresentObligation;
-
-    function setTokenomicsEngine(address _tokenomicsEngine) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
-        tokenomicsEngine = _tokenomicsEngine;
-    }
-
-    function setCircuitBreaker(address _circuitBreaker) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
-        circuitBreaker = _circuitBreaker;
-    }
 
     uint256 public baseYieldRateBps = 500; // 5.00% per year (5% 1yr, 10% 2yr, 15% 3yr, 20% 4yr, 25% 5yr)
     uint256 public haircutBps = 2000; // 20% haircut on yield
@@ -62,7 +59,9 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
     uint256 public constant RAGEQUIT_PENALTY_BPS = 1500; // 15%
 
     mapping(address => address) public referrers; // referrer tracking
+    mapping(uint256 => bool) public isVestedBond;
 
+    // --- Events ---
     event BondPurchased(
         address indexed buyer,
         uint256 indexed tokenId,
@@ -74,7 +73,14 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
     event Ragequitted(uint256 indexed tokenId, address indexed user, uint256 returnedAmount, uint256 penaltyTotal);
     event MaturedClaimed(uint256 indexed tokenId, address indexed user, uint256 principalAmount);
     event TvlCapUpdated(uint256 newCap);
+    event TokenomicsEngineUpdated(address indexed newEngine);
+    event CircuitBreakerUpdated(address indexed newBreaker);
+    event GovernanceStakingUpdated(address indexed newStaking);
+    event ProtocolVaultsUpdated(address indexed treasuryBunker, address indexed realYieldRouter);
 
+    /**
+     * @notice Initializes the vested discount vault with core dependencies
+     */
     constructor(
         address _stablecoin,
         address _positionNFT,
@@ -83,9 +89,13 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         address _govToken,
         address _initialOwner
     ) {
-        address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
+        if (_stablecoin == address(0) || _positionNFT == address(0) || _initialOwner == address(0)) {
+            revert IProtocolErrors.ZeroAddress();
+        }
+
+        _grantRole(DEFAULT_ADMIN_ROLE, _initialOwner);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, _initialOwner);
+
         stablecoin = _stablecoin;
         positionNFT = VaultPositionNFT(_positionNFT);
         treasuryBunker = _treasuryBunker;
@@ -93,12 +103,55 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         govToken = _govToken;
     }
 
-    address public governanceStaking;
-
-    function setGovernanceStaking(address _governanceStaking) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
-        governanceStaking = _governanceStaking;
+    /**
+     * @notice Updates the maximum TVL deposit cap
+     * @param newCap New cap in stablecoin units (must be >= current totalInvested)
+     */
+    function setTvlCap(uint256 newCap) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (newCap < totalInvested) revert IProtocolErrors.InvalidParameters();
+        tvlCap = newCap;
+        emit TvlCapUpdated(newCap);
     }
 
+    /**
+     * @notice Updates the Tokenomics Engine address
+     */
+    function setTokenomicsEngine(address _tokenomicsEngine) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        tokenomicsEngine = _tokenomicsEngine;
+        emit TokenomicsEngineUpdated(_tokenomicsEngine);
+    }
+
+    /**
+     * @notice Updates the Circuit Breaker contract address
+     */
+    function setCircuitBreaker(address _circuitBreaker) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        circuitBreaker = _circuitBreaker;
+        emit CircuitBreakerUpdated(_circuitBreaker);
+    }
+
+    /**
+     * @notice Updates the Governance Staking contract address
+     */
+    function setGovernanceStaking(address _governanceStaking) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        governanceStaking = _governanceStaking;
+        emit GovernanceStakingUpdated(_governanceStaking);
+    }
+
+    /**
+     * @notice Configures protocol vault destinations
+     */
+    function setProtocolVaults(address _treasuryBunker, address _realYieldRouter)
+        external
+        onlyRole(ProtocolRoles.ADMIN_ROLE)
+    {
+        treasuryBunker = _treasuryBunker;
+        realYieldRouter = _realYieldRouter;
+        emit ProtocolVaultsUpdated(_treasuryBunker, _realYieldRouter);
+    }
+
+    /**
+     * @notice Calculates the total discount in basis points for a user and lock duration
+     */
     function calculateDiscountBps(address user, uint256 lockYears) public view returns (uint256 discountBps) {
         if (lockYears < 1 || lockYears > 5) revert IProtocolErrors.InvalidLockYears();
 
@@ -128,8 +181,13 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         }
     }
 
-    mapping(uint256 => bool) public isVestedBond;
-
+    /**
+     * @notice Purchases a time-vested bond position NFT with discounted price
+     * @param principalAmount Full face value of the bond
+     * @param lockYears Lockup period (1 to 5 years)
+     * @param referrer Referral address (optional)
+     * @return tokenId Newly minted position NFT ID
+     */
     function buyVestedBond(uint256 principalAmount, uint256 lockYears, address referrer)
         external
         nonReentrant
@@ -207,6 +265,10 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         emit BondPurchased(msg.sender, tokenId, principalAmount, discountedPrice, lockYears, referrer);
     }
 
+    /**
+     * @notice Early exit from a bond position with a 15% penalty
+     * @param tokenId Target bond position NFT ID
+     */
     function ragequit(uint256 tokenId) external nonReentrant {
         if (positionNFT.ownerOf(tokenId) != msg.sender) revert NotTokenOwner();
 
@@ -223,23 +285,7 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
             ITreasury(treasuryBunker).releaseVaultPayout(address(this), needed);
         }
 
-        // SECURITY FIX: Execute ALL transfers BEFORE burning the NFT (checks-effects-interactions)
-        IERC20(stablecoin).safeTransfer(msg.sender, userReturn);
-
-        if (penaltyTotal > 0 && realYieldRouter != address(0)) {
-            IERC20(stablecoin).safeTransfer(realYieldRouter, penaltyTotal);
-            if (realYieldRouter.code.length > 0) {
-                try RealYieldRouter(realYieldRouter).routeUniversalFee(stablecoin) {
-                    // Penalty routed to real yield
-                } catch {
-                    // Ignore yield routing revert during ragequit
-                }
-            }
-        } else if (penaltyTotal > 0 && treasuryBunker != address(0)) {
-            IERC20(stablecoin).safeTransfer(treasuryBunker, penaltyTotal);
-        }
-
-        // Burn NFT AFTER all transfers have succeeded
+        // Checks-Effects: Mark NFT and internal accounting BEFORE external transfers
         positionNFT.markRagequitted(tokenId);
         positionNFT.burn(tokenId);
 
@@ -269,9 +315,29 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
             }
         }
 
+        // External asset transfers
+        IERC20(stablecoin).safeTransfer(msg.sender, userReturn);
+
+        if (penaltyTotal > 0 && realYieldRouter != address(0)) {
+            IERC20(stablecoin).safeTransfer(realYieldRouter, penaltyTotal);
+            if (realYieldRouter.code.length > 0) {
+                try RealYieldRouter(realYieldRouter).routeUniversalFee(stablecoin) {
+                    // Penalty routed to real yield
+                } catch {
+                    // Ignore yield routing revert during ragequit
+                }
+            }
+        } else if (penaltyTotal > 0 && treasuryBunker != address(0)) {
+            IERC20(stablecoin).safeTransfer(treasuryBunker, penaltyTotal);
+        }
+
         emit Ragequitted(tokenId, msg.sender, userReturn, penaltyTotal);
     }
 
+    /**
+     * @notice Claims full face value principal upon bond maturity
+     * @param tokenId Target bond position NFT ID
+     */
     function claimMatured(uint256 tokenId) external nonReentrant {
         if (positionNFT.ownerOf(tokenId) != msg.sender) revert NotTokenOwner();
 
@@ -279,17 +345,14 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         if (pos.isRagequitted || pos.isMaturedClaimed) revert InactivePosition();
         if (block.timestamp < pos.expirationTimestamp) revert LockupActive();
 
-        // Ensure sufficient balance BEFORE any state changes (checks-effects-interactions)
+        // Ensure sufficient balance
         uint256 currentBal = IERC20(stablecoin).balanceOf(address(this));
         if (currentBal < pos.principalAmount && treasuryBunker != address(0) && treasuryBunker.code.length > 0) {
             uint256 needed = pos.principalAmount - currentBal;
             ITreasury(treasuryBunker).releaseVaultPayout(address(this), needed);
         }
 
-        // SECURITY FIX: Execute payout BEFORE burning the NFT
-        IERC20(stablecoin).safeTransfer(msg.sender, pos.principalAmount);
-
-        // Mark and burn AFTER successful payout
+        // Checks-Effects: Mark NFT and internal accounting BEFORE external payout
         positionNFT.markClaimed(tokenId);
         positionNFT.burn(tokenId);
 
@@ -311,6 +374,9 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         }
         delete bondPresentObligation[tokenId];
 
+        // Interactions: Payout to user
+        IERC20(stablecoin).safeTransfer(msg.sender, pos.principalAmount);
+
         emit MaturedClaimed(tokenId, msg.sender, pos.principalAmount);
     }
 
@@ -331,6 +397,9 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         uint256 userStalphaBalance;
     }
 
+    /**
+     * @notice Aggregates user discount rates and VIP tiers for UI display
+     */
     function getUserVestedOverview(address account) external view returns (UserVestedOverview memory overview) {
         overview.baseDiscount1YearBps = calculateDiscountBps(account, 1);
         overview.baseDiscount3YearsBps = calculateDiscountBps(account, 3);

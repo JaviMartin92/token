@@ -10,27 +10,41 @@ import "./interfaces/IProtocolErrors.sol";
 
 /**
  * @title ProtocolOpExVault
- * @notice Pure DeFi vault holding the 25% protocol OpEx fees in liquid USDC/stablecoins.
- *         Used exclusively for funding platform infrastructure, oracles, RPC nodes, gas, and DAO dev grants.
+ * @author Alpha Centauri Architecture Team
+ * @notice Bóveda fiduciaria para gastos operacionales, auditorías externas, nodos RPC y subvenciones de desarrollo.
+ * @dev Custodia el porcentaje de comisiones protocolarias reservadas para sostenibilidad técnica.
+ *      Los retiros están estrictamente restringidos al rol `ADMIN_ROLE` (gestionado por el `TimelockController.sol` con 72h de retraso).
+ *      Cada retiro emite un evento público auditable con el motivo exacto (`purpose`) en la blockchain.
  */
 contract ProtocolOpExVault is AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
+
+    /// @notice Token estable de liquidación utilizado para gastos operativos (USDC).
     IERC20 public immutable stablecoin;
 
+    // =========================================================================
+    // 📢 EVENTOS DE OPERACIONES & AUDITORÍA ON-CHAIN
+    // =========================================================================
     event OpExDeposited(address indexed source, uint256 amount);
     event OpExWithdrawn(address indexed recipient, uint256 amount, string purpose);
 
+    /**
+     * @notice Constructor del Vault de Gastos Operativos.
+     * @param _stablecoin Dirección del contrato ERC-20 del stablecoin (ej. USDC).
+     * @param _initialOwner Dirección administradora génesis (TimelockController en mainnet).
+     */
     constructor(address _stablecoin, address _initialOwner) {
         if (_stablecoin == address(0)) revert IProtocolErrors.ZeroAddress();
+        if (_initialOwner == address(0)) revert IProtocolErrors.ZeroAddress();
         stablecoin = IERC20(_stablecoin);
 
-        address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
+        _grantRole(DEFAULT_ADMIN_ROLE, _initialOwner);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, _initialOwner);
     }
 
     /**
-     * @notice Receives liquid USDC fee distributions from RealYieldRouter.
+     * @notice Recibe comisiones operacionales en USDC desde el enrutador de rendimientos.
+     * @param amount Cantidad exacta de USDC a depositar.
      */
     function depositOpEx(uint256 amount) external nonReentrant {
         if (amount == 0) revert IProtocolErrors.ZeroAmount();
@@ -39,7 +53,11 @@ contract ProtocolOpExVault is AccessControl, ReentrancyGuard {
     }
 
     /**
-     * @notice Withdraws liquid USDC for operational expenses (audits, infrastructure, RPCs, dev grants).
+     * @notice Retira fondos en USDC para sufragar gastos aprobados por la DAO (auditorías, infraestructura, RPCs, grants).
+     * @dev Restringido a `ADMIN_ROLE` (TimelockController con 72h de retraso).
+     * @param recipient Dirección de la entidad receptora de los fondos (ej. firma auditora).
+     * @param amount Cantidad exacta de USDC a desembolsar.
+     * @param purpose Justificación y descripción del gasto para transparencia y auditoría on-chain.
      */
     function withdrawOpEx(address recipient, uint256 amount, string calldata purpose)
         external
@@ -47,6 +65,7 @@ contract ProtocolOpExVault is AccessControl, ReentrancyGuard {
         nonReentrant
     {
         if (recipient == address(0)) revert IProtocolErrors.ZeroAddress();
+        if (amount == 0) revert IProtocolErrors.ZeroAmount();
         uint256 currentBalance = stablecoin.balanceOf(address(this));
         if (amount > currentBalance) revert IProtocolErrors.InvalidAmount();
 
@@ -54,6 +73,9 @@ contract ProtocolOpExVault is AccessControl, ReentrancyGuard {
         emit OpExWithdrawn(recipient, amount, purpose);
     }
 
+    /**
+     * @notice Consulta el saldo de fondos operativos disponibles en la bóveda.
+     */
     function getBalance() external view returns (uint256) {
         return stablecoin.balanceOf(address(this));
     }

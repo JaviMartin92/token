@@ -21,17 +21,23 @@ import "./lib/TreasuryRebalanceLib.sol";
 
 import "./interfaces/IRealYieldRouter.sol";
 import "./interfaces/IUniversalYieldAdapter.sol";
+import "./interfaces/IProtocolErrors.sol";
 
 /**
  * @title TreasuryManager
+ * @author Alpha Centauri Architecture Team
  * @notice Central orchestrator for deposits, redemptions, NAV accounting, and Proof of Reserves.
  *         Delegates custody to AlphaVault, token minting to AlphaToken, pricing to OracleHub,
  *         and specialized accounting/rebalancing logic to internal Solidity libraries.
+ * @dev Enforces mathematical invariants:
+ *      1. Monotonicity of NAV per share: ΔNAV >= 0 on all deposits and redemptions.
+ *      2. Solvency: Proof of Reserves collateral ratio >= 100% and non-decreasing.
+ *      3. Anti-MEV: SameBlockCooldown prevents deposit/redeem arbitrage in identical block.
  */
 contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    // Custom Errors for Gas Optimization and Bytecode Efficiency (Morpho Standard)
+    // Domain Custom Errors (Morpho / OpenZeppelin Institutional Standards)
     error KYCRequired(address account);
     error SameBlockCooldown(address account, uint256 currentBlock);
     error SlippageExceeded(uint256 expectedMin, uint256 actual);
@@ -79,13 +85,6 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
     // Compliance (B-04)
     mapping(address => bool) public kycWhitelist;
 
-    event WhitelistUpdated(address indexed account, bool isWhitelisted);
-
-    modifier onlyWhitelisted(address account) {
-        if (!kycWhitelist[account]) revert KYCRequired(account);
-        _;
-    }
-
     // Direct tracked assets for routing
     address public wbtcToken;
     address public wethToken;
@@ -93,6 +92,8 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
 
     uint256 public lastSettledNAVPerShare = 1e18;
 
+    // --- Events ---
+    event WhitelistUpdated(address indexed account, bool isWhitelisted);
     event Deposited(address indexed user, uint256 usdcAmount, uint256 sharesMinted);
     event Redeemed(address indexed user, uint256 sharesAmount, uint256 usdcReturned);
     event SwapRebalanceFailed(address indexed tokenOut, uint256 amountIn);
@@ -103,17 +104,38 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
     event Rebalanced(uint256 timestamp);
     event TvlCapUpdated(uint256 oldCap, uint256 newCap);
     event TreasuryGrantDisbursed(address indexed recipient, uint256 amount, string purpose);
+    event ConfigUpdated(address indexed wbtc, address indexed weth, address indexed swapRouter);
+    event SwapRouterUpdated(address indexed oldRouter, address indexed newRouter);
+    event YieldAdapterAdded(address indexed adapter);
+    event YieldAdapterRemoved(address indexed adapter);
 
+    modifier onlyWhitelisted(address account) {
+        if (!kycWhitelist[account]) revert KYCRequired(account);
+        _;
+    }
+
+    /**
+     * @notice Constructor sets immutable address provider and disables logic contract initializers
+     * @param _addressProvider Canonical address provider registry
+     */
     constructor(ProtocolAddressProvider _addressProvider) {
         if (address(_addressProvider) == address(0)) revert ZeroAddressProvider();
         addressProvider = _addressProvider;
         _disableInitializers();
     }
 
+    /**
+     * @notice Initializes proxy instance with admin roles, redemption token, and default weights
+     */
     function initialize(address _initialAdmin, address _redemptionToken, uint8 _redemptionTokenDecimals)
         public
         initializer
     {
+        if (_initialAdmin == address(0) || _redemptionToken == address(0)) {
+            revert IProtocolErrors.ZeroAddress();
+        }
+        if (_redemptionTokenDecimals > 18) revert IProtocolErrors.InvalidParameters();
+
         _ReentrancyGuard_init();
 
         _grantRole(DEFAULT_ADMIN_ROLE, _initialAdmin);
@@ -128,22 +150,37 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
         currentWeights = AssetWeights({stablecoins: 5000, wbtc: 2500, weth: 1250, alphaProtocolStaking: 1250});
     }
 
+    /**
+     * @notice Configures auxiliary routing assets and DEX swap router
+     */
     function setConfig(address _wbtc, address _weth, address _swapRouter) external onlyRole(DEFAULT_ADMIN_ROLE) {
         wbtcToken = _wbtc;
         wethToken = _weth;
         swapRouter = _swapRouter;
+        emit ConfigUpdated(_wbtc, _weth, _swapRouter);
     }
 
+    /**
+     * @notice Updates the swap router address
+     */
     function setSwapRouter(address _swapRouter) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        address oldRouter = swapRouter;
         swapRouter = _swapRouter;
+        emit SwapRouterUpdated(oldRouter, _swapRouter);
     }
 
     // --- Compliance Functions ---
+    /**
+     * @notice Updates KYC verification status for institutional gateway
+     */
     function setKYCStatus(address account, bool status) external onlyRole(ProtocolRoles.COMPLIANCE_ROLE) {
         kycWhitelist[account] = status;
         emit WhitelistUpdated(account, status);
     }
 
+    /**
+     * @notice Adds an active yield adapter
+     */
     function addYieldAdapter(address adapter) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (adapter == address(0)) revert InvalidAdapterAddress();
         uint256 len = activeYieldAdapters.length;
@@ -154,14 +191,19 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
             }
         }
         activeYieldAdapters.push(adapter);
+        emit YieldAdapterAdded(adapter);
     }
 
+    /**
+     * @notice Removes an active yield adapter
+     */
     function removeYieldAdapter(address adapter) external onlyRole(DEFAULT_ADMIN_ROLE) {
         uint256 len = activeYieldAdapters.length;
         for (uint256 i = 0; i < len;) {
             if (activeYieldAdapters[i] == adapter) {
                 activeYieldAdapters[i] = activeYieldAdapters[len - 1];
                 activeYieldAdapters.pop();
+                emit YieldAdapterRemoved(adapter);
                 break;
             }
             unchecked {
@@ -170,6 +212,9 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
         }
     }
 
+    /**
+     * @notice Sets strategic portfolio weights for rebalancing (must sum to 10,000 BPS)
+     */
     function setAssetWeights(uint256 _stables, uint256 _wbtc, uint256 _weth, uint256 _alpha)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -186,16 +231,25 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
         emit AssetWeightsUpdated(_stables, _wbtc, _weth, _alpha);
     }
 
+    /**
+     * @notice Updates the TVL cap for Guarded Launch phases
+     */
     function setTvlCap(uint256 newCap) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (newCap == 0) revert ZeroAmount();
         emit TvlCapUpdated(tvlCap, newCap);
         tvlCap = newCap;
     }
 
+    /**
+     * @notice Records token burn quantities for institutional metrics
+     */
     function recordBurn(uint256 amount) external onlyRole(ProtocolRoles.BURNER_ROLE) {
         totalBurnedTokens += amount;
     }
 
+    /**
+     * @notice Routes incoming reserve fees to AlphaVault
+     */
     function notifyReserveFee(uint256 usdcFeeAmount) external onlyRole(ProtocolRoles.VAULT_MANAGER_ROLE) {
         address vault = addressProvider.getAlphaVault();
         if (vault != address(0) && usdcFeeAmount > 0) {
@@ -358,8 +412,6 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
         (uint256 preAssetsUSD,, uint256 preRatioBps) = getProofOfReserves();
         uint256 preNavUSD = getNAVPerShare();
 
-
-
         AlphaVault vault = AlphaVault(addressProvider.getAddress(addressProvider.ID_ALPHA_VAULT()));
         address routerAddr = addressProvider.getAddress(addressProvider.ID_REAL_YIELD_ROUTER());
 
@@ -455,7 +507,8 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
         if (vault.getBalance(redemptionToken) < amount) revert InsufficientLiquidBuffer();
 
         vault.transferFunds(redemptionToken, address(this), amount);
-        IERC20(redemptionToken).approve(adapter, amount);
+        IERC20(redemptionToken).safeApprove(adapter, 0);
+        IERC20(redemptionToken).safeApprove(adapter, amount);
         IUniversalYieldAdapter(adapter).deposit(amount, address(vault));
     }
 
@@ -472,8 +525,6 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
         (uint256 preAssetsUSD,, uint256 preRatioBps) = getProofOfReserves();
         uint256 netCirculating = getNetCirculatingShares();
         uint256 preNavUSD = getNAVPerShare();
-
-
 
         TreasuryFeeLib.RedeemCalculation memory calc =
             TreasuryFeeLib.calculateRedemption(sharesAmount, preAssetsUSD, netCirculating, redemptionTokenDecimals);
@@ -577,6 +628,9 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
         return assetsReceived;
     }
 
+    /**
+     * @notice Mints corporate fee shares to the RealYieldRouter against deposited stablecoins
+     */
     function mintCorporateFeeShares(uint256 stableAmount) external returns (uint256 sharesMinted) {
         if (msg.sender != addressProvider.getAddress(addressProvider.ID_REAL_YIELD_ROUTER())) {
             revert OnlyRealYieldRouter();
@@ -584,9 +638,7 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
         if (stableAmount == 0) revert ZeroAmount();
 
         AlphaVault vault = AlphaVault(addressProvider.getAddress(addressProvider.ID_ALPHA_VAULT()));
-        if (!IERC20(redemptionToken).transferFrom(msg.sender, address(vault), stableAmount)) {
-            revert TransferFromFailed();
-        }
+        IERC20(redemptionToken).safeTransferFrom(msg.sender, address(vault), stableAmount);
 
         uint256 depositValueUSD = stableAmount * (10 ** (18 - redemptionTokenDecimals));
         uint256 navPerShare = getNAVPerShare();
@@ -596,11 +648,13 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
         sharesMinted = Math.mulDiv(depositValueUSD, 1e18, navPerShare, Math.Rounding.Floor);
 
         AlphaToken token = AlphaToken(addressProvider.getAddress(addressProvider.ID_ALPHA_TOKEN()));
-
         token.mint(msg.sender, sharesMinted);
         return sharesMinted;
     }
 
+    /**
+     * @notice Disburses loans from AlphaVault for the P2PLendingMarket
+     */
     function disburseTreasuryLoan(address recipient, uint256 amount) external nonReentrant {
         if (
             msg.sender != addressProvider.getAddress(addressProvider.ID_P2P_MARKET())
@@ -624,6 +678,9 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
         vault.transferFunds(redemptionToken, recipient, amount);
     }
 
+    /**
+     * @notice Releases payouts for VestedDiscountVault ragequits or maturity claims
+     */
     function releaseVaultPayout(address recipient, uint256 amount) external nonReentrant {
         if (
             msg.sender != addressProvider.getVestedVault()
@@ -652,7 +709,7 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
      *         Callable ONLY by TimelockController via passed on-chain DAO proposal.
      */
     function withdrawUSDC(address recipient, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
-        if (recipient == address(0)) revert ZeroAddressProvider();
+        if (recipient == address(0)) revert IProtocolErrors.ZeroAddress();
         if (amount == 0) revert ZeroAmount();
 
         AlphaVault vault = AlphaVault(addressProvider.getAlphaVault());

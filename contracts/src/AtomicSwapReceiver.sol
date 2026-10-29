@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import "./interfaces/IAtomicSwapReceiver.sol";
 import "./interfaces/ISwapRouter.sol";
 import "./interfaces/IProtocolErrors.sol";
+import "./interfaces/ICircuitBreaker.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -12,16 +13,37 @@ import "./lib/security/ReentrancyGuard.sol";
 
 /**
  * @title AtomicSwapReceiver
- * @notice Accepts USDT deposits and atomically swaps them to USDC via Uniswap V3.
+ * @notice Accepts USDT deposits and atomically swaps them to USDC via Uniswap V3 on Arbitrum One.
+ *         Applies SafeERC20 approval sequences to guarantee compatibility with non-standard USDT.
  */
 contract AtomicSwapReceiver is IAtomicSwapReceiver, AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
+
     address public immutable usdtToken;
     address public immutable usdcToken;
-    address public immutable swapRouter;
+    address public swapRouter;
     address public treasury;
+    address public circuitBreaker;
 
-    constructor(address _usdtToken, address _usdcToken, address _swapRouter, address _treasury, address _initialOwner) {
+    uint24 public poolFee = 100; // 0.01% standard stablecoin pool fee
+    uint24 public constant MAX_POOL_FEE = 3000; // 0.30% max allowable pool fee
+
+    event TreasuryUpdated(address oldTreasury, address newTreasury);
+    event SwapRouterUpdated(address oldRouter, address newRouter);
+    event PoolFeeUpdated(uint24 oldFee, uint24 newFee);
+    event CircuitBreakerUpdated(address oldBreaker, address newBreaker);
+    event TokensSwept(address indexed token, address indexed to, uint256 amount);
+
+    constructor(
+        address _usdtToken,
+        address _usdcToken,
+        address _swapRouter,
+        address _treasury,
+        address _initialOwner
+    ) {
+        if (_usdtToken == address(0) || _usdcToken == address(0) || _treasury == address(0)) {
+            revert IProtocolErrors.ZeroAddress();
+        }
         usdtToken = _usdtToken;
         usdcToken = _usdcToken;
         swapRouter = _swapRouter;
@@ -33,11 +55,42 @@ contract AtomicSwapReceiver is IAtomicSwapReceiver, AccessControl, ReentrancyGua
     }
 
     /**
-     * @notice Updates the treasury address. Restricted to owner.
+     * @notice Updates the treasury address.
      */
     function setTreasury(address _treasury) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         if (_treasury == address(0)) revert IProtocolErrors.ZeroAddress();
+        address old = treasury;
         treasury = _treasury;
+        emit TreasuryUpdated(old, _treasury);
+    }
+
+    /**
+     * @notice Updates the swap router address.
+     */
+    function setSwapRouter(address _swapRouter) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (_swapRouter == address(0)) revert IProtocolErrors.ZeroAddress();
+        address old = swapRouter;
+        swapRouter = _swapRouter;
+        emit SwapRouterUpdated(old, _swapRouter);
+    }
+
+    /**
+     * @notice Updates the Uniswap V3 pool fee tier.
+     */
+    function setPoolFee(uint24 _poolFee) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (_poolFee > MAX_POOL_FEE) revert IProtocolErrors.InvalidParameters();
+        uint24 old = poolFee;
+        poolFee = _poolFee;
+        emit PoolFeeUpdated(old, _poolFee);
+    }
+
+    /**
+     * @notice Updates the Circuit Breaker reference.
+     */
+    function setCircuitBreaker(address _circuitBreaker) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        address old = circuitBreaker;
+        circuitBreaker = _circuitBreaker;
+        emit CircuitBreakerUpdated(old, _circuitBreaker);
     }
 
     /**
@@ -50,7 +103,16 @@ contract AtomicSwapReceiver is IAtomicSwapReceiver, AccessControl, ReentrancyGua
         returns (uint256 usdcDeposited)
     {
         if (usdtAmount == 0) revert IProtocolErrors.ZeroAmount();
-        if (treasury == address(0)) revert IProtocolErrors.ZeroAddress();
+        if (treasury == address(0) || swapRouter == address(0)) revert IProtocolErrors.ZeroAddress();
+
+        if (circuitBreaker != address(0)) {
+            if (ICircuitBreaker(circuitBreaker).isFrozen(usdtToken)) {
+                revert IProtocolErrors.CircuitBreakerActive(usdtToken);
+            }
+            if (ICircuitBreaker(circuitBreaker).isFrozen(usdcToken)) {
+                revert IProtocolErrors.CircuitBreakerActive(usdcToken);
+            }
+        }
 
         // Enforce maximum 0.05% slippage check on-chain (USDT -> USDC)
         uint256 maxSlippageLimit = (usdtAmount * 9995) / 10000;
@@ -61,16 +123,15 @@ contract AtomicSwapReceiver is IAtomicSwapReceiver, AccessControl, ReentrancyGua
         // 1. Pull USDT from sender to this contract
         IERC20(usdtToken).safeTransferFrom(msg.sender, address(this), usdtAmount);
 
-        // 2. Approve SwapRouter to spend USDT
-        if (!IERC20(usdtToken).approve(swapRouter, usdtAmount)) {
-            revert IProtocolErrors.ApproveFailed();
-        }
+        // 2. Approve SwapRouter to spend USDT via SafeERC20 (reset to 0 first for USDT compliance)
+        IERC20(usdtToken).safeApprove(swapRouter, 0);
+        IERC20(usdtToken).safeApprove(swapRouter, usdtAmount);
 
         // 3. Configure Uniswap swap parameters
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
             tokenIn: usdtToken,
             tokenOut: usdcToken,
-            fee: 100, // 0.01% fee pool (standard stablecoin pool fee)
+            fee: poolFee,
             recipient: address(this),
             deadline: block.timestamp + 15 minutes,
             amountIn: usdtAmount,
@@ -86,5 +147,14 @@ contract AtomicSwapReceiver is IAtomicSwapReceiver, AccessControl, ReentrancyGua
 
         emit AtomicSwapExecuted(msg.sender, usdtAmount, usdcDeposited, 0);
         return usdcDeposited;
+    }
+
+    /**
+     * @notice Rescues erroneously transferred tokens.
+     */
+    function sweepTokens(address token, address to, uint256 amount) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (token == address(0) || to == address(0)) revert IProtocolErrors.ZeroAddress();
+        IERC20(token).safeTransfer(to, amount);
+        emit TokensSwept(token, to, amount);
     }
 }

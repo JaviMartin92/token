@@ -16,10 +16,11 @@ interface IMockMintableERC20 {
 /**
  * @title MockSwapRouter
  * @notice Mock Uniswap V3 SwapRouter for sandbox local devnet (Anvil).
- *         Executes real ERC20 swaps using mock prices ($60,000 WBTC, $3,000 WETH, $1 USDC).
+ *         Executes real ERC20 swaps enforcing deadline and slippage bounds.
  */
 contract MockSwapRouter is ISwapRouter, AccessControl {
     using SafeERC20 for IERC20;
+
     address public immutable usdcToken;
     address public immutable wbtcToken;
     address public immutable wethToken;
@@ -27,7 +28,13 @@ contract MockSwapRouter is ISwapRouter, AccessControl {
     uint256 public btcPriceUsd = 60000;
     uint256 public ethPriceUsd = 3000;
 
+    event PricesUpdated(uint256 btcPriceUsd, uint256 ethPriceUsd);
+    event TokensSwept(address indexed token, address indexed to, uint256 amount);
+
     constructor(address _usdcToken, address _wbtcToken, address _wethToken, address _initialOwner) {
+        if (_usdcToken == address(0) || _wbtcToken == address(0) || _wethToken == address(0)) {
+            revert IProtocolErrors.ZeroAddress();
+        }
         usdcToken = _usdcToken;
         wbtcToken = _wbtcToken;
         wethToken = _wethToken;
@@ -38,8 +45,10 @@ contract MockSwapRouter is ISwapRouter, AccessControl {
     }
 
     function setPrices(uint256 _btcPriceUsd, uint256 _ethPriceUsd) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (_btcPriceUsd == 0 || _ethPriceUsd == 0) revert IProtocolErrors.InvalidPrice();
         btcPriceUsd = _btcPriceUsd;
         ethPriceUsd = _ethPriceUsd;
+        emit PricesUpdated(_btcPriceUsd, _ethPriceUsd);
     }
 
     function exactInputSingle(ExactInputSingleParams calldata params)
@@ -49,6 +58,9 @@ contract MockSwapRouter is ISwapRouter, AccessControl {
         returns (uint256 amountOut)
     {
         if (params.amountIn == 0) revert IProtocolErrors.ZeroAmount();
+        if (params.deadline != 0 && block.timestamp > params.deadline) {
+            revert IProtocolErrors.InvalidParameters();
+        }
 
         // 1. Pull tokenIn from recipient (AlphaVault) or sender
         address payer = (params.recipient != address(0)
@@ -60,12 +72,9 @@ contract MockSwapRouter is ISwapRouter, AccessControl {
         // 2. Compute amountOut based on token pair
         if (params.tokenIn == usdcToken && params.tokenOut == wbtcToken) {
             // USDC (6 dec) -> WBTC (8 dec) @ $60,000
-            // amountIn is in 6 decimals (1e6 = $1)
-            // amountOut = (amountIn * 1e8) / (60000 * 1e6)
             amountOut = (params.amountIn * 10 ** 8) / (btcPriceUsd * 10 ** 6);
         } else if (params.tokenIn == usdcToken && params.tokenOut == wethToken) {
             // USDC (6 dec) -> WETH (18 dec) @ $3,000
-            // amountOut = (amountIn * 1e18) / (3000 * 1e6)
             amountOut = (params.amountIn * 10 ** 18) / (ethPriceUsd * 10 ** 6);
         } else if (params.tokenIn == wbtcToken && params.tokenOut == usdcToken) {
             // WBTC (8 dec) -> USDC (6 dec) @ $60,000
@@ -78,7 +87,12 @@ contract MockSwapRouter is ISwapRouter, AccessControl {
             amountOut = params.amountIn;
         }
 
-        // 3. Deliver tokenOut to recipient
+        // 3. Enforce slippage bounds
+        if (amountOut < params.amountOutMinimum) {
+            revert IProtocolErrors.SlippageExceeded(params.amountOutMinimum, amountOut);
+        }
+
+        // 4. Deliver tokenOut to recipient
         uint256 routerBal = IERC20(params.tokenOut).balanceOf(address(this));
         if (routerBal >= amountOut) {
             IERC20(params.tokenOut).safeTransfer(params.recipient, amountOut);
@@ -92,5 +106,14 @@ contract MockSwapRouter is ISwapRouter, AccessControl {
                 }
             }
         }
+    }
+
+    /**
+     * @notice Rescues erroneously transferred tokens.
+     */
+    function sweepTokens(address token, address to, uint256 amount) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (token == address(0) || to == address(0)) revert IProtocolErrors.ZeroAddress();
+        IERC20(token).safeTransfer(to, amount);
+        emit TokensSwept(token, to, amount);
     }
 }

@@ -110,6 +110,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
     }
 
     function _writeCheckpoint(address delegatee, uint32 nCheckpoints, uint256 oldVotes, uint256 newVotes) internal {
+        require(newVotes <= type(uint224).max, "Votes overflow");
         uint32 blockNum = uint32(block.number);
         if (nCheckpoints > 0 && _checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNum) {
             _checkpoints[delegatee][nCheckpoints - 1].votes = uint224(newVotes);
@@ -145,8 +146,13 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
     mapping(address => bool) public isExcludedFromYield;
 
     event AddressExclusionSet(address indexed account, bool excluded);
+    event TreasuryUpdated(address indexed newTreasury);
+    event ProtocolVaultsUpdated(address indexed newCommunityYieldVault);
+    event ReserveVaultsUpdated(address indexed alphaVault, address indexed promoVault);
+    event AuthorizedCallerUpdated(address indexed caller, bool authorized);
 
     constructor(address _govToken, address _rewardToken, address _initialOwner) ERC20("Staked ALPHA", "stALPHA") {
+        if (_govToken == address(0) || _rewardToken == address(0)) revert IProtocolErrors.ZeroAddress();
         govToken = IERC20(_govToken);
         rewardToken = IERC20(_rewardToken);
 
@@ -168,14 +174,18 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
      * @notice Sets the Treasury address for NAV-based staked value computation.
      */
     function setTreasury(address _treasury) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (_treasury == address(0)) revert IProtocolErrors.ZeroAddress();
         treasury = _treasury;
+        emit TreasuryUpdated(_treasury);
     }
 
     /**
      * @notice Sets Protocol Community Yield Vault for Staking Fee distribution.
      */
     function setProtocolVaults(address _communityYieldVault) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (_communityYieldVault == address(0)) revert IProtocolErrors.ZeroAddress();
         communityYieldVault = _communityYieldVault;
+        emit ProtocolVaultsUpdated(_communityYieldVault);
     }
 
     /**
@@ -184,6 +194,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
     function setAuthorizedCaller(address caller, bool authorized) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         if (caller == address(0)) revert IProtocolErrors.ZeroAddress();
         authorizedCallers[caller] = authorized;
+        emit AuthorizedCallerUpdated(caller, authorized);
     }
 
     modifier onlyAuthorized() {
@@ -215,6 +226,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
     }
 
     function earned(address account) public view returns (uint256) {
+        if (isExcludedFromYield[account]) return 0;
         return (balanceOf(account) * (rewardPerToken() - userRewardPerTokenPaid[account])) / 1e18 + rewards[account];
     }
 
@@ -257,8 +269,15 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
                     ITreasury(treasury).recordBurn(treasuryShare);
                 }
             }
-            if (communityShare > 0 && communityYieldVault != address(0)) {
-                govToken.safeTransfer(communityYieldVault, communityShare);
+            if (communityShare > 0) {
+                if (communityYieldVault != address(0)) {
+                    govToken.safeTransfer(communityYieldVault, communityShare);
+                } else {
+                    IBurnable(address(govToken)).burn(communityShare);
+                    if (treasury != address(0)) {
+                        ITreasury(treasury).recordBurn(communityShare);
+                    }
+                }
             }
         }
 
@@ -288,6 +307,20 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
         emit Unstaked(msg.sender, amount);
     }
 
+    /**
+     * @notice Allows a staker to claim their accrued USDC rewards directly.
+     * @return reward The amount of reward tokens transferred to msg.sender.
+     */
+    function claimReward() external nonReentrant updateReward(msg.sender) returns (uint256 reward) {
+        if (isExcludedFromYield[msg.sender]) return 0;
+        reward = rewards[msg.sender];
+        if (reward > 0) {
+            rewards[msg.sender] = 0;
+            rewardToken.safeTransfer(msg.sender, reward);
+            emit RewardClaimed(msg.sender, reward);
+        }
+    }
+
     function claimRewardFor(address user)
         external
         nonReentrant
@@ -295,6 +328,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
         updateReward(user)
         returns (uint256 reward)
     {
+        if (isExcludedFromYield[user]) return 0;
         reward = rewards[user];
         if (reward > 0) {
             rewards[user] = 0;
@@ -316,8 +350,10 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
     address public promoVault;
 
     function setReserveVaults(address _alphaVault, address _promoVault) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (_alphaVault == address(0) || _promoVault == address(0)) revert IProtocolErrors.ZeroAddress();
         alphaVault = _alphaVault;
         promoVault = _promoVault;
+        emit ReserveVaultsUpdated(_alphaVault, _promoVault);
     }
 
     function getStakingBreakdown() external view returns (StakingBreakdown memory breakdown) {

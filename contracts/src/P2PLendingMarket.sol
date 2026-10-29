@@ -37,6 +37,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
     error OnlyBorrowerCanRepay();
     error LoanNotLiquidatable();
     error NoClaimableEquity();
+    error InsufficientBalance();
 
     address public immutable stablecoin;
     VaultPositionNFT public immutable positionNFT;
@@ -49,21 +50,44 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
     address public wethToken;
 
     mapping(uint256 => address) public loanCollateralAsset;
+    mapping(address => mapping(address => uint256)) public claimableBorrowerEquityAssets;
+
+    event TokenomicsEngineUpdated(address oldEngine, address newEngine);
+    event AlphaTokenUpdated(address oldToken, address newToken);
+    event WbtcTokenUpdated(address oldToken, address newToken);
+    event WethTokenUpdated(address oldToken, address newToken);
+    event FeeCollectorUpdated(address oldCollector, address newCollector);
+    event PriceFeedUpdated(address oldFeed, address newFeed);
+    event TreasuryUpdated(address oldTreasury, address newTreasury);
+    event BorrowerAssetEquityClaimed(address indexed borrower, address indexed asset, uint256 amount);
+    event TokensSwept(address indexed token, address indexed to, uint256 amount);
 
     function setTokenomicsEngine(address _tokenomicsEngine) external onlyOwner {
+        if (_tokenomicsEngine == address(0)) revert IProtocolErrors.ZeroAddress();
+        address old = tokenomicsEngine;
         tokenomicsEngine = _tokenomicsEngine;
+        emit TokenomicsEngineUpdated(old, _tokenomicsEngine);
     }
 
     function setAlphaToken(address _alphaToken) external onlyOwner {
+        if (_alphaToken == address(0)) revert IProtocolErrors.ZeroAddress();
+        address old = alphaToken;
         alphaToken = _alphaToken;
+        emit AlphaTokenUpdated(old, _alphaToken);
     }
 
     function setWbtcToken(address _wbtcToken) external onlyOwner {
+        if (_wbtcToken == address(0)) revert IProtocolErrors.ZeroAddress();
+        address old = wbtcToken;
         wbtcToken = _wbtcToken;
+        emit WbtcTokenUpdated(old, _wbtcToken);
     }
 
     function setWethToken(address _wethToken) external onlyOwner {
+        if (_wethToken == address(0)) revert IProtocolErrors.ZeroAddress();
+        address old = wethToken;
         wethToken = _wethToken;
+        emit WethTokenUpdated(old, _wethToken);
     }
 
     address public circuitBreaker;
@@ -129,26 +153,36 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         address _priceFeed,
         address _initialOwner
     ) Ownable() {
+        if (_stablecoin == address(0)) revert IProtocolErrors.ZeroAddress();
         stablecoin = _stablecoin;
         positionNFT = VaultPositionNFT(_positionNFT);
         feeCollector = _feeCollector;
         priceFeed = _priceFeed;
 
-        if (_initialOwner != msg.sender) {
+        if (_initialOwner != address(0) && _initialOwner != msg.sender) {
             transferOwnership(_initialOwner);
         }
     }
 
     function setFeeCollector(address _feeCollector) external onlyOwner {
+        if (_feeCollector == address(0)) revert IProtocolErrors.ZeroAddress();
+        address old = feeCollector;
         feeCollector = _feeCollector;
+        emit FeeCollectorUpdated(old, _feeCollector);
     }
 
     function setPriceFeed(address _priceFeed) external onlyOwner {
+        if (_priceFeed == address(0)) revert IProtocolErrors.ZeroAddress();
+        address old = priceFeed;
         priceFeed = _priceFeed;
+        emit PriceFeedUpdated(old, _priceFeed);
     }
 
     function setTreasury(address _treasury) external onlyOwner {
+        if (_treasury == address(0)) revert IProtocolErrors.ZeroAddress();
+        address old = treasury;
         treasury = _treasury;
+        emit TreasuryUpdated(old, _treasury);
     }
 
     function _getTreasuryBorrowAprBps() internal view returns (uint256) {
@@ -312,13 +346,16 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
 
         ITreasury(treasury).disburseTreasuryLoan(address(this), borrowAmount);
         IERC20(stablecoin).safeTransfer(msg.sender, netBorrow);
-        if (originationFee > 0 && feeCollector != address(0)) {
-            IERC20(stablecoin).safeTransfer(feeCollector, originationFee);
-            if (feeCollector.code.length > 0) {
-                try IRealYieldRouter(feeCollector).routeUniversalFee(stablecoin) {
-                    // Fee routed
-                } catch {
-                    // Ignore fee routing error
+        if (originationFee > 0) {
+            address feeDest = feeCollector != address(0) ? feeCollector : treasury;
+            if (feeDest != address(0)) {
+                IERC20(stablecoin).safeTransfer(feeDest, originationFee);
+                if (feeDest == feeCollector && feeCollector.code.length > 0) {
+                    try IRealYieldRouter(feeCollector).routeUniversalFee(stablecoin) {
+                        // Fee routed
+                    } catch {
+                        // Ignore fee routing error
+                    }
                 }
             }
         }
@@ -403,13 +440,16 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
 
         ITreasury(treasury).disburseTreasuryLoan(address(this), borrowAmount);
         IERC20(stablecoin).safeTransfer(msg.sender, netBorrow);
-        if (originationFee > 0 && feeCollector != address(0)) {
-            IERC20(stablecoin).safeTransfer(feeCollector, originationFee);
-            if (feeCollector.code.length > 0) {
-                try IRealYieldRouter(feeCollector).routeUniversalFee(stablecoin) {
-                    // Fee routed
-                } catch {
-                    // Ignore fee routing error
+        if (originationFee > 0) {
+            address feeDest = feeCollector != address(0) ? feeCollector : treasury;
+            if (feeDest != address(0)) {
+                IERC20(stablecoin).safeTransfer(feeDest, originationFee);
+                if (feeDest == feeCollector && feeCollector.code.length > 0) {
+                    try IRealYieldRouter(feeCollector).routeUniversalFee(stablecoin) {
+                        // Fee routed
+                    } catch {
+                        // Ignore fee routing error
+                    }
                 }
             }
         }
@@ -470,7 +510,17 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
 
         IERC20(stablecoin).safeTransferFrom(msg.sender, loan.borrower, netBorrow);
         if (originationFee > 0) {
-            IERC20(stablecoin).safeTransferFrom(msg.sender, feeCollector, originationFee);
+            address feeDest = feeCollector != address(0) ? feeCollector : treasury;
+            if (feeDest != address(0)) {
+                IERC20(stablecoin).safeTransferFrom(msg.sender, feeDest, originationFee);
+                if (feeDest == feeCollector && feeCollector.code.length > 0) {
+                    try IRealYieldRouter(feeCollector).routeUniversalFee(stablecoin) {
+                        // Origination fee routed
+                    } catch {
+                        // Ignore routing error
+                    }
+                }
+            }
         }
 
         emit LoanAccepted(loanId, msg.sender, loan.borrowAmount);
@@ -740,9 +790,15 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
             // 1. Transfer fair collateral portion to liquidator
             IERC20(targetAsset).safeTransfer(msg.sender, seizeAmount);
 
-            // 2. Return surplus equity to borrower
+            // 2. Return surplus equity to borrower (with pull fallback to prevent liquidation DOS)
             if (surplusEquity > 0) {
-                IERC20(targetAsset).safeTransfer(loan.borrower, surplusEquity);
+                (bool success, bytes memory data) = targetAsset.call(
+                    abi.encodeWithSelector(IERC20.transfer.selector, loan.borrower, surplusEquity)
+                );
+                bool transferred = success && (data.length == 0 || abi.decode(data, (bool)));
+                if (!transferred) {
+                    claimableBorrowerEquityAssets[loan.borrower][targetAsset] += surplusEquity;
+                }
             }
         }
 
@@ -761,6 +817,35 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         claimableBorrowerEquity[msg.sender] = 0;
         IERC20(stablecoin).safeTransfer(msg.sender, amount);
         emit BorrowerEquityClaimed(msg.sender, amount);
+    }
+
+    /**
+     * @notice Allows borrowers to claim preserved asset equity from fallback pull storage.
+     */
+    function claimBorrowerEquityAsset(address asset) external nonReentrant returns (uint256 amount) {
+        if (_checkGracePeriod()) {
+            revert IProtocolErrors.SequencerGracePeriodActive();
+        }
+        if (asset == address(0)) revert IProtocolErrors.ZeroAddress();
+        amount = claimableBorrowerEquityAssets[msg.sender][asset];
+        if (amount == 0) revert NoClaimableEquity();
+        claimableBorrowerEquityAssets[msg.sender][asset] = 0;
+        IERC20(asset).safeTransfer(msg.sender, amount);
+        emit BorrowerAssetEquityClaimed(msg.sender, asset, amount);
+    }
+
+    /**
+     * @notice Rescues erroneously transferred tokens without affecting active collateral.
+     */
+    function sweepTokens(address token, address to, uint256 amount) external onlyOwner {
+        if (token == address(0) || to == address(0)) revert IProtocolErrors.ZeroAddress();
+        if (token == stablecoin) {
+            uint256 currentBal = IERC20(token).balanceOf(address(this));
+            if (currentBal <= _totalActiveLoansReceivableUSD) revert InsufficientBalance();
+            if (amount > currentBal - _totalActiveLoansReceivableUSD) revert InsufficientBalance();
+        }
+        IERC20(token).safeTransfer(to, amount);
+        emit TokensSwept(token, to, amount);
     }
 
     struct MarketplaceOverview {

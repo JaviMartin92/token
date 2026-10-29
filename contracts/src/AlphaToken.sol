@@ -9,13 +9,23 @@ import "./ProtocolAddressProvider.sol";
 import "./interfaces/IProtocolErrors.sol";
 
 /**
- * @title AlphaToken
- * @notice The core ERC20 token for the Alpha Centauri protocol with EIP-2612 Permit support.
- *         Minting and burning are strictly controlled via RBAC, typically granted to the TreasuryManager.
+ * @title AlphaToken (ALPHA)
+ * @author Alpha Centauri Architecture Team
+ * @notice Token de cuota patrimonial y gobernanza del protocolo Alpha Centauri con soporte EIP-2612 (Permit).
+ * @dev Cada token ALPHA representa una participación proporcional sobre la cesta de activos exógenos
+ *      (USDC, WBTC, WETH) custodiados en la tesorería. La emisión y quema están estrictamente restringidas
+ *      a contratos autorizados mediante RBAC (MINTER_ROLE y BURNER_ROLE).
+ *      El soporte de EIP-2612 Permit permite aprobaciones sin coste de gas (gasless) optimizadas para Arbitrum.
  */
 contract AlphaToken is ERC20, ERC20Permit, AccessControl {
+    /// @notice Proveedor central de direcciones inmutable del protocolo.
     ProtocolAddressProvider public immutable addressProvider;
 
+    /**
+     * @notice Inicializa el token ALPHA con su símbolo, nombre y administrador génesis.
+     * @param _addressProvider Contrato central de registro de direcciones del protocolo.
+     * @param initialAdmin Dirección que recibe el rol inicial DEFAULT_ADMIN_ROLE (transferido al Timelock en mainnet).
+     */
     constructor(ProtocolAddressProvider _addressProvider, address initialAdmin)
         ERC20("Alpha Centauri Shares", "ALPHA")
         ERC20Permit("Alpha Centauri Shares")
@@ -23,33 +33,47 @@ contract AlphaToken is ERC20, ERC20Permit, AccessControl {
         if (address(_addressProvider) == address(0)) {
             revert IProtocolErrors.ZeroAddressProvider();
         }
+        if (initialAdmin == address(0)) {
+            revert IProtocolErrors.ZeroAddress();
+        }
         addressProvider = _addressProvider;
         _grantRole(DEFAULT_ADMIN_ROLE, initialAdmin);
     }
 
     /**
-     * @notice Mints new ALPHA tokens. Strictly restricted to MINTER_ROLE.
-     * @param to The address that will receive the minted tokens.
-     * @param amount The number of tokens to mint.
+     * @notice Acuña nuevas participaciones ALPHA respaldadas por depósitos a valor liquidativo (NAV).
+     * @dev Restringido estrictamente a direcciones que posean `MINTER_ROLE` (`TreasuryManager.sol`).
+     * @param to Dirección de la billetera o contrato receptor de los tokens.
+     * @param amount Cantidad exacta de tokens en unidades wei (18 decimales) a acuñar.
      */
     function mint(address to, uint256 amount) external onlyRole(ProtocolRoles.MINTER_ROLE) {
+        if (amount == 0) {
+            revert IProtocolErrors.ZeroAmount();
+        }
         _mint(to, amount);
     }
 
     /**
-     * @notice Burns ALPHA tokens from the caller.
-     * @param amount The number of tokens to burn.
+     * @notice Quema voluntariamente tokens ALPHA de la cuenta del emisor (`msg.sender`).
+     * @param amount Cantidad exacta de tokens a quemar.
      */
     function burn(uint256 amount) external {
+        if (amount == 0) {
+            revert IProtocolErrors.ZeroAmount();
+        }
         _burn(msg.sender, amount);
     }
 
     /**
-     * @notice Burns ALPHA tokens from a specific account. Restricted to BURNER_ROLE.
-     * @param account The account from which to burn the tokens.
-     * @param amount The number of tokens to burn.
+     * @notice Quema tokens ALPHA de una cuenta específica con deducción de `allowance`.
+     * @dev Restringido a direcciones con `BURNER_ROLE` (`TreasuryManager.sol` en rescates y `DiscountBuybackEngine.sol`).
+     * @param account Cuenta propietaria de los tokens a ser quemados.
+     * @param amount Cantidad de tokens a quemar.
      */
     function burnFrom(address account, uint256 amount) external onlyRole(ProtocolRoles.BURNER_ROLE) {
+        if (amount == 0) {
+            revert IProtocolErrors.ZeroAmount();
+        }
         if (account != msg.sender) {
             _spendAllowance(account, msg.sender, amount);
         }

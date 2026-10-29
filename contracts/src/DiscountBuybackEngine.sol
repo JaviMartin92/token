@@ -52,6 +52,7 @@ interface ISwapRouterBuyback {
 
 /**
  * @title DiscountBuybackEngine
+ * @author Alpha Centauri Architecture Team
  * @notice Autonomous Algorithmic Market Stabilizer & Deflationary Buyback Engine.
  *         Executes discount buyback & burns when ALPHA trades on DEX at a discount >= 5% vs NAV.
  *         Enforces 10 institutional safety locks to eliminate liquidity bleed, flash-loan manipulation,
@@ -106,12 +107,16 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
         uint256 minPoRRatioBps,
         uint256 maxTradeImpactBps
     );
+    event MaxSlippageUpdated(uint32 oldSlippage, uint32 newSlippage);
     event SwapRouterUpdated(address oldRouter, address newRouter);
     event PoolFeeUpdated(uint24 oldFee, uint24 newFee);
     event KeeperBountyUpdated(uint16 oldBounty, uint16 newBounty);
     event TokensSwept(address indexed token, address indexed to, uint256 amount);
     event EnginePaused(bool isPaused);
 
+    /**
+     * @notice Initializes the buyback engine with immutable registries
+     */
     constructor(
         ProtocolAddressProvider _addressProvider,
         address _redemptionToken,
@@ -120,28 +125,35 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
         address initialAdmin
     ) {
         if (address(_addressProvider) == address(0)) revert UninitializedProvider();
-        if (_redemptionToken == address(0)) revert IProtocolErrors.ZeroAddress();
+        if (_redemptionToken == address(0) || initialAdmin == address(0)) revert IProtocolErrors.ZeroAddress();
+        if (_redemptionTokenDecimals > 18) revert IProtocolErrors.InvalidParameters();
 
         addressProvider = _addressProvider;
         redemptionToken = _redemptionToken;
         redemptionTokenDecimals = _redemptionTokenDecimals;
         swapRouter = _swapRouter;
 
-        address admin = (initialAdmin != address(0)) ? initialAdmin : msg.sender;
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
-        _grantRole(ProtocolRoles.KEEPER_ROLE, admin);
+        _grantRole(DEFAULT_ADMIN_ROLE, initialAdmin);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, initialAdmin);
+        _grantRole(ProtocolRoles.KEEPER_ROLE, initialAdmin);
 
         lastBudgetResetTimestamp = block.timestamp;
     }
 
     // --- Administration ---
+
+    /**
+     * @notice Updates the Uniswap v3 SwapRouter address
+     */
     function setSwapRouter(address _swapRouter) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         address old = swapRouter;
         swapRouter = _swapRouter;
         emit SwapRouterUpdated(old, _swapRouter);
     }
 
+    /**
+     * @notice Updates the core engine parameters under strict sanity constraints
+     */
     function setParameters(
         uint256 _minDiscountBps,
         uint256 _maxDailyBudgetBps,
@@ -164,11 +176,27 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
         );
     }
 
+    /**
+     * @notice Updates max allowable slippage tolerance (max 500 bps / 5%)
+     */
+    function setMaxSlippageBps(uint32 _maxSlippageBps) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (_maxSlippageBps == 0 || _maxSlippageBps > 500) revert IProtocolErrors.InvalidParameters();
+        uint32 old = maxSlippageBps;
+        maxSlippageBps = _maxSlippageBps;
+        emit MaxSlippageUpdated(old, _maxSlippageBps);
+    }
+
+    /**
+     * @notice Pauses or unpauses buyback execution
+     */
     function setPaused(bool _paused) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         isPaused = _paused;
         emit EnginePaused(_paused);
     }
 
+    /**
+     * @notice Configures Uniswap v3 fee tier for buyback swaps
+     */
     function setPoolFee(uint24 _poolFee) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         if (_poolFee != 100 && _poolFee != 500 && _poolFee != 3000 && _poolFee != 10000) {
             revert IProtocolErrors.InvalidParameters();
@@ -178,13 +206,19 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
         emit PoolFeeUpdated(old, _poolFee);
     }
 
+    /**
+     * @notice Sets keeper bounty reward in basis points (capped at 50 bps / 0.50%)
+     */
     function setKeeperBountyBps(uint16 _bountyBps) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
-        if (_bountyBps > 50) revert IProtocolErrors.InvalidParameters(); // Max 0.50% bounty cap
+        if (_bountyBps > 50) revert IProtocolErrors.InvalidParameters();
         uint16 old = keeperBountyBps;
         keeperBountyBps = _bountyBps;
         emit KeeperBountyUpdated(old, _bountyBps);
     }
 
+    /**
+     * @notice Sweeps accidentally sent tokens
+     */
     function sweepTokens(address token, address to) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         if (token == address(0) || to == address(0)) revert IProtocolErrors.ZeroAddress();
         uint256 bal = IERC20(token).balanceOf(address(this));
@@ -258,8 +292,8 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
         IAlphaVaultBuyback(alphaVault).transferFunds(redemptionToken, address(this), usdcToSpend);
 
         if (swapRouter != address(0)) {
-            IERC20(redemptionToken).approve(swapRouter, 0);
-            IERC20(redemptionToken).approve(swapRouter, usdcToSpend);
+            IERC20(redemptionToken).safeApprove(swapRouter, 0);
+            IERC20(redemptionToken).safeApprove(swapRouter, usdcToSpend);
             try ISwapRouterBuyback(swapRouter)
                 .exactInputSingle(
                     ISwapRouterBuyback.ExactInputSingleParams({
