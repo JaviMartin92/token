@@ -280,23 +280,27 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
                     }
                 } catch {}
             }
-            IERC20(stablecoin).safeApprove(swapRouter, 0);
-            IERC20(stablecoin).safeApprove(swapRouter, wbtcShare);
-            try ISwapRouter(swapRouter).exactInputSingle(
-                ISwapRouter.ExactInputSingleParams({
-                    tokenIn: stablecoin,
-                    tokenOut: wbtc,
-                    fee: reserveFeeTier,
-                    recipient: msg.sender,
-                    deadline: block.timestamp + 15 minutes,
-                    amountIn: wbtcShare,
-                    amountOutMinimum: minWbtc,
-                    sqrtPriceLimitX96: 0
-                })
-            ) returns (uint256 bought) {
-                wbtcPaid = bought;
-            } catch {
-                usdcPayout += wbtcShare; // Fallback to USDC
+            if (minWbtc == 0) {
+                usdcPayout += wbtcShare;
+            } else {
+                IERC20(stablecoin).safeApprove(swapRouter, 0);
+                IERC20(stablecoin).safeApprove(swapRouter, wbtcShare);
+                try ISwapRouter(swapRouter).exactInputSingle(
+                    ISwapRouter.ExactInputSingleParams({
+                        tokenIn: stablecoin,
+                        tokenOut: wbtc,
+                        fee: reserveFeeTier,
+                        recipient: msg.sender,
+                        deadline: block.timestamp + 15 minutes,
+                        amountIn: wbtcShare,
+                        amountOutMinimum: minWbtc,
+                        sqrtPriceLimitX96: 0
+                    })
+                ) returns (uint256 bought) {
+                    wbtcPaid = bought;
+                } catch {
+                    usdcPayout += wbtcShare; // Fallback to USDC
+                }
             }
         } else {
             usdcPayout += wbtcShare;
@@ -313,23 +317,27 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
                     }
                 } catch {}
             }
-            IERC20(stablecoin).safeApprove(swapRouter, 0);
-            IERC20(stablecoin).safeApprove(swapRouter, wethShare);
-            try ISwapRouter(swapRouter).exactInputSingle(
-                ISwapRouter.ExactInputSingleParams({
-                    tokenIn: stablecoin,
-                    tokenOut: weth,
-                    fee: reserveFeeTier,
-                    recipient: msg.sender,
-                    deadline: block.timestamp + 15 minutes,
-                    amountIn: wethShare,
-                    amountOutMinimum: minWeth,
-                    sqrtPriceLimitX96: 0
-                })
-            ) returns (uint256 bought) {
-                wethPaid = bought;
-            } catch {
-                usdcPayout += wethShare; // Fallback to USDC
+            if (minWeth == 0) {
+                usdcPayout += wethShare;
+            } else {
+                IERC20(stablecoin).safeApprove(swapRouter, 0);
+                IERC20(stablecoin).safeApprove(swapRouter, wethShare);
+                try ISwapRouter(swapRouter).exactInputSingle(
+                    ISwapRouter.ExactInputSingleParams({
+                        tokenIn: stablecoin,
+                        tokenOut: weth,
+                        fee: reserveFeeTier,
+                        recipient: msg.sender,
+                        deadline: block.timestamp + 15 minutes,
+                        amountIn: wethShare,
+                        amountOutMinimum: minWeth,
+                        sqrtPriceLimitX96: 0
+                    })
+                ) returns (uint256 bought) {
+                    wethPaid = bought;
+                } catch {
+                    usdcPayout += wethShare; // Fallback to USDC
+                }
             }
         } else {
             usdcPayout += wethShare;

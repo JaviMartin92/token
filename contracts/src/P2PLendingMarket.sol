@@ -746,8 +746,37 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
 
         uint256 totalCollateral = loan.collateralAmount;
 
-        // Liquidator repays the debt to the lender
-        IERC20(stablecoin).safeTransferFrom(msg.sender, loan.lender, totalOwed);
+        // Liquidator repays the debt to the lender (routing Treasury loans back to AlphaVault & RealYield)
+        if (treasury != address(0) && (loan.lender == owner() || loan.lender == treasury)) {
+            if (_treasuryActiveLoansReceivableUSD >= loan.borrowAmount) {
+                _treasuryActiveLoansReceivableUSD -= loan.borrowAmount;
+            } else {
+                _treasuryActiveLoansReceivableUSD = 0;
+            }
+            address vaultTarget = treasury;
+            try ITreasury(treasury).alphaVault() returns (address av) {
+                if (av != address(0)) vaultTarget = av;
+            } catch {}
+            IERC20(stablecoin).safeTransferFrom(msg.sender, vaultTarget, loan.borrowAmount);
+            if (interest > 0 && feeCollector != address(0)) {
+                IERC20(stablecoin).safeTransferFrom(msg.sender, feeCollector, interest);
+                if (feeCollector.code.length > 0) {
+                    try IRealYieldRouter(feeCollector).routeUniversalFee(stablecoin) {} catch {}
+                }
+            } else if (interest > 0 && treasury != address(0)) {
+                IERC20(stablecoin).safeTransferFrom(msg.sender, treasury, interest);
+            }
+        } else {
+            uint256 feeSpread = (interest * INTEREST_SPREAD_BPS) / 10000;
+            uint256 lenderPayout = totalOwed - feeSpread;
+            IERC20(stablecoin).safeTransferFrom(msg.sender, loan.lender, lenderPayout);
+            if (feeSpread > 0 && feeCollector != address(0)) {
+                IERC20(stablecoin).safeTransferFrom(msg.sender, feeCollector, feeSpread);
+                if (feeCollector.code.length > 0) {
+                    try IRealYieldRouter(feeCollector).routeUniversalFee(stablecoin) {} catch {}
+                }
+            }
+        }
 
         // Transfer position NFT collateral with Fair Liquidation equity refund to borrower
         if (loan.positionTokenId > 0 && address(positionNFT) != address(0)) {
@@ -757,7 +786,14 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
                 uint256 maxLiquidatorReward = (totalOwed * (10000 + LIQUIDATION_BONUS_BPS)) / 10000;
                 if (nftFloorValue > maxLiquidatorReward) {
                     uint256 borrowerRefund = nftFloorValue - maxLiquidatorReward;
-                    IERC20(stablecoin).safeTransferFrom(msg.sender, loan.borrower, borrowerRefund);
+                    IERC20(stablecoin).safeTransferFrom(msg.sender, address(this), borrowerRefund);
+                    (bool success, bytes memory data) = stablecoin.call(
+                        abi.encodeWithSelector(IERC20.transfer.selector, loan.borrower, borrowerRefund)
+                    );
+                    bool transferred = success && (data.length == 0 || abi.decode(data, (bool)));
+                    if (!transferred) {
+                        claimableBorrowerEquityAssets[loan.borrower][stablecoin] += borrowerRefund;
+                    }
                 }
             } catch {}
             positionNFT.safeTransferFrom(address(this), msg.sender, loan.positionTokenId);
@@ -893,6 +929,35 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         allLoans = new Loan[](count);
         for (uint256 i = 1; i < maxId;) {
             allLoans[i - 1] = loans[i];
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    /**
+     * @notice Returns paginated loans to eliminate unbounded memory growth and RPC eth_call gas exhaustion [L-01].
+     * @param offset Zero-based offset in historical loan sequence.
+     * @param limit Maximum number of records to return.
+     */
+    function getLoansPaginated(uint256 offset, uint256 limit)
+        external
+        view
+        returns (Loan[] memory paginatedLoans, uint256 totalCount)
+    {
+        uint256 total = nextLoanId > 1 ? nextLoanId - 1 : 0;
+        totalCount = total;
+        if (offset >= total || limit == 0) {
+            return (new Loan[](0), totalCount);
+        }
+        uint256 end = offset + limit;
+        if (end > total) {
+            end = total;
+        }
+        uint256 size = end - offset;
+        paginatedLoans = new Loan[](size);
+        for (uint256 i = 0; i < size;) {
+            paginatedLoans[i] = loans[offset + i + 1];
             unchecked {
                 ++i;
             }

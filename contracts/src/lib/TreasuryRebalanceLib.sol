@@ -169,7 +169,10 @@ library TreasuryRebalanceLib {
             try IGovernanceStakingRebalance(stakingPool).stake(alphaObtained) {
                 // Auto-staked successfully
             } catch {
-                // Keep unstaked in treasury if staking pool reverts
+                // Keep unstaked in treasury custody if staking pool reverts: transfer to AlphaVault
+                if (address(params.vault) != address(0)) {
+                    params.token.safeTransfer(address(params.vault), alphaObtained);
+                }
             }
         }
     }

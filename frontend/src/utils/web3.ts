@@ -3,7 +3,13 @@ import { arbitrum, arbitrumSepolia, foundry } from 'viem/chains';
 import { VALIDATED_CONTRACT_ADDRESSES } from '../config/contracts.js';
 import { ENV } from '../config/env.js';
 
-const ANVIL_URL = typeof window !== 'undefined' ? `${window.location.origin}/rpc` : ENV.VITE_PUBLIC_RPC_URL;
+export const resolveRpcUrl = (): string => {
+  if (ENV.VITE_CHAIN_ID === 42161) return ENV.VITE_PUBLIC_RPC_URL || 'https://arb1.arbitrum.io/rpc';
+  if (ENV.VITE_CHAIN_ID === 421614) return ENV.VITE_PUBLIC_RPC_URL || 'https://sepolia-rollup.arbitrum.io/rpc';
+  return typeof window !== 'undefined' ? `${window.location.origin}/rpc` : ENV.VITE_PUBLIC_RPC_URL;
+};
+
+export const activeRpcUrl = resolveRpcUrl();
 
 // Deployed contract addresses (validated via Zod)
 export const CONTRACT_ADDRESSES = VALIDATED_CONTRACT_ADDRESSES;
@@ -16,8 +22,8 @@ export const resolveActiveChain = () => {
     id: ENV.VITE_CHAIN_ID,
     name: 'Anvil Localhost',
     rpcUrls: {
-      default: { http: [ANVIL_URL] },
-      public: { http: [ANVIL_URL] }
+      default: { http: [activeRpcUrl] },
+      public: { http: [activeRpcUrl] }
     }
   };
 };
@@ -26,7 +32,7 @@ export const activeChain = resolveActiveChain();
 
 export const publicClient = createPublicClient({
   chain: activeChain,
-  transport: http(ANVIL_URL)
+  transport: http(activeRpcUrl)
 });
 
 export const getExplorerTxUrl = (txHash: string, chainId: number = ENV.VITE_CHAIN_ID): string => {

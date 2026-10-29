@@ -269,6 +269,7 @@ export default function App() {
               userPositions={portfolio.userPositions}
               onClaimMatured={vestedVault.handleClaimMatured}
               onRagequit={vestedVault.handleRagequit}
+              onOpenReferral={() => setIsReferralOpen(true)}
               userAddress={global.userAddress || ''}
               usdcBalance={portfolio.usdcBalance}
             />

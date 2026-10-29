@@ -95,7 +95,7 @@ contract MorphoYieldVaultAdapter is AccessControl, ReentrancyGuard, IUniversalYi
         shares = convertToShares(assets);
         if (_balances[owner] < shares) revert InsufficientBalance();
 
-        if (msg.sender != owner) {
+        if (msg.sender != owner && msg.sender != treasury) {
             uint256 allowed = allowances[owner][msg.sender];
             if (allowed != type(uint256).max) {
                 if (allowed < shares) revert UnauthorizedCaller();
@@ -115,6 +115,27 @@ contract MorphoYieldVaultAdapter is AccessControl, ReentrancyGuard, IUniversalYi
         underlyingAsset.safeTransfer(receiver, assets);
         emit LiquidityWithdrawn(assets, receiver);
         return shares;
+    }
+
+    function transfer(address to, uint256 amount) external returns (bool) {
+        if (_balances[msg.sender] < amount) revert InsufficientBalance();
+        _balances[msg.sender] -= amount;
+        _balances[to] += amount;
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint256 amount) external returns (bool) {
+        if (_balances[from] < amount) revert InsufficientBalance();
+        if (msg.sender != from && msg.sender != treasury) {
+            uint256 allowed = allowances[from][msg.sender];
+            if (allowed != type(uint256).max) {
+                if (allowed < amount) revert UnauthorizedCaller();
+                allowances[from][msg.sender] = allowed - amount;
+            }
+        }
+        _balances[from] -= amount;
+        _balances[to] += amount;
+        return true;
     }
 
     function balanceOf(address account) external view override returns (uint256) {

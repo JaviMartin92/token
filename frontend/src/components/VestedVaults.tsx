@@ -224,7 +224,7 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
                     <Button
                       variant="emerald"
                       size="sm"
-                      onClick={() => onClaimMatured(pos.id)}
+                      onClick={() => onClaimMatured(pos.id, pos)}
                     >
                       {UI_STRINGS.VESTED_VAULTS.BTN_CLAIM_MATURED}
                     </Button>
@@ -234,7 +234,7 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onRagequit(pos.id)}
+                      onClick={() => onRagequit(pos.id, pos)}
                     >
                       {UI_STRINGS.VESTED_VAULTS.BTN_RAGEQUIT}
                     </Button>

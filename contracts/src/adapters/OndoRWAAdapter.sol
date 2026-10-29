@@ -4,12 +4,13 @@ pragma solidity ^0.8.20;
 import {IUniversalYieldAdapter} from "../interfaces/IUniversalYieldAdapter.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Ownable} from "../lib/access/Ownable.sol";
 
 /**
  * @title OndoRWAAdapter
  * @notice Mock implementation of an Ondo RWA adapter for testing Universal Yield Routing.
  */
-contract OndoRWAAdapter is IUniversalYieldAdapter {
+contract OndoRWAAdapter is IUniversalYieldAdapter, Ownable {
     using SafeERC20 for IERC20;
     IERC20 public immutable underlyingAsset;
 
@@ -18,8 +19,12 @@ contract OndoRWAAdapter is IUniversalYieldAdapter {
 
     // To simulate yield
     uint256 public yieldFactor = 10000; // 10000 = 1:1, 10500 = 5% yield
+    uint256 public constant MIN_YIELD_FACTOR = 10000; // 1.0x (100%)
+    uint256 public constant MAX_YIELD_FACTOR = 50000; // 5.0x (500%)
 
-    constructor(address _asset) {
+    error InvalidYieldFactorRange(uint256 factor);
+
+    constructor(address _asset) Ownable() {
         underlyingAsset = IERC20(_asset);
     }
 
@@ -82,8 +87,17 @@ contract OndoRWAAdapter is IUniversalYieldAdapter {
         return _balances[account];
     }
 
-    function simulateYield(uint256 newFactor) external {
+    /// @notice Ajuste de factor de rendimiento restringido exclusivamente al propietario con límites económicos seguros
+    function setYieldFactor(uint256 newFactor) public onlyOwner {
+        if (newFactor < MIN_YIELD_FACTOR || newFactor > MAX_YIELD_FACTOR) {
+            revert InvalidYieldFactorRange(newFactor);
+        }
         yieldFactor = newFactor;
+    }
+
+    /// @notice Alias protegido para compatibilidad de pruebas
+    function simulateYield(uint256 newFactor) external onlyOwner {
+        setYieldFactor(newFactor);
     }
 
     // Mock ERC20 transfer

@@ -155,7 +155,13 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
     function calculateDiscountBps(address user, uint256 lockYears) public view returns (uint256 discountBps) {
         if (lockYears < 1 || lockYears > 5) revert IProtocolErrors.InvalidLockYears();
 
-        discountBps = (lockYears * baseYieldRateBps) + subsidyBps;
+        uint256 effectiveBaseRate = baseYieldRateBps;
+        if (tokenomicsEngine != address(0)) {
+            try ProtocolTokenomicsEngine(tokenomicsEngine).baseYieldRateBps() returns (uint256 r) {
+                if (r > 0) effectiveBaseRate = r;
+            } catch {}
+        }
+        discountBps = (lockYears * effectiveBaseRate) + subsidyBps;
 
         // Tiered Governance Staking Extra Discount:
         // < 5,000 ALPHA staked: +0%
@@ -204,8 +210,28 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
             if (ICircuitBreaker(circuitBreaker).isFrozen(stablecoin)) revert CircuitBreakerActive();
         }
 
+        // Solvency check: ensure Treasury maintains baseline solvency prior to new issuance
+        if (treasuryBunker != address(0) && treasuryBunker.code.length > 0) {
+            try ITreasury(treasuryBunker).getProofOfReserves() returns (uint256 preAssets, uint256 preLiabilities, uint256) {
+                if (preLiabilities > 0 && preAssets < preLiabilities) {
+                    revert InactivePosition();
+                }
+            } catch {}
+        }
+
         uint256 discountBps = calculateDiscountBps(msg.sender, lockYears);
         uint256 discountedPrice = (principalAmount * (10000 - discountBps)) / 10000;
+
+        uint256 refBps = REFERRAL_REWARD_BPS;
+        uint256 mintFeeBps = 150;
+        if (tokenomicsEngine != address(0)) {
+            try ProtocolTokenomicsEngine(tokenomicsEngine).referralFeeBps() returns (uint256 rf) {
+                if (rf > 0) refBps = rf;
+            } catch {}
+            try ProtocolTokenomicsEngine(tokenomicsEngine).mintFeeBps() returns (uint256 mf) {
+                if (mf > 0) mintFeeBps = mf;
+            } catch {}
+        }
 
         uint256 refAmount = 0;
         if (referrer != address(0) && referrer != msg.sender) {
@@ -215,11 +241,11 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
             }
             if (referrerStake >= 100 * 10 ** 18) {
                 referrers[msg.sender] = referrer;
-                refAmount = (discountedPrice * REFERRAL_REWARD_BPS) / 10000; // 1.5%
+                refAmount = (discountedPrice * refBps) / 10000;
             }
         }
 
-        uint256 mintFee = (discountedPrice * 150) / 10000; // 1.5% protocol mint fee to Real Yield pool
+        uint256 mintFee = (discountedPrice * mintFeeBps) / 10000;
         uint256 netToTreasury = discountedPrice - refAmount - mintFee;
 
         // Pull stablecoin from buyer
@@ -249,13 +275,13 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         }
 
         totalInvested += principalAmount;
-        totalPresentObligation += principalAmount;
+        totalPresentObligation += discountedPrice;
 
         // Mint Position NFT
         tokenId = positionNFT.mintPosition(msg.sender, stablecoin, principalAmount, discountedPrice, lockYears);
 
         isVestedBond[tokenId] = true;
-        bondPresentObligation[tokenId] = principalAmount;
+        bondPresentObligation[tokenId] = discountedPrice;
 
         emit BondPurchased(msg.sender, tokenId, principalAmount, discountedPrice, lockYears, referrer);
     }
@@ -270,7 +296,13 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         VaultPositionNFT.Position memory pos = positionNFT.getPosition(tokenId);
         if (pos.isRagequitted || pos.isMaturedClaimed) revert InactivePosition();
 
-        uint256 penaltyTotal = (pos.discountedPricePaid * RAGEQUIT_PENALTY_BPS) / 10000; // 15%
+        uint256 penaltyBps = RAGEQUIT_PENALTY_BPS;
+        if (tokenomicsEngine != address(0)) {
+            try ProtocolTokenomicsEngine(tokenomicsEngine).ragequitPenaltyBps() returns (uint256 p) {
+                if (p > 0) penaltyBps = p;
+            } catch {}
+        }
+        uint256 penaltyTotal = (pos.discountedPricePaid * penaltyBps) / 10000;
         uint256 userReturn = pos.discountedPricePaid - penaltyTotal;
 
         // Ensure VestedVault has enough stablecoins to execute payouts by requesting reimbursement from Treasury

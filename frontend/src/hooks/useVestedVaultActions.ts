@@ -17,7 +17,15 @@ interface VestedVaultActionsParams {
 export function useVestedVaultActions({ activeKey, userAddress, addLog, addToast, fetchData, requestConfirmation }: VestedVaultActionsParams) {
   const [bondPrincipal, setBondPrincipal] = useState('1000');
   const [bondLockYears, setBondLockYears] = useState('3');
-  const [bondReferrer, setBondReferrer] = useState('');
+  const [bondReferrer, setBondReferrer] = useState(() => {
+    if (typeof window !== 'undefined' && window.location?.search) {
+      const refParam = new URLSearchParams(window.location.search).get('ref');
+      if (refParam && /^0x[a-fA-F0-9]{40}$/.test(refParam)) {
+        return refParam;
+      }
+    }
+    return '';
+  });
 
   const executeBuyBond = async () => {
     if (!bondPrincipal) return;
@@ -150,7 +158,7 @@ export function useVestedVaultActions({ activeKey, userAddress, addLog, addToast
   };
 
   const handleClaimMatured = (tokenId: number, positionObj?: any) => {
-    const principalVal = positionObj ? (parseFloat((positionObj.principalAmount || '0').toString().replace(/,/g, '')) || 0) : 0;
+    const principalVal = positionObj ? (parseFloat((positionObj.principal || positionObj.principalAmount || '0').toString().replace(/,/g, '')) || 0) : 0;
     const outputStr = principalVal > 0 ? `$${principalVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '100%';
 
     if (requestConfirmation) {
@@ -198,7 +206,7 @@ export function useVestedVaultActions({ activeKey, userAddress, addLog, addToast
   };
 
   const handleRagequit = (tokenId: number, positionObj?: any) => {
-    const pricePaid = positionObj ? (parseFloat((positionObj.discountedPricePaid || positionObj.principalAmount || '0').toString().replace(/,/g, '')) || 0) : 0;
+    const pricePaid = positionObj ? (parseFloat((positionObj.discountedPricePaid || positionObj.principal || positionObj.principalAmount || '0').toString().replace(/,/g, '')) || 0) : 0;
     const netRefund = pricePaid * 0.85;
     const penalty = pricePaid * 0.15;
     const feeReserves = pricePaid * 0.075;

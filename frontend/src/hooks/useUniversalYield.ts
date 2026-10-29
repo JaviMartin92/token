@@ -131,9 +131,9 @@ export function useUniversalYield(refetchInterval = 3000) {
         return {
           liveApyStr: `${weightedPct}%`,
           assetRates: {
-            stablesApyPct: sBps > 0 ? sBps / 10000 : 0,
-            ethApyPct: eBps > 0 ? eBps / 10000 : 0,
-            btcApyPct: bBps > 0 ? bBps / 10000 : 0
+            stablesApyPct: sBps > 0 ? sBps / 100 : 0,
+            ethApyPct: eBps > 0 ? eBps / 100 : 0,
+            btcApyPct: bBps > 0 ? bBps / 100 : 0
           }
         };
       } catch (err) {

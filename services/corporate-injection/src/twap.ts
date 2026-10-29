@@ -9,7 +9,7 @@ dotenv.config();
 const prisma = new PrismaClient();
 
 const RPC_URL = process.env.ARBITRUM_RPC_URL || 'http://localhost:8545';
-const OPERATOR_KEY = process.env.BACKEND_OPERATOR_PRIVATE_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
+const OPERATOR_KEY = process.env.BACKEND_OPERATOR_PRIVATE_KEY || (process.env.NODE_ENV === 'production' ? (() => { throw new Error('FATAL: BACKEND_OPERATOR_PRIVATE_KEY is required in production'); })() : '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80');
 const CONTRACT_ADDRESS = (process.env.CORP_CONTRIBUTION_ADDRESS || '0x0000000000000000000000000000000000000000') as `0x${string}`;
 
 const account = privateKeyToAccount(OPERATOR_KEY as `0x${string}`);

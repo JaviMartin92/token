@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "./IERC721.sol";
+import "./IERC721Receiver.sol";
 
 abstract contract ERC721 is IERC721 {
     string private _name;
@@ -83,12 +84,45 @@ abstract contract ERC721 is IERC721 {
         address from,
         address to,
         uint256 tokenId,
-        bytes memory /* data */
+        bytes memory data
     )
         internal
         virtual
     {
         _transfer(from, to, tokenId);
+        require(_checkOnERC721Received(from, to, tokenId, data), "ERC721: transfer to non ERC721Receiver implementer");
+    }
+
+    function _safeMint(address to, uint256 tokenId) internal virtual {
+        _safeMint(to, tokenId, "");
+    }
+
+    function _safeMint(address to, uint256 tokenId, bytes memory data) internal virtual {
+        _mint(to, tokenId);
+        require(_checkOnERC721Received(address(0), to, tokenId, data), "ERC721: transfer to non ERC721Receiver implementer");
+    }
+
+    function _checkOnERC721Received(
+        address from,
+        address to,
+        uint256 tokenId,
+        bytes memory data
+    ) private returns (bool) {
+        if (to.code.length > 0) {
+            try IERC721Receiver(to).onERC721Received(msg.sender, from, tokenId, data) returns (bytes4 retval) {
+                return retval == IERC721Receiver.onERC721Received.selector;
+            } catch (bytes memory reason) {
+                if (reason.length == 0) {
+                    revert("ERC721: transfer to non ERC721Receiver implementer");
+                } else {
+                    assembly {
+                        revert(add(32, reason), mload(reason))
+                    }
+                }
+            }
+        } else {
+            return true;
+        }
     }
 
     function _isApprovedOrOwner(address spender, uint256 tokenId) internal view virtual returns (bool) {

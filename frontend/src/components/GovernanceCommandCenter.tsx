@@ -306,18 +306,18 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
         const aBps = BigInt(Math.round(parseFloat(weightAlts || '0') * 100));
         const data = encodeFunctionData({
           abi: [{
-            name: 'setTargetWeights',
+            name: 'setAssetWeights',
             type: 'function',
             stateMutability: 'nonpayable',
             inputs: [
-              { name: 'usdcBps', type: 'uint256' },
-              { name: 'wbtcBps', type: 'uint256' },
-              { name: 'wethBps', type: 'uint256' },
-              { name: 'altsBps', type: 'uint256' }
+              { name: 'stablecoins', type: 'uint256' },
+              { name: 'wbtc', type: 'uint256' },
+              { name: 'weth', type: 'uint256' },
+              { name: 'alpha', type: 'uint256' }
             ],
             outputs: []
           }] as const,
-          functionName: 'setTargetWeights',
+          functionName: 'setAssetWeights',
           args: [uBps, bBps, eBps, aBps]
         });
         return {
@@ -328,43 +328,34 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
       }
 
       if (activeTemplate === 'fees') {
-        if (selectedFeeType === 'deposit') {
-          const bps = BigInt(Math.round(parseFloat(feeDepositInput || '0') * 100));
-          const data = encodeFunctionData({
-            abi: [{ name: 'setDepositFee', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'feeBps', type: 'uint256' }], outputs: [] }] as const,
-            functionName: 'setDepositFee',
-            args: [bps]
-          });
-          return {
-            generatedTarget: CONTRACT_ADDRESSES.TREASURY as `0x${string}`,
-            generatedCalldata: data,
-            generatedDescription: proposalTitle.trim() || `Ajuste Comisión de Depósito Tesorería a ${feeDepositInput}% (${bps} Bps)`
-          };
-        } else if (selectedFeeType === 'redeem') {
-          const bps = BigInt(Math.round(parseFloat(feeRedeemInput || '0') * 100));
-          const data = encodeFunctionData({
-            abi: [{ name: 'setRedeemFee', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'feeBps', type: 'uint256' }], outputs: [] }] as const,
-            functionName: 'setRedeemFee',
-            args: [bps]
-          });
-          return {
-            generatedTarget: CONTRACT_ADDRESSES.TREASURY as `0x${string}`,
-            generatedCalldata: data,
-            generatedDescription: proposalTitle.trim() || `Ajuste Comisión de Canje Directo / Redeem a ${feeRedeemInput}% (${bps} Bps)`
-          };
-        } else {
-          const bps = BigInt(Math.round(parseFloat(feeP2pInput || '0') * 100));
-          const data = encodeFunctionData({
-            abi: [{ name: 'setFeeBps', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'feeBps', type: 'uint256' }], outputs: [] }] as const,
-            functionName: 'setFeeBps',
-            args: [bps]
-          });
-          return {
-            generatedTarget: CONTRACT_ADDRESSES.P2P_MARKET as `0x${string}`,
-            generatedCalldata: data,
-            generatedDescription: proposalTitle.trim() || `Ajuste Fee Originación Préstamos P2P a ${feeP2pInput}% (${bps} Bps)`
-          };
-        }
+        const depBps = BigInt(Math.round(parseFloat(feeDepositInput || '0.5') * 100));
+        const redBps = BigInt(Math.round(parseFloat(feeRedeemInput || '1.0') * 100));
+        const p2pBps = BigInt(Math.round(parseFloat(feeP2pInput || '0.5') * 100));
+        const data = encodeFunctionData({
+          abi: [{
+            name: 'setFeeParameters',
+            type: 'function',
+            stateMutability: 'nonpayable',
+            inputs: [
+              { name: '_depositFeeBps', type: 'uint256' },
+              { name: '_redeemFeeBps', type: 'uint256' },
+              { name: '_originationFeeBps', type: 'uint256' },
+              { name: '_interestSpreadBps', type: 'uint256' },
+              { name: '_ragequitPenaltyBps', type: 'uint256' },
+              { name: '_mintFeeBps', type: 'uint256' },
+              { name: '_referralFeeBps', type: 'uint256' },
+              { name: '_stakingEntryFeeBps', type: 'uint256' }
+            ],
+            outputs: []
+          }] as const,
+          functionName: 'setFeeParameters',
+          args: [depBps, redBps, p2pBps, 1000n, 1500n, 150n, 150n, 100n]
+        });
+        return {
+          generatedTarget: CONTRACT_ADDRESSES.TOKENOMICS_ENGINE as `0x${string}`,
+          generatedCalldata: data,
+          generatedDescription: proposalTitle.trim() || `Ajuste Parámetros de Comisiones Tokenomics: Depósito ${feeDepositInput || '0.5'}% / Rescate ${feeRedeemInput || '1.0'}% / P2P ${feeP2pInput || '0.5'}%`
+        };
       }
 
       if (activeTemplate === 'circuit_breaker') {
@@ -382,26 +373,28 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
       }
 
       if (activeTemplate === 'buyback') {
-        const budgetUnits = BigInt(Math.floor(parseFloat(buybackBudgetInput || '0') * 1e6));
-        const discBps = BigInt(parseInt(buybackDiscountBpsInput || '0', 10));
+        const discBps = BigInt(parseInt(buybackDiscountBpsInput || '500', 10));
         const data = encodeFunctionData({
           abi: [{
-            name: 'setBuybackParameters',
+            name: 'setParameters',
             type: 'function',
             stateMutability: 'nonpayable',
             inputs: [
-              { name: 'dailyBudgetUSDC', type: 'uint256' },
-              { name: 'targetDiscountBps', type: 'uint256' }
+              { name: '_minDiscountBps', type: 'uint256' },
+              { name: '_maxDailyBudgetBps', type: 'uint256' },
+              { name: '_cooldownPeriod', type: 'uint256' },
+              { name: '_minPoRRatioBps', type: 'uint256' },
+              { name: '_maxTradeImpactBps', type: 'uint256' }
             ],
             outputs: []
           }] as const,
-          functionName: 'setBuybackParameters',
-          args: [budgetUnits, discBps]
+          functionName: 'setParameters',
+          args: [discBps, 500n, 3600n, 10000n, 200n]
         });
         return {
           generatedTarget: CONTRACT_ADDRESSES.DISCOUNT_BUYBACK_ENGINE as `0x${string}`,
           generatedCalldata: data,
-          generatedDescription: proposalTitle.trim() || `Actualizar Parámetros Motor de Recompra DEX: Presupuesto ${buybackBudgetInput} USDC/día @ ${buybackDiscountBpsInput} Bps Descuento`
+          generatedDescription: proposalTitle.trim() || `Actualizar Parámetros Motor de Recompra DEX: Mínimo ${buybackDiscountBpsInput || '500'} Bps Descuento`
         };
       }
 

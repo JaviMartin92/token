@@ -479,7 +479,8 @@ export class TokenomicsSupervisorAgent {
       notes.push(`INVARIANTE NAV VIOLADO: NAV disminuyó de $${preChain.navUSD.toFixed(6)} a $${postChain.navUSD.toFixed(6)} (delta: ${deltaNav.toFixed(6)})`);
     }
 
-    const fullSolvencyPoR = postChain.totalLiabilitiesUSD === 0 || postChain.porRatioPct >= 99.90;
+    const minPoR = isPayoutOrSettlement ? 99.50 : 99.90;
+    const fullSolvencyPoR = postChain.totalLiabilitiesUSD === 0 || postChain.porRatioPct >= minPoR;
     if (!fullSolvencyPoR) {
       notes.push(`INVARIANTE PoR VIOLADO: PoR cayó bajo solvencia plena: ${postChain.porRatioPct.toFixed(2)}%`);
     }

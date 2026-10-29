@@ -10,7 +10,9 @@ import "../interfaces/IProtocolErrors.sol";
 
 interface ITreasuryManagerGateway {
     function deposit(uint256 stableAmount, uint256 minSharesOut) external returns (uint256 sharesMinted);
+    function depositFor(address beneficiary, uint256 stableAmount, uint256 minSharesOut) external returns (uint256 sharesMinted);
     function redeem(uint256 sharesAmount, uint256 minUsdcOut) external returns (uint256 assetsReceived);
+    function redeemFor(address beneficiary, address recipient, uint256 sharesAmount, uint256 minUsdcOut) external returns (uint256 assetsReceived);
     function redemptionToken() external view returns (address);
 }
 
@@ -93,7 +95,7 @@ contract CompliantTreasuryGateway is AccessControl, ReentrancyGuard {
         IERC20(stablecoin).approve(address(treasuryManager), stableAmount);
 
         // Execute core deposit
-        sharesMinted = treasuryManager.deposit(stableAmount, minSharesOut);
+        sharesMinted = treasuryManager.depositFor(msg.sender, stableAmount, minSharesOut);
         userLastDepositBlock[msg.sender] = block.number;
 
         // Forward minted shares to the institution
@@ -122,7 +124,7 @@ contract CompliantTreasuryGateway is AccessControl, ReentrancyGuard {
         IERC20(alphaToken).approve(address(treasuryManager), sharesAmount);
 
         // Execute core redemption
-        assetsReceived = treasuryManager.redeem(sharesAmount, minUsdcOut);
+        assetsReceived = treasuryManager.redeemFor(msg.sender, msg.sender, sharesAmount, minUsdcOut);
 
         // Forward redeemed stablecoins to institution
         IERC20(stablecoin).safeTransfer(msg.sender, assetsReceived);

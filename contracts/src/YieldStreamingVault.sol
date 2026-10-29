@@ -133,6 +133,9 @@ contract YieldStreamingVault is IYieldStreamingVault, AccessControl, ReentrancyG
         if (user == address(0)) revert IProtocolErrors.ZeroAddress();
         if (amount == 0) revert IProtocolErrors.ZeroAmount();
 
+        // Pull backing yield tokens to ensure 100% solvency
+        IERC20(yieldToken).safeTransferFrom(msg.sender, address(this), amount);
+
         pendingYields[user] = _calculateCompoundedYield(user) + amount;
         lastYieldUpdateTimestamp[user] = block.timestamp;
     }

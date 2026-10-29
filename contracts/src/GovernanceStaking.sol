@@ -110,7 +110,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
     }
 
     function _writeCheckpoint(address delegatee, uint32 nCheckpoints, uint256 oldVotes, uint256 newVotes) internal {
-        require(newVotes <= type(uint224).max, "Votes overflow");
+        if (newVotes > type(uint224).max) revert IProtocolErrors.InvalidAmount();
         uint32 blockNum = uint32(block.number);
         if (nCheckpoints > 0 && _checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNum) {
             _checkpoints[delegatee][nCheckpoints - 1].votes = uint224(newVotes);
@@ -212,12 +212,18 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
         return rewardToken.balanceOf(address(this));
     }
 
-    modifier updateReward(address account) {
+    function _updateAccountReward(address account) internal {
         rewardPerTokenStored = rewardPerToken();
         if (account != address(0)) {
-            rewards[account] = earned(account);
+            if (!isExcludedFromYield[account]) {
+                rewards[account] = earned(account);
+            }
             userRewardPerTokenPaid[account] = rewardPerTokenStored;
         }
+    }
+
+    modifier updateReward(address account) {
+        _updateAccountReward(account);
         _;
     }
 
@@ -401,11 +407,20 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
 
     // --- Voting Power Synchronization ---
     function _transfer(address from, address to, uint256 value) internal virtual override {
+        if (value == 0) revert IProtocolErrors.InvalidAmount();
+
+        _updateAccountReward(from);
+        _updateAccountReward(to);
+
         if (from != address(0) && block.timestamp < lastStakeTime[from] + MIN_STAKE_DURATION) {
             revert IProtocolErrors.TimelockActive(lastStakeTime[from] + MIN_STAKE_DURATION);
         }
         if (to != address(0)) {
-            lastStakeTime[to] = block.timestamp;
+            if (lastStakeTime[to] == 0) {
+                lastStakeTime[to] = block.timestamp;
+            } else if (lastStakeTime[from] > lastStakeTime[to]) {
+                lastStakeTime[to] = lastStakeTime[from];
+            }
         }
         super._transfer(from, to, value);
         _moveVotingPower(delegates(from), delegates(to), value);

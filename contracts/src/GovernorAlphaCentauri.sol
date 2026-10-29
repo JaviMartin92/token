@@ -225,10 +225,10 @@ contract GovernorAlphaCentauri is AccessControl {
     function _castVoteInternal(uint256 proposalId, uint8 support, string memory reason) internal returns (uint256 weight) {
         if (support > 2) revert InvalidVoteType();
         Proposal storage p = proposals[proposalId];
-        if (block.number < p.startBlock || block.number > p.endBlock) revert VotingClosed();
+        if (block.number <= p.startBlock || block.number > p.endBlock) revert VotingClosed();
         if (hasVoted[proposalId][msg.sender]) revert AlreadyVoted();
 
-        weight = _getVotes(msg.sender, p.startBlock - 1);
+        weight = _getVotes(msg.sender, p.startBlock);
         if (weight == 0) revert NoVotingWeight();
 
         hasVoted[proposalId][msg.sender] = true;
@@ -267,7 +267,7 @@ contract GovernorAlphaCentauri is AccessControl {
         Proposal storage p = proposals[proposalId];
         if (p.canceled) return ProposalState.Canceled;
         if (p.executed) return ProposalState.Executed;
-        if (block.number < p.startBlock) return ProposalState.Pending;
+        if (block.number <= p.startBlock) return ProposalState.Pending;
         if (block.number <= p.endBlock) return ProposalState.Active;
 
         uint256 totalVotes = p.forVotes + p.abstainVotes;

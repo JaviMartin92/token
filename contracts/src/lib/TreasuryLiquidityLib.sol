@@ -28,7 +28,8 @@ library TreasuryLiquidityLib {
         if (vaultBal < requiredUsdc) {
             uint256 deficit = requiredUsdc - vaultBal;
 
-            for (uint256 i = 0; i < activeYieldAdapters.length && deficit > 0;) {
+            uint256 maxAdapters = activeYieldAdapters.length > 10 ? 10 : activeYieldAdapters.length;
+            for (uint256 i = 0; i < maxAdapters && deficit > 0;) {
                 address adapter = activeYieldAdapters[i];
                 try IUniversalYieldAdapter(adapter).balanceOf(address(vault)) returns (uint256 vaultShares) {
                     if (vaultShares > 0) {
@@ -43,7 +44,10 @@ library TreasuryLiquidityLib {
                                 IUniversalYieldAdapter(adapter).withdraw(toWithdraw, address(vault), treasuryContract);
                                 deficit = (toWithdraw > deficit) ? 0 : deficit - toWithdraw;
                             } catch {
-                                // Ignore transfer failure to next adapter
+                                // Fallback: try direct withdraw from vault if authorized
+                                try IUniversalYieldAdapter(adapter).withdraw(toWithdraw, address(vault), address(vault)) {
+                                    deficit = (toWithdraw > deficit) ? 0 : deficit - toWithdraw;
+                                } catch {}
                             }
                         } catch {
                             // Ignore conversion revert

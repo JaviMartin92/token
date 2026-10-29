@@ -261,7 +261,7 @@ export function validateConservativeRate(
  */
 export async function syncYieldRatesOnChain(customRpcUrl?: string, customKey?: string) {
   const rpcUrl = customRpcUrl || process.env.ANVIL_URL || 'http://localhost:8545';
-  const operatorKey = (customKey || process.env.OPERATOR_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80') as `0x${string}`;
+  const operatorKey = (customKey || process.env.OPERATOR_KEY || (process.env.NODE_ENV === 'production' ? (() => { throw new Error('FATAL: OPERATOR_KEY required in production'); })() : '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80')) as `0x${string}`;
 
   // Load contracts.json
   const contractsPath = path.resolve(__dirname, '../../../frontend/src/contracts.json');

@@ -83,6 +83,7 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
     mapping(address => uint256) public lastDepositBlock;
 
     // Compliance (B-04)
+    bool public kycForced;
     mapping(address => bool) public kycWhitelist;
 
     // Direct tracked assets for routing
@@ -110,8 +111,15 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
     event YieldAdapterRemoved(address indexed adapter);
 
     modifier onlyWhitelisted(address account) {
-        if (!kycWhitelist[account]) revert KYCRequired(account);
+        if (kycForced && !kycWhitelist[account]) revert KYCRequired(account);
         _;
+    }
+
+    /**
+     * @notice Enforces or relaxes protocol-wide KYC requirements for deposits and redemptions.
+     */
+    function setKYCForced(bool forced) external onlyRole(ProtocolRoles.COMPLIANCE_ROLE) {
+        kycForced = forced;
     }
 
     /**
@@ -401,13 +409,30 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
      * @param minSharesOut Minimum shares expected to receive (slippage protection).
      * @return sharesMinted The amount of Alpha shares minted to the user.
      */
-    function deposit(uint256 stableAmount, uint256 minSharesOut) public nonReentrant returns (uint256 sharesMinted) {
+    function deposit(uint256 stableAmount, uint256 minSharesOut) public returns (uint256 sharesMinted) {
+        return depositFor(msg.sender, stableAmount, minSharesOut);
+    }
+
+    /**
+     * @notice Mints Alpha Shares on behalf of a beneficiary. Routes funds to Yield Adapters and P2P Buffers.
+     * @param beneficiary The account receiving the minted shares and tracked for cooldowns.
+     * @param stableAmount The amount of stablecoin (USDC) to deposit.
+     * @param minSharesOut Minimum shares expected to receive (slippage protection).
+     * @return sharesMinted The amount of Alpha shares minted to the beneficiary.
+     */
+    function depositFor(address beneficiary, uint256 stableAmount, uint256 minSharesOut)
+        public
+        nonReentrant
+        onlyWhitelisted(beneficiary)
+        returns (uint256 sharesMinted)
+    {
+        if (beneficiary == address(0)) revert ZeroAddress();
         if (stableAmount == 0) revert ZeroAmount();
         uint256 grossDepositUSD = stableAmount * (10 ** (18 - redemptionTokenDecimals));
         if (tvlCap > 0 && getTotalNavUSD() + grossDepositUSD > tvlCap) {
             revert TVLCapExceeded(getTotalNavUSD() + grossDepositUSD, tvlCap);
         }
-        lastDepositBlock[msg.sender] = block.number;
+        lastDepositBlock[beneficiary] = block.number;
 
         (uint256 preAssetsUSD,, uint256 preRatioBps) = getProofOfReserves();
         uint256 preNavUSD = getNAVPerShare();
@@ -419,7 +444,7 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
         sharesMinted = res.sharesMinted;
 
         AlphaToken token = AlphaToken(addressProvider.getAddress(addressProvider.ID_ALPHA_TOKEN()));
-        token.mint(msg.sender, sharesMinted);
+        token.mint(beneficiary, sharesMinted);
 
         if (res.feeAmount > 0 && routerAddr != address(0)) {
             vault.transferFunds(redemptionToken, routerAddr, res.feeAmount);
@@ -458,7 +483,7 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
 
         lastSettledNAVPerShare = postNavUSD;
 
-        emit Deposited(msg.sender, res.actualDeposited, sharesMinted);
+        emit Deposited(beneficiary, res.actualDeposited, sharesMinted);
     }
 
     /**
@@ -518,9 +543,27 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
      * @param minUsdcOut Minimum USDC expected to receive (slippage protection).
      * @return assetsReceived The amount of USDC transferred to the user, net of fees.
      */
-    function redeem(uint256 sharesAmount, uint256 minUsdcOut) external nonReentrant returns (uint256 assetsReceived) {
+    function redeem(uint256 sharesAmount, uint256 minUsdcOut) external returns (uint256 assetsReceived) {
+        return redeemFor(msg.sender, msg.sender, sharesAmount, minUsdcOut);
+    }
+
+    /**
+     * @notice Burns Alpha Shares on behalf of a beneficiary in exchange for USDC from the Treasury.
+     * @param beneficiary The account whose cooldown and whitelist status are verified.
+     * @param recipient The destination account receiving the redeemed stablecoins.
+     * @param sharesAmount The amount of Alpha shares to burn.
+     * @param minUsdcOut Minimum USDC expected to receive (slippage protection).
+     * @return assetsReceived The amount of USDC transferred to recipient, net of fees.
+     */
+    function redeemFor(address beneficiary, address recipient, uint256 sharesAmount, uint256 minUsdcOut)
+        public
+        nonReentrant
+        onlyWhitelisted(beneficiary)
+        returns (uint256 assetsReceived)
+    {
+        if (beneficiary == address(0) || recipient == address(0)) revert ZeroAddress();
         if (sharesAmount == 0) revert ZeroAmount();
-        if (lastDepositBlock[msg.sender] >= block.number) revert SameBlockCooldown(msg.sender, block.number);
+        if (lastDepositBlock[beneficiary] >= block.number) revert SameBlockCooldown(beneficiary, block.number);
 
         (uint256 preAssetsUSD,, uint256 preRatioBps) = getProofOfReserves();
         uint256 netCirculating = getNetCirculatingShares();
@@ -538,7 +581,7 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
 
         AlphaToken(addressProvider.getAddress(addressProvider.ID_ALPHA_TOKEN())).burnFrom(msg.sender, sharesAmount);
         totalBurnedTokens += sharesAmount;
-        vault.transferFunds(redemptionToken, msg.sender, assetsReceived);
+        vault.transferFunds(redemptionToken, recipient, assetsReceived);
 
         // Fee Distribution
         address routerAddr = addressProvider.getAddress(addressProvider.ID_REAL_YIELD_ROUTER());
@@ -555,7 +598,7 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
 
         lastSettledNAVPerShare = postNav;
 
-        emit Redeemed(msg.sender, sharesAmount, assetsReceived);
+        emit Redeemed(beneficiary, sharesAmount, assetsReceived);
     }
 
     function _updateLastSettledNAV() internal {

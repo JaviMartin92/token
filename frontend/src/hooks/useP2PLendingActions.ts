@@ -484,7 +484,7 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
       } catch (e) {}
 
       if (totalOwedWei > 0n) {
-        const safeApprovalWei = totalOwedWei * 105n / 100n + parseUnits('10', 6);
+        const safeApprovalWei = totalOwedWei * 150n / 100n + parseUnits('500', 6);
         let currentAllowance = 0n;
         try {
           currentAllowance = await publicClient.readContract({
@@ -495,7 +495,7 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
           }) as bigint;
         } catch (e) {}
 
-        if (currentAllowance < totalOwedWei) {
+        if (currentAllowance < safeApprovalWei) {
           addToast('info', 'Aprobación Liquidación', `Aprobando pago de $${formatUnits(safeApprovalWei, 6)} USDC para saldar la deuda impagada...`);
           const appHash = await client.writeContract({
             address: CONTRACT_ADDRESSES.USDC,

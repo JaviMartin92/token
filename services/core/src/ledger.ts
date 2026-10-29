@@ -35,6 +35,16 @@ export async function recordLedgerTransaction(
     );
   }
 
+  if (referenceId) {
+    const existing = await prisma.ledgerTransaction.findFirst({
+      where: { referenceId, referenceType },
+      include: { entries: true }
+    });
+    if (existing) {
+      return existing;
+    }
+  }
+
   return await prisma.ledgerTransaction.create({
     data: {
       description,
