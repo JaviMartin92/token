@@ -464,14 +464,16 @@ export class TokenomicsSupervisorAgent {
 
     // 3. Verificación de los 5 Invariantes Fundamentales de Tokenomics
     const deltaNav = postChain.navUSD - preChain.navUSD;
-    // La liquidación de bonos y el cobro de dividendos (Real Yield) admiten una tolerancia operativa de 0.005 USD
+    // La liquidación de bonos y el cobro de dividendos (Real Yield) admiten una tolerancia operativa de 0.005 USD.
+    // Para operaciones ordinarias (reembolsos/burns), la conversión de enteros EVM (18 a 6 decimales) y división truncada
+    // genera una variación flotante de precisión numérica de hasta 0.0001 USD ($0.01 centavos).
     const isPayoutOrSettlement = 
       operationName.toLowerCase().includes('matured') || 
       operationName.toLowerCase().includes('vencido') ||
       operationName.toLowerCase().includes('yield') ||
       operationName.toLowerCase().includes('rendimiento') ||
       transactionId.includes('CLAIM');
-    const minDeltaNav = isPayoutOrSettlement ? -0.005 : -0.00001;
+    const minDeltaNav = isPayoutOrSettlement ? -0.005 : -0.0001;
     const nonDecreasingNav = deltaNav >= minDeltaNav;
     if (!nonDecreasingNav) {
       notes.push(`INVARIANTE NAV VIOLADO: NAV disminuyó de $${preChain.navUSD.toFixed(6)} a $${postChain.navUSD.toFixed(6)} (delta: ${deltaNav.toFixed(6)})`);

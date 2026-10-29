@@ -217,44 +217,23 @@ export function useStakingActions({
 
   const handleGaslessClaim = async () => {
     try {
-      addLog('Iniciando reclamo gasless vía YieldStreamingVault...');
-      const YIELD_VAULT_ADDRESS = (import.meta.env.VITE_YIELD_STREAMING_VAULT_ADDRESS || CONTRACT_ADDRESSES.YIELD_VAULT || '') as `0x${string}`;
-      if (!YIELD_VAULT_ADDRESS) {
-        addLog('[Aviso] Dirección YieldStreamingVault no configurada.');
-        return;
-      }
-      const streamId = 0n;
-      const nonce = 0n;
-      const amount = 0n;
-      const signature = '0x' as `0x${string}`;
-
+      addLog('Iniciando reclamo de rendimiento en GovernanceStaking...');
       const client = getWalletClient(activeKey);
+      const userAddr = (userAddress || activeKey) as `0x${string}`;
       const tx = await client.writeContract({
-        address: YIELD_VAULT_ADDRESS,
-        abi: [
-          {
-            name: 'claimStreamWithPermit',
-            type: 'function',
-            stateMutability: 'nonpayable',
-            inputs: [
-              { name: 'streamId', type: 'uint256' },
-              { name: 'amount', type: 'uint256' },
-              { name: 'nonce', type: 'uint256' },
-              { name: 'signature', type: 'bytes' }
-            ],
-            outputs: []
-          }
-        ] as const,
-        functionName: 'claimStreamWithPermit',
-        args: [streamId, amount, nonce, signature]
+        address: CONTRACT_ADDRESSES.STAKING,
+        abi: ABIS.STAKING,
+        functionName: 'claimReward',
+        args: [],
+        account: client.account || userAddr
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
-      addLog('Reclamo gasless procesado.');
-      addToast('success', 'Reclamo Gasless', 'Procesado vía YieldStreamingVault');
+      addLog('Reclamo de rendimiento procesado con éxito.');
+      addToast('success', 'Rendimiento Reclamado', 'USDC transferido a tu wallet');
       await fetchData();
     } catch (err: any) {
-      addLog(`[Error Gasless] Falló el reclamo: ${err.message || err}`);
-      addToast('error', 'Error Gasless', err.message || 'Fallo');
+      addLog(`[Error Reclamo] Falló: ${err.message || err}`);
+      addToast('error', 'Error Reclamo', err.message || 'Fallo');
     }
   };
 

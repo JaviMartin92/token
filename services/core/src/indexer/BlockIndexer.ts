@@ -198,15 +198,15 @@ export class BlockIndexerService {
    */
   public async fetchLogsForRange(fromBlock: bigint, toBlock: bigint): Promise<DomainBlockchainEvent[]> {
     const eventsToQuery = [
-      parseAbiItem('event SharesMinted(address indexed user, uint256 stableAmount, uint256 sharesMinted)'),
-      parseAbiItem('event SharesRedeemed(address indexed user, uint256 sharesAmount, uint256 assetsReceived)'),
-      parseAbiItem('event VestedBondPurchased(uint256 indexed tokenId, address indexed buyer, uint256 principal, uint256 lockYears)'),
-      parseAbiItem('event LoanCreated(uint256 indexed loanId, address indexed borrower, uint256 borrowAmount)'),
-      parseAbiItem('event LoanFunded(uint256 indexed loanId, address indexed lender)'),
-      parseAbiItem('event LoanRepaid(uint256 indexed loanId)'),
+      parseAbiItem('event Deposited(address indexed user, uint256 stableAmount, uint256 sharesMinted, uint256 feePaid)'),
+      parseAbiItem('event Redeemed(address indexed user, uint256 sharesAmount, uint256 usdcReturned)'),
+      parseAbiItem('event BondPurchased(address indexed buyer, uint256 indexed tokenId, uint256 principalAmount, uint256 discountedPricePaid, uint256 lockYears, address referrer)'),
+      parseAbiItem('event LoanCreated(uint256 indexed loanId, address indexed borrower, uint256 amount, uint256 interestRateBps, uint256 durationDays, uint256 positionTokenId, uint256 collateralAmount)'),
+      parseAbiItem('event LoanAccepted(uint256 indexed loanId, address indexed borrower, address indexed lender, uint256 amount)'),
+      parseAbiItem('event LoanRepaid(uint256 indexed loanId, uint256 totalRepaid)'),
       parseAbiItem('event Staked(address indexed user, uint256 amount)'),
       parseAbiItem('event Unstaked(address indexed user, uint256 amount)'),
-      parseAbiItem('event BreakerTriggered(address indexed asset, uint256 dropPercentage)')
+      parseAbiItem('event CircuitTriggered(address indexed asset, uint256 oldPrice, uint256 newPrice)')
     ];
 
     const results: DomainBlockchainEvent[] = [];

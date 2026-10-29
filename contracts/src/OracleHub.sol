@@ -107,6 +107,7 @@ contract OracleHub is AccessControl {
         priceFeeds[asset] = feed;
         secondaryPriceFeeds[asset] = secondaryFeed;
         assetDecimals[asset] = decimals_;
+        updatePrimaryPriceCache(asset);
         emit AssetFeedUpdated(asset, feed, secondaryFeed, decimals_);
     }
 
@@ -124,7 +125,7 @@ contract OracleHub is AccessControl {
         delete lastValidPrimaryPrice18[asset];
 
         uint256 len = trackedAssets.length;
-        for (uint256 i = 0; i < len; i++) {
+        for (uint256 i = 0; i < len; ++i) {
             if (trackedAssets[i] == asset) {
                 trackedAssets[i] = trackedAssets[len - 1];
                 trackedAssets.pop();
@@ -204,6 +205,16 @@ contract OracleHub is AccessControl {
             } catch {
                 // Ignore transient oracle revert during cache warmup
             }
+        }
+    }
+
+    /**
+     * @notice Updates primary price caches for all tracked assets in a single batch transaction.
+     */
+    function updateAllPrimaryPriceCaches() external {
+        uint256 len = trackedAssets.length;
+        for (uint256 i = 0; i < len; ++i) {
+            updatePrimaryPriceCache(trackedAssets[i]);
         }
     }
 

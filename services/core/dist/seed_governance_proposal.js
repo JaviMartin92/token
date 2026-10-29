@@ -91,7 +91,7 @@ async function main() {
     console.log('[*] Submitting Proposal #1 to GovernorAlphaCentauri...');
     const weightsCalldata = (0, viem_1.encodeFunctionData)({
         abi: [{
-                name: 'setTargetWeights',
+                name: 'setAssetWeights',
                 type: 'function',
                 stateMutability: 'nonpayable',
                 inputs: [
@@ -102,7 +102,7 @@ async function main() {
                 ],
                 outputs: []
             }],
-        functionName: 'setTargetWeights',
+        functionName: 'setAssetWeights',
         args: [5000n, 2500n, 1250n, 1250n]
     });
     const txPropose = await delegateWallet.writeContract({

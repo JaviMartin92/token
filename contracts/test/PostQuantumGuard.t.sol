@@ -21,6 +21,7 @@ contract PostQuantumGuardTest is Test {
         vm.startPrank(admin);
         addressProvider = new ProtocolAddressProvider(admin);
         guard = new PostQuantumGuard(admin, address(addressProvider));
+        guard.grantRole(guard.QUANTUM_OPERATOR_ROLE(), alice);
         vm.stopPrank();
 
         // Generar par de claves W-OTS+ deterministas para Alice
@@ -117,7 +118,7 @@ contract PostQuantumGuardTest is Test {
 
     function test_AuthorizeAction_And_PreventReplay() public {
         bytes32 actionId = keccak256("action_transfer_rescue_001");
-        bytes32 message = keccak256("action_payload_data");
+        bytes32 message = keccak256(abi.encodePacked(block.chainid, address(guard), alice, actionId));
         bytes32[67] memory sig = _signMessage(message, privateKeys);
 
         bytes32 nextRoot = keccak256("next_quantum_root_key");

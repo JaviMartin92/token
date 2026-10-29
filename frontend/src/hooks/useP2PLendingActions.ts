@@ -163,8 +163,8 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
       const tx = await client.writeContract({
         address: CONTRACT_ADDRESSES.P2P_MARKET,
         abi: ABIS.P2P_MARKET,
-        functionName: 'acceptLoanAndDepositCollateral',
-        args: [BigInt(loanId), colWei]
+        functionName: 'fundLoanOffer',
+        args: [BigInt(loanId)]
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
       addLog(`¡Préstamo #${loanId} financiado con éxito!`);

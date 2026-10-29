@@ -289,32 +289,30 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
         internal
         returns (uint256 alphaReceived)
     {
+        if (swapRouter == address(0)) revert IProtocolErrors.ZeroAddress();
+
         IAlphaVaultBuyback(alphaVault).transferFunds(redemptionToken, address(this), usdcToSpend);
 
-        if (swapRouter != address(0)) {
-            IERC20(redemptionToken).safeApprove(swapRouter, 0);
-            IERC20(redemptionToken).safeApprove(swapRouter, usdcToSpend);
-            try ISwapRouterBuyback(swapRouter)
-                .exactInputSingle(
-                    ISwapRouterBuyback.ExactInputSingleParams({
-                    tokenIn: redemptionToken,
-                    tokenOut: alphaToken,
-                    fee: poolFee,
-                    recipient: address(this),
-                    deadline: block.timestamp + 15 minutes,
-                    amountIn: usdcToSpend,
-                    amountOutMinimum: minAlphaOut,
-                    sqrtPriceLimitX96: 0
-                })
-                ) returns (
-                uint256 amountOut
-            ) {
-                alphaReceived = amountOut;
-            } catch {
-                revert DEXSwapFailed();
-            }
-        } else {
-            alphaReceived = minAlphaOut;
+        IERC20(redemptionToken).safeApprove(swapRouter, 0);
+        IERC20(redemptionToken).safeApprove(swapRouter, usdcToSpend);
+        try ISwapRouterBuyback(swapRouter)
+            .exactInputSingle(
+                ISwapRouterBuyback.ExactInputSingleParams({
+                tokenIn: redemptionToken,
+                tokenOut: alphaToken,
+                fee: poolFee,
+                recipient: address(this),
+                deadline: block.timestamp + 15 minutes,
+                amountIn: usdcToSpend,
+                amountOutMinimum: minAlphaOut,
+                sqrtPriceLimitX96: 0
+            })
+            ) returns (
+            uint256 amountOut
+        ) {
+            alphaReceived = amountOut;
+        } catch {
+            revert DEXSwapFailed();
         }
 
         if (alphaReceived < minAlphaOut) {
@@ -331,6 +329,7 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
     function executeDiscountBuyback(uint256 usdcToSpend, uint256 minAlphaOut)
         external
         nonReentrant
+        onlyRole(ProtocolRoles.KEEPER_ROLE)
         returns (uint256 alphaBurned)
     {
         if (isPaused) revert IProtocolErrors.ProtocolPaused();

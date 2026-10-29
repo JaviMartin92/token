@@ -45,9 +45,12 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
     address public weth;
     address public alphaToken;
 
+    enum PayoutPreference { BASKET, ALL_USDC }
+    mapping(address => PayoutPreference) public userPayoutPreference;
     mapping(address => bool) public authorizedYieldCallers;
 
     // --- Events ---
+    event UserPayoutPreferenceSet(address indexed user, PayoutPreference preference);
     event BasketAssetsUpdated(address indexed wbtc, address indexed weth, address indexed alphaToken);
     event RealYieldBasketClaimed(
         address indexed user,
@@ -186,6 +189,14 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
     }
 
     /**
+     * @notice Allows users to set their preferred payout preference (Multi-asset Basket or 100% USDC)
+     */
+    function setUserPayoutPreference(PayoutPreference preference) external {
+        userPayoutPreference[msg.sender] = preference;
+        emit UserPayoutPreferenceSet(msg.sender, preference);
+    }
+
+    /**
      * @notice Routes incoming fees according to 50 / 50 Liquid USDC Specification:
      *         50% Strategic Reserve, 50% Community Real Yield (Liquid USDC).
      */
@@ -244,6 +255,12 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
     {
         uint256 yieldAmount = stakingPool.claimRewardFor(msg.sender);
         if (yieldAmount == 0) revert IProtocolErrors.ZeroAmount();
+
+        if (userPayoutPreference[msg.sender] == PayoutPreference.ALL_USDC) {
+            IERC20(stablecoin).safeTransfer(msg.sender, yieldAmount);
+            emit RealYieldBasketClaimed(msg.sender, yieldAmount, yieldAmount, 0, 0, 0);
+            return (yieldAmount, 0, 0, 0);
+        }
 
         uint256 usdcShare = (yieldAmount * 5000) / 10000;
         uint256 wbtcShare = (yieldAmount * 2500) / 10000;

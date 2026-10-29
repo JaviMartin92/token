@@ -202,7 +202,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         uint256 interestRateBps,
         uint256 durationDays
     ) public nonReentrant returns (uint256 loanId) {
-        if (borrowAmount == 0) revert IProtocolErrors.ZeroAmount();
+        if (borrowAmount < 10 * 10 ** 6) revert IProtocolErrors.InvalidParameters();
         if (interestRateBps > MAX_INTEREST_BPS) revert IProtocolErrors.InvalidParameters();
         if (durationDays == 0 || durationDays > MAX_DURATION_DAYS) revert IProtocolErrors.InvalidParameters();
         if (address(positionNFT) == address(0)) revert IProtocolErrors.ZeroAddress();
@@ -256,7 +256,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         uint256 interestRateBps,
         uint256 durationDays
     ) external nonReentrant returns (uint256 loanId) {
-        if (borrowAmount == 0 || collateralAmount == 0) revert IProtocolErrors.ZeroAmount();
+        if (borrowAmount < 10 * 10 ** 6 || collateralAmount == 0) revert IProtocolErrors.InvalidParameters();
         if (interestRateBps > MAX_INTEREST_BPS) revert IProtocolErrors.InvalidParameters();
         if (durationDays == 0 || durationDays > MAX_DURATION_DAYS) revert IProtocolErrors.InvalidParameters();
         if (circuitBreaker != address(0) && ICircuitBreaker(circuitBreaker).isFrozen(stablecoin)) {
@@ -749,8 +749,17 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         // Liquidator repays the debt to the lender
         IERC20(stablecoin).safeTransferFrom(msg.sender, loan.lender, totalOwed);
 
-        // Transfer position NFT collateral to liquidator in full settlement of defaulted loan
+        // Transfer position NFT collateral with Fair Liquidation equity refund to borrower
         if (loan.positionTokenId > 0 && address(positionNFT) != address(0)) {
+            try positionNFT.getPosition(loan.positionTokenId) returns (VaultPositionNFT.Position memory pos) {
+                uint256 nftBasePrice = pos.discountedPricePaid > 0 ? pos.discountedPricePaid : pos.principalAmount;
+                uint256 nftFloorValue = (nftBasePrice * 8500) / 10000; // 85% cash floor via ragequit
+                uint256 maxLiquidatorReward = (totalOwed * (10000 + LIQUIDATION_BONUS_BPS)) / 10000;
+                if (nftFloorValue > maxLiquidatorReward) {
+                    uint256 borrowerRefund = nftFloorValue - maxLiquidatorReward;
+                    IERC20(stablecoin).safeTransferFrom(msg.sender, loan.borrower, borrowerRefund);
+                }
+            } catch {}
             positionNFT.safeTransferFrom(address(this), msg.sender, loan.positionTokenId);
         } else if (loan.collateralAmount > 0) {
             address colAsset = loanCollateralAsset[loanId];
@@ -858,7 +867,8 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
 
     function getMarketplaceOverview() external view returns (MarketplaceOverview memory stats) {
         uint256 maxId = nextLoanId;
-        for (uint256 i = 1; i < maxId;) {
+        uint256 startId = maxId > 200 ? maxId - 200 : 1;
+        for (uint256 i = startId; i < maxId;) {
             Loan memory loan = loans[i];
             if (loan.state == LoanState.ACTIVE || loan.state == LoanState.REPAID || loan.state == LoanState.LIQUIDATED)
             {

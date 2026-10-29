@@ -50,12 +50,26 @@ contract OndoRWAAdapter is IUniversalYieldAdapter {
     }
 
     error InsufficientBalance();
+    error UnauthorizedCaller();
+
+    mapping(address => mapping(address => uint256)) public allowances;
+
+    function approve(address spender, uint256 amount) external returns (bool) {
+        allowances[msg.sender][spender] = amount;
+        return true;
+    }
 
     function withdraw(uint256 assets, address receiver, address owner) external override returns (uint256 shares) {
         shares = convertToShares(assets);
         if (_balances[owner] < shares) revert InsufficientBalance();
 
-        // If caller is not owner, we'd normally check allowance, but this is a mock.
+        if (msg.sender != owner) {
+            uint256 allowed = allowances[owner][msg.sender];
+            if (allowed != type(uint256).max) {
+                if (allowed < shares) revert UnauthorizedCaller();
+                allowances[owner][msg.sender] = allowed - shares;
+            }
+        }
 
         _balances[owner] -= shares;
         _totalSupply -= shares;

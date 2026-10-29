@@ -401,6 +401,12 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
 
     // --- Voting Power Synchronization ---
     function _transfer(address from, address to, uint256 value) internal virtual override {
+        if (from != address(0) && block.timestamp < lastStakeTime[from] + MIN_STAKE_DURATION) {
+            revert IProtocolErrors.TimelockActive(lastStakeTime[from] + MIN_STAKE_DURATION);
+        }
+        if (to != address(0)) {
+            lastStakeTime[to] = block.timestamp;
+        }
         super._transfer(from, to, value);
         _moveVotingPower(delegates(from), delegates(to), value);
     }

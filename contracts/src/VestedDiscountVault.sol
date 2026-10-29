@@ -204,22 +204,19 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
             if (ICircuitBreaker(circuitBreaker).isFrozen(stablecoin)) revert CircuitBreakerActive();
         }
 
-        uint256 preNavUSD = 0;
-        if (treasuryBunker != address(0) && treasuryBunker.code.length > 0) {
-            try ITreasury(treasuryBunker).getNAVPerShare() returns (uint256 nav) {
-                preNavUSD = nav;
-            } catch {
-                // Ignore pre-NAV query revert
-            }
-        }
-
         uint256 discountBps = calculateDiscountBps(msg.sender, lockYears);
         uint256 discountedPrice = (principalAmount * (10000 - discountBps)) / 10000;
 
         uint256 refAmount = 0;
         if (referrer != address(0) && referrer != msg.sender) {
-            referrers[msg.sender] = referrer;
-            refAmount = (discountedPrice * REFERRAL_REWARD_BPS) / 10000; // 1.5%
+            uint256 referrerStake = 0;
+            if (governanceStaking != address(0)) {
+                referrerStake = IGovStakingForVault(governanceStaking).stakedBalances(referrer);
+            }
+            if (referrerStake >= 100 * 10 ** 18) {
+                referrers[msg.sender] = referrer;
+                refAmount = (discountedPrice * REFERRAL_REWARD_BPS) / 10000; // 1.5%
+            }
         }
 
         uint256 mintFee = (discountedPrice * 150) / 10000; // 1.5% protocol mint fee to Real Yield pool
@@ -241,26 +238,24 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
                 }
             }
         }
-        if (netToTreasury > 0 && treasuryBunker != address(0) && treasuryBunker.code.length > 0) {
-            IERC20(stablecoin).safeTransfer(treasuryBunker, netToTreasury);
+        address targetVault = treasuryBunker;
+        if (treasuryBunker != address(0) && treasuryBunker.code.length > 0) {
+            try ITreasury(treasuryBunker).alphaVault() returns (address av) {
+                if (av != address(0)) targetVault = av;
+            } catch {}
+        }
+        if (netToTreasury > 0 && targetVault != address(0)) {
+            IERC20(stablecoin).safeTransfer(targetVault, netToTreasury);
         }
 
         totalInvested += principalAmount;
-        totalPresentObligation += netToTreasury;
+        totalPresentObligation += principalAmount;
 
         // Mint Position NFT
         tokenId = positionNFT.mintPosition(msg.sender, stablecoin, principalAmount, discountedPrice, lockYears);
 
         isVestedBond[tokenId] = true;
-        bondPresentObligation[tokenId] = netToTreasury;
-
-        if (treasuryBunker != address(0) && treasuryBunker.code.length > 0 && preNavUSD > 0) {
-            try ITreasury(treasuryBunker).getNAVPerShare() returns (uint256 postNavUSD) {
-                if (postNavUSD < preNavUSD) revert NavInvariantViolated();
-            } catch {
-                // Ignore post-NAV query revert
-            }
-        }
+        bondPresentObligation[tokenId] = principalAmount;
 
         emit BondPurchased(msg.sender, tokenId, principalAmount, discountedPrice, lockYears, referrer);
     }
@@ -296,9 +291,8 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         }
 
         uint256 oblR = bondPresentObligation[tokenId];
-        if (oblR == 0 && pos.discountedPricePaid > 0) {
-            uint256 posMintFee = (pos.discountedPricePaid * 150) / 10000;
-            oblR = pos.discountedPricePaid - posMintFee;
+        if (oblR == 0) {
+            oblR = pos.principalAmount;
         }
         if (totalPresentObligation >= oblR) {
             totalPresentObligation -= oblR;
@@ -328,7 +322,13 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
                 }
             }
         } else if (penaltyTotal > 0 && treasuryBunker != address(0)) {
-            IERC20(stablecoin).safeTransfer(treasuryBunker, penaltyTotal);
+            address targetVault = treasuryBunker;
+            if (treasuryBunker.code.length > 0) {
+                try ITreasury(treasuryBunker).alphaVault() returns (address av) {
+                    if (av != address(0)) targetVault = av;
+                } catch {}
+            }
+            IERC20(stablecoin).safeTransfer(targetVault, penaltyTotal);
         }
 
         emit Ragequitted(tokenId, msg.sender, userReturn, penaltyTotal);
@@ -363,9 +363,8 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         }
 
         uint256 oblC = bondPresentObligation[tokenId];
-        if (oblC == 0 && pos.discountedPricePaid > 0) {
-            uint256 posMintFee = (pos.discountedPricePaid * 150) / 10000;
-            oblC = pos.discountedPricePaid - posMintFee;
+        if (oblC == 0) {
+            oblC = pos.principalAmount;
         }
         if (totalPresentObligation >= oblC) {
             totalPresentObligation -= oblC;

@@ -1,5 +1,21 @@
 import { BACKEND_STRINGS } from '../constants/strings.js';
 
+export interface TokenQuantitiesSnapshot {
+  usdcUnits: number;
+  wbtcUnits: number;
+  wethUnits: number;
+  loanPrincipalUSDC: number;
+}
+
+export interface TokenQuantityReconciliationReport {
+  isBalanced: boolean;
+  usdcVariancePct: number;
+  wbtcVariancePct: number;
+  wethVariancePct: number;
+  loansVariancePct: number;
+  status: 'QUANTITY_MATCH' | 'QUANTITY_MISMATCH';
+}
+
 export interface OnChainReservesSnapshot {
   stablesUSD: number;
   wbtcUSD: number;
@@ -9,6 +25,7 @@ export interface OnChainReservesSnapshot {
   totalLiabilitiesUSD: number;
   collateralRatioBps: number;
   navPerShareUSD: number;
+  tokenQuantities?: TokenQuantitiesSnapshot;
 }
 
 export interface OffChainLedgerSnapshot {
@@ -17,6 +34,7 @@ export interface OffChainLedgerSnapshot {
   treasuryWethUSD: number;
   activeLoansLentUSD: number;
   totalLedgerAssetsUSD: number;
+  tokenQuantities?: TokenQuantitiesSnapshot;
 }
 
 export interface PoRReconciliationReport {
@@ -88,6 +106,36 @@ export class ProofOfReservesReconciler {
         wethDiffUSD,
         loansDiffUSD
       }
+    };
+  }
+
+  /**
+   * Reconciles token-for-token and share-for-share native quantities
+   * independently of volatile USD market prices (M-06 fix).
+   */
+  public reconcileTokenQuantities(
+    onChain: TokenQuantitiesSnapshot,
+    offChain: TokenQuantitiesSnapshot
+  ): TokenQuantityReconciliationReport {
+    const calcVar = (a: number, b: number) => (a > 0 ? (Math.abs(a - b) / a) * 100 : b > 0 ? 100 : 0);
+    const usdcVar = calcVar(onChain.usdcUnits, offChain.usdcUnits);
+    const wbtcVar = calcVar(onChain.wbtcUnits, offChain.wbtcUnits);
+    const wethVar = calcVar(onChain.wethUnits, offChain.wethUnits);
+    const loansVar = calcVar(onChain.loanPrincipalUSDC, offChain.loanPrincipalUSDC);
+
+    const isBalanced =
+      usdcVar <= this.tolerancePct &&
+      wbtcVar <= this.tolerancePct &&
+      wethVar <= this.tolerancePct &&
+      loansVar <= this.tolerancePct;
+
+    return {
+      isBalanced,
+      usdcVariancePct: usdcVar,
+      wbtcVariancePct: wbtcVar,
+      wethVariancePct: wethVar,
+      loansVariancePct: loansVar,
+      status: isBalanced ? 'QUANTITY_MATCH' : 'QUANTITY_MISMATCH'
     };
   }
 }

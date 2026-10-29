@@ -146,15 +146,15 @@ class BlockIndexerService {
      */
     async fetchLogsForRange(fromBlock, toBlock) {
         const eventsToQuery = [
-            (0, viem_1.parseAbiItem)('event SharesMinted(address indexed user, uint256 stableAmount, uint256 sharesMinted)'),
-            (0, viem_1.parseAbiItem)('event SharesRedeemed(address indexed user, uint256 sharesAmount, uint256 assetsReceived)'),
-            (0, viem_1.parseAbiItem)('event VestedBondPurchased(uint256 indexed tokenId, address indexed buyer, uint256 principal, uint256 lockYears)'),
-            (0, viem_1.parseAbiItem)('event LoanCreated(uint256 indexed loanId, address indexed borrower, uint256 borrowAmount)'),
-            (0, viem_1.parseAbiItem)('event LoanFunded(uint256 indexed loanId, address indexed lender)'),
-            (0, viem_1.parseAbiItem)('event LoanRepaid(uint256 indexed loanId)'),
+            (0, viem_1.parseAbiItem)('event Deposited(address indexed user, uint256 stableAmount, uint256 sharesMinted, uint256 feePaid)'),
+            (0, viem_1.parseAbiItem)('event Redeemed(address indexed user, uint256 sharesAmount, uint256 usdcReturned)'),
+            (0, viem_1.parseAbiItem)('event BondPurchased(address indexed buyer, uint256 indexed tokenId, uint256 principalAmount, uint256 discountedPricePaid, uint256 lockYears, address referrer)'),
+            (0, viem_1.parseAbiItem)('event LoanCreated(uint256 indexed loanId, address indexed borrower, uint256 amount, uint256 interestRateBps, uint256 durationDays, uint256 positionTokenId, uint256 collateralAmount)'),
+            (0, viem_1.parseAbiItem)('event LoanAccepted(uint256 indexed loanId, address indexed borrower, address indexed lender, uint256 amount)'),
+            (0, viem_1.parseAbiItem)('event LoanRepaid(uint256 indexed loanId, uint256 totalRepaid)'),
             (0, viem_1.parseAbiItem)('event Staked(address indexed user, uint256 amount)'),
             (0, viem_1.parseAbiItem)('event Unstaked(address indexed user, uint256 amount)'),
-            (0, viem_1.parseAbiItem)('event BreakerTriggered(address indexed asset, uint256 dropPercentage)')
+            (0, viem_1.parseAbiItem)('event CircuitTriggered(address indexed asset, uint256 oldPrice, uint256 newPrice)')
         ];
         const results = [];
         for (const eventAbi of eventsToQuery) {

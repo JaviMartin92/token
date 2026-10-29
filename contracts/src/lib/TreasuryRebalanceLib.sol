@@ -161,20 +161,9 @@ library TreasuryRebalanceLib {
             }
         }
 
-        // 2. NAV Mint Fallback (Genesis Sandbox / Liquidity Protection)
-        if (!dexSuccess) {
-            uint256 depositValueUSD = altsUsdc * (10 ** (18 - params.redemptionTokenDecimals));
-            uint256 navPerShare = 1e18;
-            if (params.treasuryContract != address(0)) {
-                try ITreasury(params.treasuryContract).getNAVPerShare() returns (uint256 nav) {
-                    if (nav > 0) navPerShare = nav;
-                } catch {}
-            }
-            alphaObtained = (depositValueUSD * 1e18) / navPerShare;
-            params.token.mint(params.treasuryContract, alphaObtained);
-        }
+        // Never mint unbacked ALPHA when DEX swap is unavailable; retain USDC in AlphaVault.
 
-        // 3. Auto-stake into GovernanceStaking for Treasury POL
+        // 2. Auto-stake into GovernanceStaking for Treasury POL only if real ALPHA was obtained via swap
         if (alphaObtained > 0) {
             params.token.approve(stakingPool, alphaObtained);
             try IGovernanceStakingRebalance(stakingPool).stake(alphaObtained) {

@@ -349,6 +349,21 @@ async function runBackendImprovementsTestSuite() {
     assert(!report3.isBalanced, 'Major discrepancy ($10,000) triggers isBalanced: false');
     assert(report3.status === 'DISCREPANCY_ALERT', 'Status flagged as DISCREPANCY_ALERT');
     assert(report3.variancePct === 10.0, 'Variance calculated accurately at 10.00%');
+
+    // [M-06] Token quantities reconciliation test
+    const tokenReportExact = reconciler.reconcileTokenQuantities(
+      { usdcUnits: 50000, wbtcUnits: 0.5, wethUnits: 5.0, loanPrincipalUSDC: 10000 },
+      { usdcUnits: 50000, wbtcUnits: 0.5, wethUnits: 5.0, loanPrincipalUSDC: 10000 }
+    );
+    assert(tokenReportExact.isBalanced, 'Token quantities exact match isBalanced: true');
+    assert(tokenReportExact.status === 'QUANTITY_MATCH', 'Status is QUANTITY_MATCH');
+
+    const tokenReportDiscrepancy = reconciler.reconcileTokenQuantities(
+      { usdcUnits: 50000, wbtcUnits: 0.5, wethUnits: 5.0, loanPrincipalUSDC: 10000 },
+      { usdcUnits: 49000, wbtcUnits: 0.5, wethUnits: 5.0, loanPrincipalUSDC: 10000 }
+    );
+    assert(!tokenReportDiscrepancy.isBalanced, 'Token quantities mismatch isBalanced: false');
+    assert(tokenReportDiscrepancy.status === 'QUANTITY_MISMATCH', 'Status is QUANTITY_MISMATCH');
   }
 
   console.log('\n============================================================');

@@ -78,6 +78,11 @@ interface ITreasury {
     function releaseVaultPayout(address to, uint256 amount) external;
 
     /**
+     * @notice Returns the canonical AlphaVault custody address.
+     */
+    function alphaVault() external view returns (address);
+
+    /**
      * @notice Records the amount of tokens burned by external contracts (e.g. GovernanceStaking) to track total burned.
      */
     function recordBurn(uint256 amount) external;

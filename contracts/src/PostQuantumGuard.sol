@@ -63,6 +63,9 @@ contract PostQuantumGuard is IPostQuantumGuard, AccessControl {
      * @param commitmentRoot Keccak-256 hash of the 67 public key endpoints
      */
     function registerQuantumCommitment(bytes32 commitmentRoot) external override {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender) && !hasRole(QUANTUM_OPERATOR_ROLE, msg.sender)) {
+            revert IProtocolErrors.Unauthorized();
+        }
         if (commitmentRoot == bytes32(0)) revert ZeroCommitmentRoot();
         if (usedCommitments[commitmentRoot]) revert QuantumCommitmentAlreadyUsed();
 
@@ -134,8 +137,14 @@ contract PostQuantumGuard is IPostQuantumGuard, AccessControl {
         bytes32[67] calldata pqcSignature,
         bytes32 nextCommitment
     ) external override returns (bool authorized) {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender) && !hasRole(QUANTUM_OPERATOR_ROLE, msg.sender)) {
+            revert IProtocolErrors.Unauthorized();
+        }
         if (actionId == bytes32(0)) revert ZeroActionId();
         if (quantumAuthorizedActions[actionId]) revert ActionAlreadyAuthorized();
+
+        bytes32 expectedHash = keccak256(abi.encodePacked(block.chainid, address(this), msg.sender, actionId));
+        if (messageHash != expectedHash) revert IProtocolErrors.InvalidParameters();
 
         bytes32 currentCommitment = _activeCommitments[msg.sender];
         if (currentCommitment == bytes32(0)) revert NoActiveQuantumCommitment();

@@ -7,17 +7,22 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "../ProtocolRoles.sol";
 import "../lib/security/ReentrancyGuard.sol";
 import "../interfaces/IProtocolErrors.sol";
+import "../interfaces/IUniversalYieldAdapter.sol";
 
 /**
  * @title MorphoYieldVaultAdapter
- * @notice Adapts Treasury stablecoin liquid reserves and BTC/ETH staking positions to institutional Morpho Blue / MetaMorpho vaults.
- *         Harvests daily yields directly into the Treasury core to compound NAV per share.
+ * @notice Adapts Treasury stablecoin liquid reserves and staking positions to institutional Morpho Blue / MetaMorpho vaults.
+ *         Complies with IUniversalYieldAdapter (ERC-4626 style) while tracking dynamic simulated APYs.
  */
-contract MorphoYieldVaultAdapter is AccessControl, ReentrancyGuard {
+contract MorphoYieldVaultAdapter is AccessControl, ReentrancyGuard, IUniversalYieldAdapter {
     using SafeERC20 for IERC20;
 
-    address public immutable stablecoin;
+    IERC20 public immutable underlyingAsset;
     address public treasury;
+
+    mapping(address => uint256) public _balances;
+    mapping(address => mapping(address => uint256)) public allowances;
+    uint256 public _totalSupply;
 
     uint256 public totalStablecoinInvested;
     uint256 public totalYieldHarvested;
@@ -30,6 +35,9 @@ contract MorphoYieldVaultAdapter is AccessControl, ReentrancyGuard {
 
     uint256 public constant MAX_APY_BPS = 5000; // 50.00% APR Sanity Bound
 
+    error InsufficientBalance();
+    error UnauthorizedCaller();
+
     event DepositedToMorpho(uint256 amount);
     event YieldHarvested(uint256 yieldAmount, uint256 timestamp);
     event APYsUpdated(uint256 stablecoinApy, uint256 ethApy, uint256 btcApy);
@@ -41,10 +49,84 @@ contract MorphoYieldVaultAdapter is AccessControl, ReentrancyGuard {
         address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
-        stablecoin = _stablecoin;
+        underlyingAsset = IERC20(_stablecoin);
         treasury = _treasury;
         lastHarvestTimestamp = block.timestamp;
+        _totalSupply = 1000; // Virtual shares offset against ERC-4626 inflation
     }
+
+    // --- IUniversalYieldAdapter Implementation ---
+
+    function asset() external view override returns (address) {
+        return address(underlyingAsset);
+    }
+
+    function totalAssets() external view override returns (uint256) {
+        return underlyingAsset.balanceOf(address(this));
+    }
+
+    function convertToShares(uint256 assets) public view override returns (uint256) {
+        if (_totalSupply == 0) return assets;
+        uint256 total = underlyingAsset.balanceOf(address(this));
+        if (total == 0) return assets;
+        return (assets * _totalSupply) / total;
+    }
+
+    function convertToAssets(uint256 shares) public view override returns (uint256) {
+        if (_totalSupply == 0) return shares;
+        uint256 total = underlyingAsset.balanceOf(address(this));
+        return (shares * total) / _totalSupply;
+    }
+
+    function deposit(uint256 assets, address receiver) external override nonReentrant returns (uint256 shares) {
+        if (assets == 0) revert IProtocolErrors.ZeroAmount();
+        shares = convertToShares(assets);
+        underlyingAsset.safeTransferFrom(msg.sender, address(this), assets);
+
+        _balances[receiver] += shares;
+        _totalSupply += shares;
+        totalStablecoinInvested += assets;
+
+        emit DepositedToMorpho(assets);
+        return shares;
+    }
+
+    function withdraw(uint256 assets, address receiver, address owner) external override nonReentrant returns (uint256 shares) {
+        shares = convertToShares(assets);
+        if (_balances[owner] < shares) revert InsufficientBalance();
+
+        if (msg.sender != owner) {
+            uint256 allowed = allowances[owner][msg.sender];
+            if (allowed != type(uint256).max) {
+                if (allowed < shares) revert UnauthorizedCaller();
+                allowances[owner][msg.sender] = allowed - shares;
+            }
+        }
+
+        _balances[owner] -= shares;
+        _totalSupply -= shares;
+
+        if (assets <= totalStablecoinInvested) {
+            totalStablecoinInvested -= assets;
+        } else {
+            totalStablecoinInvested = 0;
+        }
+
+        underlyingAsset.safeTransfer(receiver, assets);
+        emit LiquidityWithdrawn(assets, receiver);
+        return shares;
+    }
+
+    function balanceOf(address account) external view override returns (uint256) {
+        return _balances[account];
+    }
+
+    function approve(address spender, uint256 amount) external returns (bool) {
+        allowances[msg.sender][spender] = amount;
+        return true;
+    }
+
+    // --- Admin & Harvest Functions ---
 
     function setTreasury(address _treasury) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         if (_treasury == address(0)) revert IProtocolErrors.ZeroAddress();
@@ -66,40 +148,33 @@ contract MorphoYieldVaultAdapter is AccessControl, ReentrancyGuard {
         emit APYsUpdated(_stablecoinApy, _ethApy, _btcApy);
     }
 
-    /**
-     * @notice Simulates depositing stablecoins into Morpho Blue Vault
-     */
     function depositStablecoins(uint256 amount) external nonReentrant returns (bool) {
         if (amount == 0) revert IProtocolErrors.ZeroAmount();
-        IERC20(stablecoin).safeTransferFrom(msg.sender, address(this), amount);
+        underlyingAsset.safeTransferFrom(msg.sender, address(this), amount);
 
+        uint256 shares = convertToShares(amount);
+        _balances[msg.sender] += shares;
+        _totalSupply += shares;
         totalStablecoinInvested += amount;
+
         emit DepositedToMorpho(amount);
         return true;
     }
 
-    /**
-     * @notice Computes pending yield accumulated since last harvest
-     */
     function getPendingYield() public view returns (uint256 pendingYield) {
         if (totalStablecoinInvested == 0 || lastHarvestTimestamp == 0) return 0;
         uint256 elapsedDays = (block.timestamp - lastHarvestTimestamp) / 1 days;
         if (elapsedDays == 0) return 0;
-
-        // Daily yield calculation: (invested * APY_BPS * days) / (10000 * 365)
         pendingYield = (totalStablecoinInvested * morphoStablecoinApyBps * elapsedDays) / (10000 * 365);
     }
 
-    /**
-     * @notice Withdraws liquidity back to the Treasury to cover redemptions
-     */
     function withdrawLiquidity(uint256 amount) external nonReentrant returns (uint256 withdrawn) {
         if (msg.sender != treasury && !hasRole(ProtocolRoles.ADMIN_ROLE, msg.sender)) {
             revert IProtocolErrors.Unauthorized();
         }
         if (amount == 0) revert IProtocolErrors.ZeroAmount();
 
-        uint256 bal = IERC20(stablecoin).balanceOf(address(this));
+        uint256 bal = underlyingAsset.balanceOf(address(this));
         withdrawn = amount > bal ? bal : amount;
 
         if (withdrawn > 0) {
@@ -108,25 +183,22 @@ contract MorphoYieldVaultAdapter is AccessControl, ReentrancyGuard {
             } else {
                 totalStablecoinInvested = 0;
             }
-            IERC20(stablecoin).safeTransfer(treasury, withdrawn);
+            underlyingAsset.safeTransfer(treasury, withdrawn);
             emit LiquidityWithdrawn(withdrawn, treasury);
         }
     }
 
-    /**
-     * @notice Harvests accumulated yield from Morpho Blue vaults and sends it to the Treasury
-     */
     function harvestYield() external nonReentrant returns (uint256 yieldHarvested) {
         yieldHarvested = getPendingYield();
         lastHarvestTimestamp = block.timestamp;
 
         if (yieldHarvested > 0 && treasury != address(0)) {
-            uint256 bal = IERC20(stablecoin).balanceOf(address(this));
+            uint256 bal = underlyingAsset.balanceOf(address(this));
             uint256 actualYield = bal >= yieldHarvested ? yieldHarvested : bal;
 
             if (actualYield > 0) {
                 totalYieldHarvested += actualYield;
-                IERC20(stablecoin).safeTransfer(treasury, actualYield);
+                underlyingAsset.safeTransfer(treasury, actualYield);
                 emit YieldHarvested(actualYield, block.timestamp);
                 return actualYield;
             }

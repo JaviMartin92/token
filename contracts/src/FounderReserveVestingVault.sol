@@ -151,7 +151,7 @@ contract FounderReserveVestingVault is AccessControl, ReentrancyGuard {
 
                 uint256 alphaFromSurplus = (maxClaimableUSD * 1e18) / navPerShare;
                 claimableAlpha = alphaFromSurplus > remaining ? remaining : alphaFromSurplus;
-                canClaim = cooldownPassed && (claimableAlpha > 0);
+                canClaim = cooldownPassed && (claimableAlpha > 0) && (navPerShare >= 1e18);
             }
         } catch {
             return (0, 0, nextAvailableTimestamp, false);

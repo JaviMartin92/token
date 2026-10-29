@@ -55,10 +55,12 @@ async function handleBlockchainEvent(event: Web3Event) {
 
   switch (event.type) {
     case 'TREASURY_REDEEMED': {
-      const { user, sharesBurned, assetAmountOut, feeCharged } = event.payload;
+      const { user, sharesBurned, assetAmountOut, feeCharged = '0' } = event.payload;
       
-      // Calculate total assets redeemed in USD/USDC equivalent
-      const burnedVal = (parseFloat(assetAmountOut) + parseFloat(feeCharged)).toString();
+      // Calculate total assets redeemed in USD/USDC equivalent safely
+      const safeFee = feeCharged && !isNaN(parseFloat(feeCharged)) ? parseFloat(feeCharged) : 0;
+      const safeOut = assetAmountOut && !isNaN(parseFloat(assetAmountOut)) ? parseFloat(assetAmountOut) : 0;
+      const burnedVal = (safeOut + safeFee).toFixed(6);
 
       await recordLedgerTransaction(
         BACKEND_STRINGS.LEDGER.USER_REDEEM_DESC(user),

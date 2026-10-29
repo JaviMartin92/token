@@ -343,6 +343,30 @@ export async function syncYieldRatesOnChain(customRpcUrl?: string, customKey?: s
     }
   }
 
+  // 5. Keep primary price caches warm on OracleHub for secondary oracle divergence guards (M-03)
+  const oracleHubAddress = contracts.ORACLE_HUB as `0x${string}`;
+  if (oracleHubAddress && oracleHubAddress !== '0x0000000000000000000000000000000000000000') {
+    try {
+      console.log(`[*] WARMING OracleHub primary price caches on: ${oracleHubAddress}`);
+      const hash = await walletClient.writeContract({
+        address: oracleHubAddress,
+        abi: [{
+          name: 'updateAllPrimaryPriceCaches',
+          type: 'function',
+          stateMutability: 'nonpayable',
+          inputs: [],
+          outputs: []
+        }],
+        functionName: 'updateAllPrimaryPriceCaches',
+        args: []
+      });
+      await publicClient.waitForTransactionReceipt({ hash });
+      console.log(`    [PASS] OracleHub caches warmed: ${hash}`);
+    } catch (err: any) {
+      console.warn(`[-] OracleHub cache warmup warning:`, err?.message);
+    }
+  }
+
   console.log(`============================================================\n`);
   return syncResults;
 }

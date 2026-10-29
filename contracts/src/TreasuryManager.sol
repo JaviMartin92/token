@@ -705,6 +705,13 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
     }
 
     /**
+     * @notice Returns the canonical AlphaVault custody address.
+     */
+    function alphaVault() external view returns (address) {
+        return addressProvider.getAlphaVault();
+    }
+
+    /**
      * @notice Disburses USDC funds to external destination (e.g. Code4rena audit escrow, community grant).
      *         Callable ONLY by TimelockController via passed on-chain DAO proposal.
      */

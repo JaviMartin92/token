@@ -717,7 +717,7 @@ async function main() {
     const governorAddr = (await publicClient.waitForTransactionReceipt({ hash: governorTx })).contractAddress;
     console.log(`[+] GovernorAlphaCentauri Contract deployed at: ${governorAddr}`);
     // Wire Timelock ownership to GovernorAlphaCentauri
-    const adminRoleHash = (0, viem_1.keccak256)((0, viem_1.toHex)('ADMIN_ROLE'));
+    const adminRoleHash = (0, viem_1.keccak256)((0, viem_1.toHex)('PROTOCOL_ADMIN_ROLE'));
     const setTimeOwnerHash = await walletClient.writeContract({
         address: timelockAddr,
         abi: timelockArtifact.abi,
@@ -738,7 +738,7 @@ async function main() {
     const buybackTx = await walletClient.deployContract({
         abi: buybackArtifact.abi,
         bytecode: buybackArtifact.bytecode.object,
-        args: [apAddr, usdcAddr, 6, zeroAddr, account.address],
+        args: [apAddr, usdcAddr, 6, routerAddr, account.address],
         account
     });
     const buybackAddr = (await publicClient.waitForTransactionReceipt({ hash: buybackTx })).contractAddress;

@@ -30,13 +30,15 @@ library TreasuryLiquidityLib {
 
             for (uint256 i = 0; i < activeYieldAdapters.length && deficit > 0;) {
                 address adapter = activeYieldAdapters[i];
-                try IUniversalYieldAdapter(adapter).balanceOf(address(vault)) returns (uint256 shares) {
-                    if (shares > 0) {
-                        try IUniversalYieldAdapter(adapter).convertToAssets(shares) returns (uint256 assets) {
+                try IUniversalYieldAdapter(adapter).balanceOf(address(vault)) returns (uint256 vaultShares) {
+                    if (vaultShares > 0) {
+                        try IUniversalYieldAdapter(adapter).convertToAssets(vaultShares) returns (uint256 assets) {
                             uint256 toWithdraw = (assets > deficit) ? deficit : assets;
+                            uint256 sharesNeeded = IUniversalYieldAdapter(adapter).convertToShares(toWithdraw);
+                            if (sharesNeeded > vaultShares) sharesNeeded = vaultShares;
 
                             try vault.transferFunds(
-                                adapter, treasuryContract, IUniversalYieldAdapter(adapter).convertToShares(toWithdraw)
+                                adapter, treasuryContract, sharesNeeded
                             ) {
                                 IUniversalYieldAdapter(adapter).withdraw(toWithdraw, address(vault), treasuryContract);
                                 deficit = (toWithdraw > deficit) ? 0 : deficit - toWithdraw;

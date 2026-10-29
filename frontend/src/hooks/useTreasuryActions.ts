@@ -86,12 +86,27 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
         await publicClient.waitForTransactionReceipt({ hash: appHash });
       }
 
+      // Fetch fresh on-chain NAV directly for precision slippage protection
+      let onChainNav = 10n ** 18n;
+      try {
+        const freshNav = await publicClient.readContract({
+          address: CONTRACT_ADDRESSES.TREASURY,
+          abi: ABIS.TREASURY,
+          functionName: 'getNAVPerShare',
+          args: []
+        }) as bigint;
+        if (freshNav > 0n) onChainNav = freshNav;
+      } catch {}
+
+      const estShares = (amountWei * 10n ** 30n) / onChainNav;
+      const minSharesOut = (estShares * 940n) / 1000n;
+
       // Preflight Zero-Revert Simulation
       const preflight = await simulatePreflightTransaction(
         CONTRACT_ADDRESSES.TREASURY,
         ABIS.TREASURY,
         'deposit',
-        [amountWei, 0n],
+        [amountWei, minSharesOut],
         account
       );
       if (!preflight.canExecute && preflight.error) {
@@ -105,7 +120,7 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
         address: CONTRACT_ADDRESSES.TREASURY,
         abi: ABIS.TREASURY,
         functionName: 'deposit',
-        args: [amountWei, 0n],
+        args: [amountWei, minSharesOut],
         account
       });
       await publicClient.waitForTransactionReceipt({ hash: depHash });
@@ -218,12 +233,27 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
         await publicClient.waitForTransactionReceipt({ hash: appHash });
       }
 
+      // Fetch fresh on-chain NAV directly for precision slippage protection
+      let onChainNav = 10n ** 18n;
+      try {
+        const freshNav = await publicClient.readContract({
+          address: CONTRACT_ADDRESSES.TREASURY,
+          abi: ABIS.TREASURY,
+          functionName: 'getNAVPerShare',
+          args: []
+        }) as bigint;
+        if (freshNav > 0n) onChainNav = freshNav;
+      } catch {}
+
+      const estUsdc = (amountWei * onChainNav) / 10n ** 30n;
+      const minUsdcOut = (estUsdc * 940n) / 1000n;
+
       // Preflight Zero-Revert Simulation
       const preflight = await simulatePreflightTransaction(
         CONTRACT_ADDRESSES.TREASURY,
         ABIS.TREASURY,
         'redeem',
-        [amountWei, 0n],
+        [amountWei, minUsdcOut],
         account
       );
       if (!preflight.canExecute && preflight.error) {
@@ -237,7 +267,7 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
         address: CONTRACT_ADDRESSES.TREASURY,
         abi: ABIS.TREASURY,
         functionName: 'redeem',
-        args: [amountWei, 0n],
+        args: [amountWei, minUsdcOut],
         account
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });

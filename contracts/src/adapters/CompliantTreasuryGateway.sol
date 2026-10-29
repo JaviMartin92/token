@@ -31,6 +31,7 @@ contract CompliantTreasuryGateway is AccessControl, ReentrancyGuard {
     address public immutable stablecoin;
 
     mapping(address => bool) public isKYCVerified;
+    mapping(address => uint256) public userLastDepositBlock;
 
     event InstitutionalKYCUpdated(address indexed account, bool status);
     event InstitutionalDepositForwarded(address indexed institution, uint256 usdcIn, uint256 sharesOut);
@@ -93,6 +94,7 @@ contract CompliantTreasuryGateway is AccessControl, ReentrancyGuard {
 
         // Execute core deposit
         sharesMinted = treasuryManager.deposit(stableAmount, minSharesOut);
+        userLastDepositBlock[msg.sender] = block.number;
 
         // Forward minted shares to the institution
         IERC20(alphaToken).safeTransfer(msg.sender, sharesMinted);
@@ -111,6 +113,9 @@ contract CompliantTreasuryGateway is AccessControl, ReentrancyGuard {
         returns (uint256 assetsReceived)
     {
         if (sharesAmount == 0) revert IProtocolErrors.ZeroAmount();
+        if (userLastDepositBlock[msg.sender] >= block.number) {
+            revert IProtocolErrors.SameBlockCooldown(msg.sender, block.number);
+        }
 
         // Pull Alpha tokens from institution
         IERC20(alphaToken).safeTransferFrom(msg.sender, address(this), sharesAmount);

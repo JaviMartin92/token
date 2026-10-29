@@ -228,7 +228,7 @@ contract FullSystemCoverageTest is Test {
         usdc.mint(lender, 500 * 10 ** 6);
         vm.startPrank(lender);
         usdc.approve(address(p2pMarket), 500 * 10 ** 6);
-        p2pMarket.acceptLoanAndDepositCollateral(loanId, 0);
+        p2pMarket.fundLoanOffer(loanId);
         vm.stopPrank();
 
         vm.startPrank(user);
@@ -271,7 +271,7 @@ contract FullSystemCoverageTest is Test {
         usdc.mint(lender, 500 * 10 ** 6);
         vm.startPrank(lender);
         usdc.approve(address(p2pMarket), 500 * 10 ** 6);
-        p2pMarket.acceptLoanAndDepositCollateral(loanId, 0);
+        p2pMarket.fundLoanOffer(loanId);
         vm.stopPrank();
 
         vm.startPrank(user);

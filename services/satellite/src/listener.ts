@@ -53,6 +53,7 @@ export function startEventListener() {
               user,
               sharesBurned: sharesAmount?.toString(),
               assetAmountOut: usdcReturned?.toString(),
+              feeCharged: '0',
             });
           }
         }

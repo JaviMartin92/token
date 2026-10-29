@@ -52,9 +52,10 @@ function loadArtifactSafe(name: string, file: string) {
 async function main() {
   const deployEnv = process.env.DEPLOY_ENV || 'sandbox';
   const isProduction = deployEnv === 'production' || process.env.NODE_ENV === 'production';
-  if (isProduction) {
+  const chainId = await publicClient.getChainId();
+  if (isProduction || chainId === 42161) {
     console.error('CRITICAL: deploy.ts is dedicated to sandbox and local simulation fixtures. For production, deploy via deterministic scripts using verified external tokens, Chainlink feeds, and multisig timelock.');
-    throw new Error('Production deployment guard: Mock deployments blocked in production mode.');
+    throw new Error('Production deployment guard: Mock deployments blocked in production mode or Arbitrum One Mainnet.');
   }
 
   console.log('[*] Starting full deployment of Sandbox Smart Contracts onto Anvil...');
@@ -811,7 +812,7 @@ async function main() {
   console.log(`[+] GovernorAlphaCentauri Contract deployed at: ${governorAddr}`);
 
   // Wire Timelock ownership to GovernorAlphaCentauri
-  const adminRoleHash = keccak256(toHex('ADMIN_ROLE'));
+  const adminRoleHash = keccak256(toHex('PROTOCOL_ADMIN_ROLE'));
   const setTimeOwnerHash = await walletClient.writeContract({
     address: timelockAddr,
     abi: timelockArtifact.abi,
@@ -835,7 +836,7 @@ async function main() {
   const buybackTx = await walletClient.deployContract({
     abi: buybackArtifact.abi,
     bytecode: buybackArtifact.bytecode.object,
-    args: [apAddr, usdcAddr, 6, zeroAddr, account.address],
+    args: [apAddr, usdcAddr, 6, routerAddr, account.address],
     account
   });
   const buybackAddr = (await publicClient.waitForTransactionReceipt({ hash: buybackTx })).contractAddress!;

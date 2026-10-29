@@ -103,7 +103,7 @@ async function main() {
   console.log('[*] Submitting Proposal #1 to GovernorAlphaCentauri...');
   const weightsCalldata = encodeFunctionData({
     abi: [{
-      name: 'setTargetWeights',
+      name: 'setAssetWeights',
       type: 'function',
       stateMutability: 'nonpayable',
       inputs: [
@@ -114,7 +114,7 @@ async function main() {
       ],
       outputs: []
     }] as const,
-    functionName: 'setTargetWeights',
+    functionName: 'setAssetWeights',
     args: [5000n, 2500n, 1250n, 1250n]
   });
 

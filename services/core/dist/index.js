@@ -46,9 +46,11 @@ async function handleBlockchainEvent(event) {
     const { txHash } = event;
     switch (event.type) {
         case 'TREASURY_REDEEMED': {
-            const { user, sharesBurned, assetAmountOut, feeCharged } = event.payload;
-            // Calculate total assets redeemed in USD/USDC equivalent
-            const burnedVal = (parseFloat(assetAmountOut) + parseFloat(feeCharged)).toString();
+            const { user, sharesBurned, assetAmountOut, feeCharged = '0' } = event.payload;
+            // Calculate total assets redeemed in USD/USDC equivalent safely
+            const safeFee = feeCharged && !isNaN(parseFloat(feeCharged)) ? parseFloat(feeCharged) : 0;
+            const safeOut = assetAmountOut && !isNaN(parseFloat(assetAmountOut)) ? parseFloat(assetAmountOut) : 0;
+            const burnedVal = (safeOut + safeFee).toFixed(6);
             await (0, ledger_js_1.recordLedgerTransaction)(strings_js_1.BACKEND_STRINGS.LEDGER.USER_REDEEM_DESC(user), client_1.ReferenceType.REDEMPTION, txHash, [
                 {
                     accountCode: 'USER_EQUITY',
