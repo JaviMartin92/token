@@ -34,6 +34,7 @@ Thumbs.db
 *.log
 logs/
 test-results/
+*.zip
 
 # Docker volumes
 postgres_data/
