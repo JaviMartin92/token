@@ -1,4 +1,5 @@
 import { prisma } from './database.js';
+import { parseUnits } from 'viem';
 import { ReferenceType } from '@prisma/client';
 
 export interface EntryInput {
@@ -19,17 +20,22 @@ export async function recordLedgerTransaction(
   entries: EntryInput[]
 ) {
   // Validate double-entry accounting rule: Sum(Debits) === Sum(Credits)
+  let debitsWei = 0n;
+  let creditsWei = 0n;
   let totalDebits = 0;
   let totalCredits = 0;
 
   for (const entry of entries) {
+    try {
+      debitsWei += parseUnits(entry.debit || '0', 18);
+      creditsWei += parseUnits(entry.credit || '0', 18);
+    } catch {}
     totalDebits += parseFloat(entry.debit);
     totalCredits += parseFloat(entry.credit);
   }
 
-  // Use a small epsilon for floating-point safety, or exact comparisons when converting to BigInt/Decimal
   const deviation = Math.abs(totalDebits - totalCredits);
-  if (deviation > 0.00000001) {
+  if (debitsWei !== creditsWei && deviation > 0.00000001) {
     throw new Error(
       `Ledger Error: Double-entry violation. Debits (${totalDebits}) do not equal Credits (${totalCredits}). Deviation: ${deviation}`
     );

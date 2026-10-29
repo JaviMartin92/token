@@ -5,6 +5,7 @@ import "./interfaces/IAtomicSwapReceiver.sol";
 import "./interfaces/ISwapRouter.sol";
 import "./interfaces/IProtocolErrors.sol";
 import "./interfaces/ICircuitBreaker.sol";
+import "./interfaces/ITreasury.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -142,8 +143,9 @@ contract AtomicSwapReceiver is IAtomicSwapReceiver, AccessControl, ReentrancyGua
         // 4. Execute atomic swap on Uniswap V3
         usdcDeposited = ISwapRouter(swapRouter).exactInputSingle(params);
 
-        // 5. Transfer resulting USDC to Treasury
-        IERC20(usdcToken).safeTransfer(treasury, usdcDeposited);
+        // 5. Transfer resulting USDC to Treasury & mint ALPHA to depositor
+        IERC20(usdcToken).forceApprove(treasury, usdcDeposited);
+        ITreasury(treasury).depositFor(msg.sender, usdcDeposited, 0);
 
         emit AtomicSwapExecuted(msg.sender, usdtAmount, usdcDeposited, 0);
         return usdcDeposited;

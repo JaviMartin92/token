@@ -10,10 +10,10 @@ using AlphaVault as alphaVault;
 methods {
     function getNAV() external returns (uint256) envfree;
     function getNAVPerShare() external returns (uint256) envfree;
-    function getRedemptionPrice() external returns (uint256) envfree;
-    function getCirculatingAlpha() external returns (uint256) envfree;
-    function totalAssetsExcludingLoans() external returns (uint256) envfree;
-    function totalLiabilitiesUSD() external returns (uint256) envfree;
+    function getNetCirculatingShares() external returns (uint256) envfree;
+    function getTotalNavUSD() external returns (uint256) envfree;
+    function getNetEquityUSD() external returns (uint256) envfree;
+    function getTotalNavUSD() external returns (uint256) envfree;
     
     // Non-envfree state changing methods
     function deposit(uint256, uint256) external returns (uint256);

@@ -34,7 +34,7 @@ import "./interfaces/IProtocolErrors.sol";
  *      2. Solvency: Proof of Reserves collateral ratio >= 100% and non-decreasing.
  *      3. Anti-MEV: SameBlockCooldown prevents deposit/redeem arbitrage in identical block.
  */
-contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
+contract TreasuryManager is IProtocolErrors, Initializable, AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // Domain Custom Errors (Morpho / OpenZeppelin Institutional Standards)
@@ -43,6 +43,7 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
     error SlippageExceeded(uint256 expectedMin, uint256 actual);
     error InvariantNAVDecreased(uint256 preNav, uint256 postNav);
     error InvariantSolvencyDecreased(uint256 preRatio, uint256 postRatio);
+    error ZeroAddress();
     error Undercollateralized(uint256 ratioBps);
     error ZeroAmount();
     error TVLCapExceeded(uint256 attempted, uint256 cap);
@@ -111,7 +112,7 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
     event YieldAdapterRemoved(address indexed adapter);
 
     modifier onlyWhitelisted(address account) {
-        if (kycForced && !kycWhitelist[account]) revert KYCRequired(account);
+        if (kycForced && !kycWhitelist[account] && !kycWhitelist[msg.sender]) revert KYCRequired(account);
         _;
     }
 
@@ -565,12 +566,13 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
         if (sharesAmount == 0) revert ZeroAmount();
         if (lastDepositBlock[beneficiary] >= block.number) revert SameBlockCooldown(beneficiary, block.number);
 
-        (uint256 preAssetsUSD,, uint256 preRatioBps) = getProofOfReserves();
+        (,, uint256 preRatioBps) = getProofOfReserves();
         uint256 netCirculating = getNetCirculatingShares();
         uint256 preNavUSD = getNAVPerShare();
+        uint256 netEquityUSD = getNetEquityUSD();
 
         TreasuryFeeLib.RedeemCalculation memory calc =
-            TreasuryFeeLib.calculateRedemption(sharesAmount, preAssetsUSD, netCirculating, redemptionTokenDecimals);
+            TreasuryFeeLib.calculateRedemption(sharesAmount, netEquityUSD, netCirculating, redemptionTokenDecimals);
         assetsReceived = calc.assetsReceived;
         if (assetsReceived == 0) revert ZeroAmount();
 
@@ -625,15 +627,19 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
     {
         if (kycWhitelist[msg.sender]) revert AccountIsWhitelisted();
         if (sharesAmount == 0) revert ZeroAmount();
+        if (lastDepositBlock[msg.sender] >= block.number) revert SameBlockCooldown(msg.sender, block.number);
 
         AlphaToken token = AlphaToken(addressProvider.getAlphaToken());
         if (token.balanceOf(msg.sender) < sharesAmount) revert InsufficientShareBalance();
 
-        (uint256 totalAssetsUSD,,) = getProofOfReserves();
+        (,, uint256 preRatioBps) = getProofOfReserves();
         uint256 netCirculating = getNetCirculatingShares();
         if (netCirculating == 0) revert ZeroNetCirculatingShares();
 
-        uint256 grossUsdValue = Math.mulDiv(sharesAmount, totalAssetsUSD, netCirculating, Math.Rounding.Floor);
+        uint256 preNavUSD = getNAVPerShare();
+        uint256 netEquityUSD = getNetEquityUSD();
+
+        uint256 grossUsdValue = Math.mulDiv(sharesAmount, netEquityUSD, netCirculating, Math.Rounding.Floor);
 
         // 5.0% Emergency retention fee calculated via TreasuryFeeLib
         uint256 emergencyFeeUsd = TreasuryFeeLib.calculateEmergencyFee(grossUsdValue);
@@ -664,8 +670,13 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
             }
         }
 
+        (,, uint256 postRatioBps) = getProofOfReserves();
+        if (postRatioBps + 1 < preRatioBps) revert InvariantSolvencyDecreased(preRatioBps, postRatioBps);
+        uint256 postNav = getNAVPerShare();
+        if (postNav + 1e14 < preNavUSD) revert InvariantNAVDecreased(preNavUSD, postNav);
         if (assetsReceived < minUsdcOut) revert SlippageExceeded(minUsdcOut, assetsReceived);
-        _updateLastSettledNAV();
+
+        lastSettledNAVPerShare = postNav;
 
         emit Redeemed(msg.sender, sharesAmount, assetsReceived);
         return assetsReceived;

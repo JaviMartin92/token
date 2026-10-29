@@ -398,9 +398,6 @@ async function main() {
   const swapAddr = (await publicClient.waitForTransactionReceipt({ hash: swapTx })).contractAddress!;
   console.log(`[+] AtomicSwapReceiver Contract deployed at: ${swapAddr}`);
 
-  const hashSwapMint = await walletClient.writeContract({ address: alphaTokenAddr, abi: acAbi, functionName: 'grantRole', args: [MINTER_ROLE, swapAddr], account });
-  await publicClient.waitForTransactionReceipt({ hash: hashSwapMint });
-
   // Deploy YieldStreamingVault
   const yieldTx = await walletClient.deployContract({
     abi: YieldStreamingVault.abi,

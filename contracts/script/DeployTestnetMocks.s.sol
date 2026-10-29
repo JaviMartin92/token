@@ -10,7 +10,7 @@ import "../src/ProtocolRoles.sol";
 
 contract DeployTestnetMocks is Script {
     function run() external {
-        require(block.chainid != 1 && block.chainid != 8453, "Cannot deploy faucet on mainnet");
+        require(block.chainid != 1 && block.chainid != 8453 && block.chainid != 42161, "Cannot deploy faucet on mainnet");
 
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         console.log("Deployer address:", vm.addr(deployerPrivateKey));

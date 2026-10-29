@@ -228,6 +228,7 @@ export const ABIS = {
     ]}
   ] as const,
   REAL_YIELD_ROUTER: [
+    { name: 'setUserPayoutPreference', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'preference', type: 'uint8' }], outputs: [] },
     { name: 'setBasketAssets', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: '_wbtc', type: 'address' }, { name: '_weth', type: 'address' }, { name: '_alphaToken', type: 'address' }], outputs: [] },
     { name: 'claimRealYield', type: 'function', stateMutability: 'nonpayable', inputs: [], outputs: [{ name: 'payoutAmount', type: 'uint256' }] },
     { name: 'wbtc', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'address' }] },

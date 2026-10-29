@@ -373,11 +373,12 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
         }
 
         // --- KEEPER BOUNTY INCENTIVE ---
+        uint256 totalOutflow = usdcToSpend;
         if (keeperBountyBps > 0) {
             uint256 bounty = (usdcToSpend * keeperBountyBps) / 10000;
             if (bounty > 0) {
                 try IAlphaVaultBuyback(alphaVault).transferFunds(redemptionToken, msg.sender, bounty) {
-                    // Bounty transferred to keeper
+                    totalOutflow += bounty;
                 } catch {
                     // Ignore bounty failure
                 }
@@ -385,7 +386,7 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
         }
 
         // --- State Updates ---
-        spentToday += usdcToSpend;
+        spentToday += totalOutflow;
         lastExecutionTimestamp = block.timestamp;
         totalBuybackVolumeUSD += usdcToSpend;
         totalAlphaBurned += alphaReceived;

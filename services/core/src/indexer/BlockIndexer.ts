@@ -172,6 +172,22 @@ export class BlockIndexerService {
       ? safeLatestBlock 
       : fromBlock + BigInt(this.batchSize) - 1n;
 
+    // Track block header for active reorg detection if driver is available
+    if (this.storageDriver) {
+      try {
+        const block = await this.client.getBlock({ blockNumber: toBlock });
+        if (block) {
+          const reorgCheck = await this.trackBlockHeader(toBlock, block.hash, block.parentHash);
+          if (reorgCheck.isReorg && reorgCheck.forkBlock !== undefined) {
+            await this.handleReorgRollback(reorgCheck.forkBlock, toBlock);
+            return { fromBlock, toBlock, eventsCount: 0 };
+          }
+        }
+      } catch (e) {
+        // Ignore transient block query error during indexing
+      }
+    }
+
     const events = await this.fetchLogsForRange(fromBlock, toBlock);
 
     for (const event of events) {
@@ -211,10 +227,14 @@ export class BlockIndexerService {
     ];
 
     const results: DomainBlockchainEvent[] = [];
+    const targetAddresses = this.config.contractAddresses
+      ? (Object.values(this.config.contractAddresses).filter(Boolean) as `0x${string}`[])
+      : undefined;
 
     for (const eventAbi of eventsToQuery) {
       try {
         const logs = await this.client.getLogs({
+          ...(targetAddresses && targetAddresses.length > 0 ? { address: targetAddresses } : {}),
           event: eventAbi,
           fromBlock,
           toBlock

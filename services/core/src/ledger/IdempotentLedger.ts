@@ -1,4 +1,5 @@
 import { createHash } from 'crypto';
+import { parseUnits } from 'viem';
 import { type ILedgerStorageDriver, InMemoryLedgerStorage } from './PersistentLedgerStorage.js';
 import { BACKEND_STRINGS } from '../constants/strings.js';
 
@@ -49,16 +50,24 @@ export class IdempotentLedgerEngine {
    * Validates double-entry accounting equilibrium: Sum(Debits) === Sum(Credits)
    */
   public validateEquilibrium(entries: LedgerEntryData[]): { isValid: boolean; totalDebits: number; totalCredits: number; deviation: number } {
+    let debitsWei = 0n;
+    let creditsWei = 0n;
     let totalDebits = 0;
     let totalCredits = 0;
 
     for (const e of entries) {
+      try {
+        debitsWei += parseUnits(e.debit || '0', 18);
+        creditsWei += parseUnits(e.credit || '0', 18);
+      } catch {
+        // Fallback to floating point if non-standard formatted string
+      }
       totalDebits += parseFloat(e.debit || '0');
       totalCredits += parseFloat(e.credit || '0');
     }
 
+    const isValid = debitsWei === creditsWei || Math.abs(totalDebits - totalCredits) < 0.00000001;
     const deviation = Math.abs(totalDebits - totalCredits);
-    const isValid = deviation < 0.00000001;
 
     return { isValid, totalDebits, totalCredits, deviation };
   }

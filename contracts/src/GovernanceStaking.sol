@@ -26,6 +26,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
     IERC20 public immutable rewardToken; // e.g. USDC
 
     uint256 public totalStaked;
+    uint256 public eligibleStaked;
 
     // Backward-compatible stakedBalances getter mapping to ERC20 balanceOf
     function stakedBalances(address account) public view returns (uint256) {
@@ -166,8 +167,21 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
      */
     function setExcludedAddress(address account, bool excluded) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         if (account == address(0)) revert IProtocolErrors.ZeroAddress();
-        isExcludedFromYield[account] = excluded;
-        emit AddressExclusionSet(account, excluded);
+        if (isExcludedFromYield[account] != excluded) {
+            _updateAccountReward(account);
+            uint256 bal = balanceOf(account);
+            if (excluded) {
+                if (eligibleStaked >= bal) {
+                    eligibleStaked -= bal;
+                } else {
+                    eligibleStaked = 0;
+                }
+            } else {
+                eligibleStaked += bal;
+            }
+            isExcludedFromYield[account] = excluded;
+            emit AddressExclusionSet(account, excluded);
+        }
     }
 
     /**
@@ -238,10 +252,10 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
 
     function notifyRewardAmount(uint256 amount) external nonReentrant onlyAuthorized updateReward(address(0)) {
         if (amount == 0) revert IProtocolErrors.ZeroAmount();
-        if (totalStaked == 0) revert IProtocolErrors.NoActiveStakers();
+        if (eligibleStaked == 0) revert IProtocolErrors.NoActiveStakers();
         rewardToken.safeTransferFrom(msg.sender, address(this), amount);
 
-        rewardPerTokenStored += (amount * 1e18) / totalStaked;
+        rewardPerTokenStored += (amount * 1e18) / eligibleStaked;
 
         emit RewardAdded(amount);
     }
@@ -261,6 +275,9 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
         uint256 netStake = amount - fee;
 
         totalStaked += netStake;
+        if (!isExcludedFromYield[msg.sender]) {
+            eligibleStaked += netStake;
+        }
         // AC-15: _mint already calls _moveVotingPower internally via ERC20 override
         _mint(msg.sender, netStake);
 
@@ -305,6 +322,13 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
         }
 
         totalStaked -= amount;
+        if (!isExcludedFromYield[msg.sender]) {
+            if (eligibleStaked >= amount) {
+                eligibleStaked -= amount;
+            } else {
+                eligibleStaked = 0;
+            }
+        }
         // AC-15: _burn already calls _moveVotingPower internally via ERC20 override
         _burn(msg.sender, amount);
 
@@ -423,6 +447,15 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
             }
         }
         super._transfer(from, to, value);
+        if (!isExcludedFromYield[from] && isExcludedFromYield[to]) {
+            if (eligibleStaked >= value) {
+                eligibleStaked -= value;
+            } else {
+                eligibleStaked = 0;
+            }
+        } else if (isExcludedFromYield[from] && !isExcludedFromYield[to]) {
+            eligibleStaked += value;
+        }
         _moveVotingPower(delegates(from), delegates(to), value);
     }
 

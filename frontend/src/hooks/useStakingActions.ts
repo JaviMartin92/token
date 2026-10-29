@@ -239,6 +239,25 @@ export function useStakingActions({
 
   const handleSetPayoutPreference = async (pref: number) => {
     setPayoutPref(pref);
+    try {
+      addLog(`Configurando preferencia de rendimiento a opción ${pref}...`);
+      const client = getWalletClient(activeKey);
+      const userAddr = (userAddress || activeKey) as `0x${string}`;
+      if (CONTRACT_ADDRESSES.REAL_YIELD_ROUTER && CONTRACT_ADDRESSES.REAL_YIELD_ROUTER !== '0x0000000000000000000000000000000000000000') {
+        const tx = await client.writeContract({
+          address: CONTRACT_ADDRESSES.REAL_YIELD_ROUTER,
+          abi: ABIS.REAL_YIELD_ROUTER,
+          functionName: 'setUserPayoutPreference',
+          args: [pref],
+          account: client.account || userAddr
+        });
+        await publicClient.waitForTransactionReceipt({ hash: tx });
+        addLog(`Preferencia de pago opción ${pref} registrada on-chain con éxito.`);
+        addToast('success', 'Preferencia Guardada', `Opción ${pref} configurada en RealYieldRouter`);
+      }
+    } catch (err: any) {
+      addLog(`[Aviso Preferencia] Registro local actualizado (${err.message || err})`);
+    }
   };
 
   return {

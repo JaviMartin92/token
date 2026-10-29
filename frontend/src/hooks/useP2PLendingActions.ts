@@ -156,7 +156,7 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         address: CONTRACT_ADDRESSES.USDC,
         abi: ABIS.ERC20,
         functionName: 'approve',
-        args: [CONTRACT_ADDRESSES.P2P_MARKET, colWei * 2n]
+        args: [CONTRACT_ADDRESSES.P2P_MARKET, colWei > 0n ? colWei * 2n : 1000000000000n]
       });
       await publicClient.waitForTransactionReceipt({ hash: appHash });
 

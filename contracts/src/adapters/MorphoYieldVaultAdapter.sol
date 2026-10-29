@@ -52,7 +52,6 @@ contract MorphoYieldVaultAdapter is AccessControl, ReentrancyGuard, IUniversalYi
         underlyingAsset = IERC20(_stablecoin);
         treasury = _treasury;
         lastHarvestTimestamp = block.timestamp;
-        _totalSupply = 1000; // Virtual shares offset against ERC-4626 inflation
     }
 
     // --- IUniversalYieldAdapter Implementation ---
@@ -61,21 +60,16 @@ contract MorphoYieldVaultAdapter is AccessControl, ReentrancyGuard, IUniversalYi
         return address(underlyingAsset);
     }
 
-    function totalAssets() external view override returns (uint256) {
+    function totalAssets() public view override returns (uint256) {
         return underlyingAsset.balanceOf(address(this));
     }
 
     function convertToShares(uint256 assets) public view override returns (uint256) {
-        if (_totalSupply == 0) return assets;
-        uint256 total = underlyingAsset.balanceOf(address(this));
-        if (total == 0) return assets;
-        return (assets * _totalSupply) / total;
+        return (assets * (_totalSupply + 1)) / (totalAssets() + 1);
     }
 
     function convertToAssets(uint256 shares) public view override returns (uint256) {
-        if (_totalSupply == 0) return shares;
-        uint256 total = underlyingAsset.balanceOf(address(this));
-        return (shares * total) / _totalSupply;
+        return (shares * (totalAssets() + 1)) / (_totalSupply + 1);
     }
 
     function deposit(uint256 assets, address receiver) external override nonReentrant returns (uint256 shares) {

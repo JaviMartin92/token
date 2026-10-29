@@ -671,7 +671,11 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
             } else {
                 _treasuryActiveLoansReceivableUSD = 0;
             }
-            IERC20(stablecoin).safeTransferFrom(msg.sender, treasury, loan.borrowAmount);
+            address vaultTarget = treasury;
+            try ITreasury(treasury).alphaVault() returns (address av) {
+                if (av != address(0)) vaultTarget = av;
+            } catch {}
+            IERC20(stablecoin).safeTransferFrom(msg.sender, vaultTarget, loan.borrowAmount);
             if (interest > 0 && feeCollector != address(0)) {
                 IERC20(stablecoin).safeTransferFrom(msg.sender, feeCollector, interest);
                 if (feeCollector.code.length > 0) {
@@ -726,7 +730,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         bool isExpired = block.timestamp > (loan.startTime + (loan.durationDays * 1 days));
         if (healthRatio >= LIQUIDATION_THRESHOLD && !isExpired) revert LoanNotLiquidatable();
 
-        (uint256 totalOwed,) = calculateTotalOwed(loanId);
+        (uint256 totalOwed, uint256 interest) = calculateTotalOwed(loanId);
 
         loan.state = LoanState.LIQUIDATED;
 
@@ -748,11 +752,6 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
 
         // Liquidator repays the debt to the lender (routing Treasury loans back to AlphaVault & RealYield)
         if (treasury != address(0) && (loan.lender == owner() || loan.lender == treasury)) {
-            if (_treasuryActiveLoansReceivableUSD >= loan.borrowAmount) {
-                _treasuryActiveLoansReceivableUSD -= loan.borrowAmount;
-            } else {
-                _treasuryActiveLoansReceivableUSD = 0;
-            }
             address vaultTarget = treasury;
             try ITreasury(treasury).alphaVault() returns (address av) {
                 if (av != address(0)) vaultTarget = av;

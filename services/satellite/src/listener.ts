@@ -24,10 +24,10 @@ export function startEventListener() {
   setInterval(async () => {
     try {
       const currentBlock = await client.getBlockNumber();
-      const targetBlock = currentBlock - 2n; // 2-block finality buffer
+      const targetBlock = currentBlock >= 2n ? currentBlock - 2n : 0n; // 2-block finality buffer
 
       if (lastProcessedBlock === 0n) {
-        lastProcessedBlock = targetBlock - 10n; // Look back 10 blocks on startup
+        lastProcessedBlock = targetBlock >= 10n ? targetBlock - 10n : 0n; // Look back 10 blocks on startup
       }
 
       if (targetBlock <= lastProcessedBlock) {

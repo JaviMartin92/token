@@ -36,7 +36,7 @@ export function useAdminActions({
       const priceScaled = BigInt(Math.round(parseFloat(oraclePrice) * 1e8));
 
       const tx = await client.writeContract({
-        address: CONTRACT_ADDRESSES.USDC,
+        address: CONTRACT_ADDRESSES.PRICE_FEED,
         abi: [{ name: 'updateAnswer', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: '_answer', type: 'int256' }], outputs: [] }],
         functionName: 'updateAnswer',
         args: [priceScaled]

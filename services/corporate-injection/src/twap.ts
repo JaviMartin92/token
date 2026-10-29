@@ -1,4 +1,4 @@
-import { createWalletClient, http } from 'viem';
+import { createWalletClient, createPublicClient, http } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { arbitrum } from 'viem/chains';
 import dotenv from 'dotenv';
@@ -16,6 +16,11 @@ const account = privateKeyToAccount(OPERATOR_KEY as `0x${string}`);
 
 const walletClient = createWalletClient({
   account,
+  chain: arbitrum,
+  transport: http(RPC_URL),
+});
+
+const publicClient = createPublicClient({
   chain: arbitrum,
   transport: http(RPC_URL),
 });
@@ -71,6 +76,11 @@ export async function runTwapScheduler() {
           });
 
           console.log(`[+] Executed TWAP step. Tx hash: ${hash}`);
+
+          const receipt = await publicClient.waitForTransactionReceipt({ hash });
+          if (receipt.status !== 'success') {
+            throw new Error(`TWAP execution transaction failed on-chain: ${hash}`);
+          }
 
           // Update database state
           const nextStep = order.executedSteps + 1;

@@ -41,6 +41,11 @@ interface ITreasury {
     function deposit(uint256 stableAmount) external returns (uint256 sharesMinted);
 
     /**
+     * @notice Allows depositing on behalf of a beneficiary address.
+     */
+    function depositFor(address beneficiary, uint256 stableAmount, uint256 minSharesOut) external returns (uint256 sharesMinted);
+
+    /**
      * @notice Allows RealYieldRouter to convert protocol fee shares into ALPHA tokens without triggering reentrancy locks.
      */
     function mintCorporateFeeShares(uint256 stableAmount) external returns (uint256 sharesMinted);
@@ -56,6 +61,11 @@ interface ITreasury {
      * @return assetsReceived The net amount of USDC/EURC stablecoins received.
      */
     function redeem(uint256 sharesAmount) external returns (uint256 assetsReceived);
+
+    /**
+     * @notice Allows redeeming on behalf of an owner and routing stablecoins to a recipient.
+     */
+    function redeemFor(address beneficiary, address recipient, uint256 sharesAmount, uint256 minUsdcOut) external returns (uint256 assetsReceived);
 
     function getProofOfReserves()
         external

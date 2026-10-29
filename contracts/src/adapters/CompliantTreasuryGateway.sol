@@ -92,14 +92,11 @@ contract CompliantTreasuryGateway is AccessControl, ReentrancyGuard {
 
         // Pull stablecoin from institution
         IERC20(stablecoin).safeTransferFrom(msg.sender, address(this), stableAmount);
-        IERC20(stablecoin).approve(address(treasuryManager), stableAmount);
+        IERC20(stablecoin).forceApprove(address(treasuryManager), stableAmount);
 
-        // Execute core deposit
+        // Execute core deposit: TreasuryManager.depositFor mints shares directly to msg.sender
         sharesMinted = treasuryManager.depositFor(msg.sender, stableAmount, minSharesOut);
         userLastDepositBlock[msg.sender] = block.number;
-
-        // Forward minted shares to the institution
-        IERC20(alphaToken).safeTransfer(msg.sender, sharesMinted);
 
         emit InstitutionalDepositForwarded(msg.sender, stableAmount, sharesMinted);
     }
@@ -121,13 +118,10 @@ contract CompliantTreasuryGateway is AccessControl, ReentrancyGuard {
 
         // Pull Alpha tokens from institution
         IERC20(alphaToken).safeTransferFrom(msg.sender, address(this), sharesAmount);
-        IERC20(alphaToken).approve(address(treasuryManager), sharesAmount);
+        IERC20(alphaToken).forceApprove(address(treasuryManager), sharesAmount);
 
-        // Execute core redemption
-        assetsReceived = treasuryManager.redeemFor(msg.sender, msg.sender, sharesAmount, minUsdcOut);
-
-        // Forward redeemed stablecoins to institution
-        IERC20(stablecoin).safeTransfer(msg.sender, assetsReceived);
+        // Execute core redemption: TreasuryManager burns from address(this) and transfers USDC directly to msg.sender
+        assetsReceived = treasuryManager.redeemFor(address(this), msg.sender, sharesAmount, minUsdcOut);
 
         emit InstitutionalRedeemForwarded(msg.sender, sharesAmount, assetsReceived);
     }

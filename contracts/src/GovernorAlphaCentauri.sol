@@ -251,6 +251,7 @@ contract GovernorAlphaCentauri is AccessControl {
         Proposal storage p = proposals[proposalId];
         if (p.executed) revert ProposalAlreadyExecuted();
         if (p.canceled) revert IProtocolErrors.InvalidParameters();
+        if (p.timelockTxHash != bytes32(0)) revert IProtocolErrors.InvalidParameters();
         if (msg.sender != p.proposer && _getVotes(p.proposer, block.number - 1) >= proposalThreshold) {
             revert Unauthorized();
         }

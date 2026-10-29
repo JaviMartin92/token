@@ -143,8 +143,11 @@ contract PostQuantumGuard is IPostQuantumGuard, AccessControl {
         if (actionId == bytes32(0)) revert ZeroActionId();
         if (quantumAuthorizedActions[actionId]) revert ActionAlreadyAuthorized();
 
-        bytes32 expectedHash = keccak256(abi.encodePacked(block.chainid, address(this), msg.sender, actionId));
-        if (messageHash != expectedHash) revert IProtocolErrors.InvalidParameters();
+        bytes32 expectedHashWithNext = keccak256(abi.encodePacked(block.chainid, address(this), msg.sender, actionId, nextCommitment));
+        bytes32 expectedHashWithoutNext = keccak256(abi.encodePacked(block.chainid, address(this), msg.sender, actionId));
+        if (messageHash != expectedHashWithNext && messageHash != expectedHashWithoutNext) {
+            revert IProtocolErrors.InvalidParameters();
+        }
 
         bytes32 currentCommitment = _activeCommitments[msg.sender];
         if (currentCommitment == bytes32(0)) revert NoActiveQuantumCommitment();

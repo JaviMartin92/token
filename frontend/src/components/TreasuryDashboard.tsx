@@ -42,8 +42,8 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
   loansList = []
 }) => {
   const totalLentUsd = loansList
-    .filter((l: any) => l.active)
-    .reduce((acc: number, curr: any) => acc + (parseFloat(curr.amount) || 0), 0);
+    .filter((l: any) => l.state === 1 || l.active)
+    .reduce((acc: number, curr: any) => acc + (parseFloat(curr.amount || curr.borrowAmount || '0') || 0), 0);
 
   return (
     <div className={styles.container}>

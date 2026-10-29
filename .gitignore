@@ -19,6 +19,8 @@ contracts/broadcast/*/.last-run.json
 # Frontend build
 frontend/dist/
 frontend/.vite/
+services/dist/
+dist/
 
 # IDE
 .vscode/

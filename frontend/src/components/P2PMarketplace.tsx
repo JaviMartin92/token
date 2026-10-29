@@ -18,6 +18,8 @@ export interface MarketplaceLoan {
   startTime: number;
   state: number; // 0: CREATED, 1: ACTIVE, 2: REPAID, 3: LIQUIDATED, 4: CANCELLED
   healthFactor?: string;
+  isExpired?: boolean;
+  expiration?: number;
 }
 
 interface P2PMarketplaceProps {
@@ -561,7 +563,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                     )}
 
                     {loan.state === 1 && onLiquidateLoanById && (
-                      parseFloat(loan.healthFactor?.replace('%', '') || '1000') < 115 ? (
+                      (parseFloat(loan.healthFactor?.replace('%', '') || '1000') < 115 || loan.isExpired || (loan.expiration && Math.floor(Date.now() / 1000) > loan.expiration)) ? (
                         <Button
                           variant="danger"
                           size="sm"

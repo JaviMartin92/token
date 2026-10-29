@@ -70,45 +70,63 @@ export function useUserPortfolio(userAddress: string | undefined, refetchInterva
           maxTokens = Number(nextTokenId);
         } catch (e) {}
 
-        for (let i = 1; i < maxTokens; i++) {
-          try {
-            const nftOwner = await publicClient.readContract({
-              address: CONTRACT_ADDRESSES.POSITION_NFT,
-              abi: [{ name: 'ownerOf', type: 'function', stateMutability: 'view', inputs: [{ name: 'tokenId', type: 'uint256' }], outputs: [{ name: '', type: 'address' }] }] as const,
-              functionName: 'ownerOf',
-              args: [BigInt(i)]
-            }) as string;
+        const tokenIds = Array.from({ length: Math.max(0, maxTokens - 1) }, (_, idx) => BigInt(idx + 1));
+        if (tokenIds.length > 0) {
+          const ownerCalls = tokenIds.map(id => ({
+            address: CONTRACT_ADDRESSES.POSITION_NFT,
+            abi: [{ name: 'ownerOf', type: 'function', stateMutability: 'view', inputs: [{ name: 'tokenId', type: 'uint256' }], outputs: [{ name: '', type: 'address' }] }] as const,
+            functionName: 'ownerOf',
+            args: [id]
+          }));
 
-            if (nftOwner.toLowerCase() === targetAddr.toLowerCase()) {
-              const pos = await publicClient.readContract({
-                address: CONTRACT_ADDRESSES.POSITION_NFT,
-                abi: ABIS.POSITION_NFT,
-                functionName: 'getPosition',
-                args: [BigInt(i)]
-              }) as any;
+          const ownerResults: readonly any[] = await publicClient.multicall({ contracts: ownerCalls as any }).catch(async () => {
+            return await Promise.all(ownerCalls.map(c => publicClient.readContract(c as any).then(result => ({ status: 'success', result })).catch(() => ({ status: 'failure', error: null }))));
+          });
 
-              const principalWei = pos.principalAmount ?? (Array.isArray(pos) ? pos[7] : 0n);
-              const paidWei = pos.discountedPricePaid ?? (Array.isArray(pos) ? pos[8] : 0n);
-              const expSec = Number(pos.expirationTimestamp ?? (Array.isArray(pos) ? pos[4] : 0));
-              const lockYearsVal = (pos.lockYears ?? (Array.isArray(pos) ? pos[3] : 1)).toString();
-              const isRagequitted = Boolean(pos.isRagequitted ?? (Array.isArray(pos) ? pos[5] : false));
-              const isMaturedClaimed = Boolean(pos.isMaturedClaimed ?? (Array.isArray(pos) ? pos[6] : false));
-
-              const isExpired = currentSec >= expSec;
-              userPositions.push({
-                id: i,
-                principal: parseFloat(formatUnits(BigInt(principalWei), 6)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-                paid: parseFloat(formatUnits(BigInt(paidWei), 6)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-                expirationTimestamp: expSec,
-                expDateStr: new Date(expSec * 1000).toLocaleDateString('es-ES'),
-                lockYears: lockYearsVal,
-                isRagequitted,
-                isMaturedClaimed,
-                canClaim: isExpired && !isRagequitted && !isMaturedClaimed
-              });
+          const matchingIds: bigint[] = [];
+          ownerResults.forEach((res: any, idx: number) => {
+            if (res.status === 'success' && typeof res.result === 'string' && res.result.toLowerCase() === targetAddr.toLowerCase()) {
+              matchingIds.push(tokenIds[idx]);
             }
-          } catch (e) {
-            // Token may have been burned or does not exist
+          });
+
+          if (matchingIds.length > 0) {
+            const posCalls = matchingIds.map(id => ({
+              address: CONTRACT_ADDRESSES.POSITION_NFT,
+              abi: ABIS.POSITION_NFT,
+              functionName: 'getPosition' as const,
+              args: [id]
+            }));
+
+            const posResults: readonly any[] = await publicClient.multicall({ contracts: posCalls as any }).catch(async () => {
+              return await Promise.all(posCalls.map(c => publicClient.readContract(c as any).then(result => ({ status: 'success', result })).catch(() => ({ status: 'failure', error: null }))));
+            });
+
+            posResults.forEach((res: any, idx: number) => {
+              if (res.status === 'success' && res.result) {
+                const pos = res.result as any;
+                const i = Number(matchingIds[idx]);
+                const principalWei = pos.principalAmount ?? (Array.isArray(pos) ? pos[7] : 0n);
+                const paidWei = pos.discountedPricePaid ?? (Array.isArray(pos) ? pos[8] : 0n);
+                const expSec = Number(pos.expirationTimestamp ?? (Array.isArray(pos) ? pos[4] : 0));
+                const lockYearsVal = (pos.lockYears ?? (Array.isArray(pos) ? pos[3] : 1)).toString();
+                const isRagequitted = Boolean(pos.isRagequitted ?? (Array.isArray(pos) ? pos[5] : false));
+                const isMaturedClaimed = Boolean(pos.isMaturedClaimed ?? (Array.isArray(pos) ? pos[6] : false));
+
+                const isExpired = currentSec >= expSec;
+                userPositions.push({
+                  id: i,
+                  principal: parseFloat(formatUnits(BigInt(principalWei), 6)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                  paid: parseFloat(formatUnits(BigInt(paidWei), 6)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                  expirationTimestamp: expSec,
+                  expDateStr: new Date(expSec * 1000).toLocaleDateString('es-ES'),
+                  lockYears: lockYearsVal,
+                  isRagequitted,
+                  isMaturedClaimed,
+                  canClaim: isExpired && !isRagequitted && !isMaturedClaimed
+                });
+              }
+            });
           }
         }
       } catch (e) {}
