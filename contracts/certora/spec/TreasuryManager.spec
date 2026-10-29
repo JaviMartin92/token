@@ -13,7 +13,7 @@ methods {
     function getNetCirculatingShares() external returns (uint256) envfree;
     function getTotalNavUSD() external returns (uint256) envfree;
     function getNetEquityUSD() external returns (uint256) envfree;
-    function getTotalNavUSD() external returns (uint256) envfree;
+    function totalVestedLiabilityUSD() external returns (uint256) envfree;
     
     // Non-envfree state changing methods
     function deposit(uint256, uint256) external returns (uint256);
@@ -29,7 +29,7 @@ methods {
  *         to total protocol liabilities across all reachable EVM states.
  */
 invariant proofOfReservesSolvency()
-    totalAssetsExcludingLoans() >= totalLiabilitiesUSD()
+    getTotalNavUSD() >= totalVestedLiabilityUSD()
     {
         preserved with (env e) {
             require e.msg.value == 0;
@@ -41,7 +41,7 @@ invariant proofOfReservesSolvency()
  * @notice When there are circulating shares, the Net Asset Value per share must be strictly positive.
  */
 invariant positiveNavPerShareWhenCirculating()
-    getCirculatingAlpha() > 0 => getNAVPerShare() > 0
+    getNetCirculatingShares() > 0 => getNAVPerShare() > 0
     {
         preserved with (env e) {
             require e.msg.value == 0;
@@ -55,7 +55,7 @@ invariant positiveNavPerShareWhenCirculating()
  */
 rule navIncreasesOnTokenBurn(uint256 burnAmount, env e) {
     uint256 navBefore = getNAVPerShare();
-    uint256 circulatingBefore = getCirculatingAlpha();
+    uint256 circulatingBefore = getNetCirculatingShares();
     
     require circulatingBefore > burnAmount;
     require burnAmount > 0;
@@ -90,5 +90,5 @@ rule loanDisbursementPreservesSolvency(address recipient, uint256 amount, env e)
     
     disburseTreasuryLoan(e, recipient, amount);
     
-    assert totalAssetsExcludingLoans() >= totalLiabilitiesUSD(), "Loan disbursement must not breach solvency invariant";
+    assert getTotalNavUSD() >= totalVestedLiabilityUSD(), "Loan disbursement must not breach solvency invariant";
 }

@@ -79,7 +79,9 @@ contract OndoRWAAdapter is IUniversalYieldAdapter, Ownable {
         _balances[owner] -= shares;
         _totalSupply -= shares;
 
-        underlyingAsset.safeTransfer(receiver, assets);
+        uint256 currentBal = underlyingAsset.balanceOf(address(this));
+        uint256 toSend = assets <= currentBal ? assets : currentBal;
+        underlyingAsset.safeTransfer(receiver, toSend);
         return shares;
     }
 

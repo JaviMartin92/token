@@ -100,7 +100,7 @@ export async function runTwapScheduler() {
               data: {
                 orderId: order.id,
                 txHash: hash,
-                tokensBought: (order.totalAmount.toNumber() / order.totalSteps) * 2, // Mock 2x native token payout
+                tokensBought: order.totalAmount.toNumber() / order.totalSteps,
                 usdcSpent: order.totalAmount.toNumber() / order.totalSteps,
                 slippage: 0.00
               }

@@ -5,64 +5,46 @@
  */
 
 methods {
-    function calculateNAVPerShare(uint256, uint256) external returns (uint256) envfree;
-    function calculateDiscountPrice(uint256, uint256) external returns (uint256) envfree;
-    function calculateRedemptionPayout(uint256, uint256, uint256) external returns (uint256) envfree;
-    function calculateLTVMaxBorrow(uint256, uint256) external returns (uint256) envfree;
+    function calculateSharesToMint(uint256, uint256, uint256) external returns (uint256) envfree;
+    function calculateRagequitPenalty(uint256) external returns (uint256) envfree;
+    function calculateProofOfReserves(uint256, uint256) external returns (uint256, bool) envfree;
 }
 
 /**
- * @title Rule: Discount Price Strictly Bounded
- * @notice Discounted purchase price must always be strictly less than or equal to base price,
- *         and non-negative when discountBps <= 10000.
+ * @title Rule: Shares to Mint Strict Monotonicity with Deposit Value
+ * @notice Given positive supply and NAV, a larger deposit strictly produces greater or equal shares.
  */
-rule discountPriceBounded(uint256 basePrice, uint256 discountBps) {
-    require discountBps <= 10000;
-    
-    uint256 discountedPrice = calculateDiscountPrice(basePrice, discountBps);
-    
-    assert discountedPrice <= basePrice, "Discounted price cannot exceed base price";
-    assert (discountBps == 0 => discountedPrice == basePrice), "Zero discount must equal base price";
-    assert (discountBps == 10000 => discountedPrice == 0), "100% discount must equal zero";
-}
-
-/**
- * @title Rule: NAV Monotonicity with Asset Inflows
- * @notice For any fixed circulating supply > 0, increasing total assets strictly increases NAV per share.
- */
-rule navIncreasesWithAssets(uint256 assets1, uint256 assets2, uint256 supply) {
+rule sharesToMintMonotonicWithDeposit(uint256 depositVal1, uint256 depositVal2, uint256 supply, uint256 nav) {
     require supply > 0;
-    require assets2 >= assets1;
-    
-    uint256 nav1 = calculateNAVPerShare(assets1, supply);
-    uint256 nav2 = calculateNAVPerShare(assets2, supply);
-    
-    assert nav2 >= nav1, "NAV per share must grow monotonically with increased protocol assets";
+    require nav > 0;
+    require depositVal2 >= depositVal1;
+    require depositVal1 > 0;
+
+    uint256 shares1 = calculateSharesToMint(depositVal1, supply, nav);
+    uint256 shares2 = calculateSharesToMint(depositVal2, supply, nav);
+
+    assert shares2 >= shares1, "Shares minted must grow monotonically with deposit value";
 }
 
 /**
- * @title Rule: NAV Monotonicity with Supply Burns
- * @notice For any fixed asset base > 0, burning supply strictly increases NAV per share.
+ * @title Rule: Ragequit Penalty Strictly Bounded by Principal
+ * @notice Ragequit penalty must always be strictly less than or equal to discounted price paid.
  */
-rule navIncreasesWithSupplyBurn(uint256 assets, uint256 supply1, uint256 supply2) {
-    require supply2 < supply1;
-    require supply2 > 0;
-    require assets > 0;
-    
-    uint256 nav1 = calculateNAVPerShare(assets, supply1);
-    uint256 nav2 = calculateNAVPerShare(assets, supply2);
-    
-    assert nav2 >= nav1, "NAV per share must grow monotonically when tokens are burned";
+rule ragequitPenaltyBounded(uint256 discountedPricePaid) {
+    uint256 penalty = calculateRagequitPenalty(discountedPricePaid);
+
+    assert penalty <= discountedPricePaid, "Penalty cannot exceed discounted price paid";
 }
 
 /**
- * @title Rule: Maximum LTV Borrow Bounded
- * @notice Borrow amount under max LTV must never exceed the collateral valuation.
+ * @title Rule: Proof of Reserves Solvency Check
+ * @notice Solvency flag is strictly true when assets >= liabilities.
  */
-rule maxBorrowBoundedByCollateral(uint256 collateralUSD, uint256 maxLtvBps) {
-    require maxLtvBps <= 10000;
-    
-    uint256 maxBorrow = calculateLTVMaxBorrow(collateralUSD, maxLtvBps);
-    
-    assert maxBorrow <= collateralUSD, "Max borrow amount cannot exceed total collateral USD valuation";
+rule proofOfReservesSolvency(uint256 assets18, uint256 liabilities18) {
+    require liabilities18 > 0;
+    uint256 ratio;
+    bool isSolvent;
+    ratio, isSolvent = calculateProofOfReserves(assets18, liabilities18);
+
+    assert (assets18 >= liabilities18 <=> isSolvent), "System must be solvent if and only if assets >= liabilities";
 }

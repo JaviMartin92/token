@@ -135,6 +135,12 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
 
+    // Synthetix Continuous Real-Yield Streaming State (Anti Flash-Stake MEV)
+    uint256 public rewardsDuration = 7 days;
+    uint256 public periodFinish;
+    uint256 public rewardRate; // Scaled by 1e18 for exact sub-wei precision
+    uint256 public lastUpdateTime;
+
     // Timelock state (Anti Flash-Loan Voting)
     uint256 public constant MIN_STAKE_DURATION = 7 days;
     mapping(address => uint256) public lastStakeTime;
@@ -226,8 +232,18 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
         return rewardToken.balanceOf(address(this));
     }
 
+    function lastTimeRewardApplicable() public view returns (uint256) {
+        return block.timestamp < periodFinish ? block.timestamp : periodFinish;
+    }
+
+    function rewardPerToken() public view returns (uint256) {
+        if (eligibleStaked == 0) return rewardPerTokenStored;
+        return rewardPerTokenStored + (((lastTimeRewardApplicable() - lastUpdateTime) * rewardRate) / eligibleStaked);
+    }
+
     function _updateAccountReward(address account) internal {
         rewardPerTokenStored = rewardPerToken();
+        lastUpdateTime = lastTimeRewardApplicable();
         if (account != address(0)) {
             if (!isExcludedFromYield[account]) {
                 rewards[account] = earned(account);
@@ -241,10 +257,6 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
         _;
     }
 
-    function rewardPerToken() public view returns (uint256) {
-        return rewardPerTokenStored;
-    }
-
     function earned(address account) public view returns (uint256) {
         if (isExcludedFromYield[account]) return 0;
         return (balanceOf(account) * (rewardPerToken() - userRewardPerTokenPaid[account])) / 1e18 + rewards[account];
@@ -255,9 +267,23 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
         if (eligibleStaked == 0) revert IProtocolErrors.NoActiveStakers();
         rewardToken.safeTransferFrom(msg.sender, address(this), amount);
 
-        rewardPerTokenStored += (amount * 1e18) / eligibleStaked;
+        if (block.timestamp >= periodFinish) {
+            rewardRate = (amount * 1e18) / rewardsDuration;
+        } else {
+            uint256 remaining = periodFinish - block.timestamp;
+            uint256 leftover = (remaining * rewardRate) / 1e18;
+            rewardRate = ((amount + leftover) * 1e18) / rewardsDuration;
+        }
+        lastUpdateTime = block.timestamp;
+        periodFinish = block.timestamp + rewardsDuration;
 
         emit RewardAdded(amount);
+    }
+
+    function setRewardsDuration(uint256 _rewardsDuration) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (_rewardsDuration == 0) revert IProtocolErrors.InvalidAmount();
+        if (block.timestamp < periodFinish) revert IProtocolErrors.TimelockActive(periodFinish);
+        rewardsDuration = _rewardsDuration;
     }
 
     /**
@@ -343,6 +369,9 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
      */
     function claimReward() external nonReentrant updateReward(msg.sender) returns (uint256 reward) {
         if (isExcludedFromYield[msg.sender]) return 0;
+        if (block.timestamp < lastStakeTime[msg.sender] + MIN_STAKE_DURATION) {
+            revert IProtocolErrors.TimelockActive(lastStakeTime[msg.sender] + MIN_STAKE_DURATION);
+        }
         reward = rewards[msg.sender];
         if (reward > 0) {
             rewards[msg.sender] = 0;
@@ -359,6 +388,9 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
         returns (uint256 reward)
     {
         if (isExcludedFromYield[user]) return 0;
+        if (block.timestamp < lastStakeTime[user] + MIN_STAKE_DURATION) {
+            revert IProtocolErrors.TimelockActive(lastStakeTime[user] + MIN_STAKE_DURATION);
+        }
         reward = rewards[user];
         if (reward > 0) {
             rewards[user] = 0;

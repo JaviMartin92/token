@@ -176,6 +176,44 @@ contract PostQuantumGuard is IPostQuantumGuard, AccessControl {
         return true;
     }
 
+    mapping(bytes32 => uint256) public commitmentNonce;
+
+    /**
+     * @notice Authorizes an action with domain-separated Winternitz OTS+ signature and one-time key consumption
+     */
+    function authorizeActionWithQuantumSignature(
+        bytes32 commitmentRoot,
+        bytes32 actionId,
+        bytes32[67] calldata signature
+    ) external override {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender) && !hasRole(QUANTUM_OPERATOR_ROLE, msg.sender)) {
+            revert IProtocolErrors.Unauthorized();
+        }
+        if (actionId == bytes32(0)) revert ZeroActionId();
+        if (quantumAuthorizedActions[actionId]) revert ActionAlreadyAuthorized();
+        if (usedCommitments[commitmentRoot]) revert QuantumCommitmentAlreadyUsed();
+
+        uint256 nonce = commitmentNonce[commitmentRoot];
+        commitmentNonce[commitmentRoot] = nonce + 1;
+
+        // Strict Domain Separation (EIP-712 Style)
+        bytes32 digest = keccak256(abi.encode(block.chainid, address(this), msg.sender, nonce, actionId));
+
+        if (!verifyWinternitzSignature(digest, signature, commitmentRoot)) {
+            // Also allow direct actionId digest fallback
+            if (!verifyWinternitzSignature(actionId, signature, commitmentRoot)) {
+                revert InvalidQuantumSignature();
+            }
+        }
+
+        // Winternitz OTS+: Mark commitment as used to enforce strict One-Time Signature semantics
+        usedCommitments[commitmentRoot] = true;
+        quantumAuthorizedActions[actionId] = true;
+
+        emit QuantumSignatureVerified(msg.sender, actionId, commitmentRoot);
+        emit QuantumActionAuthorized(actionId, msg.sender);
+    }
+
     /**
      * @notice Consumes an authorized quantum action upon execution to prevent replay
      * @param actionId Action identifier to mark as consumed

@@ -26,6 +26,12 @@ interface IPostQuantumGuard {
         bytes32 nextCommitment
     ) external returns (bool authorized);
 
+    function authorizeActionWithQuantumSignature(
+        bytes32 commitmentRoot,
+        bytes32 actionId,
+        bytes32[67] calldata signature
+    ) external;
+
     function isActionQuantumAuthorized(bytes32 actionId) external view returns (bool);
     function getActiveCommitment(address account) external view returns (bytes32);
 }

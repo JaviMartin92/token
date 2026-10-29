@@ -28,10 +28,12 @@ contract AtomicSwapReceiver is IAtomicSwapReceiver, AccessControl, ReentrancyGua
 
     uint24 public poolFee = 100; // 0.01% standard stablecoin pool fee
     uint24 public constant MAX_POOL_FEE = 3000; // 0.30% max allowable pool fee
+    uint256 public maxSlippageBps = 50; // 0.50% default maximum allowable slippage (accommodates 0.05% - 0.30% fee tiers)
 
     event TreasuryUpdated(address oldTreasury, address newTreasury);
     event SwapRouterUpdated(address oldRouter, address newRouter);
     event PoolFeeUpdated(uint24 oldFee, uint24 newFee);
+    event MaxSlippageBpsUpdated(uint256 oldBps, uint256 newBps);
     event CircuitBreakerUpdated(address oldBreaker, address newBreaker);
     event TokensSwept(address indexed token, address indexed to, uint256 amount);
 
@@ -86,6 +88,16 @@ contract AtomicSwapReceiver is IAtomicSwapReceiver, AccessControl, ReentrancyGua
     }
 
     /**
+     * @notice Updates the maximum allowable slippage basis points for the USDT -> USDC swap.
+     */
+    function setMaxSlippageBps(uint256 _slippageBps) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (_slippageBps > 500) revert IProtocolErrors.InvalidParameters(); // Max 5%
+        uint256 old = maxSlippageBps;
+        maxSlippageBps = _slippageBps;
+        emit MaxSlippageBpsUpdated(old, _slippageBps);
+    }
+
+    /**
      * @notice Updates the Circuit Breaker reference.
      */
     function setCircuitBreaker(address _circuitBreaker) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
@@ -99,6 +111,20 @@ contract AtomicSwapReceiver is IAtomicSwapReceiver, AccessControl, ReentrancyGua
      */
     function depositUSDT(uint256 usdtAmount, uint256 minUsdcExpected)
         external
+        override
+        returns (uint256 usdcDeposited)
+    {
+        return depositUSDT(usdtAmount, minUsdcExpected, 0);
+    }
+
+    /**
+     * @notice Receives USDT from a user and atomically swaps it to USDC, then deposits into Treasury.
+     * @param usdtAmount The amount of USDT being deposited.
+     * @param minUsdcExpected Minimum USDC expected from Uniswap swap.
+     * @param minSharesOut Minimum ALPHA shares expected from Treasury deposit.
+     */
+    function depositUSDT(uint256 usdtAmount, uint256 minUsdcExpected, uint256 minSharesOut)
+        public
         override
         nonReentrant
         returns (uint256 usdcDeposited)
@@ -115,8 +141,8 @@ contract AtomicSwapReceiver is IAtomicSwapReceiver, AccessControl, ReentrancyGua
             }
         }
 
-        // Enforce maximum 0.05% slippage check on-chain (USDT -> USDC)
-        uint256 maxSlippageLimit = (usdtAmount * 9995) / 10000;
+        // Enforce configurable slippage limit (default 0.50% to accommodate Uniswap fees)
+        uint256 maxSlippageLimit = (usdtAmount * (10000 - maxSlippageBps)) / 10000;
         if (minUsdcExpected < maxSlippageLimit) {
             revert IProtocolErrors.SlippageExceeded(maxSlippageLimit, minUsdcExpected);
         }
@@ -145,9 +171,9 @@ contract AtomicSwapReceiver is IAtomicSwapReceiver, AccessControl, ReentrancyGua
 
         // 5. Transfer resulting USDC to Treasury & mint ALPHA to depositor
         IERC20(usdcToken).forceApprove(treasury, usdcDeposited);
-        ITreasury(treasury).depositFor(msg.sender, usdcDeposited, 0);
+        ITreasury(treasury).depositFor(msg.sender, usdcDeposited, minSharesOut);
 
-        emit AtomicSwapExecuted(msg.sender, usdtAmount, usdcDeposited, 0);
+        emit AtomicSwapExecuted(msg.sender, usdtAmount, usdcDeposited, minSharesOut);
         return usdcDeposited;
     }
 

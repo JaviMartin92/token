@@ -12,4 +12,5 @@ interface IAtomicSwapReceiver {
      * @return usdcDeposited The net amount of USDC deposited into the treasury.
      */
     function depositUSDT(uint256 usdtAmount, uint256 minUsdcExpected) external returns (uint256 usdcDeposited);
+    function depositUSDT(uint256 usdtAmount, uint256 minUsdcExpected, uint256 minSharesOut) external returns (uint256 usdcDeposited);
 }

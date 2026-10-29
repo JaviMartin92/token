@@ -39,6 +39,7 @@ interface ITreasury {
      * @return sharesMinted The net amount of ALPHA shares minted.
      */
     function deposit(uint256 stableAmount) external returns (uint256 sharesMinted);
+    function deposit(uint256 stableAmount, uint256 minSharesOut) external returns (uint256 sharesMinted);
 
     /**
      * @notice Allows depositing on behalf of a beneficiary address.
@@ -61,6 +62,7 @@ interface ITreasury {
      * @return assetsReceived The net amount of USDC/EURC stablecoins received.
      */
     function redeem(uint256 sharesAmount) external returns (uint256 assetsReceived);
+    function redeem(uint256 sharesAmount, uint256 minUsdcOut) external returns (uint256 assetsReceived);
 
     /**
      * @notice Allows redeeming on behalf of an owner and routing stablecoins to a recipient.

@@ -22,6 +22,7 @@ import "./lib/TreasuryRebalanceLib.sol";
 import "./interfaces/IRealYieldRouter.sol";
 import "./interfaces/IUniversalYieldAdapter.sol";
 import "./interfaces/IProtocolErrors.sol";
+import "./interfaces/ITreasury.sol";
 
 /**
  * @title TreasuryManager
@@ -34,21 +35,12 @@ import "./interfaces/IProtocolErrors.sol";
  *      2. Solvency: Proof of Reserves collateral ratio >= 100% and non-decreasing.
  *      3. Anti-MEV: SameBlockCooldown prevents deposit/redeem arbitrage in identical block.
  */
-contract TreasuryManager is IProtocolErrors, Initializable, AccessControl, ReentrancyGuard {
+contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // Domain Custom Errors (Morpho / OpenZeppelin Institutional Standards)
     error KYCRequired(address account);
     error SameBlockCooldown(address account, uint256 currentBlock);
-    error SlippageExceeded(uint256 expectedMin, uint256 actual);
-    error InvariantNAVDecreased(uint256 preNav, uint256 postNav);
-    error InvariantSolvencyDecreased(uint256 preRatio, uint256 postRatio);
-    error ZeroAddress();
-    error Undercollateralized(uint256 ratioBps);
-    error ZeroAmount();
-    error TVLCapExceeded(uint256 attempted, uint256 cap);
-    error InvalidWeightsSum(uint256 sum);
-    error ZeroAddressProvider();
     error InvalidAdapterAddress();
     error AdapterAlreadyActive();
     error AdapterNotActive();
@@ -410,7 +402,11 @@ contract TreasuryManager is IProtocolErrors, Initializable, AccessControl, Reent
      * @param minSharesOut Minimum shares expected to receive (slippage protection).
      * @return sharesMinted The amount of Alpha shares minted to the user.
      */
-    function deposit(uint256 stableAmount, uint256 minSharesOut) public returns (uint256 sharesMinted) {
+    function deposit(uint256 stableAmount) external override returns (uint256 sharesMinted) {
+        return deposit(stableAmount, 0);
+    }
+
+    function deposit(uint256 stableAmount, uint256 minSharesOut) public override returns (uint256 sharesMinted) {
         return depositFor(msg.sender, stableAmount, minSharesOut);
     }
 
@@ -434,6 +430,7 @@ contract TreasuryManager is IProtocolErrors, Initializable, AccessControl, Reent
             revert TVLCapExceeded(getTotalNavUSD() + grossDepositUSD, tvlCap);
         }
         lastDepositBlock[beneficiary] = block.number;
+        lastDepositBlock[msg.sender] = block.number;
 
         (uint256 preAssetsUSD,, uint256 preRatioBps) = getProofOfReserves();
         uint256 preNavUSD = getNAVPerShare();
@@ -544,7 +541,11 @@ contract TreasuryManager is IProtocolErrors, Initializable, AccessControl, Reent
      * @param minUsdcOut Minimum USDC expected to receive (slippage protection).
      * @return assetsReceived The amount of USDC transferred to the user, net of fees.
      */
-    function redeem(uint256 sharesAmount, uint256 minUsdcOut) external returns (uint256 assetsReceived) {
+    function redeem(uint256 sharesAmount) external override returns (uint256 assetsReceived) {
+        return redeem(sharesAmount, 0);
+    }
+
+    function redeem(uint256 sharesAmount, uint256 minUsdcOut) external override returns (uint256 assetsReceived) {
         return redeemFor(msg.sender, msg.sender, sharesAmount, minUsdcOut);
     }
 
@@ -564,7 +565,13 @@ contract TreasuryManager is IProtocolErrors, Initializable, AccessControl, Reent
     {
         if (beneficiary == address(0) || recipient == address(0)) revert ZeroAddress();
         if (sharesAmount == 0) revert ZeroAmount();
-        if (lastDepositBlock[beneficiary] >= block.number) revert SameBlockCooldown(beneficiary, block.number);
+        if (
+            lastDepositBlock[beneficiary] >= block.number ||
+            lastDepositBlock[recipient] >= block.number ||
+            lastDepositBlock[msg.sender] >= block.number
+        ) {
+            revert SameBlockCooldown(beneficiary, block.number);
+        }
 
         (,, uint256 preRatioBps) = getProofOfReserves();
         uint256 netCirculating = getNetCirculatingShares();

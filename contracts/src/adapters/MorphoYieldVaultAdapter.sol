@@ -204,12 +204,13 @@ contract MorphoYieldVaultAdapter is AccessControl, ReentrancyGuard, IUniversalYi
     }
 
     function harvestYield() external nonReentrant returns (uint256 yieldHarvested) {
-        yieldHarvested = getPendingYield();
         lastHarvestTimestamp = block.timestamp;
 
-        if (yieldHarvested > 0 && treasury != address(0)) {
-            uint256 bal = underlyingAsset.balanceOf(address(this));
-            uint256 actualYield = bal >= yieldHarvested ? yieldHarvested : bal;
+        if (treasury != address(0)) {
+            uint256 currentBalance = underlyingAsset.balanceOf(address(this));
+            uint256 actualYield = currentBalance > totalStablecoinInvested
+                ? currentBalance - totalStablecoinInvested
+                : 0;
 
             if (actualYield > 0) {
                 totalYieldHarvested += actualYield;

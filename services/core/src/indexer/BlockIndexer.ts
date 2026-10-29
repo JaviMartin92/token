@@ -59,14 +59,27 @@ export class BlockIndexerService {
     this.storageDriver = storageDriver;
     this.ledgerEngine = ledgerEngine;
 
-    // Async hydration from persistent checkpoint if available
+    // Start hydration from persistent checkpoint if available
     if (this.storageDriver && config.startBlock === undefined) {
-      this.storageDriver.getCheckpoint('lastIndexedBlock').then(cp => {
+      this.init().catch(() => {});
+    }
+  }
+
+  private isHydrated = false;
+
+  public async init(): Promise<void> {
+    if (this.isHydrated) return;
+    if (this.storageDriver && this.config.startBlock === undefined) {
+      try {
+        const cp = await this.storageDriver.getCheckpoint('lastIndexedBlock');
         if (cp) {
           this.lastIndexedBlock = BigInt(cp);
         }
-      }).catch(() => {});
+      } catch {
+        // Ignore checkpoint retrieval error on startup
+      }
     }
+    this.isHydrated = true;
   }
 
   public registerHandler(eventName: string, handler: EventHandler): void {
@@ -158,6 +171,9 @@ export class BlockIndexerService {
    * Indexes the next chunk of blocks up to safe target block (latest - confirmationBlocks)
    */
   public async indexNextBatch(maxTargetBlock?: bigint): Promise<{ fromBlock: bigint; toBlock: bigint; eventsCount: number }> {
+    if (!this.isHydrated) {
+      await this.init();
+    }
     const latestBlock = maxTargetBlock ?? await this.client.getBlockNumber();
     const safeLatestBlock = latestBlock > BigInt(this.confirmationBlocks) 
       ? latestBlock - BigInt(this.confirmationBlocks) 
@@ -175,12 +191,18 @@ export class BlockIndexerService {
     // Track block header for active reorg detection if driver is available
     if (this.storageDriver) {
       try {
-        const block = await this.client.getBlock({ blockNumber: toBlock });
-        if (block) {
-          const reorgCheck = await this.trackBlockHeader(toBlock, block.hash, block.parentHash);
+        const firstBlock = await this.client.getBlock({ blockNumber: fromBlock });
+        if (firstBlock) {
+          const reorgCheck = await this.trackBlockHeader(fromBlock, firstBlock.hash, firstBlock.parentHash);
           if (reorgCheck.isReorg && reorgCheck.forkBlock !== undefined) {
             await this.handleReorgRollback(reorgCheck.forkBlock, toBlock);
             return { fromBlock, toBlock, eventsCount: 0 };
+          }
+        }
+        if (toBlock > fromBlock) {
+          const lastBlock = await this.client.getBlock({ blockNumber: toBlock });
+          if (lastBlock) {
+            await this.trackBlockHeader(toBlock, lastBlock.hash, lastBlock.parentHash);
           }
         }
       } catch (e) {

@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import { parseUnits } from 'viem';
+import { parseUnits, formatUnits } from 'viem';
 import { type ILedgerStorageDriver, InMemoryLedgerStorage } from './PersistentLedgerStorage.js';
 import { BACKEND_STRINGS } from '../constants/strings.js';
 
@@ -151,23 +151,30 @@ export class IdempotentLedgerEngine {
   }
 
   /**
-   * Computes the net balance of an account considering ONLY CANONICAL (non-orphaned) entries
+   * Computes the net balance of an account considering ONLY CANONICAL (non-orphaned) entries using exact 18-decimal integer arithmetic
    */
-  public async getCanonicalAccountBalance(accountCode: string): Promise<number> {
+  public async getCanonicalAccountBalanceBigInt(accountCode: string): Promise<bigint> {
     const all = await this.storage.getAllTransactions();
-    let balance = 0;
+    let balance = 0n;
 
     for (const tx of all.values()) {
       if (tx.status !== 'ORPHANED') {
         for (const entry of tx.entries) {
           if (entry.accountCode === accountCode) {
-            balance += parseFloat(entry.debit || '0') - parseFloat(entry.credit || '0');
+            const debit = parseUnits((entry.debit || '0').toString(), 18);
+            const credit = parseUnits((entry.credit || '0').toString(), 18);
+            balance += debit - credit;
           }
         }
       }
     }
 
     return balance;
+  }
+
+  public async getCanonicalAccountBalance(accountCode: string): Promise<number> {
+    const balBig = await this.getCanonicalAccountBalanceBigInt(accountCode);
+    return parseFloat(formatUnits(balBig, 18));
   }
 
   /**

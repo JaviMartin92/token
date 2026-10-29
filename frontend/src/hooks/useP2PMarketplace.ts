@@ -53,7 +53,7 @@ export function useP2PMarketplace(refetchInterval = 3000) {
                 const paidWei = pos.discountedPricePaid ?? (Array.isArray(pos) ? pos[8] : 0n);
                 const principalVal = parseFloat(formatUnits(BigInt(principalWei), 6));
                 const paidVal = parseFloat(formatUnits(BigInt(paidWei), 6));
-                numCollateralVal = principalVal > 0 ? principalVal : (paidVal > 0 ? paidVal : 0);
+                numCollateralVal = paidVal > 0 ? paidVal : (principalVal > 0 ? principalVal : 0);
               } catch (e) {
                 numCollateralVal = 0;
               }
