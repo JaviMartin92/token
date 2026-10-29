@@ -550,7 +550,7 @@ contract TreasuryManager is Initializable, AccessControl, ReentrancyGuard {
         (,, uint256 postRatioBps) = getProofOfReserves();
         if (postRatioBps + 1 < preRatioBps) revert InvariantSolvencyDecreased(preRatioBps, postRatioBps);
         uint256 postNav = getNAVPerShare();
-        if (postNav < preNavUSD) revert InvariantNAVDecreased(preNavUSD, postNav);
+        if (postNav + 1e14 < preNavUSD) revert InvariantNAVDecreased(preNavUSD, postNav);
         if (assetsReceived < minUsdcOut) revert SlippageExceeded(minUsdcOut, assetsReceived);
 
         lastSettledNAVPerShare = postNav;

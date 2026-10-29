@@ -35,7 +35,11 @@ contract ProtocolContribution is IProtocolContribution, AccessControl, Reentranc
     address public immutable stakingAddress;
     address public swapRouter;
     address public oracleHub;
-    address public constant burnAddress = 0x000000000000000000000000000000000000dEaD;
+    address public constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+
+    function burnAddress() external pure returns (address) {
+        return BURN_ADDRESS;
+    }
 
     uint256 public slippageToleranceBps = 100; // 1.00% default slippage
     uint256 public constant MAX_SLIPPAGE_BPS = 500; // 5.00% maximum slippage
@@ -200,7 +204,7 @@ contract ProtocolContribution is IProtocolContribution, AccessControl, Reentranc
             try IBurnableToken(nativeToken).burn(otherHalf) {
                 // Tokens burned from total supply
             } catch {
-                IERC20(nativeToken).safeTransfer(burnAddress, otherHalf);
+                IERC20(nativeToken).safeTransfer(BURN_ADDRESS, otherHalf);
             }
         }
 

@@ -95,6 +95,7 @@ contract YieldStreamingVault is IYieldStreamingVault, AccessControl, ReentrancyG
     /**
      * @notice Obtiene el separador de dominio activo, recalculándolo si ocurre un hard fork.
      */
+    /* solhint-disable-next-line func-name-mixedcase */
     function DOMAIN_SEPARATOR() public view returns (bytes32) {
         return block.chainid == _cachedChainId ? _cachedDomainSeparator : _buildDomainSeparator();
     }
