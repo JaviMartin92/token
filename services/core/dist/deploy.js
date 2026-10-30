@@ -32,7 +32,9 @@ function loadArtifact(name, file) {
     const p3 = path_1.default.resolve(__dirname, `../../../contracts/out/test/${file}/${name}.json`);
     const p4 = path_1.default.resolve(__dirname, `../../../contracts/out/adapters/${file}/${name}.json`);
     const p5 = path_1.default.resolve(__dirname, `../../../contracts/out/${name}.sol/${name}.json`);
-    const p = fs_1.default.existsSync(p1) ? p1 : fs_1.default.existsSync(p2) ? p2 : fs_1.default.existsSync(p3) ? p3 : fs_1.default.existsSync(p4) ? p4 : fs_1.default.existsSync(p5) ? p5 : p1;
+    const p6 = path_1.default.resolve(__dirname, `../../../contracts/out/mocks/${file}/${name}.json`);
+    const p7 = path_1.default.resolve(__dirname, `../../../contracts/out/test/mocks/${file}/${name}.json`);
+    const p = fs_1.default.existsSync(p1) ? p1 : fs_1.default.existsSync(p2) ? p2 : fs_1.default.existsSync(p3) ? p3 : fs_1.default.existsSync(p4) ? p4 : fs_1.default.existsSync(p5) ? p5 : fs_1.default.existsSync(p6) ? p6 : fs_1.default.existsSync(p7) ? p7 : p1;
     if (!fs_1.default.existsSync(p)) {
         throw new Error(`Artifact not found for ${name} in ${file}. Run forge compile first.`);
     }
@@ -49,9 +51,10 @@ function loadArtifactSafe(name, file) {
 async function main() {
     const deployEnv = process.env.DEPLOY_ENV || 'sandbox';
     const isProduction = deployEnv === 'production' || process.env.NODE_ENV === 'production';
-    if (isProduction) {
+    const chainId = await publicClient.getChainId();
+    if (isProduction || chainId === 42161) {
         console.error('CRITICAL: deploy.ts is dedicated to sandbox and local simulation fixtures. For production, deploy via deterministic scripts using verified external tokens, Chainlink feeds, and multisig timelock.');
-        throw new Error('Production deployment guard: Mock deployments blocked in production mode.');
+        throw new Error('Production deployment guard: Mock deployments blocked in production mode or Arbitrum One Mainnet.');
     }
     console.log('[*] Starting full deployment of Sandbox Smart Contracts onto Anvil...');
     const TreasuryProxy = loadArtifact('TreasuryProxy', 'TreasuryProxy.sol');
@@ -353,8 +356,6 @@ async function main() {
     });
     const swapAddr = (await publicClient.waitForTransactionReceipt({ hash: swapTx })).contractAddress;
     console.log(`[+] AtomicSwapReceiver Contract deployed at: ${swapAddr}`);
-    const hashSwapMint = await walletClient.writeContract({ address: alphaTokenAddr, abi: acAbi, functionName: 'grantRole', args: [MINTER_ROLE, swapAddr], account });
-    await publicClient.waitForTransactionReceipt({ hash: hashSwapMint });
     // Deploy YieldStreamingVault
     const yieldTx = await walletClient.deployContract({
         abi: YieldStreamingVault.abi,

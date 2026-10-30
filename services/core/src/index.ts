@@ -71,7 +71,7 @@ async function handleBlockchainEvent(event: Web3Event) {
             accountCode: 'USER_EQUITY',
             debit: burnedVal,
             credit: '0.0',
-            assetAddress: 'SHARES_TOKEN_MOCK'
+            assetAddress: 'USDC_TOKEN_MOCK'
           },
           {
             accountCode: 'TREASURY_LIQUID_USDC',

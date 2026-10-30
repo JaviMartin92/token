@@ -40,6 +40,8 @@ export declare class BlockIndexerService {
     private ledgerEngine?;
     private indexedEvents;
     constructor(config: IndexerConfig, clientOverride?: PublicClient, storageDriver?: ILedgerStorageDriver, ledgerEngine?: IdempotentLedgerEngine);
+    private isHydrated;
+    init(): Promise<void>;
     registerHandler(eventName: string, handler: EventHandler): void;
     getLastIndexedBlock(): bigint;
     setLastIndexedBlock(block: bigint): void;

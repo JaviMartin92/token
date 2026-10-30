@@ -92,7 +92,7 @@ contract DeployMainnet is Script {
         _deployYieldAndStaking(deployer);
         _deployMarketsAndGovernance(deployer);
         _deploySecurityAndExtensions(deployer);
-        _wirePermissions();
+        _wirePermissions(deployer);
 
         console.log("=== ARBITRUM ONE MAINNET DEPLOYMENT COMPLETED SUCCESSFULLY ===");
 
@@ -154,7 +154,8 @@ contract DeployMainnet is Script {
             address(staking),
             deployer
         );
-        realYieldRouter.setProtocolVaults(address(alphaVault), address(communityVault));
+        realYieldRouter.setProtocolVaults(address(treasury), address(communityVault));
+        realYieldRouter.setAuthorizedYieldCaller(address(treasury), true);
         realYieldRouter.setBasketAssets(ARB_WBTC, ARB_WETH, address(alphaToken));
         realYieldRouter.setOracleConfig(address(oracleHub), 300);
         realYieldRouter.setCircuitBreaker(address(circuitBreaker));
@@ -169,7 +170,7 @@ contract DeployMainnet is Script {
         vestedVault = new VestedDiscountVault(
             ARB_USDC,
             address(positionNFT),
-            address(alphaVault),
+            address(treasury),
             address(realYieldRouter),
             address(alphaToken),
             deployer
@@ -185,9 +186,10 @@ contract DeployMainnet is Script {
             ARB_USDC,
             address(positionNFT),
             deployer,
-            ARB_FEED_USDC,
+            address(oracleHub),
             deployer
         );
+        p2pMarket.setPriceFeed(address(oracleHub));
         p2pMarket.setTreasury(address(treasury));
         p2pMarket.setTokenomicsEngine(address(tokenomicsEngine));
         p2pMarket.setCircuitBreaker(address(circuitBreaker));
@@ -252,11 +254,63 @@ contract DeployMainnet is Script {
         console.log("[19] AtomicSwapReceiver deployed:", address(atomicSwap));
     }
 
-    function _wirePermissions() private {
+    function _wirePermissions(address deployer) private {
         alphaToken.grantRole(ProtocolRoles.MINTER_ROLE, address(treasury));
         alphaToken.grantRole(ProtocolRoles.BURNER_ROLE, address(treasury));
         alphaVault.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(treasury));
         alphaVault.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(buybackEngine));
         treasury.grantRole(ProtocolRoles.COMPLIANCE_ROLE, address(gateway));
+
+        // Treasury configuration & Burner roles
+        treasury.grantRole(ProtocolRoles.BURNER_ROLE, address(staking));
+        treasury.grantRole(ProtocolRoles.BURNER_ROLE, address(buybackEngine));
+        treasury.setConfig(ARB_WBTC, ARB_WETH, ARB_UNISWAP_V3_ROUTER);
+
+        // Community vault & staking links
+        communityVault.setStakingPool(address(staking));
+        staking.setAuthorizedCaller(address(treasury), true);
+        staking.setAuthorizedCaller(address(realYieldRouter), true);
+
+        // RealYieldRouter permissions
+        realYieldRouter.setAuthorizedYieldCaller(address(treasury), true);
+        realYieldRouter.setAuthorizedYieldCaller(address(vestedVault), true);
+        realYieldRouter.setAuthorizedYieldCaller(address(p2pMarket), true);
+
+        // Circuit breaker feeds
+        circuitBreaker.setPriceFeed(ARB_WBTC, ARB_FEED_BTC);
+        circuitBreaker.setPriceFeed(ARB_WETH, ARB_FEED_ETH);
+        circuitBreaker.setPriceFeed(ARB_USDC, ARB_FEED_USDC);
+
+        // Governance transfer to Timelock & revoke deployer master roles
+        TreasuryProxy(payable(address(treasury))).changeAdmin(address(timelock));
+
+        alphaVault.grantRole(alphaVault.DEFAULT_ADMIN_ROLE(), address(timelock));
+        alphaVault.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        alphaVault.renounceRole(ProtocolRoles.VAULT_MANAGER_ROLE, deployer);
+        alphaVault.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        alphaVault.renounceRole(alphaVault.DEFAULT_ADMIN_ROLE(), deployer);
+
+        treasury.grantRole(treasury.DEFAULT_ADMIN_ROLE(), address(timelock));
+        treasury.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        treasury.renounceRole(ProtocolRoles.VAULT_MANAGER_ROLE, deployer);
+        treasury.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        treasury.renounceRole(treasury.DEFAULT_ADMIN_ROLE(), deployer);
+
+        positionNFT.grantRole(positionNFT.DEFAULT_ADMIN_ROLE(), address(timelock));
+        positionNFT.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        positionNFT.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        positionNFT.renounceRole(positionNFT.DEFAULT_ADMIN_ROLE(), deployer);
+
+        vestedVault.grantRole(vestedVault.DEFAULT_ADMIN_ROLE(), address(timelock));
+        vestedVault.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        vestedVault.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        vestedVault.renounceRole(vestedVault.DEFAULT_ADMIN_ROLE(), deployer);
+
+        p2pMarket.transferOwnership(address(timelock));
+
+        buybackEngine.grantRole(buybackEngine.DEFAULT_ADMIN_ROLE(), address(timelock));
+        buybackEngine.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        buybackEngine.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        buybackEngine.renounceRole(buybackEngine.DEFAULT_ADMIN_ROLE(), deployer);
     }
 }

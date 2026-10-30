@@ -61,6 +61,7 @@ enum InjectionStatus {
 // Internal logs tracking TWAP order executions
 model TwapOrder {
   id              String                @id @default(uuid())
+  onChainOrderId  Int                   @default(0)
   contributionId  String
   contribution    CorporateContribution @relation(fields: [contributionId], references: [id])
   totalAmount     Decimal               @db.Decimal(65, 18)

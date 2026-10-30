@@ -50,6 +50,7 @@ contract YieldStreamingVault is IYieldStreamingVault, AccessControl, ReentrancyG
     mapping(address => uint256) public nonces;
     mapping(address => uint256) public pendingYields;
     mapping(address => uint256) public lastYieldUpdateTimestamp;
+    uint256 public totalUnclaimedPrincipal;
 
     /// @notice Tasa anual de auto-composición de rendimientos (por defecto 6.45% = 645 BPS).
     uint256 public compoundingApyBps = 645;
@@ -115,12 +116,17 @@ contract YieldStreamingVault is IYieldStreamingVault, AccessControl, ReentrancyG
      */
     function _calculateCompoundedYield(address user) internal view returns (uint256) {
         uint256 base = pendingYields[user];
-        if (base == 0) return 0;
+        if (base == 0 || compoundingApyBps == 0) return base;
         uint256 lastTs = lastYieldUpdateTimestamp[user];
         if (lastTs == 0 || block.timestamp <= lastTs) return base;
 
         uint256 elapsedSeconds = block.timestamp - lastTs;
         uint256 extraYield = (base * compoundingApyBps * elapsedSeconds) / (10000 * 365 days);
+        uint256 vaultBal = IERC20(yieldToken).balanceOf(address(this));
+        uint256 availableSurplus = vaultBal > totalUnclaimedPrincipal ? vaultBal - totalUnclaimedPrincipal : 0;
+        if (extraYield > availableSurplus) {
+            extraYield = availableSurplus;
+        }
         return base + extraYield;
     }
 
@@ -136,6 +142,7 @@ contract YieldStreamingVault is IYieldStreamingVault, AccessControl, ReentrancyG
         // Pull backing yield tokens to ensure 100% solvency
         IERC20(yieldToken).safeTransferFrom(msg.sender, address(this), amount);
 
+        totalUnclaimedPrincipal += amount;
         pendingYields[user] = _calculateCompoundedYield(user) + amount;
         lastYieldUpdateTimestamp[user] = block.timestamp;
     }
@@ -152,6 +159,12 @@ contract YieldStreamingVault is IYieldStreamingVault, AccessControl, ReentrancyG
 
         uint256 bal = IERC20(yieldToken).balanceOf(address(this));
         if (bal < amount) revert InsufficientYieldBalance(amount, bal);
+
+        if (totalUnclaimedPrincipal >= amount) {
+            totalUnclaimedPrincipal -= amount;
+        } else {
+            totalUnclaimedPrincipal = 0;
+        }
 
         pendingYields[msg.sender] = currentYield - amount;
         lastYieldUpdateTimestamp[msg.sender] = block.timestamp;
@@ -188,6 +201,12 @@ contract YieldStreamingVault is IYieldStreamingVault, AccessControl, ReentrancyG
         // Recuperar y verificar dirección firmante
         address signer = ECDSA.recover(digest, signature);
         if (signer != request.user) revert InvalidSignature();
+
+        if (totalUnclaimedPrincipal >= request.amount) {
+            totalUnclaimedPrincipal -= request.amount;
+        } else {
+            totalUnclaimedPrincipal = 0;
+        }
 
         pendingYields[request.user] = currentYield - request.amount;
         lastYieldUpdateTimestamp[request.user] = block.timestamp;

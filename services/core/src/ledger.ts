@@ -9,9 +9,19 @@ export interface EntryInput {
   assetAddress: string;
 }
 
+const NUMBER_REGEX = /^\d+(\.\d{1,18})?$/;
+
+function validateNumericString(val: string | undefined | null, fieldName: string): string {
+  const trimmed = val ? val.trim() : '0';
+  if (!NUMBER_REGEX.test(trimmed)) {
+    throw new Error(`Ledger Error: Invalid numeric string for ${fieldName}: "${val}"`);
+  }
+  return trimmed;
+}
+
 /**
  * Creates an audit-compliant double-entry ledger transaction.
- * Ensures total debits equal total credits.
+ * Ensures total debits equal total credits per asset, preventing NaN bypass and TOCTOU races.
  */
 export async function recordLedgerTransaction(
   description: string,
@@ -19,55 +29,85 @@ export async function recordLedgerTransaction(
   referenceId: string | null,
   entries: EntryInput[]
 ) {
-  // Validate double-entry accounting rule: Sum(Debits) === Sum(Credits)
-  let debitsWei = 0n;
-  let creditsWei = 0n;
+  if (!entries || entries.length === 0) {
+    throw new Error('Ledger Error: Cannot record transaction with empty entries');
+  }
+
+  // Validate equilibrium per asset
+  const assetGroups = new Map<string, { debitsWei: bigint; creditsWei: bigint; debitsNum: number; creditsNum: number }>();
   let totalDebits = 0;
   let totalCredits = 0;
 
   for (const entry of entries) {
-    try {
-      debitsWei += parseUnits(entry.debit || '0', 18);
-      creditsWei += parseUnits(entry.credit || '0', 18);
-    } catch {}
-    totalDebits += parseFloat(entry.debit);
-    totalCredits += parseFloat(entry.credit);
+    if (!entry.assetAddress || !entry.accountCode) {
+      throw new Error(`Ledger Error: Missing assetAddress or accountCode in entry`);
+    }
+
+    const debitStr = validateNumericString(entry.debit, 'debit');
+    const creditStr = validateNumericString(entry.credit, 'credit');
+
+    const assetKey = entry.assetAddress.toLowerCase();
+    let group = assetGroups.get(assetKey);
+    if (!group) {
+      group = { debitsWei: 0n, creditsWei: 0n, debitsNum: 0, creditsNum: 0 };
+      assetGroups.set(assetKey, group);
+    }
+
+    const dWei = parseUnits(debitStr, 18);
+    const cWei = parseUnits(creditStr, 18);
+    group.debitsWei += dWei;
+    group.creditsWei += cWei;
+
+    const dNum = parseFloat(debitStr);
+    const cNum = parseFloat(creditStr);
+    if (Number.isNaN(dNum) || Number.isNaN(cNum)) {
+      throw new Error(`Ledger Error: NaN detected in numeric parsing for entry`);
+    }
+
+    group.debitsNum += dNum;
+    group.creditsNum += cNum;
+    totalDebits += dNum;
+    totalCredits += cNum;
   }
 
-  const deviation = Math.abs(totalDebits - totalCredits);
-  if (debitsWei !== creditsWei && deviation > 0.00000001) {
-    throw new Error(
-      `Ledger Error: Double-entry violation. Debits (${totalDebits}) do not equal Credits (${totalCredits}). Deviation: ${deviation}`
-    );
-  }
-
-  if (referenceId) {
-    const existing = await prisma.ledgerTransaction.findFirst({
-      where: { referenceId, referenceType },
-      include: { entries: true }
-    });
-    if (existing) {
-      return existing;
+  for (const [asset, group] of assetGroups.entries()) {
+    const deviation = Math.abs(group.debitsNum - group.creditsNum);
+    if (group.debitsWei !== group.creditsWei && deviation > 0.00000001) {
+      throw new Error(
+        `Ledger Error: Double-entry violation for asset ${asset}. Debits (${group.debitsNum}) do not equal Credits (${group.creditsNum}). Deviation: ${deviation}`
+      );
     }
   }
 
-  return await prisma.ledgerTransaction.create({
-    data: {
-      description,
-      referenceType,
-      referenceId,
-      entries: {
-        create: entries.map((e) => ({
-          accountCode: e.accountCode,
-          debit: e.debit,
-          credit: e.credit,
-          assetAddress: e.assetAddress,
-        })),
+  // Atomic TOCTOU-safe query and commit
+  return await prisma.$transaction(async (tx) => {
+    if (referenceId) {
+      const existing = await tx.ledgerTransaction.findFirst({
+        where: { referenceId, referenceType },
+        include: { entries: true }
+      });
+      if (existing) {
+        return existing;
+      }
+    }
+
+    return await tx.ledgerTransaction.create({
+      data: {
+        description,
+        referenceType,
+        referenceId,
+        entries: {
+          create: entries.map((e) => ({
+            accountCode: e.accountCode,
+            debit: (e.debit ? e.debit.trim() : '0') || '0',
+            credit: (e.credit ? e.credit.trim() : '0') || '0',
+            assetAddress: e.assetAddress,
+          })),
+        },
       },
-    },
-    include: {
-      entries: true,
-    },
+      include: {
+        entries: true,
+      },
+    });
   });
 }
-

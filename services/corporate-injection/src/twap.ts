@@ -1,4 +1,4 @@
-import { createWalletClient, createPublicClient, http } from 'viem';
+import { createWalletClient, createPublicClient, http, decodeEventLog, formatUnits } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { arbitrum } from 'viem/chains';
 import dotenv from 'dotenv';
@@ -25,7 +25,7 @@ const publicClient = createPublicClient({
   transport: http(RPC_URL),
 });
 
-// Minimum ABI for executeTwapStep call
+// Minimum ABI for executeTwapStep call and TwapStepExecuted event
 const CorporateContributionABI = [
   {
     name: 'executeTwapStep',
@@ -33,6 +33,16 @@ const CorporateContributionABI = [
     stateMutability: 'nonpayable',
     inputs: [{ name: 'orderId', type: 'uint256' }],
     outputs: []
+  },
+  {
+    name: 'TwapStepExecuted',
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'orderId', type: 'uint256' },
+      { indexed: false, name: 'tokensBought', type: 'uint256' },
+      { indexed: false, name: 'amountIn', type: 'uint256' }
+    ]
   }
 ] as const;
 
@@ -62,9 +72,8 @@ export async function runTwapScheduler() {
         }
 
         try {
-          // Resolve contract order ID dynamically from DB record (or fallback to 0n in mock mode)
-          const parsedId = Number(order.id);
-          const contractOrderId = !Number.isNaN(parsedId) ? BigInt(parsedId) : 0n;
+          // Resolve contract order ID dynamically from DB record (or fallback to onChainOrderId)
+          const contractOrderId = BigInt(order.onChainOrderId);
 
           // Dispatch transaction to smart contract
           const hash = await walletClient.writeContract({
@@ -82,6 +91,30 @@ export async function runTwapScheduler() {
             throw new Error(`TWAP execution transaction failed on-chain: ${hash}`);
           }
 
+          // Parse actual tokens bought and USDC spent from transaction logs
+          let tokensBought = order.totalAmount.toNumber() / order.totalSteps;
+          let usdcSpent = order.totalAmount.toNumber() / order.totalSteps;
+
+          for (const log of receipt.logs) {
+            try {
+              const decoded = decodeEventLog({
+                abi: CorporateContributionABI,
+                data: log.data,
+                topics: log.topics
+              });
+              if (decoded.eventName === 'TwapStepExecuted') {
+                const args = decoded.args as any;
+                if (args && args.tokensBought !== undefined && args.amountIn !== undefined) {
+                  tokensBought = Number(formatUnits(args.tokensBought, 18));
+                  usdcSpent = Number(formatUnits(args.amountIn, 6));
+                  break;
+                }
+              }
+            } catch {
+              // Ignore non-matching logs
+            }
+          }
+
           // Update database state
           const nextStep = order.executedSteps + 1;
           const isCompleted = nextStep >= order.totalSteps;
@@ -91,7 +124,7 @@ export async function runTwapScheduler() {
               where: { id: order.id },
               data: {
                 executedSteps: nextStep,
-                executedAmount: { increment: order.totalAmount.toNumber() / order.totalSteps },
+                executedAmount: { increment: usdcSpent },
                 nextExecutionAt: new Date(Date.now() + order.intervalMinutes * 60000),
                 status: isCompleted ? 'COMPLETED' : 'ACTIVE'
               }
@@ -100,8 +133,8 @@ export async function runTwapScheduler() {
               data: {
                 orderId: order.id,
                 txHash: hash,
-                tokensBought: order.totalAmount.toNumber() / order.totalSteps,
-                usdcSpent: order.totalAmount.toNumber() / order.totalSteps,
+                tokensBought,
+                usdcSpent,
                 slippage: 0.00
               }
             })

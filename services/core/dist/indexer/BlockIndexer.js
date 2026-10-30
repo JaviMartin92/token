@@ -25,14 +25,27 @@ class BlockIndexerService {
         this.batchSize = config.batchSize ?? 1000;
         this.storageDriver = storageDriver;
         this.ledgerEngine = ledgerEngine;
-        // Async hydration from persistent checkpoint if available
+        // Start hydration from persistent checkpoint if available
         if (this.storageDriver && config.startBlock === undefined) {
-            this.storageDriver.getCheckpoint('lastIndexedBlock').then(cp => {
+            this.init().catch(() => { });
+        }
+    }
+    isHydrated = false;
+    async init() {
+        if (this.isHydrated)
+            return;
+        if (this.storageDriver && this.config.startBlock === undefined) {
+            try {
+                const cp = await this.storageDriver.getCheckpoint('lastIndexedBlock');
                 if (cp) {
                     this.lastIndexedBlock = BigInt(cp);
                 }
-            }).catch(() => { });
+            }
+            catch {
+                // Ignore checkpoint retrieval error on startup
+            }
         }
+        this.isHydrated = true;
     }
     registerHandler(eventName, handler) {
         const list = this.handlers.get(eventName) || [];
@@ -112,6 +125,9 @@ class BlockIndexerService {
      * Indexes the next chunk of blocks up to safe target block (latest - confirmationBlocks)
      */
     async indexNextBatch(maxTargetBlock) {
+        if (!this.isHydrated) {
+            await this.init();
+        }
         const latestBlock = maxTargetBlock ?? await this.client.getBlockNumber();
         const safeLatestBlock = latestBlock > BigInt(this.confirmationBlocks)
             ? latestBlock - BigInt(this.confirmationBlocks)
@@ -123,6 +139,24 @@ class BlockIndexerService {
         const toBlock = fromBlock + BigInt(this.batchSize) - 1n > safeLatestBlock
             ? safeLatestBlock
             : fromBlock + BigInt(this.batchSize) - 1n;
+        // Track block header for active reorg detection if driver is available
+        if (this.storageDriver) {
+            try {
+                for (let b = fromBlock; b <= toBlock; b++) {
+                    const blk = await this.client.getBlock({ blockNumber: b });
+                    if (blk) {
+                        const reorgCheck = await this.trackBlockHeader(b, blk.hash, blk.parentHash);
+                        if (reorgCheck.isReorg && reorgCheck.forkBlock !== undefined) {
+                            await this.handleReorgRollback(reorgCheck.forkBlock, toBlock);
+                            return { fromBlock, toBlock, eventsCount: 0 };
+                        }
+                    }
+                }
+            }
+            catch (e) {
+                // Ignore transient block query error during indexing
+            }
+        }
         const events = await this.fetchLogsForRange(fromBlock, toBlock);
         for (const event of events) {
             this.indexedEvents.set(event.id, event);
@@ -146,20 +180,25 @@ class BlockIndexerService {
      */
     async fetchLogsForRange(fromBlock, toBlock) {
         const eventsToQuery = [
-            (0, viem_1.parseAbiItem)('event Deposited(address indexed user, uint256 stableAmount, uint256 sharesMinted, uint256 feePaid)'),
+            (0, viem_1.parseAbiItem)('event Deposited(address indexed user, uint256 usdcAmount, uint256 sharesMinted)'),
             (0, viem_1.parseAbiItem)('event Redeemed(address indexed user, uint256 sharesAmount, uint256 usdcReturned)'),
             (0, viem_1.parseAbiItem)('event BondPurchased(address indexed buyer, uint256 indexed tokenId, uint256 principalAmount, uint256 discountedPricePaid, uint256 lockYears, address referrer)'),
-            (0, viem_1.parseAbiItem)('event LoanCreated(uint256 indexed loanId, address indexed borrower, uint256 amount, uint256 interestRateBps, uint256 durationDays, uint256 positionTokenId, uint256 collateralAmount)'),
-            (0, viem_1.parseAbiItem)('event LoanAccepted(uint256 indexed loanId, address indexed borrower, address indexed lender, uint256 amount)'),
-            (0, viem_1.parseAbiItem)('event LoanRepaid(uint256 indexed loanId, uint256 totalRepaid)'),
+            (0, viem_1.parseAbiItem)('event LoanCreated(uint256 indexed loanId, address indexed lender, uint256 positionTokenId, uint256 borrowAmount)'),
+            (0, viem_1.parseAbiItem)('event LoanAccepted(uint256 indexed loanId, address indexed borrower, uint256 collateralAmount)'),
+            (0, viem_1.parseAbiItem)('event LoanRepaid(uint256 indexed loanId, uint256 amountRepaid)'),
+            (0, viem_1.parseAbiItem)('event LoanLiquidated(uint256 indexed loanId, address indexed liquidator, uint256 collateralSeized)'),
             (0, viem_1.parseAbiItem)('event Staked(address indexed user, uint256 amount)'),
             (0, viem_1.parseAbiItem)('event Unstaked(address indexed user, uint256 amount)'),
-            (0, viem_1.parseAbiItem)('event CircuitTriggered(address indexed asset, uint256 oldPrice, uint256 newPrice)')
+            (0, viem_1.parseAbiItem)('event CircuitTriggered(address indexed asset, uint256 dropPercentage, uint256 timestamp)')
         ];
         const results = [];
+        const targetAddresses = this.config.contractAddresses
+            ? Object.values(this.config.contractAddresses).filter(Boolean)
+            : undefined;
         for (const eventAbi of eventsToQuery) {
             try {
                 const logs = await this.client.getLogs({
+                    ...(targetAddresses && targetAddresses.length > 0 ? { address: targetAddresses } : {}),
                     event: eventAbi,
                     fromBlock,
                     toBlock

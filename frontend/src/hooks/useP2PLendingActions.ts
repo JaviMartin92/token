@@ -146,7 +146,7 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
     }
   };
 
-  const executeAcceptLoanById = async (loanId: number, colWei: bigint) => {
+  const executeAcceptLoanById = async (loanId: number, borrowWei: bigint) => {
     try {
       addLog(`Financiando préstamo P2P #${loanId}...`);
       addToast('info', 'Financiar Préstamo', 'Aprobando USDC...');
@@ -156,7 +156,7 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         address: CONTRACT_ADDRESSES.USDC,
         abi: ABIS.ERC20,
         functionName: 'approve',
-        args: [CONTRACT_ADDRESSES.P2P_MARKET, colWei > 0n ? colWei * 2n : 1000000000000n]
+        args: [CONTRACT_ADDRESSES.P2P_MARKET, borrowWei > 0n ? borrowWei : 1000000000000n]
       });
       await publicClient.waitForTransactionReceipt({ hash: appHash });
 
@@ -179,7 +179,7 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
   const handleAcceptLoanById = (loanId: number, reqBorrowAmountStr: string, customCollateralStr?: string) => {
     const numBorrow = parseFloat(reqBorrowAmountStr.replace(/,/g, ''));
     const colVal = customCollateralStr ? parseFloat(customCollateralStr) : numBorrow * 1.4;
-    const colWei = parseUnits(colVal.toFixed(6), 6);  // USDC = 6 decimals
+    const borrowWei = parseUnits(numBorrow.toFixed(6), 6);  // USDC = 6 decimals
     const ratioPct = numBorrow > 0 ? ((colVal / numBorrow) * 100).toFixed(2) : '140.00';
     const origFee = (numBorrow * 0.005).toFixed(2);
     const netBorrow = (numBorrow * 0.995).toFixed(2);
@@ -188,13 +188,13 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
       requestConfirmation({
         title: `Financiar Préstamo P2P #${loanId}`,
         actionIcon: '✅',
-        typeBadge: 'Aceptación de Oferta',
+        typeBadge: 'Financiación de Oferta',
         targetContractName: 'P2PLendingMarket.sol',
         targetContractAddress: CONTRACT_ADDRESSES.P2P_MARKET,
-        inputAmount: `$${colVal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-        inputSymbol: 'USDC Colateral Depositado',
-        expectedOutput: `$${numBorrow.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-        expectedOutputSymbol: 'USDC Transferido al Ofertante',
+        inputAmount: `$${numBorrow.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+        inputSymbol: 'USDC Financiación Aportada',
+        expectedOutput: `$${colVal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+        expectedOutputSymbol: 'Colateral en Custodia (Garantía)',
         details: [
           { label: 'ID Préstamo', value: `#${loanId}` },
           { label: 'Ratio de Colateralización Calculado', value: `${ratioPct}%`, badge: `LTV: ${(100 / parseFloat(ratioPct) * 100).toFixed(1)}%` },
@@ -204,9 +204,9 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         warningNote: 'Obtendrás derechos de cobro de intereses más principal. Si el prestatario entra en impago, podrás ejecutar auto-liquidación.',
         confirmButtonText: '✍️ Confirmar y Financiar',
         confirmButtonVariant: 'emerald'
-      }, () => executeAcceptLoanById(loanId, colWei));
+      }, () => executeAcceptLoanById(loanId, borrowWei));
     } else {
-      executeAcceptLoanById(loanId, colWei);
+      executeAcceptLoanById(loanId, borrowWei);
     }
   };
 

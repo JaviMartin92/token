@@ -46,6 +46,29 @@ class ProofOfReservesReconciler {
             }
         };
     }
+    /**
+     * Reconciles token-for-token and share-for-share native quantities
+     * independently of volatile USD market prices (M-06 fix).
+     */
+    reconcileTokenQuantities(onChain, offChain) {
+        const calcVar = (a, b) => (a > 0 ? (Math.abs(a - b) / a) * 100 : b > 0 ? 100 : 0);
+        const usdcVar = calcVar(onChain.usdcUnits, offChain.usdcUnits);
+        const wbtcVar = calcVar(onChain.wbtcUnits, offChain.wbtcUnits);
+        const wethVar = calcVar(onChain.wethUnits, offChain.wethUnits);
+        const loansVar = calcVar(onChain.loanPrincipalUSDC, offChain.loanPrincipalUSDC);
+        const isBalanced = usdcVar <= this.tolerancePct &&
+            wbtcVar <= this.tolerancePct &&
+            wethVar <= this.tolerancePct &&
+            loansVar <= this.tolerancePct;
+        return {
+            isBalanced,
+            usdcVariancePct: usdcVar,
+            wbtcVariancePct: wbtcVar,
+            wethVariancePct: wethVar,
+            loansVariancePct: loansVar,
+            status: isBalanced ? 'QUANTITY_MATCH' : 'QUANTITY_MISMATCH'
+        };
+    }
 }
 exports.ProofOfReservesReconciler = ProofOfReservesReconciler;
 //# sourceMappingURL=ProofOfReservesReconciler.js.map

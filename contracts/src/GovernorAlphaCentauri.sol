@@ -34,6 +34,9 @@ contract GovernorAlphaCentauri is AccessControl {
     address public alphaVault;
     address public communityYieldVault;
     address public treasuryManager;
+    address public promoVault;
+
+    event PromoVaultUpdated(address indexed oldVault, address indexed newVault);
 
     uint256 public constant VOTING_DELAY = 1; // 1 block voting delay
     uint256 public constant VOTING_PERIOD = 50400; // ~7 days in blocks (Arbitrum / EVM standard)
@@ -136,11 +139,21 @@ contract GovernorAlphaCentauri is AccessControl {
     function _getVotes(address account, uint256 blockNumber) internal view returns (uint256) {
         if (
             account == alphaVault || account == communityYieldVault || account == treasuryManager
-                || account == address(0)
+                || account == promoVault || account == address(0)
         ) {
             return 0;
         }
         return stakingToken.getPastVotes(account, blockNumber);
+    }
+
+    /**
+     * @notice Sets Promotional Incentive Vault for governance veto
+     */
+    function setPromoVault(address _promoVault) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_promoVault == address(0)) revert IProtocolErrors.ZeroAddress();
+        address old = promoVault;
+        promoVault = _promoVault;
+        emit PromoVaultUpdated(old, _promoVault);
     }
 
     /**
@@ -244,14 +257,16 @@ contract GovernorAlphaCentauri is AccessControl {
     }
 
     /**
-     * @notice Cancels an unexecuted proposal
+     * @notice Cancels a proposal before voting concludes
      * @param proposalId Proposal ID to cancel
      */
     function cancel(uint256 proposalId) external {
+        if (proposalId == 0 || proposalId > proposalCount) revert IProtocolErrors.InvalidParameters();
+        ProposalState currentState = state(proposalId);
+        if (currentState != ProposalState.Pending && currentState != ProposalState.Active) {
+            revert IProtocolErrors.InvalidParameters();
+        }
         Proposal storage p = proposals[proposalId];
-        if (p.executed) revert ProposalAlreadyExecuted();
-        if (p.canceled) revert IProtocolErrors.InvalidParameters();
-        if (p.timelockTxHash != bytes32(0)) revert IProtocolErrors.InvalidParameters();
         if (msg.sender != p.proposer && _getVotes(p.proposer, block.number - 1) >= proposalThreshold) {
             revert Unauthorized();
         }

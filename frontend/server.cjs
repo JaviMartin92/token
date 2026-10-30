@@ -42,9 +42,27 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.url.startsWith('/rpc')) {
+    const MAX_BODY_SIZE = 256 * 1024; // 256 KB
     let bodyChunks = [];
-    req.on('data', (chunk) => bodyChunks.push(chunk));
+    let receivedBytes = 0;
+    let isTooLarge = false;
+
+    req.on('data', (chunk) => {
+      receivedBytes += chunk.length;
+      if (receivedBytes > MAX_BODY_SIZE) {
+        if (!isTooLarge) {
+          isTooLarge = true;
+          res.writeHead(413, { 'content-type': 'application/json' });
+          res.end(JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32600, message: 'Payload Too Large' } }));
+          req.destroy();
+        }
+        return;
+      }
+      bodyChunks.push(chunk);
+    });
+
     req.on('end', () => {
+      if (isTooLarge) return;
       const bodyBuffer = Buffer.concat(bodyChunks);
       
       // Security: Parse RPC payload and block dangerous cheatcode methods
@@ -55,7 +73,7 @@ const server = http.createServer((req, res) => {
           : (payload.method && (payload.method.startsWith('anvil_') || payload.method.startsWith('evm_')));
           
         if (isDangerous && process.env.NODE_ENV === 'production') {
-          res.writeHead(403, { 'content-type': 'application/json', 'access-control-allow-origin': '*' });
+          res.writeHead(403, { 'content-type': 'application/json' });
           res.end(JSON.stringify({ jsonrpc: '2.0', id: payload.id || null, error: { code: -32600, message: 'RPC method restricted in production' } }));
           return;
         }
@@ -68,7 +86,7 @@ const server = http.createServer((req, res) => {
       function tryProxy(hostIndex) {
         if (hostIndex >= hostsToTry.length) {
           if (!res.headersSent) {
-            res.writeHead(502, { 'content-type': 'application/json', 'access-control-allow-origin': '*' });
+            res.writeHead(502, { 'content-type': 'application/json' });
             res.end(JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32603, message: 'RPC proxy unavailable across all hosts' } }));
           }
           return;
@@ -100,8 +118,7 @@ const server = http.createServer((req, res) => {
           (proxyRes) => {
             if (!res.headersSent) {
               res.writeHead(proxyRes.statusCode, {
-                'content-type': 'application/json',
-                'access-control-allow-origin': '*'
+                'content-type': 'application/json'
               });
               proxyRes.pipe(res);
             }

@@ -240,7 +240,7 @@ function validateConservativeRate(rate, currentOnChainBps) {
  */
 async function syncYieldRatesOnChain(customRpcUrl, customKey) {
     const rpcUrl = customRpcUrl || process.env.ANVIL_URL || 'http://localhost:8545';
-    const operatorKey = (customKey || process.env.OPERATOR_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80');
+    const operatorKey = (customKey || process.env.OPERATOR_KEY || (process.env.NODE_ENV === 'production' ? (() => { throw new Error('FATAL: OPERATOR_KEY required in production'); })() : '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'));
     // Load contracts.json
     const contractsPath = path_1.default.resolve(__dirname, '../../../frontend/src/contracts.json');
     if (!fs_1.default.existsSync(contractsPath)) {
@@ -307,6 +307,30 @@ async function syncYieldRatesOnChain(customRpcUrl, customKey) {
         catch (err) {
             console.error(`[-] ERROR updating asset class ${rate.assetClass}:`, err?.message);
             syncResults.push({ assetClass: rate.assetClass, updated: false, error: err?.message });
+        }
+    }
+    // 5. Keep primary price caches warm on OracleHub for secondary oracle divergence guards (M-03)
+    const oracleHubAddress = contracts.ORACLE_HUB;
+    if (oracleHubAddress && oracleHubAddress !== '0x0000000000000000000000000000000000000000') {
+        try {
+            console.log(`[*] WARMING OracleHub primary price caches on: ${oracleHubAddress}`);
+            const hash = await walletClient.writeContract({
+                address: oracleHubAddress,
+                abi: [{
+                        name: 'updateAllPrimaryPriceCaches',
+                        type: 'function',
+                        stateMutability: 'nonpayable',
+                        inputs: [],
+                        outputs: []
+                    }],
+                functionName: 'updateAllPrimaryPriceCaches',
+                args: []
+            });
+            await publicClient.waitForTransactionReceipt({ hash });
+            console.log(`    [PASS] OracleHub caches warmed: ${hash}`);
+        }
+        catch (err) {
+            console.warn(`[-] OracleHub cache warmup warning:`, err?.message);
         }
     }
     console.log(`============================================================\n`);

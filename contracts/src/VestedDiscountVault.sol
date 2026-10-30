@@ -118,6 +118,7 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
      * @notice Updates the Tokenomics Engine address
      */
     function setTokenomicsEngine(address _tokenomicsEngine) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (_tokenomicsEngine == address(0)) revert IProtocolErrors.ZeroAddress();
         tokenomicsEngine = _tokenomicsEngine;
         emit TokenomicsEngineUpdated(_tokenomicsEngine);
     }
@@ -126,6 +127,7 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
      * @notice Updates the Circuit Breaker contract address
      */
     function setCircuitBreaker(address _circuitBreaker) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (_circuitBreaker == address(0)) revert IProtocolErrors.ZeroAddress();
         circuitBreaker = _circuitBreaker;
         emit CircuitBreakerUpdated(_circuitBreaker);
     }
@@ -134,6 +136,7 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
      * @notice Updates the Governance Staking contract address
      */
     function setGovernanceStaking(address _governanceStaking) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (_governanceStaking == address(0)) revert IProtocolErrors.ZeroAddress();
         governanceStaking = _governanceStaking;
         emit GovernanceStakingUpdated(_governanceStaking);
     }
@@ -145,6 +148,7 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         external
         onlyRole(ProtocolRoles.ADMIN_ROLE)
     {
+        if (_treasuryBunker == address(0) || _realYieldRouter == address(0)) revert IProtocolErrors.ZeroAddress();
         treasuryBunker = _treasuryBunker;
         realYieldRouter = _realYieldRouter;
         emit ProtocolVaultsUpdated(_treasuryBunker, _realYieldRouter);
@@ -239,13 +243,13 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         }
 
         totalInvested += principalAmount;
-        totalPresentObligation += discountedPrice;
+        totalPresentObligation += principalAmount;
 
         // Mint Position NFT
         tokenId = positionNFT.mintPosition(msg.sender, stablecoin, principalAmount, discountedPrice, lockYears);
 
         isVestedBond[tokenId] = true;
-        bondPresentObligation[tokenId] = discountedPrice;
+        bondPresentObligation[tokenId] = principalAmount;
 
         emit BondPurchased(msg.sender, tokenId, principalAmount, discountedPrice, lockYears, referrer);
     }
@@ -296,14 +300,6 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
             totalPresentObligation = 0;
         }
         delete bondPresentObligation[tokenId];
-
-        if (treasuryBunker != address(0) && pos.principalAmount > 0) {
-            try ITreasury(treasuryBunker).recordBurn(pos.principalAmount * 10 ** 12) {
-                // Burn recorded
-            } catch {
-                // Ignore burn record revert
-            }
-        }
 
         // External asset transfers
         IERC20(stablecoin).safeTransfer(msg.sender, userReturn);

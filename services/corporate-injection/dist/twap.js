@@ -12,7 +12,7 @@ const client_1 = require("@prisma/client");
 dotenv_1.default.config();
 const prisma = new client_1.PrismaClient();
 const RPC_URL = process.env.ARBITRUM_RPC_URL || 'http://localhost:8545';
-const OPERATOR_KEY = process.env.BACKEND_OPERATOR_PRIVATE_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
+const OPERATOR_KEY = process.env.BACKEND_OPERATOR_PRIVATE_KEY || (process.env.NODE_ENV === 'production' ? (() => { throw new Error('FATAL: BACKEND_OPERATOR_PRIVATE_KEY is required in production'); })() : '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80');
 const CONTRACT_ADDRESS = (process.env.CORP_CONTRIBUTION_ADDRESS || '0x0000000000000000000000000000000000000000');
 const account = (0, accounts_1.privateKeyToAccount)(OPERATOR_KEY);
 const walletClient = (0, viem_1.createWalletClient)({
@@ -20,7 +20,11 @@ const walletClient = (0, viem_1.createWalletClient)({
     chain: chains_1.arbitrum,
     transport: (0, viem_1.http)(RPC_URL),
 });
-// Minimum ABI for executeTwapStep call
+const publicClient = (0, viem_1.createPublicClient)({
+    chain: chains_1.arbitrum,
+    transport: (0, viem_1.http)(RPC_URL),
+});
+// Minimum ABI for executeTwapStep call and TwapStepExecuted event
 const CorporateContributionABI = [
     {
         name: 'executeTwapStep',
@@ -28,6 +32,16 @@ const CorporateContributionABI = [
         stateMutability: 'nonpayable',
         inputs: [{ name: 'orderId', type: 'uint256' }],
         outputs: []
+    },
+    {
+        name: 'TwapStepExecuted',
+        type: 'event',
+        anonymous: false,
+        inputs: [
+            { indexed: true, name: 'orderId', type: 'uint256' },
+            { indexed: false, name: 'tokensBought', type: 'uint256' },
+            { indexed: false, name: 'amountIn', type: 'uint256' }
+        ]
     }
 ];
 /**
@@ -52,9 +66,8 @@ async function runTwapScheduler() {
                     continue;
                 }
                 try {
-                    // Resolve contract order ID dynamically from DB record (or fallback to 0n in mock mode)
-                    const parsedId = Number(order.id);
-                    const contractOrderId = !Number.isNaN(parsedId) ? BigInt(parsedId) : 0n;
+                    // Resolve contract order ID dynamically from DB record (or fallback to onChainOrderId)
+                    const contractOrderId = BigInt(order.onChainOrderId);
                     // Dispatch transaction to smart contract
                     const hash = await walletClient.writeContract({
                         address: CONTRACT_ADDRESS,
@@ -64,6 +77,33 @@ async function runTwapScheduler() {
                         account
                     });
                     console.log(`[+] Executed TWAP step. Tx hash: ${hash}`);
+                    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+                    if (receipt.status !== 'success') {
+                        throw new Error(`TWAP execution transaction failed on-chain: ${hash}`);
+                    }
+                    // Parse actual tokens bought and USDC spent from transaction logs
+                    let tokensBought = order.totalAmount.toNumber() / order.totalSteps;
+                    let usdcSpent = order.totalAmount.toNumber() / order.totalSteps;
+                    for (const log of receipt.logs) {
+                        try {
+                            const decoded = (0, viem_1.decodeEventLog)({
+                                abi: CorporateContributionABI,
+                                data: log.data,
+                                topics: log.topics
+                            });
+                            if (decoded.eventName === 'TwapStepExecuted') {
+                                const args = decoded.args;
+                                if (args && args.tokensBought !== undefined && args.amountIn !== undefined) {
+                                    tokensBought = Number((0, viem_1.formatUnits)(args.tokensBought, 18));
+                                    usdcSpent = Number((0, viem_1.formatUnits)(args.amountIn, 6));
+                                    break;
+                                }
+                            }
+                        }
+                        catch {
+                            // Ignore non-matching logs
+                        }
+                    }
                     // Update database state
                     const nextStep = order.executedSteps + 1;
                     const isCompleted = nextStep >= order.totalSteps;
@@ -72,7 +112,7 @@ async function runTwapScheduler() {
                             where: { id: order.id },
                             data: {
                                 executedSteps: nextStep,
-                                executedAmount: { increment: order.totalAmount.toNumber() / order.totalSteps },
+                                executedAmount: { increment: usdcSpent },
                                 nextExecutionAt: new Date(Date.now() + order.intervalMinutes * 60000),
                                 status: isCompleted ? 'COMPLETED' : 'ACTIVE'
                             }
@@ -81,8 +121,8 @@ async function runTwapScheduler() {
                             data: {
                                 orderId: order.id,
                                 txHash: hash,
-                                tokensBought: (order.totalAmount.toNumber() / order.totalSteps) * 2, // Mock 2x native token payout
-                                usdcSpent: order.totalAmount.toNumber() / order.totalSteps,
+                                tokensBought,
+                                usdcSpent,
                                 slippage: 0.00
                             }
                         })

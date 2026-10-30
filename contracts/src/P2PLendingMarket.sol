@@ -501,9 +501,6 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         loan.state = LoanState.ACTIVE;
 
         _totalActiveLoansReceivableUSD += loan.borrowAmount;
-        if (treasury != address(0) && (msg.sender == owner() || msg.sender == treasury)) {
-            _treasuryActiveLoansReceivableUSD += loan.borrowAmount;
-        }
 
         uint256 originationFee = (loan.borrowAmount * ORIGINATION_FEE_BPS) / 10000; // 0.5%
         uint256 netBorrow = loan.borrowAmount - originationFee;
@@ -665,7 +662,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
             _totalActiveLoansReceivableUSD = 0;
         }
 
-        if (treasury != address(0) && (loan.lender == owner() || loan.lender == treasury)) {
+        if (treasury != address(0) && loan.lender == treasury) {
             if (_treasuryActiveLoansReceivableUSD >= loan.borrowAmount) {
                 _treasuryActiveLoansReceivableUSD -= loan.borrowAmount;
             } else {
@@ -740,7 +737,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
             _totalActiveLoansReceivableUSD = 0;
         }
 
-        if (treasury != address(0) && (loan.lender == owner() || loan.lender == treasury)) {
+        if (treasury != address(0) && loan.lender == treasury) {
             if (_treasuryActiveLoansReceivableUSD >= loan.borrowAmount) {
                 _treasuryActiveLoansReceivableUSD -= loan.borrowAmount;
             } else {
@@ -816,21 +813,20 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         uint256 owedWithBonusUSD = (totalOwed * (10000 + LIQUIDATION_BONUS_BPS)) / 10000;
         uint256 seizeAmount = loan.collateralAmount;
 
-        if (targetAsset == alphaToken && treasury != address(0)) {
-            try ITreasury(treasury).getNAVPerShare() returns (uint256 nav) {
-                if (nav > 0) {
-                    uint256 neededCol = (owedWithBonusUSD * 1e30) / nav;
-                    if (neededCol < seizeAmount) seizeAmount = neededCol;
-                }
-            } catch {}
-        } else if (targetAsset != address(0) && priceFeed != address(0)) {
-            try IOracleHub(priceFeed).getPriceBase18(targetAsset) returns (uint256 price18) {
-                if (price18 > 0) {
-                    uint8 dec = (targetAsset == wbtcToken) ? 8 : 18;
-                    uint256 neededCol = (owedWithBonusUSD * (10 ** (12 + dec))) / price18;
-                    if (neededCol < seizeAmount) seizeAmount = neededCol;
-                }
-            } catch {}
+        if (targetAsset != stablecoin && targetAsset != alphaToken) {
+            if (priceFeed == address(0)) revert IProtocolErrors.PriceFeedNotSet();
+            uint256 price18 = IOracleHub(priceFeed).getPriceBase18(targetAsset);
+            if (price18 == 0) revert IProtocolErrors.InvalidPrice();
+            uint8 dec = (targetAsset == wbtcToken) ? 8 : 18;
+            uint256 neededCol = (owedWithBonusUSD * (10 ** (12 + dec))) / price18;
+            if (neededCol < seizeAmount) seizeAmount = neededCol;
+        } else if (targetAsset == alphaToken && treasury != address(0)) {
+            uint256 nav = ITreasury(treasury).getNAVPerShare();
+            if (nav == 0) revert IProtocolErrors.InvalidPrice();
+            uint256 neededCol = (owedWithBonusUSD * 1e30) / nav;
+            if (neededCol < seizeAmount) seizeAmount = neededCol;
+        } else if (targetAsset == stablecoin) {
+            if (owedWithBonusUSD < seizeAmount) seizeAmount = owedWithBonusUSD;
         }
 
         if (seizeAmount > loan.collateralAmount) {

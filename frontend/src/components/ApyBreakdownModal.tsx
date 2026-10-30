@@ -34,22 +34,27 @@ export function calculateProtocolApyMath(
   let wbtcUSD = porBreakdown.wbtc;
   let wethUSD = porBreakdown.weth;
 
+  // Normalize rate: if passed as percentage (e.g. 6.8 for 6.8%), convert to fraction (0.068); if passed as fraction (e.g. 0.08 for 8%), use directly.
+  const stablesRate = assetRates.stablesApyPct > 1.0 ? assetRates.stablesApyPct / 100 : assetRates.stablesApyPct;
+  const btcRate = assetRates.btcApyPct > 1.0 ? assetRates.btcApyPct / 100 : assetRates.btcApyPct;
+  const ethRate = assetRates.ethApyPct > 1.0 ? assetRates.ethApyPct / 100 : assetRates.ethApyPct;
+
   // 1. Morpho Blue (USDC): 90% of USDC stablecoin reserve deployed to MetaMorpho Vault @ Dynamic On-Chain Oracle APR
   const morphoUSDPool = stablesUSD * 0.90;
   const liquidBufferUSDPool = stablesUSD * 0.10;
-  const morphoUSDYield = morphoUSDPool * assetRates.stablesApyPct;
+  const morphoUSDYield = morphoUSDPool * stablesRate;
 
   // 2. Lombard LBTC (WBTC): 100% of WBTC reserve @ Dynamic On-Chain Oracle APR
-  const lbtcUSDYield = wbtcUSD * assetRates.btcApyPct;
+  const lbtcUSDYield = wbtcUSD * btcRate;
 
   // 3. Lido wstETH (WETH): 100% of WETH reserve @ Dynamic On-Chain Oracle APR
-  const wstEthUSDYield = wethUSD * assetRates.ethApyPct;
+  const wstEthUSDYield = wethUSD * ethRate;
 
   // 4. P2P Direct Treasury Loans: Up to 20% Max Credit Line from Exogenous Reserves
   const maxCreditLineUSD = numericAssetsUSD * 0.20;
   const realActiveLoansUSD = Math.min(activeLoansUsd, maxCreditLineUSD);
   const unlentAvailableUSD = Math.max(maxCreditLineUSD - realActiveLoansUSD, 0);
-  const unlentLoanPoolUSDYield = (unlentAvailableUSD * 0.90) * assetRates.stablesApyPct;
+  const unlentLoanPoolUSDYield = (unlentAvailableUSD * 0.90) * stablesRate;
   const loanUtilizationPct = maxCreditLineUSD > 0 ? (realActiveLoansUSD / maxCreditLineUSD) * 100 : 0;
   const activeLoanInterestUSD = activeLoansInterestUsd;
   const treasuryLoanUSDYield = activeLoanInterestUSD;
@@ -174,6 +179,8 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
     navPerShareNum
   );
 
+  const stablesDisplayPct = assetRates.stablesApyPct > 1.0 ? assetRates.stablesApyPct : assetRates.stablesApyPct * 100;
+
   return (
     <div
       className="modal-overlay"
@@ -234,7 +241,7 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
               <div>
                 <div className="font-semibold text-base">{UI_STRINGS.MODALS.APY_BREAKDOWN.MORPHO_TITLE} ({wMorphoPct.toFixed(1)}% USDC Invertido)</div>
                 <div className="text-sm text-muted margin-top-xs">
-                  {UI_STRINGS.MODALS.APY_BREAKDOWN.MORPHO_LOCATION_PREFIX} <strong>${morphoUSDPool.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> ({wMorphoPct.toFixed(1)}% {UI_STRINGS.MODALS.APY_BREAKDOWN.MORPHO_OF_RESERVES}) • {UI_STRINGS.MODALS.APY_BREAKDOWN.MORPHO_VAULT_RATE} <strong>{(assetRates.stablesApyPct * 100).toFixed(2)}% APY</strong>
+                  {UI_STRINGS.MODALS.APY_BREAKDOWN.MORPHO_LOCATION_PREFIX} <strong>${morphoUSDPool.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong> ({wMorphoPct.toFixed(1)}% {UI_STRINGS.MODALS.APY_BREAKDOWN.MORPHO_OF_RESERVES}) • {UI_STRINGS.MODALS.APY_BREAKDOWN.MORPHO_VAULT_RATE} <strong>{stablesDisplayPct.toFixed(2)}% APY</strong>
                 </div>
               </div>
               <div className="text-align-right">

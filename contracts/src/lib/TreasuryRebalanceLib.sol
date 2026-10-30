@@ -71,6 +71,7 @@ library TreasuryRebalanceLib {
                     // Swap to WBTC completed
                 }
                 catch {
+                    params.vault.approveFunds(params.redemptionToken, params.swapRouter, 0);
                     emit SwapRebalanceFailed(params.wbtcToken, btcUsdc);
                 }
             }
@@ -101,6 +102,7 @@ library TreasuryRebalanceLib {
                     // Swap to WETH completed
                 }
                 catch {
+                    params.vault.approveFunds(params.redemptionToken, params.swapRouter, 0);
                     emit SwapRebalanceFailed(params.wethToken, ethUsdc);
                 }
             }
@@ -156,6 +158,11 @@ library TreasuryRebalanceLib {
                         }
                     } catch {
                         // DEX swap failed, fall back to NAV mint
+                    }
+
+                    if (!dexSuccess) {
+                        params.vault.approveFunds(params.redemptionToken, params.swapRouter, 0);
+                        emit SwapRebalanceFailed(alphaTokenAddr, altsUsdc);
                     }
                 }
             } catch {

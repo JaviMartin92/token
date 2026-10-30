@@ -27,7 +27,8 @@ export function startEventListener() {
       const targetBlock = currentBlock >= 2n ? currentBlock - 2n : 0n; // 2-block finality buffer
 
       if (lastProcessedBlock === 0n) {
-        lastProcessedBlock = targetBlock >= 10n ? targetBlock - 10n : 0n; // Look back 10 blocks on startup
+        const persisted = await redis.get('satellite:last_processed_block');
+        lastProcessedBlock = persisted ? BigInt(persisted) : (targetBlock >= 100n ? targetBlock - 100n : 0n);
       }
 
       if (targetBlock <= lastProcessedBlock) {
@@ -120,6 +121,7 @@ export function startEventListener() {
 
       // Progress watermark
       lastProcessedBlock = toBlock;
+      await redis.set('satellite:last_processed_block', toBlock.toString());
     } catch (err) {
       console.error('[!] Error in confirmed logs polling cycle:', err);
     }

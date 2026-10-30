@@ -93,6 +93,9 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     event SwapRouterUpdated(address indexed oldRouter, address indexed newRouter);
     event YieldAdapterAdded(address indexed adapter);
     event YieldAdapterRemoved(address indexed adapter);
+    event KYCForcedUpdated(bool forced);
+    event TokensBurnedRecorded(address indexed caller, uint256 amount, uint256 totalBurned);
+    event ReserveFeeNotified(address indexed caller, uint256 feeAmount, uint256 sweptToVault);
 
     modifier onlyWhitelisted(address account) {
         if (kycForced && !kycWhitelist[account] && !kycWhitelist[msg.sender]) revert KYCRequired(account);
@@ -104,6 +107,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
      */
     function setKYCForced(bool forced) external onlyRole(ProtocolRoles.COMPLIANCE_ROLE) {
         kycForced = forced;
+        emit KYCForcedUpdated(forced);
     }
 
     /**
@@ -146,6 +150,9 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
      * @notice Configures auxiliary routing assets and DEX swap router
      */
     function setConfig(address _wbtc, address _weth, address _swapRouter) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_wbtc == address(0) || _weth == address(0) || _swapRouter == address(0)) {
+            revert ZeroAddress();
+        }
         wbtcToken = _wbtc;
         wethToken = _weth;
         swapRouter = _swapRouter;
@@ -156,6 +163,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
      * @notice Updates the swap router address
      */
     function setSwapRouter(address _swapRouter) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_swapRouter == address(0)) revert ZeroAddress();
         address oldRouter = swapRouter;
         swapRouter = _swapRouter;
         emit SwapRouterUpdated(oldRouter, _swapRouter);
@@ -237,20 +245,27 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
      */
     function recordBurn(uint256 amount) external onlyRole(ProtocolRoles.BURNER_ROLE) {
         totalBurnedTokens += amount;
+        emit TokensBurnedRecorded(msg.sender, amount, totalBurnedTokens);
     }
 
     /**
      * @notice Routes incoming reserve fees to AlphaVault
      */
-    function notifyReserveFee(uint256 usdcFeeAmount) external onlyRole(ProtocolRoles.VAULT_MANAGER_ROLE) {
+    function notifyReserveFee(uint256 usdcFeeAmount) external {
+        address routerAddr = addressProvider.getAddress(addressProvider.ID_REAL_YIELD_ROUTER());
+        if (msg.sender != routerAddr && !hasRole(ProtocolRoles.VAULT_MANAGER_ROLE, msg.sender)) {
+            revert Unauthorized();
+        }
         address vault = addressProvider.getAlphaVault();
-        if (vault != address(0) && usdcFeeAmount > 0) {
+        uint256 swept = 0;
+        if (vault != address(0)) {
             uint256 bal = IERC20(redemptionToken).balanceOf(address(this));
-            uint256 toTransfer = usdcFeeAmount > bal ? bal : usdcFeeAmount;
-            if (toTransfer > 0) {
-                IERC20(redemptionToken).safeTransfer(vault, toTransfer);
+            if (bal > 0) {
+                IERC20(redemptionToken).safeTransfer(vault, bal);
+                swept = bal;
             }
         }
+        emit ReserveFeeNotified(msg.sender, usdcFeeAmount, swept);
     }
 
     // --- Proof of Reserves & NAV (Delegated to TreasuryPoRLib) ---
@@ -675,14 +690,20 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     /**
      * @notice Mints corporate fee shares to the RealYieldRouter against deposited stablecoins
      */
-    function mintCorporateFeeShares(uint256 stableAmount) external returns (uint256 sharesMinted) {
-        if (msg.sender != addressProvider.getAddress(addressProvider.ID_REAL_YIELD_ROUTER())) {
-            revert OnlyRealYieldRouter();
+    function mintCorporateFeeShares(uint256 stableAmount) external nonReentrant returns (uint256 sharesMinted) {
+        address routerAddr = addressProvider.getAddress(addressProvider.ID_REAL_YIELD_ROUTER());
+        if (msg.sender != routerAddr && !hasRole(ProtocolRoles.VAULT_MANAGER_ROLE, msg.sender)) {
+            revert Unauthorized();
         }
         if (stableAmount == 0) revert ZeroAmount();
 
         AlphaVault vault = AlphaVault(addressProvider.getAddress(addressProvider.ID_ALPHA_VAULT()));
-        IERC20(redemptionToken).safeTransferFrom(msg.sender, address(vault), stableAmount);
+        uint256 localBal = IERC20(redemptionToken).balanceOf(address(this));
+        if (localBal >= stableAmount) {
+            IERC20(redemptionToken).safeTransfer(address(vault), localBal);
+        } else {
+            IERC20(redemptionToken).safeTransferFrom(msg.sender, address(vault), stableAmount);
+        }
 
         uint256 depositValueUSD = stableAmount * (10 ** (18 - redemptionTokenDecimals));
         uint256 navPerShare = getNAVPerShare();
@@ -693,6 +714,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
 
         AlphaToken token = AlphaToken(addressProvider.getAddress(addressProvider.ID_ALPHA_TOKEN()));
         token.mint(msg.sender, sharesMinted);
+        lastSettledNAVPerShare = getNAVPerShare();
         return sharesMinted;
     }
 

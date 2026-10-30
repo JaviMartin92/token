@@ -191,18 +191,14 @@ export class BlockIndexerService {
     // Track block header for active reorg detection if driver is available
     if (this.storageDriver) {
       try {
-        const firstBlock = await this.client.getBlock({ blockNumber: fromBlock });
-        if (firstBlock) {
-          const reorgCheck = await this.trackBlockHeader(fromBlock, firstBlock.hash, firstBlock.parentHash);
-          if (reorgCheck.isReorg && reorgCheck.forkBlock !== undefined) {
-            await this.handleReorgRollback(reorgCheck.forkBlock, toBlock);
-            return { fromBlock, toBlock, eventsCount: 0 };
-          }
-        }
-        if (toBlock > fromBlock) {
-          const lastBlock = await this.client.getBlock({ blockNumber: toBlock });
-          if (lastBlock) {
-            await this.trackBlockHeader(toBlock, lastBlock.hash, lastBlock.parentHash);
+        for (let b = fromBlock; b <= toBlock; b++) {
+          const blk = await this.client.getBlock({ blockNumber: b });
+          if (blk) {
+            const reorgCheck = await this.trackBlockHeader(b, blk.hash, blk.parentHash);
+            if (reorgCheck.isReorg && reorgCheck.forkBlock !== undefined) {
+              await this.handleReorgRollback(reorgCheck.forkBlock, toBlock);
+              return { fromBlock, toBlock, eventsCount: 0 };
+            }
           }
         }
       } catch (e) {

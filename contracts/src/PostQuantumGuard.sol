@@ -191,6 +191,9 @@ contract PostQuantumGuard is IPostQuantumGuard, AccessControl {
         }
         if (actionId == bytes32(0)) revert ZeroActionId();
         if (quantumAuthorizedActions[actionId]) revert ActionAlreadyAuthorized();
+        if (_activeCommitments[msg.sender] == bytes32(0) || _activeCommitments[msg.sender] != commitmentRoot) {
+            revert InvalidQuantumSignature();
+        }
         if (usedCommitments[commitmentRoot]) revert QuantumCommitmentAlreadyUsed();
 
         uint256 nonce = commitmentNonce[commitmentRoot];
@@ -200,15 +203,13 @@ contract PostQuantumGuard is IPostQuantumGuard, AccessControl {
         bytes32 digest = keccak256(abi.encode(block.chainid, address(this), msg.sender, nonce, actionId));
 
         if (!verifyWinternitzSignature(digest, signature, commitmentRoot)) {
-            // Also allow direct actionId digest fallback
-            if (!verifyWinternitzSignature(actionId, signature, commitmentRoot)) {
-                revert InvalidQuantumSignature();
-            }
+            revert InvalidQuantumSignature();
         }
 
         // Winternitz OTS+: Mark commitment as used to enforce strict One-Time Signature semantics
         usedCommitments[commitmentRoot] = true;
         quantumAuthorizedActions[actionId] = true;
+        delete _activeCommitments[msg.sender];
 
         emit QuantumSignatureVerified(msg.sender, actionId, commitmentRoot);
         emit QuantumActionAuthorized(actionId, msg.sender);

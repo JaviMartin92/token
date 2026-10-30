@@ -31,7 +31,7 @@ export declare class IdempotentLedgerEngine {
      */
     generateIdempotencyKey(txHash: string, logIndex: number, referenceType: string): string;
     /**
-     * Validates double-entry accounting equilibrium: Sum(Debits) === Sum(Credits)
+     * Validates double-entry accounting equilibrium: Sum(Debits) === Sum(Credits) strictly per asset
      */
     validateEquilibrium(entries: LedgerEntryData[]): {
         isValid: boolean;
@@ -52,8 +52,9 @@ export declare class IdempotentLedgerEngine {
         revertedCredits: number;
     }>;
     /**
-     * Computes the net balance of an account considering ONLY CANONICAL (non-orphaned) entries
+     * Computes the net balance of an account considering ONLY CANONICAL (non-orphaned) entries using exact 18-decimal integer arithmetic
      */
+    getCanonicalAccountBalanceBigInt(accountCode: string): Promise<bigint>;
     getCanonicalAccountBalance(accountCode: string): Promise<number>;
     /**
      * Creates balanced entries for Treasury Deposit

@@ -12,6 +12,7 @@ import "./interfaces/ILidoWstETH.sol";
 import "./interfaces/ILombardLBTC.sol";
 import "./interfaces/IMorphoVault.sol";
 import "./interfaces/IProtocolErrors.sol";
+import "./interfaces/ITreasury.sol";
 
 /**
  * @title TreasuryReserveManager
@@ -27,6 +28,7 @@ contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     address public treasury;
+    address public alphaVault;
     address public usdcToken;
     address public wbtcToken;
     address public wethToken;
@@ -43,6 +45,7 @@ contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
     uint256 public lastProductionRebalanceTimestamp;
 
     // --- Events ---
+    event AlphaVaultUpdated(address indexed oldVault, address indexed newVault);
     event ProductionRebalanceExecuted(
         uint256 totalUsdcAllocated, uint256 liquidLoansPool, uint256 morphoVaultDeposit, uint256 timestamp
     );
@@ -102,31 +105,73 @@ contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
     }
 
     /**
+     * @notice Configures the canonical AlphaVault custody address
+     */
+    function setAlphaVault(address _alphaVault) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_alphaVault == address(0)) revert IProtocolErrors.ZeroAddress();
+        address old = alphaVault;
+        alphaVault = _alphaVault;
+        emit AlphaVaultUpdated(old, _alphaVault);
+    }
+
+    /**
+     * @notice Returns target custody vault address
+     */
+    function getTargetVault() public view returns (address) {
+        if (alphaVault != address(0)) return alphaVault;
+        if (treasury != address(0) && treasury.code.length > 0) {
+            try ITreasury(treasury).alphaVault() returns (address av) {
+                if (av != address(0)) return av;
+            } catch {}
+        }
+        return treasury;
+    }
+
+    /**
      * @notice Executes 1-click production rebalance allocating 10% to liquid P2P reserve line and 90% to Morpho Blue
      * @param usdcAmount Total USDC amount to deploy
      */
-    function executeProductionRebalance(uint256 usdcAmount) external nonReentrant returns (bool) {
+    function executeProductionRebalance(uint256 usdcAmount)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+        nonReentrant
+        returns (bool)
+    {
+        return executeProductionRebalance(usdcAmount, getTargetVault());
+    }
+
+    /**
+     * @notice Executes 1-click production rebalance allocating to a specified vault address
+     */
+    function executeProductionRebalance(uint256 usdcAmount, address targetAlphaVault)
+        public
+        onlyRole(DEFAULT_ADMIN_ROLE)
+        nonReentrant
+        returns (bool)
+    {
         if (usdcAmount == 0) revert IProtocolErrors.ZeroAmount();
+        if (targetAlphaVault == address(0)) revert IProtocolErrors.ZeroAddress();
+
         IERC20(usdcToken).safeTransferFrom(msg.sender, address(this), usdcAmount);
 
         uint256 liquidReserve10 = (usdcAmount * 1000) / 10000; // 10%
         uint256 morphoVault90 = usdcAmount - liquidReserve10; // 90%
 
-        // Send 10% to Treasury for liquid buffer / P2P reserve line
-        IERC20(usdcToken).safeTransfer(treasury, liquidReserve10);
+        // Send 10% to AlphaVault for liquid buffer / P2P reserve line
+        IERC20(usdcToken).safeTransfer(targetAlphaVault, liquidReserve10);
 
-        // Deposit 90% to Morpho Blue Vault if configured
+        // Deposit 90% to Morpho Blue Vault if configured, minting shares to AlphaVault
         if (morphoUsdcVault != address(0) && morphoUsdcVault.code.length > 0) {
             IERC20(usdcToken).safeApprove(morphoUsdcVault, 0);
             IERC20(usdcToken).safeApprove(morphoUsdcVault, morphoVault90);
-            try IMorphoVault(morphoUsdcVault).deposit(morphoVault90, treasury) {
+            try IMorphoVault(morphoUsdcVault).deposit(morphoVault90, targetAlphaVault) {
                 // Morpho deposit successful
             } catch {
-                // Fallback: safe transfer to treasury on vault error
-                IERC20(usdcToken).safeTransfer(treasury, morphoVault90);
+                // Fallback: safe transfer to targetAlphaVault on vault error
+                IERC20(usdcToken).safeTransfer(targetAlphaVault, morphoVault90);
             }
         } else {
-            IERC20(usdcToken).safeTransfer(treasury, morphoVault90);
+            IERC20(usdcToken).safeTransfer(targetAlphaVault, morphoVault90);
         }
 
         totalRebalancedVolume += usdcAmount;

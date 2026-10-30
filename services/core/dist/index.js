@@ -47,16 +47,16 @@ async function handleBlockchainEvent(event) {
     switch (event.type) {
         case 'TREASURY_REDEEMED': {
             const { user, sharesBurned, assetAmountOut, feeCharged = '0' } = event.payload;
-            // Calculate total assets redeemed in USD/USDC equivalent safely
-            const safeFee = feeCharged && !isNaN(parseFloat(feeCharged)) ? parseFloat(feeCharged) : 0;
-            const safeOut = assetAmountOut && !isNaN(parseFloat(assetAmountOut)) ? parseFloat(assetAmountOut) : 0;
-            const burnedVal = (safeOut + safeFee).toFixed(6);
+            // Calculate total assets redeemed in USD/USDC equivalent safely with BigInt precision
+            const feeBig = BigInt(feeCharged && !isNaN(Number(feeCharged)) ? feeCharged : '0');
+            const outBig = BigInt(assetAmountOut && !isNaN(Number(assetAmountOut)) ? assetAmountOut : '0');
+            const burnedVal = (outBig + feeBig).toString();
             await (0, ledger_js_1.recordLedgerTransaction)(strings_js_1.BACKEND_STRINGS.LEDGER.USER_REDEEM_DESC(user), client_1.ReferenceType.REDEMPTION, txHash, [
                 {
                     accountCode: 'USER_EQUITY',
                     debit: burnedVal,
                     credit: '0.0',
-                    assetAddress: 'SHARES_TOKEN_MOCK'
+                    assetAddress: 'USDC_TOKEN_MOCK'
                 },
                 {
                     accountCode: 'TREASURY_LIQUID_USDC',
@@ -93,8 +93,11 @@ async function handleBlockchainEvent(event) {
         }
         case 'TWAP_STEP_EXECUTED': {
             const { orderId, tokensBought, costUsdc } = event.payload;
-            const half = (parseFloat(tokensBought) / 2).toString();
-            const otherHalf = (parseFloat(tokensBought) - parseFloat(half)).toString();
+            const tokensBoughtBig = BigInt(tokensBought && !isNaN(Number(tokensBought)) ? tokensBought : '0');
+            const halfBig = tokensBoughtBig / 2n;
+            const otherHalfBig = tokensBoughtBig - halfBig;
+            const half = halfBig.toString();
+            const otherHalf = otherHalfBig.toString();
             // Double-entry record for the TWAP trade (representing assets movements)
             await (0, ledger_js_1.recordLedgerTransaction)(strings_js_1.BACKEND_STRINGS.LEDGER.TWAP_BUYBACK_DESC(orderId), client_1.ReferenceType.REBALANCE, txHash, [
                 {

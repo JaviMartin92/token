@@ -294,9 +294,11 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
     function stake(uint256 amount) external nonReentrant updateReward(msg.sender) {
         if (amount == 0) revert IProtocolErrors.ZeroAmount();
 
-        lastStakeTime[msg.sender] = block.timestamp;
+        if (msg.sender != treasury) {
+            lastStakeTime[msg.sender] = block.timestamp;
+        }
 
-        // 1% Staking Entry Fee — transferred to Treasury and processed via Real Yield Flywheel
+        // 1% Staking Entry Fee — 100% burned for deflationary reserve accretion
         uint256 fee = (amount * 100) / 10000;
         uint256 netStake = amount - fee;
 
@@ -309,24 +311,9 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
 
         govToken.safeTransferFrom(msg.sender, address(this), amount);
         if (fee > 0) {
-            uint256 treasuryShare = fee / 2; // 50%
-            uint256 communityShare = fee - treasuryShare; // 50%
-
-            if (treasuryShare > 0) {
-                IBurnable(address(govToken)).burn(treasuryShare);
-                if (treasury != address(0)) {
-                    ITreasury(treasury).recordBurn(treasuryShare);
-                }
-            }
-            if (communityShare > 0) {
-                if (communityYieldVault != address(0)) {
-                    govToken.safeTransfer(communityYieldVault, communityShare);
-                } else {
-                    IBurnable(address(govToken)).burn(communityShare);
-                    if (treasury != address(0)) {
-                        ITreasury(treasury).recordBurn(communityShare);
-                    }
-                }
+            IBurnable(address(govToken)).burn(fee);
+            if (treasury != address(0)) {
+                ITreasury(treasury).recordBurn(fee);
             }
         }
 
@@ -343,7 +330,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
         if (balanceOf(msg.sender) < amount) {
             revert IProtocolErrors.InsufficientStakedBalance(amount, balanceOf(msg.sender));
         }
-        if (block.timestamp < lastStakeTime[msg.sender] + MIN_STAKE_DURATION) {
+        if (msg.sender != treasury && block.timestamp < lastStakeTime[msg.sender] + MIN_STAKE_DURATION) {
             revert IProtocolErrors.TimelockActive(lastStakeTime[msg.sender] + MIN_STAKE_DURATION);
         }
 
@@ -369,7 +356,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
      */
     function claimReward() external nonReentrant updateReward(msg.sender) returns (uint256 reward) {
         if (isExcludedFromYield[msg.sender]) return 0;
-        if (block.timestamp < lastStakeTime[msg.sender] + MIN_STAKE_DURATION) {
+        if (msg.sender != treasury && block.timestamp < lastStakeTime[msg.sender] + MIN_STAKE_DURATION) {
             revert IProtocolErrors.TimelockActive(lastStakeTime[msg.sender] + MIN_STAKE_DURATION);
         }
         reward = rewards[msg.sender];
@@ -388,7 +375,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
         returns (uint256 reward)
     {
         if (isExcludedFromYield[user]) return 0;
-        if (block.timestamp < lastStakeTime[user] + MIN_STAKE_DURATION) {
+        if (user != treasury && block.timestamp < lastStakeTime[user] + MIN_STAKE_DURATION) {
             revert IProtocolErrors.TimelockActive(lastStakeTime[user] + MIN_STAKE_DURATION);
         }
         reward = rewards[user];
