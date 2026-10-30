@@ -750,7 +750,18 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
 
         uint256 totalCollateral = loan.collateralAmount;
 
-        // Liquidator repays the debt to the lender (routing Treasury loans back to AlphaVault & RealYield)
+        _repayLenderOnLiquidation(loan, totalOwed, interest);
+
+        if (loan.positionTokenId > 0 && address(positionNFT) != address(0)) {
+            _liquidateNFTCollateral(loan, totalOwed);
+        } else if (loan.collateralAmount > 0) {
+            _liquidateTokenCollateral(loanId, loan, totalOwed);
+        }
+
+        emit LoanLiquidated(loanId, msg.sender, totalCollateral);
+    }
+
+    function _repayLenderOnLiquidation(Loan storage loan, uint256 totalOwed, uint256 interest) private {
         if (treasury != address(0) && (loan.lender == owner() || loan.lender == treasury)) {
             address vaultTarget = treasury;
             try ITreasury(treasury).alphaVault() returns (address av) {
@@ -776,77 +787,68 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
                 }
             }
         }
+    }
 
-        // Transfer position NFT collateral with Fair Liquidation equity refund to borrower
-        if (loan.positionTokenId > 0 && address(positionNFT) != address(0)) {
-            try positionNFT.getPosition(loan.positionTokenId) returns (VaultPositionNFT.Position memory pos) {
-                uint256 nftBasePrice = pos.discountedPricePaid > 0 ? pos.discountedPricePaid : pos.principalAmount;
-                uint256 nftFloorValue = (nftBasePrice * 8500) / 10000; // 85% cash floor via ragequit
-                uint256 maxLiquidatorReward = (totalOwed * (10000 + LIQUIDATION_BONUS_BPS)) / 10000;
-                if (nftFloorValue > maxLiquidatorReward) {
-                    uint256 borrowerRefund = nftFloorValue - maxLiquidatorReward;
-                    IERC20(stablecoin).safeTransferFrom(msg.sender, address(this), borrowerRefund);
-                    (bool success, bytes memory data) = stablecoin.call(
-                        abi.encodeWithSelector(IERC20.transfer.selector, loan.borrower, borrowerRefund)
-                    );
-                    bool transferred = success && (data.length == 0 || abi.decode(data, (bool)));
-                    if (!transferred) {
-                        claimableBorrowerEquityAssets[loan.borrower][stablecoin] += borrowerRefund;
-                    }
-                }
-            } catch {}
-            positionNFT.safeTransferFrom(address(this), msg.sender, loan.positionTokenId);
-        } else if (loan.collateralAmount > 0) {
-            address colAsset = loanCollateralAsset[loanId];
-            address targetAsset = colAsset != address(0) ? colAsset : (alphaToken != address(0) ? alphaToken : stablecoin);
-
-            // FAIR LIQUIDATION: Liquidator receives debt + 10% bonus in collateral value
-            uint256 owedWithBonusUSD = (totalOwed * (10000 + LIQUIDATION_BONUS_BPS)) / 10000;
-            uint256 seizeAmount = loan.collateralAmount;
-
-            if (targetAsset == alphaToken && treasury != address(0)) {
-                try ITreasury(treasury).getNAVPerShare() returns (uint256 nav) {
-                    if (nav > 0) {
-                        uint256 neededCol = (owedWithBonusUSD * 1e30) / nav;
-                        if (neededCol < seizeAmount) seizeAmount = neededCol;
-                    }
-                } catch {
-                    // Ignore NAV query revert
-                }
-            } else if (targetAsset != address(0) && priceFeed != address(0)) {
-                try IOracleHub(priceFeed).getPriceBase18(targetAsset) returns (uint256 price18) {
-                    if (price18 > 0) {
-                        uint8 dec = (targetAsset == wbtcToken) ? 8 : 18;
-                        uint256 neededCol = (owedWithBonusUSD * (10 ** (12 + dec))) / price18;
-                        if (neededCol < seizeAmount) seizeAmount = neededCol;
-                    }
-                } catch {
-                    // Ignore oracle price query revert
-                }
-            }
-
-            if (seizeAmount > loan.collateralAmount) {
-                seizeAmount = loan.collateralAmount;
-            }
-
-            uint256 surplusEquity = loan.collateralAmount - seizeAmount;
-
-            // 1. Transfer fair collateral portion to liquidator
-            IERC20(targetAsset).safeTransfer(msg.sender, seizeAmount);
-
-            // 2. Return surplus equity to borrower (with pull fallback to prevent liquidation DOS)
-            if (surplusEquity > 0) {
-                (bool success, bytes memory data) = targetAsset.call(
-                    abi.encodeWithSelector(IERC20.transfer.selector, loan.borrower, surplusEquity)
+    function _liquidateNFTCollateral(Loan storage loan, uint256 totalOwed) private {
+        try positionNFT.getPosition(loan.positionTokenId) returns (VaultPositionNFT.Position memory pos) {
+            uint256 nftBasePrice = pos.discountedPricePaid > 0 ? pos.discountedPricePaid : pos.principalAmount;
+            uint256 nftFloorValue = (nftBasePrice * 8500) / 10000;
+            uint256 maxLiquidatorReward = (totalOwed * (10000 + LIQUIDATION_BONUS_BPS)) / 10000;
+            if (nftFloorValue > maxLiquidatorReward) {
+                uint256 borrowerRefund = nftFloorValue - maxLiquidatorReward;
+                IERC20(stablecoin).safeTransferFrom(msg.sender, address(this), borrowerRefund);
+                (bool success, bytes memory data) = stablecoin.call(
+                    abi.encodeWithSelector(IERC20.transfer.selector, loan.borrower, borrowerRefund)
                 );
                 bool transferred = success && (data.length == 0 || abi.decode(data, (bool)));
                 if (!transferred) {
-                    claimableBorrowerEquityAssets[loan.borrower][targetAsset] += surplusEquity;
+                    claimableBorrowerEquityAssets[loan.borrower][stablecoin] += borrowerRefund;
                 }
             }
+        } catch {}
+        positionNFT.safeTransferFrom(address(this), msg.sender, loan.positionTokenId);
+    }
+
+    function _liquidateTokenCollateral(uint256 loanId, Loan storage loan, uint256 totalOwed) private {
+        address colAsset = loanCollateralAsset[loanId];
+        address targetAsset = colAsset != address(0) ? colAsset : (alphaToken != address(0) ? alphaToken : stablecoin);
+
+        uint256 owedWithBonusUSD = (totalOwed * (10000 + LIQUIDATION_BONUS_BPS)) / 10000;
+        uint256 seizeAmount = loan.collateralAmount;
+
+        if (targetAsset == alphaToken && treasury != address(0)) {
+            try ITreasury(treasury).getNAVPerShare() returns (uint256 nav) {
+                if (nav > 0) {
+                    uint256 neededCol = (owedWithBonusUSD * 1e30) / nav;
+                    if (neededCol < seizeAmount) seizeAmount = neededCol;
+                }
+            } catch {}
+        } else if (targetAsset != address(0) && priceFeed != address(0)) {
+            try IOracleHub(priceFeed).getPriceBase18(targetAsset) returns (uint256 price18) {
+                if (price18 > 0) {
+                    uint8 dec = (targetAsset == wbtcToken) ? 8 : 18;
+                    uint256 neededCol = (owedWithBonusUSD * (10 ** (12 + dec))) / price18;
+                    if (neededCol < seizeAmount) seizeAmount = neededCol;
+                }
+            } catch {}
         }
 
-        emit LoanLiquidated(loanId, msg.sender, totalCollateral);
+        if (seizeAmount > loan.collateralAmount) {
+            seizeAmount = loan.collateralAmount;
+        }
+
+        uint256 surplusEquity = loan.collateralAmount - seizeAmount;
+        IERC20(targetAsset).safeTransfer(msg.sender, seizeAmount);
+
+        if (surplusEquity > 0) {
+            (bool success, bytes memory data) = targetAsset.call(
+                abi.encodeWithSelector(IERC20.transfer.selector, loan.borrower, surplusEquity)
+            );
+            bool transferred = success && (data.length == 0 || abi.decode(data, (bool)));
+            if (!transferred) {
+                claimableBorrowerEquityAssets[loan.borrower][targetAsset] += surplusEquity;
+            }
+        }
     }
 
     /**

@@ -3,10 +3,10 @@ pragma solidity ^0.8.20;
 
 interface ITreasury {
     struct AssetWeights {
-        uint256 stablecoins; // Target: 50% (Min 40%, Max 60%)
-        uint256 wbtc; // Target: 25% (Min 20%, Max 30%)
-        uint256 weth; // Target: 12.5% (Min 10%, Max 15%)
-        uint256 alphaProtocolStaking; // Target: 12.5% (Min 5%, Max 15%) - Auto-staked for Real Yield
+        uint64 stablecoins; // Target: 50% (Min 40%, Max 60%)
+        uint64 wbtc; // Target: 25% (Min 20%, Max 30%)
+        uint64 weth; // Target: 12.5% (Min 10%, Max 15%)
+        uint64 alphaProtocolStaking; // Target: 12.5% (Min 5%, Max 15%) - Auto-staked for Real Yield
     }
 
     event WeightsAdjusted(AssetWeights newWeights);
@@ -27,11 +27,6 @@ interface ITreasury {
      * @notice Returns the net circulating shares excluding protocol-owned ALPHA.
      */
     function getNetCirculatingShares() external view returns (uint256);
-
-    /**
-     * @notice Returns the amount of specific asset held by the Treasury (including yield vaults).
-     */
-    function getAssetBalance(address asset) external view returns (uint256);
 
     /**
      * @notice Allows an investor to deposit stablecoins to mint native ALPHA shares based on NAV.
@@ -75,16 +70,6 @@ interface ITreasury {
         returns (uint256 totalAssetsUSD, uint256 totalLiabilitiesUSD, uint256 collateralRatioBps);
 
     /**
-     * @notice Validates that the current portfolio weights are within the sanity bounds.
-     */
-    function validateSanityBounds() external view returns (bool);
-
-    /**
-     * @notice Performs a rebalancing operation, realigning current weights to targets.
-     */
-    function rebalance() external;
-
-    /**
      * @notice Allows VestedDiscountVault to request reimbursement payouts upon ragequit/maturity.
      */
     function releaseVaultPayout(address to, uint256 amount) external;
@@ -98,11 +83,6 @@ interface ITreasury {
      * @notice Records the amount of tokens burned by external contracts (e.g. GovernanceStaking) to track total burned.
      */
     function recordBurn(uint256 amount) external;
-
-    /**
-     * @notice Processes staking entry fees under the Pure DeFi 50/50 reserve/community-yield model.
-     */
-    function processStakingFee(uint256 feeShares) external;
 
     /**
      * @notice Disburses a Treasury reserve loan (up to 20% max of total reserves) to P2PLendingMarket.

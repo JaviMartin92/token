@@ -30,6 +30,7 @@ interface IProtocolErrors {
     error DailyBudgetExceeded(uint256 spent, uint256 cap);
     error TradeSizeTooLarge(uint256 amount, uint256 maxSingleTrade);
     error CooldownActive(uint256 nextExecutionTimestamp);
+    error SameBlockCooldown(address account, uint256 currentBlock);
     error CircuitBreakerActive(address asset);
 
     // Oracle & Price Feed Errors

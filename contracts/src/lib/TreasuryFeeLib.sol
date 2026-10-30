@@ -52,6 +52,23 @@ library TreasuryFeeLib {
     }
 
     /**
+     * @notice Computes emergency redemption amounts and fees while optimizing EVM stack depth.
+     */
+    function calculateEmergencyRedemption(uint256 sharesAmount, uint256 netEquityUSD, uint256 totalShares, uint8 decimals)
+        internal
+        pure
+        returns (RedeemCalculation memory calc)
+    {
+        calc.grossAssetValueUSD = (sharesAmount * netEquityUSD) / totalShares;
+        calc.feeChargedUSD = (calc.grossAssetValueUSD * EMERGENCY_FEE_BPS) / 10000;
+        calc.netAssetValueUSD = calc.grossAssetValueUSD - calc.feeChargedUSD;
+
+        uint256 scale = 10 ** (18 - decimals);
+        calc.assetsReceived = calc.netAssetValueUSD / scale;
+        calc.feeTokenAmount = calc.feeChargedUSD / scale;
+    }
+
+    /**
      * @notice Computes standard redemption amounts and fees while optimizing EVM stack depth.
      */
     function calculateRedemption(uint256 sharesAmount, uint256 totalNavUSD, uint256 totalShares, uint8 decimals)

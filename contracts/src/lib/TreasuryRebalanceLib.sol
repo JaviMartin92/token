@@ -7,6 +7,7 @@ import "../AlphaToken.sol";
 import "../interfaces/IOracleHub.sol";
 import "../interfaces/ISwapRouter.sol";
 import "../interfaces/ITreasury.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface IGovernanceStakingRebalance {
     function stake(uint256 amount) external;
@@ -17,6 +18,7 @@ interface IGovernanceStakingRebalance {
  * @notice Internal library executing automatic DEX portfolio rebalancing and dynamic ALPHA sub-reserve allocation.
  */
 library TreasuryRebalanceLib {
+    using SafeERC20 for IERC20;
     struct RebalanceParams {
         ProtocolAddressProvider addressProvider;
         AlphaVault vault;
@@ -171,7 +173,7 @@ library TreasuryRebalanceLib {
             } catch {
                 // Keep unstaked in treasury custody if staking pool reverts: transfer to AlphaVault
                 if (address(params.vault) != address(0)) {
-                    params.token.safeTransfer(address(params.vault), alphaObtained);
+                    IERC20(address(params.token)).safeTransfer(address(params.vault), alphaObtained);
                 }
             }
         }

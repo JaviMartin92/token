@@ -354,12 +354,7 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
 
         _validateBudgetAndLimits(alphaVault, usdcToSpend);
 
-        // --- LOCK 4: Slippage / Minimum Output Validation ---
-        uint256 expectedAlphaFromOracle = (usdcToSpend * (10 ** (18 - redemptionTokenDecimals)) * 1e18) / spotPriceUSD;
-        uint256 minAllowedAlpha = (expectedAlphaFromOracle * (10000 - maxSlippageBps)) / 10000;
-        if (minAlphaOut < minAllowedAlpha) {
-            minAlphaOut = minAllowedAlpha;
-        }
+        minAlphaOut = _calculateMinAlpha(usdcToSpend, spotPriceUSD, minAlphaOut);
 
         // --- EXECUTION: Pull Funds from Vault, Swap & Burn ---
         uint256 alphaReceived = _executeSwap(alphaVault, alphaToken, usdcToSpend, minAlphaOut);
@@ -373,17 +368,7 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
         }
 
         // --- KEEPER BOUNTY INCENTIVE ---
-        uint256 totalOutflow = usdcToSpend;
-        if (keeperBountyBps > 0) {
-            uint256 bounty = (usdcToSpend * keeperBountyBps) / 10000;
-            if (bounty > 0) {
-                try IAlphaVaultBuyback(alphaVault).transferFunds(redemptionToken, msg.sender, bounty) {
-                    totalOutflow += bounty;
-                } catch {
-                    // Ignore bounty failure
-                }
-            }
-        }
+        uint256 totalOutflow = _payKeeperBounty(alphaVault, usdcToSpend);
 
         // --- State Updates ---
         spentToday += totalOutflow;
@@ -395,5 +380,23 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
             usdcToSpend, alphaReceived, spotPriceUSD, navPerShareUSD, discountBps, block.timestamp
         );
         return alphaReceived;
+    }
+
+    function _calculateMinAlpha(uint256 usdcToSpend, uint256 spotPriceUSD, uint256 minAlphaOut) private view returns (uint256) {
+        uint256 expectedAlphaFromOracle = (usdcToSpend * (10 ** (18 - redemptionTokenDecimals)) * 1e18) / spotPriceUSD;
+        uint256 minAllowedAlpha = (expectedAlphaFromOracle * (10000 - maxSlippageBps)) / 10000;
+        return (minAlphaOut < minAllowedAlpha) ? minAllowedAlpha : minAlphaOut;
+    }
+
+    function _payKeeperBounty(address alphaVault, uint256 usdcToSpend) private returns (uint256 totalOutflow) {
+        totalOutflow = usdcToSpend;
+        if (keeperBountyBps > 0) {
+            uint256 bounty = (usdcToSpend * keeperBountyBps) / 10000;
+            if (bounty > 0) {
+                try IAlphaVaultBuyback(alphaVault).transferFunds(redemptionToken, msg.sender, bounty) {
+                    totalOutflow += bounty;
+                } catch {}
+            }
+        }
     }
 }

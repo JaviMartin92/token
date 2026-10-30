@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "./interfaces/ISwapRouter.sol";
-import "./interfaces/IProtocolErrors.sol";
+import "../../src/interfaces/ISwapRouter.sol";
+import "../../src/interfaces/IProtocolErrors.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./ProtocolRoles.sol";
+import "../../src/ProtocolRoles.sol";
 
 interface IMockMintableERC20 {
     function mint(address to, uint256 amount) external;
@@ -15,8 +15,9 @@ interface IMockMintableERC20 {
 
 /**
  * @title MockSwapRouter
- * @notice Mock Uniswap V3 SwapRouter for sandbox local devnet (Anvil).
+ * @notice Mock Uniswap V3 SwapRouter for sandbox local devnet (Anvil) and testing.
  *         Executes real ERC20 swaps enforcing deadline and slippage bounds.
+ *         WARNING: TEST FIXTURE ONLY - NEVER DEPLOY TO MAINNET.
  */
 contract MockSwapRouter is ISwapRouter, AccessControl {
     using SafeERC20 for IERC20;

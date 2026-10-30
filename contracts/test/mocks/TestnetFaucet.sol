@@ -2,13 +2,13 @@
 pragma solidity ^0.8.20;
 
 import "./MockERC20.sol";
-import "../TreasuryManager.sol";
+import "../../src/TreasuryManager.sol";
 
 /**
  * @title TestnetFaucet
- * @notice A public faucet for testnet testing of the Alpha Centauri protocol.
+ * @notice A public faucet for testnet and sandbox testing of the Alpha Centauri protocol.
  * @dev Mints mock USDC and automatically grants KYC whitelist status on the TreasuryManager.
- *      WARNING: MUST NEVER BE DEPLOYED TO MAINNET.
+ *      WARNING: TESTNET FIXTURE ONLY - MUST NEVER BE DEPLOYED TO MAINNET.
  */
 contract TestnetFaucet {
     MockERC20 public usdc;

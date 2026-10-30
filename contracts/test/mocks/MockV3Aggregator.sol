@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 /**
  * @title MockV3Aggregator
- * @notice A mock of Chainlink's AggregatorV3Interface for testnet environments.
+ * @notice A mock of Chainlink's AggregatorV3Interface for testnet and sandbox environments.
  */
 contract MockV3Aggregator {
     uint8 public decimals;
@@ -32,7 +32,9 @@ contract MockV3Aggregator {
         latestRound++;
     }
 
-    function updateAnswer(int256 _answer) external {
-        setLatestAnswer(_answer);
+    function setLatestAnswerWithTimestamp(int256 _answer, uint256 _timestamp) public {
+        latestAnswer = _answer;
+        latestTimestamp = _timestamp;
+        latestRound++;
     }
 }

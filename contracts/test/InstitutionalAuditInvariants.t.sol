@@ -338,6 +338,7 @@ contract InstitutionalAuditInvariantsTest is Test {
         // 2. Admin revokes KYC status of user
         vm.prank(admin);
         manager.setKYCStatus(user, false);
+        vm.roll(block.number + 1);
 
         // 3. Emergency redeem succeeds with 5% fee retention
         vm.startPrank(user);

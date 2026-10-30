@@ -170,7 +170,8 @@ contract AtomicSwapReceiver is IAtomicSwapReceiver, AccessControl, ReentrancyGua
         usdcDeposited = ISwapRouter(swapRouter).exactInputSingle(params);
 
         // 5. Transfer resulting USDC to Treasury & mint ALPHA to depositor
-        IERC20(usdcToken).forceApprove(treasury, usdcDeposited);
+        IERC20(usdcToken).safeApprove(treasury, 0);
+        IERC20(usdcToken).safeApprove(treasury, usdcDeposited);
         ITreasury(treasury).depositFor(msg.sender, usdcDeposited, minSharesOut);
 
         emit AtomicSwapExecuted(msg.sender, usdtAmount, usdcDeposited, minSharesOut);

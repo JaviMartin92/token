@@ -255,6 +255,7 @@ export default function App() {
               onFaucetUSDC={treasury.handleFaucetUSDC}
               onAuditPoR={treasury.handleAuditPoR}
               isAdmin={global.isSandbox && global.walletConnected}
+              isSandbox={global.isSandbox}
               loansList={p2pMarket.loansList}
             />
 

@@ -122,6 +122,7 @@ contract UniversalYield_ERC4626_Rotation_Test is Test {
         assertEq(aaveAdapter.balanceOf(address(vault)), 1_000_000 * 10 ** 6);
 
         // 3. Simulate Yield Growth in Aave (+5%)
+        vm.prank(admin);
         aaveAdapter.simulateYield(10500);
 
         (,, uint256 midRatioBps) = manager.getProofOfReserves();

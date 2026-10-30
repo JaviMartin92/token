@@ -25,41 +25,46 @@ library TreasuryLiquidityLib {
         address treasuryContract
     ) internal {
         uint256 vaultBal = vault.getBalance(redemptionToken);
-        if (vaultBal < requiredUsdc) {
-            uint256 deficit = requiredUsdc - vaultBal;
+        if (vaultBal >= requiredUsdc) return;
 
-            uint256 maxAdapters = activeYieldAdapters.length > 10 ? 10 : activeYieldAdapters.length;
-            for (uint256 i = 0; i < maxAdapters && deficit > 0;) {
-                address adapter = activeYieldAdapters[i];
-                try IUniversalYieldAdapter(adapter).balanceOf(address(vault)) returns (uint256 vaultShares) {
-                    if (vaultShares > 0) {
-                        try IUniversalYieldAdapter(adapter).convertToAssets(vaultShares) returns (uint256 assets) {
-                            uint256 toWithdraw = (assets > deficit) ? deficit : assets;
-                            uint256 sharesNeeded = IUniversalYieldAdapter(adapter).convertToShares(toWithdraw);
-                            if (sharesNeeded > vaultShares) sharesNeeded = vaultShares;
-
-                            try vault.transferFunds(
-                                adapter, treasuryContract, sharesNeeded
-                            ) {
-                                IUniversalYieldAdapter(adapter).withdraw(toWithdraw, address(vault), treasuryContract);
-                                deficit = (toWithdraw > deficit) ? 0 : deficit - toWithdraw;
-                            } catch {
-                                // Fallback: try direct withdraw from vault if authorized
-                                try IUniversalYieldAdapter(adapter).withdraw(toWithdraw, address(vault), address(vault)) {
-                                    deficit = (toWithdraw > deficit) ? 0 : deficit - toWithdraw;
-                                } catch {}
-                            }
-                        } catch {
-                            // Ignore conversion revert
-                        }
-                    }
-                } catch {
-                    // Ignore query revert on adapter
-                }
-                unchecked {
-                    ++i;
-                }
+        uint256 deficit = requiredUsdc - vaultBal;
+        uint256 maxAdapters = activeYieldAdapters.length > 10 ? 10 : activeYieldAdapters.length;
+        for (uint256 i = 0; i < maxAdapters && deficit > 0;) {
+            deficit = _withdrawFromAdapter(activeYieldAdapters[i], vault, treasuryContract, deficit);
+            unchecked {
+                ++i;
             }
+        }
+    }
+
+    function _withdrawFromAdapter(
+        address adapter,
+        AlphaVault vault,
+        address treasuryContract,
+        uint256 deficit
+    ) private returns (uint256) {
+        try IUniversalYieldAdapter(adapter).balanceOf(address(vault)) returns (uint256 vaultShares) {
+            if (vaultShares == 0) return deficit;
+            try IUniversalYieldAdapter(adapter).convertToAssets(vaultShares) returns (uint256 assets) {
+                uint256 toWithdraw = (assets > deficit) ? deficit : assets;
+                uint256 sharesNeeded = IUniversalYieldAdapter(adapter).convertToShares(toWithdraw);
+                if (sharesNeeded > vaultShares) sharesNeeded = vaultShares;
+
+                try vault.transferFunds(adapter, treasuryContract, sharesNeeded) {
+                    IUniversalYieldAdapter(adapter).withdraw(toWithdraw, address(vault), treasuryContract);
+                    return (toWithdraw > deficit) ? 0 : deficit - toWithdraw;
+                } catch {
+                    try IUniversalYieldAdapter(adapter).withdraw(toWithdraw, address(vault), address(vault)) {
+                        return (toWithdraw > deficit) ? 0 : deficit - toWithdraw;
+                    } catch {
+                        return deficit;
+                    }
+                }
+            } catch {
+                return deficit;
+            }
+        } catch {
+            return deficit;
         }
     }
 }

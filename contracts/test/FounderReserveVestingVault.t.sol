@@ -7,7 +7,7 @@ import "../src/AlphaToken.sol";
 import "../src/ProtocolAddressProvider.sol";
 import "../src/TreasuryManager.sol";
 import "../src/TreasuryProxy.sol";
-import "../src/mocks/MockERC20.sol";
+import "./mocks/MockERC20.sol";
 
 contract MockTreasuryForVesting is ITreasury {
     uint256 public mockAssets = 100_000 * 1e18;
@@ -32,16 +32,17 @@ contract MockTreasuryForVesting is ITreasury {
     // Unused interface stubs
     function getNAV() external pure returns (uint256) { return 0; }
     function getNetCirculatingShares() external pure returns (uint256) { return 0; }
-    function getAssetBalance(address) external pure returns (uint256) { return 0; }
+    function deposit(uint256, uint256) external pure returns (uint256) { return 0; }
+    function depositFor(address, uint256, uint256) external pure returns (uint256) { return 0; }
     function deposit(uint256) external pure returns (uint256) { return 0; }
     function mintCorporateFeeShares(uint256) external pure returns (uint256) { return 0; }
     function notifyReserveFee(uint256) external {}
     function redeem(uint256) external pure returns (uint256) { return 0; }
-    function validateSanityBounds() external pure returns (bool) { return true; }
-    function rebalance() external {}
+    function redeem(uint256, uint256) external pure returns (uint256) { return 0; }
+    function redeemFor(address, address, uint256, uint256) external pure returns (uint256) { return 0; }
     function releaseVaultPayout(address, uint256) external {}
     function recordBurn(uint256) external {}
-    function processStakingFee(uint256) external {}
+    function alphaVault() external pure returns (address) { return address(0); }
     function disburseTreasuryLoan(address, uint256) external {}
     function totalBurnedTokens() external pure returns (uint256) { return 0; }
 }

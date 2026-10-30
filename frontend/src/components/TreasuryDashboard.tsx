@@ -20,6 +20,7 @@ interface TreasuryDashboardProps {
   onFaucetUSDC: () => void;
   onAuditPoR: () => void;
   isAdmin?: boolean;
+  isSandbox?: boolean;
   loansList?: any[];
 }
 
@@ -39,6 +40,7 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
   onFaucetUSDC,
   onAuditPoR,
   isAdmin = false,
+  isSandbox = false,
   loansList = []
 }) => {
   const totalLentUsd = loansList
@@ -55,14 +57,16 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
         headerTitle={UI_STRINGS.TREASURY.CARD_DEPOSIT_TITLE}
         headerSubtitle={UI_STRINGS.TREASURY.SUBTITLE}
         headerAction={
-          <Button
-            data-testid="treasury-faucet-btn"
-            variant="outline"
-            size="sm"
-            onClick={onFaucetUSDC}
-          >
-            🚰 {UI_STRINGS.TREASURY.BTN_FAUCET}
-          </Button>
+          (isSandbox || isAdmin) ? (
+            <Button
+              data-testid="treasury-faucet-btn"
+              variant="outline"
+              size="sm"
+              onClick={onFaucetUSDC}
+            >
+              🚰 {UI_STRINGS.TREASURY.BTN_FAUCET}
+            </Button>
+          ) : null
         }
       >
         {/* 🛡️ Guarded Genesis Cap Progress Bar */}

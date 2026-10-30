@@ -9,6 +9,7 @@ import "../src/AlphaToken.sol";
 import "../src/AlphaVault.sol";
 import "../src/OracleHub.sol";
 import "../src/ProtocolRoles.sol";
+import "../src/interfaces/IProtocolErrors.sol";
 import "./ModularProtocol.t.sol";
 
 contract GuardedLaunchTest is Test {
@@ -78,7 +79,7 @@ contract GuardedLaunchTest is Test {
         vm.prank(user);
         vm.expectRevert(
             abi.encodeWithSelector(
-                TreasuryManager.TVLCapExceeded.selector,
+                IProtocolErrors.TVLCapExceeded.selector,
                 treasury.getTotalNavUSD() + (50_000 * 1e18),
                 100_000 * 1e18
             )

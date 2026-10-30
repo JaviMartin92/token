@@ -40,7 +40,6 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
 
     // Domain Custom Errors (Morpho / OpenZeppelin Institutional Standards)
     error KYCRequired(address account);
-    error SameBlockCooldown(address account, uint256 currentBlock);
     error InvalidAdapterAddress();
     error AdapterAlreadyActive();
     error AdapterNotActive();
@@ -57,12 +56,6 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     ProtocolAddressProvider public immutable addressProvider;
 
     // Gas Optimized: Packed into a single 32-byte storage slot (4 * 64 = 256 bits)
-    struct AssetWeights {
-        uint64 stablecoins;
-        uint64 wbtc;
-        uint64 weth;
-        uint64 alphaProtocolStaking;
-    }
     AssetWeights public currentWeights;
 
     address public redemptionToken;
@@ -89,13 +82,11 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     // --- Events ---
     event WhitelistUpdated(address indexed account, bool isWhitelisted);
     event Deposited(address indexed user, uint256 usdcAmount, uint256 sharesMinted);
-    event Redeemed(address indexed user, uint256 sharesAmount, uint256 usdcReturned);
     event SwapRebalanceFailed(address indexed tokenOut, uint256 amountIn);
     event AssetWeightsUpdated(uint256 stablecoins, uint256 wbtc, uint256 weth, uint256 alpha);
     event ProofOfReservesAudited(
         uint256 totalAssetsUSD, uint256 totalLiabilitiesUSD, uint256 collateralRatioBps, uint256 timestamp
     );
-    event Rebalanced(uint256 timestamp);
     event TvlCapUpdated(uint256 oldCap, uint256 newCap);
     event TreasuryGrantDisbursed(address indexed recipient, uint256 amount, string purpose);
     event ConfigUpdated(address indexed wbtc, address indexed weth, address indexed swapRouter);
@@ -399,7 +390,6 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     /**
      * @notice Mints Alpha Shares in exchange for deposited USDC. Routes funds to Yield Adapters and P2P Buffers.
      * @param stableAmount The amount of stablecoin (USDC) to deposit.
-     * @param minSharesOut Minimum shares expected to receive (slippage protection).
      * @return sharesMinted The amount of Alpha shares minted to the user.
      */
     function deposit(uint256 stableAmount) external override returns (uint256 sharesMinted) {
@@ -538,14 +528,13 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     /**
      * @notice Burns Alpha Shares in exchange for USDC from the Treasury.
      * @param sharesAmount The amount of Alpha shares to burn.
-     * @param minUsdcOut Minimum USDC expected to receive (slippage protection).
      * @return assetsReceived The amount of USDC transferred to the user, net of fees.
      */
     function redeem(uint256 sharesAmount) external override returns (uint256 assetsReceived) {
-        return redeem(sharesAmount, 0);
+        return redeemFor(msg.sender, msg.sender, sharesAmount, 0);
     }
 
-    function redeem(uint256 sharesAmount, uint256 minUsdcOut) external override returns (uint256 assetsReceived) {
+    function redeem(uint256 sharesAmount, uint256 minUsdcOut) public override returns (uint256 assetsReceived) {
         return redeemFor(msg.sender, msg.sender, sharesAmount, minUsdcOut);
     }
 
@@ -644,23 +633,17 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
         if (netCirculating == 0) revert ZeroNetCirculatingShares();
 
         uint256 preNavUSD = getNAVPerShare();
-        uint256 netEquityUSD = getNetEquityUSD();
 
-        uint256 grossUsdValue = Math.mulDiv(sharesAmount, netEquityUSD, netCirculating, Math.Rounding.Floor);
-
-        // 5.0% Emergency retention fee calculated via TreasuryFeeLib
-        uint256 emergencyFeeUsd = TreasuryFeeLib.calculateEmergencyFee(grossUsdValue);
-        uint256 netUsdValue = grossUsdValue - emergencyFeeUsd;
-
-        uint256 scaleFactor = 10 ** (18 - redemptionTokenDecimals);
-        assetsReceived = netUsdValue / scaleFactor;
-        uint256 feeTokenAmount = emergencyFeeUsd / scaleFactor;
+        TreasuryFeeLib.RedeemCalculation memory calc = TreasuryFeeLib.calculateEmergencyRedemption(
+            sharesAmount, getNetEquityUSD(), netCirculating, redemptionTokenDecimals
+        );
+        assetsReceived = calc.assetsReceived;
 
         if (assetsReceived == 0) revert ZeroAmount();
 
         AlphaVault vault = AlphaVault(addressProvider.getAlphaVault());
         TreasuryLiquidityLib.ensureLiquidBuffer(
-            vault, redemptionToken, activeYieldAdapters, assetsReceived + feeTokenAmount, address(this)
+            vault, redemptionToken, activeYieldAdapters, assetsReceived + calc.feeTokenAmount, address(this)
         );
 
         token.burnFrom(msg.sender, sharesAmount);
@@ -668,8 +651,8 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
         vault.transferFunds(redemptionToken, msg.sender, assetsReceived);
 
         address routerAddr = addressProvider.getRealYieldRouter();
-        if (routerAddr != address(0) && feeTokenAmount > 0) {
-            vault.transferFunds(redemptionToken, routerAddr, feeTokenAmount);
+        if (routerAddr != address(0) && calc.feeTokenAmount > 0) {
+            vault.transferFunds(redemptionToken, routerAddr, calc.feeTokenAmount);
             try IRealYieldRouter(routerAddr).routeUniversalFee(redemptionToken) {
                 // Fee routed successfully
             } catch {
@@ -680,7 +663,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
         (,, uint256 postRatioBps) = getProofOfReserves();
         if (postRatioBps + 1 < preRatioBps) revert InvariantSolvencyDecreased(preRatioBps, postRatioBps);
         uint256 postNav = getNAVPerShare();
-        if (postNav + 1e14 < preNavUSD) revert InvariantNAVDecreased(preNavUSD, postNav);
+        if (netCirculating > sharesAmount && postNav + 1e14 < preNavUSD) revert InvariantNAVDecreased(preNavUSD, postNav);
         if (assetsReceived < minUsdcOut) revert SlippageExceeded(minUsdcOut, assetsReceived);
 
         lastSettledNAVPerShare = postNav;

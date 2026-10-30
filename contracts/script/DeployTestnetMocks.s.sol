@@ -2,9 +2,9 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
-import "../src/mocks/MockERC20.sol";
-import "../src/mocks/MockV3Aggregator.sol";
-import "../src/mocks/TestnetFaucet.sol";
+import "../test/mocks/MockERC20.sol";
+import "../test/mocks/MockV3Aggregator.sol";
+import "../test/mocks/TestnetFaucet.sol";
 import "../src/TreasuryManager.sol";
 import "../src/ProtocolRoles.sol";
 

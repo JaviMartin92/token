@@ -92,7 +92,8 @@ contract CompliantTreasuryGateway is AccessControl, ReentrancyGuard {
 
         // Pull stablecoin from institution
         IERC20(stablecoin).safeTransferFrom(msg.sender, address(this), stableAmount);
-        IERC20(stablecoin).forceApprove(address(treasuryManager), stableAmount);
+        IERC20(stablecoin).safeApprove(address(treasuryManager), 0);
+        IERC20(stablecoin).safeApprove(address(treasuryManager), stableAmount);
 
         // Execute core deposit: TreasuryManager.depositFor mints shares directly to msg.sender
         sharesMinted = treasuryManager.depositFor(msg.sender, stableAmount, minSharesOut);
@@ -118,7 +119,8 @@ contract CompliantTreasuryGateway is AccessControl, ReentrancyGuard {
 
         // Pull Alpha tokens from institution
         IERC20(alphaToken).safeTransferFrom(msg.sender, address(this), sharesAmount);
-        IERC20(alphaToken).forceApprove(address(treasuryManager), sharesAmount);
+        IERC20(alphaToken).safeApprove(address(treasuryManager), 0);
+        IERC20(alphaToken).safeApprove(address(treasuryManager), sharesAmount);
 
         // Execute core redemption: TreasuryManager burns from address(this) and transfers USDC directly to msg.sender
         assetsReceived = treasuryManager.redeemFor(address(this), msg.sender, sharesAmount, minUsdcOut);

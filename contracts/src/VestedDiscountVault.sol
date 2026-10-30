@@ -11,6 +11,7 @@ import "./interfaces/ITreasury.sol";
 import "./interfaces/ICircuitBreaker.sol";
 import "./interfaces/IProtocolErrors.sol";
 import "./RealYieldRouter.sol";
+import "./ProtocolTokenomicsEngine.sol";
 
 interface IGovStakingForVault {
     function stakedBalances(address user) external view returns (uint256);
@@ -211,42 +212,10 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         }
 
         // Solvency check: ensure Treasury maintains baseline solvency prior to new issuance
-        if (treasuryBunker != address(0) && treasuryBunker.code.length > 0) {
-            try ITreasury(treasuryBunker).getProofOfReserves() returns (uint256 preAssets, uint256 preLiabilities, uint256) {
-                if (preLiabilities > 0 && preAssets < preLiabilities) {
-                    revert InactivePosition();
-                }
-            } catch {}
-        }
+        _validateSolvency();
 
-        uint256 discountBps = calculateDiscountBps(msg.sender, lockYears);
-        uint256 discountedPrice = (principalAmount * (10000 - discountBps)) / 10000;
-
-        uint256 refBps = REFERRAL_REWARD_BPS;
-        uint256 mintFeeBps = 150;
-        if (tokenomicsEngine != address(0)) {
-            try ProtocolTokenomicsEngine(tokenomicsEngine).referralFeeBps() returns (uint256 rf) {
-                if (rf > 0) refBps = rf;
-            } catch {}
-            try ProtocolTokenomicsEngine(tokenomicsEngine).mintFeeBps() returns (uint256 mf) {
-                if (mf > 0) mintFeeBps = mf;
-            } catch {}
-        }
-
-        uint256 refAmount = 0;
-        if (referrer != address(0) && referrer != msg.sender) {
-            uint256 referrerStake = 0;
-            if (governanceStaking != address(0)) {
-                referrerStake = IGovStakingForVault(governanceStaking).stakedBalances(referrer);
-            }
-            if (referrerStake >= 100 * 10 ** 18) {
-                referrers[msg.sender] = referrer;
-                refAmount = (discountedPrice * refBps) / 10000;
-            }
-        }
-
-        uint256 mintFee = (discountedPrice * mintFeeBps) / 10000;
-        uint256 netToTreasury = discountedPrice - refAmount - mintFee;
+        uint256 discountedPrice = (principalAmount * (10000 - calculateDiscountBps(msg.sender, lockYears))) / 10000;
+        (uint256 refAmount, uint256 mintFee, uint256 netToTreasury) = _calculateFees(discountedPrice, referrer, msg.sender);
 
         // Pull stablecoin from buyer
         IERC20(stablecoin).safeTransferFrom(msg.sender, address(this), discountedPrice);
@@ -264,12 +233,7 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
                 }
             }
         }
-        address targetVault = treasuryBunker;
-        if (treasuryBunker != address(0) && treasuryBunker.code.length > 0) {
-            try ITreasury(treasuryBunker).alphaVault() returns (address av) {
-                if (av != address(0)) targetVault = av;
-            } catch {}
-        }
+        address targetVault = _getTargetVault();
         if (netToTreasury > 0 && targetVault != address(0)) {
             IERC20(stablecoin).safeTransfer(targetVault, netToTreasury);
         }
@@ -449,6 +413,56 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
             } catch {
                 // Default to 0 staked balance on query revert
             }
+        }
+    }
+
+    function _validateSolvency() private view {
+        if (treasuryBunker != address(0) && treasuryBunker.code.length > 0) {
+            try ITreasury(treasuryBunker).getProofOfReserves() returns (uint256 preAssets, uint256 preLiabilities, uint256) {
+                if (preLiabilities > 0 && preAssets < preLiabilities) {
+                    revert InactivePosition();
+                }
+            } catch {}
+        }
+    }
+
+    function _calculateFees(
+        uint256 discountedPrice,
+        address referrer,
+        address buyer
+    ) private returns (uint256 refAmount, uint256 mintFee, uint256 netToTreasury) {
+        uint256 refBps = REFERRAL_REWARD_BPS;
+        uint256 mintFeeBps = 150;
+        if (tokenomicsEngine != address(0)) {
+            try ProtocolTokenomicsEngine(tokenomicsEngine).referralFeeBps() returns (uint256 rf) {
+                if (rf > 0) refBps = rf;
+            } catch {}
+            try ProtocolTokenomicsEngine(tokenomicsEngine).mintFeeBps() returns (uint256 mf) {
+                if (mf > 0) mintFeeBps = mf;
+            } catch {}
+        }
+
+        if (referrer != address(0) && referrer != buyer) {
+            uint256 referrerStake = 0;
+            if (governanceStaking != address(0)) {
+                referrerStake = IGovStakingForVault(governanceStaking).stakedBalances(referrer);
+            }
+            if (referrerStake >= 100 * 10 ** 18) {
+                referrers[buyer] = referrer;
+                refAmount = (discountedPrice * refBps) / 10000;
+            }
+        }
+
+        mintFee = (discountedPrice * mintFeeBps) / 10000;
+        netToTreasury = discountedPrice - refAmount - mintFee;
+    }
+
+    function _getTargetVault() private view returns (address targetVault) {
+        targetVault = treasuryBunker;
+        if (treasuryBunker != address(0) && treasuryBunker.code.length > 0) {
+            try ITreasury(treasuryBunker).alphaVault() returns (address av) {
+                if (av != address(0)) targetVault = av;
+            } catch {}
         }
     }
 }

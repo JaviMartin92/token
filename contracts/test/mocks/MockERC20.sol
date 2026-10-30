@@ -5,8 +5,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 /**
  * @title MockERC20
- * @notice A generic ERC20 mock for testnet environments.
- * @dev Anyone can mint tokens. Not for production use.
+ * @notice A generic ERC20 mock for testnet and local simulation environments.
+ * @dev Anyone can mint tokens. Strictly for testnet and sandbox fixtures; not for production use.
  */
 contract MockERC20 is ERC20 {
     uint8 private _decimals;
@@ -20,7 +20,7 @@ contract MockERC20 is ERC20 {
     }
 
     /**
-     * @notice Allows anyone to mint tokens (for testnet faucets).
+     * @notice Allows anyone to mint tokens (for testnet faucets and invariant tests).
      * @param to Address to receive the minted tokens.
      * @param amount Amount of tokens to mint.
      */

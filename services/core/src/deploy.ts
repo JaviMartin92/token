@@ -34,7 +34,9 @@ function loadArtifact(name: string, file: string) {
   const p3 = path.resolve(__dirname, `../../../contracts/out/test/${file}/${name}.json`);
   const p4 = path.resolve(__dirname, `../../../contracts/out/adapters/${file}/${name}.json`);
   const p5 = path.resolve(__dirname, `../../../contracts/out/${name}.sol/${name}.json`);
-  const p = fs.existsSync(p1) ? p1 : fs.existsSync(p2) ? p2 : fs.existsSync(p3) ? p3 : fs.existsSync(p4) ? p4 : fs.existsSync(p5) ? p5 : p1;
+  const p6 = path.resolve(__dirname, `../../../contracts/out/mocks/${file}/${name}.json`);
+  const p7 = path.resolve(__dirname, `../../../contracts/out/test/mocks/${file}/${name}.json`);
+  const p = fs.existsSync(p1) ? p1 : fs.existsSync(p2) ? p2 : fs.existsSync(p3) ? p3 : fs.existsSync(p4) ? p4 : fs.existsSync(p5) ? p5 : fs.existsSync(p6) ? p6 : fs.existsSync(p7) ? p7 : p1;
   if (!fs.existsSync(p)) {
     throw new Error(`Artifact not found for ${name} in ${file}. Run forge compile first.`);
   }
