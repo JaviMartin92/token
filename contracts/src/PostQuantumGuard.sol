@@ -223,6 +223,7 @@ contract PostQuantumGuard is IPostQuantumGuard, AccessControl {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender) && !hasRole(QUANTUM_OPERATOR_ROLE, msg.sender)) {
             revert IProtocolErrors.Unauthorized();
         }
+        if (!quantumAuthorizedActions[actionId]) revert IProtocolErrors.Unauthorized();
         quantumAuthorizedActions[actionId] = false;
         emit QuantumActionConsumed(actionId, msg.sender);
     }

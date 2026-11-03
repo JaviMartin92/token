@@ -118,33 +118,24 @@ async function handleBlockchainEvent(event: Web3Event) {
       const { orderId, tokensBought, costUsdc } = event.payload;
       
       const tokensBoughtBig = BigInt(tokensBought && !isNaN(Number(tokensBought)) ? tokensBought : '0');
-      const halfBig = tokensBoughtBig / 2n;
-      const otherHalfBig = tokensBoughtBig - halfBig;
-      const half = halfBig.toString();
-      const otherHalf = otherHalfBig.toString();
+      const tokensBoughtStr = tokensBoughtBig.toString();
 
-      // Double-entry record for the TWAP trade (representing assets movements)
+      // Double-entry record for the TWAP trade (100% supply burn)
       await recordLedgerTransaction(
         BACKEND_STRINGS.LEDGER.TWAP_BUYBACK_DESC(orderId),
         ReferenceType.REBALANCE,
         txHash,
         [
           {
-            accountCode: 'TREASURY_STAKED_NATIVE',
-            debit: half,
-            credit: '0.0',
-            assetAddress: 'NATIVE_TOKEN_MOCK'
-          },
-          {
             accountCode: 'DEAD_BURN_ADDRESS',
-            debit: otherHalf,
+            debit: tokensBoughtStr,
             credit: '0.0',
             assetAddress: 'NATIVE_TOKEN_MOCK'
           },
           {
             accountCode: 'SWAP_ROUTER_CLEARING',
             debit: '0.0',
-            credit: tokensBought,
+            credit: tokensBoughtStr,
             assetAddress: 'NATIVE_TOKEN_MOCK'
           }
         ]

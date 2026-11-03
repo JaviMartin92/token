@@ -6,7 +6,7 @@
 
 methods {
     function calculateSharesToMint(uint256, uint256, uint256) external returns (uint256) envfree;
-    function calculateRagequitPenalty(uint256) external returns (uint256) envfree;
+    function calculateRagequitPenalty(uint256) external returns (uint256, uint256, uint256, uint256, uint256) envfree;
     function calculateProofOfReserves(uint256, uint256) external returns (uint256, bool) envfree;
 }
 
@@ -27,13 +27,21 @@ rule sharesToMintMonotonicWithDeposit(uint256 depositVal1, uint256 depositVal2, 
 }
 
 /**
- * @title Rule: Ragequit Penalty Strictly Bounded by Principal
- * @notice Ragequit penalty must always be strictly less than or equal to discounted price paid.
+ * @title Rule: Ragequit Penalty Strictly Bounded and Conserved
+ * @notice Ragequit penalty must always be strictly bounded by discountedPricePaid and partition splits conserved.
  */
 rule ragequitPenaltyBounded(uint256 discountedPricePaid) {
-    uint256 penalty = calculateRagequitPenalty(discountedPricePaid);
+    uint256 penaltyTotal;
+    uint256 userRefund;
+    uint256 bunkerShare;
+    uint256 opsShare;
+    uint256 flywheelShare;
 
-    assert penalty <= discountedPricePaid, "Penalty cannot exceed discounted price paid";
+    penaltyTotal, userRefund, bunkerShare, opsShare, flywheelShare = calculateRagequitPenalty(discountedPricePaid);
+
+    assert penaltyTotal <= discountedPricePaid, "Penalty cannot exceed discounted price paid";
+    assert userRefund + penaltyTotal == discountedPricePaid, "Refund plus penalty must strictly conserve paid amount";
+    assert bunkerShare + opsShare + flywheelShare == penaltyTotal, "Penalty splits must strictly conserve total penalty";
 }
 
 /**

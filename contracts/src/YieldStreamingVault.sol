@@ -142,8 +142,11 @@ contract YieldStreamingVault is IYieldStreamingVault, AccessControl, ReentrancyG
         // Pull backing yield tokens to ensure 100% solvency
         IERC20(yieldToken).safeTransferFrom(msg.sender, address(this), amount);
 
-        totalUnclaimedPrincipal += amount;
-        pendingYields[user] = _calculateCompoundedYield(user) + amount;
+        uint256 compounded = _calculateCompoundedYield(user);
+        uint256 accruedExtra = compounded - pendingYields[user];
+
+        pendingYields[user] = compounded + amount;
+        totalUnclaimedPrincipal += amount + accruedExtra;
         lastYieldUpdateTimestamp[user] = block.timestamp;
     }
 

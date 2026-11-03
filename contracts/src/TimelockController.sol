@@ -106,6 +106,7 @@ contract TimelockController is AccessControl {
      */
     function executeTransaction(address target, uint256 value, bytes calldata data, uint256 eta)
         external
+        payable
         onlyRole(ProtocolRoles.ADMIN_ROLE)
         returns (bytes memory)
     {

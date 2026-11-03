@@ -185,7 +185,7 @@ contract DeployMainnet is Script {
         p2pMarket = new P2PLendingMarket(
             ARB_USDC,
             address(positionNFT),
-            deployer,
+            address(realYieldRouter),
             address(oracleHub),
             deployer
         );
@@ -270,6 +270,8 @@ contract DeployMainnet is Script {
         communityVault.setStakingPool(address(staking));
         staking.setAuthorizedCaller(address(treasury), true);
         staking.setAuthorizedCaller(address(realYieldRouter), true);
+        staking.setAuthorizedCaller(address(communityVault), true);
+        staking.setExcludedAddress(address(treasury), true);
 
         // RealYieldRouter permissions
         realYieldRouter.setAuthorizedYieldCaller(address(treasury), true);
@@ -308,9 +310,65 @@ contract DeployMainnet is Script {
 
         p2pMarket.transferOwnership(address(timelock));
 
+        buybackEngine.grantRole(ProtocolRoles.KEEPER_ROLE, address(timelock));
+        buybackEngine.grantRole(ProtocolRoles.KEEPER_ROLE, deployer);
         buybackEngine.grantRole(buybackEngine.DEFAULT_ADMIN_ROLE(), address(timelock));
         buybackEngine.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
         buybackEngine.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
         buybackEngine.renounceRole(buybackEngine.DEFAULT_ADMIN_ROLE(), deployer);
+
+        addressProvider.grantRole(addressProvider.DEFAULT_ADMIN_ROLE(), address(timelock));
+        addressProvider.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        addressProvider.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        addressProvider.renounceRole(addressProvider.DEFAULT_ADMIN_ROLE(), deployer);
+
+        alphaToken.grantRole(alphaToken.DEFAULT_ADMIN_ROLE(), address(timelock));
+        alphaToken.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        alphaToken.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        alphaToken.renounceRole(alphaToken.DEFAULT_ADMIN_ROLE(), deployer);
+
+        oracleHub.grantRole(oracleHub.DEFAULT_ADMIN_ROLE(), address(timelock));
+        oracleHub.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        oracleHub.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        oracleHub.renounceRole(oracleHub.DEFAULT_ADMIN_ROLE(), deployer);
+
+        circuitBreaker.grantRole(circuitBreaker.DEFAULT_ADMIN_ROLE(), address(timelock));
+        circuitBreaker.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        circuitBreaker.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        circuitBreaker.renounceRole(circuitBreaker.DEFAULT_ADMIN_ROLE(), deployer);
+
+        tokenomicsEngine.grantRole(tokenomicsEngine.DEFAULT_ADMIN_ROLE(), address(timelock));
+        tokenomicsEngine.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        tokenomicsEngine.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        tokenomicsEngine.renounceRole(tokenomicsEngine.DEFAULT_ADMIN_ROLE(), deployer);
+
+        communityVault.grantRole(communityVault.DEFAULT_ADMIN_ROLE(), address(timelock));
+        communityVault.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        communityVault.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        communityVault.renounceRole(communityVault.DEFAULT_ADMIN_ROLE(), deployer);
+
+        staking.grantRole(staking.DEFAULT_ADMIN_ROLE(), address(timelock));
+        staking.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        staking.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        staking.renounceRole(staking.DEFAULT_ADMIN_ROLE(), deployer);
+
+        realYieldRouter.grantRole(realYieldRouter.DEFAULT_ADMIN_ROLE(), address(timelock));
+        realYieldRouter.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        realYieldRouter.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        realYieldRouter.renounceRole(realYieldRouter.DEFAULT_ADMIN_ROLE(), deployer);
+
+        pqcGuard.grantRole(pqcGuard.DEFAULT_ADMIN_ROLE(), address(timelock));
+        pqcGuard.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        pqcGuard.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        pqcGuard.renounceRole(pqcGuard.DEFAULT_ADMIN_ROLE(), deployer);
+
+        atomicSwap.grantRole(atomicSwap.DEFAULT_ADMIN_ROLE(), address(timelock));
+        atomicSwap.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        atomicSwap.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        atomicSwap.renounceRole(atomicSwap.DEFAULT_ADMIN_ROLE(), deployer);
+
+        timelock.grantRole(timelock.DEFAULT_ADMIN_ROLE(), address(timelock));
+        timelock.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        timelock.renounceRole(timelock.DEFAULT_ADMIN_ROLE(), deployer);
     }
 }

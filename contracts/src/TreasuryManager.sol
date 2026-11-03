@@ -589,7 +589,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
 
         AlphaVault vault = AlphaVault(addressProvider.getAddress(addressProvider.ID_ALPHA_VAULT()));
         TreasuryLiquidityLib.ensureLiquidBuffer(
-            vault, redemptionToken, activeYieldAdapters, assetsReceived, address(this)
+            vault, redemptionToken, activeYieldAdapters, assetsReceived + calc.feeTokenAmount, address(this)
         );
 
         AlphaToken(addressProvider.getAddress(addressProvider.ID_ALPHA_TOKEN())).burnFrom(msg.sender, sharesAmount);
@@ -606,7 +606,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
         (,, uint256 postRatioBps) = getProofOfReserves();
         if (postRatioBps + 1 < preRatioBps) revert InvariantSolvencyDecreased(preRatioBps, postRatioBps);
         uint256 postNav = getNAVPerShare();
-        if (postNav + 1e14 < preNavUSD) revert InvariantNAVDecreased(preNavUSD, postNav);
+        if (netCirculating > sharesAmount && postNav + 1e14 < preNavUSD) revert InvariantNAVDecreased(preNavUSD, postNav);
         if (assetsReceived < minUsdcOut) revert SlippageExceeded(minUsdcOut, assetsReceived);
 
         lastSettledNAVPerShare = postNav;

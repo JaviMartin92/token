@@ -35,8 +35,10 @@ contract GovernorAlphaCentauri is AccessControl {
     address public communityYieldVault;
     address public treasuryManager;
     address public promoVault;
+    address public founderVault;
 
     event PromoVaultUpdated(address indexed oldVault, address indexed newVault);
+    event FounderVaultUpdated(address indexed oldVault, address indexed newVault);
 
     uint256 public constant VOTING_DELAY = 1; // 1 block voting delay
     uint256 public constant VOTING_PERIOD = 50400; // ~7 days in blocks (Arbitrum / EVM standard)
@@ -139,7 +141,7 @@ contract GovernorAlphaCentauri is AccessControl {
     function _getVotes(address account, uint256 blockNumber) internal view returns (uint256) {
         if (
             account == alphaVault || account == communityYieldVault || account == treasuryManager
-                || account == promoVault || account == address(0)
+                || account == promoVault || account == founderVault || account == address(0)
         ) {
             return 0;
         }
@@ -154,6 +156,16 @@ contract GovernorAlphaCentauri is AccessControl {
         address old = promoVault;
         promoVault = _promoVault;
         emit PromoVaultUpdated(old, _promoVault);
+    }
+
+    /**
+     * @notice Sets Founder Reserve Vesting Vault for governance veto
+     */
+    function setFounderVault(address _founderVault) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_founderVault == address(0)) revert IProtocolErrors.ZeroAddress();
+        address old = founderVault;
+        founderVault = _founderVault;
+        emit FounderVaultUpdated(old, _founderVault);
     }
 
     /**
@@ -241,7 +253,8 @@ contract GovernorAlphaCentauri is AccessControl {
         if (block.number <= p.startBlock || block.number > p.endBlock) revert VotingClosed();
         if (hasVoted[proposalId][msg.sender]) revert AlreadyVoted();
 
-        weight = _getVotes(msg.sender, p.startBlock);
+        uint256 snapshotBlock = p.startBlock > VOTING_DELAY ? p.startBlock - VOTING_DELAY - 1 : 0;
+        weight = _getVotes(msg.sender, snapshotBlock);
         if (weight == 0) revert NoVotingWeight();
 
         hasVoted[proposalId][msg.sender] = true;

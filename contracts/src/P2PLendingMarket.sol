@@ -214,7 +214,8 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         VaultPositionNFT.Position memory pos = positionNFT.getPosition(positionTokenId);
         if (pos.isRagequitted || pos.isMaturedClaimed) revert InactivePosition();
 
-        uint256 posCollateralUSD = pos.discountedPricePaid > 0 ? pos.discountedPricePaid : pos.principalAmount;
+        uint256 baseCollateral = pos.discountedPricePaid > 0 ? pos.discountedPricePaid : pos.principalAmount;
+        uint256 posCollateralUSD = (baseCollateral * 8500) / 10000;
         uint256 maxBorrow = (posCollateralUSD * MAX_LTV_BPS) / 10000;
         if (borrowAmount > maxBorrow) revert MaxLTVExceeded(borrowAmount, maxBorrow);
 
@@ -314,7 +315,8 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         VaultPositionNFT.Position memory pos = positionNFT.getPosition(positionTokenId);
         if (pos.isRagequitted || pos.isMaturedClaimed) revert InactivePosition();
 
-        uint256 posCollateralUSD = pos.discountedPricePaid > 0 ? pos.discountedPricePaid : pos.principalAmount;
+        uint256 baseCollateral = pos.discountedPricePaid > 0 ? pos.discountedPricePaid : pos.principalAmount;
+        uint256 posCollateralUSD = (baseCollateral * 8500) / 10000;
         uint256 maxBorrow = (posCollateralUSD * MAX_LTV_BPS) / 10000;
         if (borrowAmount > maxBorrow) revert MaxLTVExceeded(borrowAmount, maxBorrow);
 
@@ -600,7 +602,8 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         uint256 collateralUSD = 0;
         if (loan.positionTokenId > 0 && address(positionNFT) != address(0)) {
             try positionNFT.getPosition(loan.positionTokenId) returns (VaultPositionNFT.Position memory pos) {
-                collateralUSD = pos.discountedPricePaid > 0 ? pos.discountedPricePaid : pos.principalAmount;
+                uint256 baseCollateral = pos.discountedPricePaid > 0 ? pos.discountedPricePaid : pos.principalAmount;
+                collateralUSD = (baseCollateral * 8500) / 10000;
             } catch {
                 collateralUSD = loan.collateralAmount;
             }

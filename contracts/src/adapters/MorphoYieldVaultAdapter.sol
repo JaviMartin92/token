@@ -86,7 +86,10 @@ contract MorphoYieldVaultAdapter is AccessControl, ReentrancyGuard, IUniversalYi
     }
 
     function withdraw(uint256 assets, address receiver, address owner) external override nonReentrant returns (uint256 shares) {
-        shares = convertToShares(assets);
+        if (assets == 0) revert IProtocolErrors.ZeroAmount();
+        uint256 supply = _totalSupply + 1;
+        uint256 poolAssets = totalAssets() + 1;
+        shares = (assets * supply + poolAssets - 1) / poolAssets;
         if (_balances[owner] < shares) revert InsufficientBalance();
 
         if (msg.sender != owner && msg.sender != treasury) {
@@ -165,9 +168,10 @@ contract MorphoYieldVaultAdapter is AccessControl, ReentrancyGuard, IUniversalYi
 
     function depositStablecoins(uint256 amount) external nonReentrant returns (bool) {
         if (amount == 0) revert IProtocolErrors.ZeroAmount();
+        uint256 shares = convertToShares(amount);
+        if (shares == 0) revert IProtocolErrors.ZeroAmount();
         underlyingAsset.safeTransferFrom(msg.sender, address(this), amount);
 
-        uint256 shares = convertToShares(amount);
         _balances[msg.sender] += shares;
         _totalSupply += shares;
         totalStablecoinInvested += amount;

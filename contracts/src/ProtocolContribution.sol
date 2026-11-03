@@ -194,17 +194,12 @@ contract ProtocolContribution is IProtocolContribution, AccessControl, Reentranc
         uint256 tokensBought = ISwapRouter(swapRouter).exactInputSingle(params);
         if (tokensBought == 0) revert ZeroTokensBought();
 
-        uint256 half = tokensBought / 2;
-        uint256 otherHalf = tokensBought - half;
-
-        IERC20(nativeToken).safeTransfer(stakingAddress, half);
-
-        // Attempt actual supply burn if authorized, fallback to dead address
-        if (otherHalf > 0) {
-            try IBurnableToken(nativeToken).burn(otherHalf) {
+        // 100% supply burn to accretively increase protocol NAV for all holders & stakers
+        if (tokensBought > 0) {
+            try IBurnableToken(nativeToken).burn(tokensBought) {
                 // Tokens burned from total supply
             } catch {
-                IERC20(nativeToken).safeTransfer(BURN_ADDRESS, otherHalf);
+                IERC20(nativeToken).safeTransfer(BURN_ADDRESS, tokensBought);
             }
         }
 

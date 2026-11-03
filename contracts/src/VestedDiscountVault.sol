@@ -243,13 +243,13 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         }
 
         totalInvested += principalAmount;
-        totalPresentObligation += principalAmount;
+        totalPresentObligation += discountedPrice;
 
         // Mint Position NFT
         tokenId = positionNFT.mintPosition(msg.sender, stablecoin, principalAmount, discountedPrice, lockYears);
 
         isVestedBond[tokenId] = true;
-        bondPresentObligation[tokenId] = principalAmount;
+        bondPresentObligation[tokenId] = discountedPrice;
 
         emit BondPurchased(msg.sender, tokenId, principalAmount, discountedPrice, lockYears, referrer);
     }
@@ -414,8 +414,8 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
 
     function _validateSolvency() private view {
         if (treasuryBunker != address(0) && treasuryBunker.code.length > 0) {
-            try ITreasury(treasuryBunker).getProofOfReserves() returns (uint256 preAssets, uint256 preLiabilities, uint256) {
-                if (preLiabilities > 0 && preAssets < preLiabilities) {
+            try ITreasury(treasuryBunker).getNAV() returns (uint256 netEquity) {
+                if (netEquity == 0) {
                     revert InactivePosition();
                 }
             } catch {}

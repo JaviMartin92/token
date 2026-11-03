@@ -131,7 +131,8 @@ library TreasuryRebalanceLib {
             try IOracleHub(params.addressProvider.getOracleHub()).getPriceBase18(alphaTokenAddr) returns (
                 uint256 alphaPrice18
             ) {
-                if (alphaPrice18 > 0) {
+                uint256 currentNav = ITreasury(params.treasuryContract).getNAVPerShare();
+                if (alphaPrice18 > 0 && alphaPrice18 <= currentNav) {
                     uint256 expectedAlpha = (altsUsdc * 10 ** 30) / alphaPrice18;
                     uint256 minAlpha = (expectedAlpha * (10000 - params.slippageToleranceBps)) / 10000;
 

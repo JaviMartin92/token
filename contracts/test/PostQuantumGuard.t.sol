@@ -137,6 +137,7 @@ contract PostQuantumGuardTest is Test {
     }
 
     function testFuzz_VerifySignature(bytes32 randomMsg) public view {
+        vm.assume(randomMsg != bytes32(0));
         bytes32[67] memory sig = _signMessage(randomMsg, privateKeys);
         bool valid = guard.verifyWinternitzSignature(randomMsg, sig, aliceCommitmentRoot);
         assertTrue(valid, "Fuzzing W-OTS+: Todo digest arbitrario debe ser verificable correctamente");

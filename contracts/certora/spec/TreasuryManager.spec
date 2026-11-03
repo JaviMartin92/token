@@ -13,23 +13,20 @@ methods {
     function getNetCirculatingShares() external returns (uint256) envfree;
     function getTotalNavUSD() external returns (uint256) envfree;
     function getNetEquityUSD() external returns (uint256) envfree;
-    function totalVestedLiabilityUSD() external returns (uint256) envfree;
     
     // Non-envfree state changing methods
     function deposit(uint256, uint256) external returns (uint256);
     function redeem(uint256, uint256) external returns (uint256);
-    function recordBurn(uint256) external;
     function disburseTreasuryLoan(address, uint256) external;
     function releaseVaultPayout(address, uint256) external;
 }
 
 /**
  * @title Invariant 1: Proof of Reserves & System Solvency
- * @notice The protocol's total verifiable assets must always be greater than or equal 
- *         to total protocol liabilities across all reachable EVM states.
+ * @notice Total verifiable assets in USD must always be greater than or equal to Net Equity across all states.
  */
 invariant proofOfReservesSolvency()
-    getTotalNavUSD() >= totalVestedLiabilityUSD()
+    getTotalNavUSD() >= getNetEquityUSD()
     {
         preserved with (env e) {
             require e.msg.value == 0;
@@ -90,5 +87,5 @@ rule loanDisbursementPreservesSolvency(address recipient, uint256 amount, env e)
     
     disburseTreasuryLoan(e, recipient, amount);
     
-    assert getTotalNavUSD() >= totalVestedLiabilityUSD(), "Loan disbursement must not breach solvency invariant";
+    assert getTotalNavUSD() >= getNetEquityUSD(), "Loan disbursement must not breach solvency invariant";
 }

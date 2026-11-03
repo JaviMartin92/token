@@ -35,9 +35,9 @@ export function calculateProtocolApyMath(
   let wethUSD = porBreakdown.weth;
 
   // Normalize rate: if passed as percentage (e.g. 6.8 for 6.8%), convert to fraction (0.068); if passed as fraction (e.g. 0.08 for 8%), use directly.
-  const stablesRate = assetRates.stablesApyPct > 1.0 ? assetRates.stablesApyPct / 100 : assetRates.stablesApyPct;
-  const btcRate = assetRates.btcApyPct > 1.0 ? assetRates.btcApyPct / 100 : assetRates.btcApyPct;
-  const ethRate = assetRates.ethApyPct > 1.0 ? assetRates.ethApyPct / 100 : assetRates.ethApyPct;
+  const stablesRate = assetRates.stablesApyPct || 0;
+  const btcRate = assetRates.btcApyPct || 0;
+  const ethRate = assetRates.ethApyPct || 0;
 
   // 1. Morpho Blue (USDC): 90% of USDC stablecoin reserve deployed to MetaMorpho Vault @ Dynamic On-Chain Oracle APR
   const morphoUSDPool = stablesUSD * 0.90;
@@ -73,9 +73,12 @@ export function calculateProtocolApyMath(
   const actualP2pFeesUSD = realActiveLoansUSD * 0.005;
   const actualInterestSpreadUSD = activeLoanInterestUSD * 0.10;
   const totalFlywheelFeesUSD = actualBondFeesUSD + actualP2pFeesUSD + actualInterestSpreadUSD;
+  const totalCommunityFlywheelFeesUSD = totalFlywheelFeesUSD * 0.50;
+  const effectiveNav = _navPerShareNum > 0 ? _navPerShareNum : 1.0;
+  const stakedValueUSD = numericStakedAlpha * effectiveNav;
 
-  const flywheelApyPct = numericStakedAlpha > 0 
-    ? (totalFlywheelFeesUSD / numericStakedAlpha) * 100 
+  const flywheelApyPct = stakedValueUSD > 0 
+    ? (totalCommunityFlywheelFeesUSD / stakedValueUSD) * 100 
     : 0.00;
 
   const stakingTotalApyPct = realTimeBaseApyPct + flywheelApyPct;
@@ -179,7 +182,7 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
     navPerShareNum
   );
 
-  const stablesDisplayPct = assetRates.stablesApyPct > 1.0 ? assetRates.stablesApyPct : assetRates.stablesApyPct * 100;
+  const stablesDisplayPct = ((assetRates.stablesApyPct || 0) * 100);
 
   return (
     <div
