@@ -48,7 +48,7 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
   const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(null);
   const [historySnapshots, setHistorySnapshots] = useState<HistoricalSnapshot[]>([]);
 
-  // 1. MÉTROLOGÍA EXÓGENA PURA (Excluye ALPHA de las Reservas)
+  // 1. MÉTROLOGÍA EXÓGENA PURA (Excluye VIRAJE de las Reservas)
   const realReservesUsd = parseFloat(porAssets.replace(/,/g, '')) || 0;
   const realLiabilitiesUsd = parseFloat(porLiabilities.replace(/,/g, '')) || 0;
   const realPorRatioVal = parseFloat(porRatio.replace(/%/g, '').replace(/,/g, '')) || 100;
@@ -78,7 +78,7 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
 
   // 2. Histórico de Persistencia con Curva Orgánica Suavizada
   useEffect(() => {
-    const STORAGE_KEY = 'alpha_protocol_analytics_history_v4';
+    const STORAGE_KEY = 'viraje_protocol_analytics_history_v4';
     let stored: HistoricalSnapshot[] = [];
     try {
       const item = localStorage.getItem(STORAGE_KEY);

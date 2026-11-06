@@ -9,7 +9,7 @@ import styles from './Header.module.css';
 interface HeaderProps {
   navValue: string;
   porRatio: string;
-  alphaApy?: string;
+  protocolApy?: string;
   blockDateStr: string;
   activeTab: 'client' | 'metrics' | 'governance';
   setActiveTab: (tab: 'client' | 'metrics' | 'governance') => void;
@@ -23,7 +23,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   navValue,
   porRatio,
-  alphaApy = '0.00%',
+  protocolApy = '0.00%',
   blockDateStr,
   activeTab,
   setActiveTab,
@@ -128,7 +128,7 @@ export const Header: React.FC<HeaderProps> = ({
             title={UI_STRINGS.MODALS.APY_BREAKDOWN.TITLE}
           >
             <span className={styles.metricLabel}>{UI_STRINGS.HEADER.LABEL_APY_BREAKDOWN_TOOLTIP}</span>
-            <span className={`${styles.metricValue} ${styles.metricPurple}`}>{alphaApy} APR ℹ️</span>
+            <span className={`${styles.metricValue} ${styles.metricPurple}`}>{protocolApy} APR ℹ️</span>
           </div>
 
           <div className={styles.metricPill}>

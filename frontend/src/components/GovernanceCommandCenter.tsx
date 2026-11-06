@@ -128,7 +128,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
   const burnedTokensStr = totalBurnedTokens || '0.00';
 
   // ---------------------------------------------------------------------------
-  // 1. Fetch On-Chain Proposals from GovernorAlphaCentauri
+  // 1. Fetch On-Chain Proposals from GovernorVirajeProtocol
   // ---------------------------------------------------------------------------
   const fetchProposals = useCallback(async () => {
     if (!CONTRACT_ADDRESSES.GOVERNOR || CONTRACT_ADDRESSES.GOVERNOR === '0x0000000000000000000000000000000000000000') {
@@ -456,7 +456,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
   ]);
 
   // ---------------------------------------------------------------------------
-  // 4. Submit Guided Governance Proposal to GovernorAlphaCentauri.propose()
+  // 4. Submit Guided Governance Proposal to GovernorVirajeProtocol.propose()
   // ---------------------------------------------------------------------------
   const handleSubmitProposal = async () => {
     if (!canPropose) {
@@ -485,7 +485,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
       });
 
       await publicClient.waitForTransactionReceipt({ hash });
-      setProposalSubmitStatus(`✅ Propuesta registrada con éxito en GovernorAlphaCentauri. Tx: ${hash}`);
+      setProposalSubmitStatus(`✅ Propuesta registrada con éxito en GovernorVirajeProtocol. Tx: ${hash}`);
       setProposalTitle('');
       await fetchProposals();
       setActiveSubTab('proposals');
@@ -852,7 +852,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
             </h3>
 
             <div className={styles.pureBanner}>
-              🏛️ <strong>Gobernanza Soberana Pure DeFi</strong>: Toda modificación de parámetros, comisiones, ponderaciones de reserva o asignaciones financieras debe nacer formalmente de una propuesta on-chain en <code>GovernorAlphaCentauri.sol</code> y superar el quórum mínimo de {UI_STRINGS.GOVERNANCE.VAL_QUORUM_REQUIRED} con timelock mandatorio de {UI_STRINGS.GOVERNANCE.VAL_TIMELOCK_DELAY}.
+              🏛️ <strong>Gobernanza Soberana Pure DeFi</strong>: Toda modificación de parámetros, comisiones, ponderaciones de reserva o asignaciones financieras debe nacer formalmente de una propuesta on-chain en <code>GovernorVirajeProtocol.sol</code> y superar el quórum mínimo de {UI_STRINGS.GOVERNANCE.VAL_QUORUM_REQUIRED} con timelock mandatorio de {UI_STRINGS.GOVERNANCE.VAL_TIMELOCK_DELAY}.
             </div>
 
             {/* Template Selector */}

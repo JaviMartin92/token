@@ -130,8 +130,8 @@ export function useFounderVesting(userAddress?: string, addLog?: (msg: string) =
       });
 
       await publicClient.waitForTransactionReceipt({ hash: tx });
-      if (addLog) addLog('Reclamo de ALPHA completado con éxito.');
-      if (addToast) addToast('success', 'Éxito Reclamo', 'ALPHA transferido a tu billetera.');
+      if (addLog) addLog('Reclamo de VIRAJE completado con éxito.');
+      if (addToast) addToast('success', 'Éxito Reclamo', 'VIRAJE transferido a tu billetera.');
       await refetch();
     } catch (err: any) {
       const parsedErr = parseWeb3Error(err);

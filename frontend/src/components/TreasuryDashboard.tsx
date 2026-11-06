@@ -181,7 +181,7 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
               className={styles.submitBtn}
               onClick={onDeposit}
             >
-              Suscribir ALPHA (Mint)
+              Suscribir VIRAJE (Mint)
             </Button>
           </div>
 
@@ -295,17 +295,17 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
                 </div>
               </div>
 
-              {/* ALPHA Token Strategy */}
+              {/* VIRAJE Token Strategy */}
               <div className={styles.strategyCard}>
                 <div className={styles.strategyHeader}>
-                  <span>🥩 ALPHA (stALPHA / Sub-Reserva)</span>
+                  <span>🥩 VIRAJE (stVIRAJE / Sub-Reserva)</span>
                   <Badge variant="purple" size="sm">Flywheel & Staking</Badge>
                 </div>
                 <div className={styles.strategyList}>
                   <div className={styles.strategyRow}>
                     <span>Bóveda en Staking:</span>
                     <span className={styles.strategyVal}>
-                      ${alphaAllocationUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (ALPHA)
+                      ${alphaAllocationUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (VIRAJE)
                     </span>
                   </div>
                   <div className={styles.strategyRow}>

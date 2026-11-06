@@ -210,7 +210,7 @@ export default function App() {
       <Header
         navValue={treasuryMetrics.navPerShareUSD}
         porRatio={universalYield.porRatio}
-        alphaApy={universalYield.liveApyStr}
+        protocolApy={universalYield.liveApyStr}
         blockDateStr={global.blockDateStr}
         activeTab={activeTab}
         setActiveTab={setActiveTab}

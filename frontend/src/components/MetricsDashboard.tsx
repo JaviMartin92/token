@@ -126,7 +126,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
           />
 
           <StatCard
-            title="Respaldo (NAV / ALPHA)"
+            title="Respaldo (NAV / VIRAJE)"
             value={navPerShareUSD.startsWith('$') ? navPerShareUSD : `$${navPerShareUSD} USDC`}
             testId="header-nav-value"
             variant="blue"
@@ -151,7 +151,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
             icon="📄"
             subtext={parNominalLiabilities > 0
               ? '100% Cobertura de Reembolso Inmediato a Valor Liquidativo (NAV)'
-              : 'Obligaciones con Tenedores de ALPHA'}
+              : 'Obligaciones con Tenedores de VIRAJE'}
           />
 
           <StatCard
@@ -174,7 +174,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
                   CRECIMIENTO PATRIMONIAL DEL PROTOCOLO: +${treasurySurplusUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD (+{surplusPct.toFixed(2)}% sobre Base Génesis)
                 </div>
                 <div className={styles.surplusText}>
-                  Cada nueva cuota de ALPHA se emite estrictamente a valor liquidativo (NAV actual: <strong>{navPerShareUSD.startsWith('$') ? navPerShareUSD : `$${navPerShareUSD} USDC`}</strong>) protegiendo a los tenedores contra la dilución. El valor patrimonial por share se ha revalorizado un <strong>+{surplusPct.toFixed(2)}%</strong> sobre la base génesis ($1.00 USD) impulsado por las comisiones de emisión protocolarias y los rendimientos reales de las bóvedas institucionales.
+                  Cada nueva cuota de VIRAJE se emite estrictamente a valor liquidativo (NAV actual: <strong>{navPerShareUSD.startsWith('$') ? navPerShareUSD : `$${navPerShareUSD} USDC`}</strong>) protegiendo a los tenedores contra la dilución. El valor patrimonial por share se ha revalorizado un <strong>+{surplusPct.toFixed(2)}%</strong> sobre la base génesis ($1.00 USD) impulsado por las comisiones de emisión protocolarias y los rendimientos reales de las bóvedas institucionales.
                 </div>
               </div>
             </div>
@@ -191,7 +191,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
         collapsible
         defaultExpanded={true}
         headerTitle="💎 Conciliación On-Chain: Desglose de Reservas, Deuda y NAV"
-        headerSubtitle="Transparencia fiduciaria y matemática: por qué cada cuota de ALPHA está 100% respaldada sin pasivos ocultos"
+        headerSubtitle="Transparencia fiduciaria y matemática: por qué cada cuota de VIRAJE está 100% respaldada sin pasivos ocultos"
       >
         <div className={styles.reconciliationContainer}>
           {/* 1. Flujo de la Ecuación del NAV */}
@@ -223,7 +223,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
             <div className={styles.formulaOperator}>➗</div>
 
             <div className={styles.formulaStep}>
-              <span className={styles.formulaStepLabel}>🪙 ALPHA Circulante</span>
+              <span className={styles.formulaStepLabel}>🪙 VIRAJE Circulante</span>
               <span className={styles.formulaStepValue} data-testid="recon-circulating">{circulatingSupply}</span>
               <span className={styles.formulaStepSub}>Cuotas Totales en Mercado</span>
             </div>
@@ -231,7 +231,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
             <div className={styles.formulaOperator}>🟰</div>
 
             <div className={styles.formulaStep} style={{ border: '1px solid var(--color-blue-border)', background: 'var(--color-blue-subtle)' }}>
-              <span className={styles.formulaStepLabel} style={{ color: 'var(--color-blue-light)' }}>💎 NAV / ALPHA</span>
+              <span className={styles.formulaStepLabel} style={{ color: 'var(--color-blue-light)' }}>💎 NAV / VIRAJE</span>
               <span className={styles.formulaStepValue} style={{ color: 'var(--color-blue-light)' }} data-testid="recon-nav-result">
                 {navPerShareUSD.startsWith('$') ? navPerShareUSD : `$${navPerShareUSD} USDC`}
               </span>
@@ -262,7 +262,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
                 El pasivo global auditado por el <strong>Proof of Reserves (PoR)</strong> se compone estrictamente de:
                 <ul className={styles.explainerList}>
                   <li>
-                    <strong>Respaldo Inmediato ALPHA (~${numericAlphaLiability.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD):</strong> Cobertura al 100% a valor de liquidación para los tenedores de cuotas en circulación.
+                    <strong>Respaldo Inmediato VIRAJE (~${numericAlphaLiability.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD):</strong> Cobertura al 100% a valor de liquidación para los tenedores de cuotas en circulación.
                   </li>
                   <li>
                     <strong>Obligaciones de Bonos Vestados (${vestedDebt || '0.00'} USD):</strong> Fondos apartados para honrar la amortización de bonos sin tocar el capital de los stakers.
@@ -277,13 +277,13 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
             <div className={styles.explainerCard}>
               <div className={styles.explainerHeader}>
                 <span>🔥</span>
-                <span>Mecanismo y Registro de Quemas Deflacionarias ({totalBurnedTokens} ALPHA)</span>
+                <span>Mecanismo y Registro de Quemas Deflacionarias ({totalBurnedTokens} VIRAJE)</span>
               </div>
               <div className={styles.explainerBody}>
                 Los tokens destruidos irreversiblemente proceden de tres fuentes criptográficas:
                 <ul className={styles.explainerList}>
                   <li>
-                    <strong>Reembolsos Primarios:</strong> Cuando un usuario liquida ALPHA por USDC a NAV, las cuotas se destruyen en <code>burnFrom()</code>.
+                    <strong>Reembolsos Primarios:</strong> Cuando un usuario liquida VIRAJE por USDC a NAV, las cuotas se destruyen en <code>burnFrom()</code>.
                   </li>
                   <li>
                     <strong>Ragequit de Bonos:</strong> Penalización del 15% por salidas anticipadas que amortiza de forma perpetua el nominal en tokens.
@@ -301,7 +301,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
             <div className={styles.explainerCard}>
               <div className={styles.explainerHeader}>
                 <span>📊</span>
-                <span>Conciliación Total del Suministro ALPHA</span>
+                <span>Conciliación Total del Suministro VIRAJE</span>
               </div>
               <div className={styles.explainerBody}>
                 Auditoría on-chain del ledger de emisión:
@@ -394,7 +394,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
             testId="staking-total-staked"
             variant="default"
             icon="🥩"
-            subtext="Total stALPHA en Gobernanza"
+            subtext="Total stVIRAJE en Gobernanza"
           />
 
           <StatCard
@@ -470,7 +470,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
             <td data-label="Activo">
               <div className={styles.assetCell}>
                 <span>🏛️</span>
-                <span>Sub-Reserva ALPHA Staking (POL)</span>
+                <span>Sub-Reserva VIRAJE Staking (POL)</span>
               </div>
             </td>
             <td data-label="Asignación Actual" className={styles.boldNum}>{alphaActualPct.toFixed(2)}%</td>

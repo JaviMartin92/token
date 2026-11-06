@@ -49,7 +49,7 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
         collapsible
         defaultExpanded={false}
         headerTitle={UI_STRINGS.STAKING.TITLE}
-        headerSubtitle="Bloqueo de participaciones ALPHA para derechos de voto DAO y rendimientos reales exógenos"
+        headerSubtitle="Bloqueo de participaciones VIRAJE para derechos de voto DAO y rendimientos reales exógenos"
         headerAction={
           <Badge variant="crimson" size="sm" dot>
             🔥 Deflacionario
@@ -151,7 +151,7 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
           </div>
           <div className={styles.radioOption} style={{ cursor: 'default' }}>
             <span className={styles.radioText}>
-              <strong>🏛️ 12.50% ALPHA:</strong> {UI_STRINGS.STAKING.BASKET_ALPHA}
+              <strong>🏛️ 12.50% VIRAJE:</strong> {UI_STRINGS.STAKING.BASKET_ALPHA}
             </span>
           </div>
         </div>

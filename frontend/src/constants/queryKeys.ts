@@ -4,7 +4,7 @@
  */
 
 export const queryKeys = {
-  all: ['alpha-centauri'] as const,
+  all: ['viraje-protocol'] as const,
 
   portfolio: {
     all: () => [...queryKeys.all, 'portfolio'] as const,

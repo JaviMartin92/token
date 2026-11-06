@@ -319,7 +319,7 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
               </div>
             </div>
 
-            {/* ALPHA Token Staking & Treasury Backing */}
+            {/* VIRAJE Token Staking & Treasury Backing */}
             <div className={styles.rowCardPurple}>
               <div>
                 <div className="font-semibold text-base text-purple-light">{UI_STRINGS.MODALS.APY_BREAKDOWN.ALPHA_STAKING_TITLE}</div>

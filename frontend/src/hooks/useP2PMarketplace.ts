@@ -60,7 +60,7 @@ export function useP2PMarketplace(refetchInterval = 3000) {
               colSymbol = `NFT #${posTokenId}`;
             } else if (collateralAmt > 0n) {
               let dec = 18;
-              colSymbol = 'ALPHA';
+              colSymbol = 'VIRAJE';
               try {
                 const assetAddr = await publicClient.readContract({
                   address: CONTRACT_ADDRESSES.P2P_MARKET,
@@ -78,7 +78,7 @@ export function useP2PMarketplace(refetchInterval = 3000) {
                   colSymbol = 'WETH';
                   dec = 18;
                 } else {
-                  colSymbol = 'ALPHA';
+                  colSymbol = 'VIRAJE';
                   dec = 18;
                 }
               } catch (e) {}

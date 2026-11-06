@@ -116,7 +116,7 @@ export function useAdminActions({
           { label: 'Stablecoins (USDC Morpho)', value: `${newStablesWeight}% (Min 40% - Max 60%)` },
           { label: 'Wrapped Bitcoin (LBTC Lombard)', value: `${newWbtcWeight}% (Min 20% - Max 30%)` },
           { label: 'Wrapped Ethereum (wstETH Lido)', value: `${newWethWeight}% (Min 10% - Max 15%)` },
-          { label: 'Préstamos & ALPHA Staking', value: `${newAltsWeight}% (Min 5% - Max 15%)` },
+          { label: 'Préstamos & VIRAJE Staking', value: `${newAltsWeight}% (Min 5% - Max 15%)` },
           { label: 'Validación de Rangos On-Chain', value: 'Cumple Límites Sanitarios de Seguridad', badge: 'Sanity Bounds OK' },
           { label: 'Comisión por Rebalanceo', value: '0.00% (Reestructuración Interna)' }
         ],
@@ -234,7 +234,7 @@ export function useAdminActions({
 
   const executeCreateCampaign = async (name: string, amount: string) => {
     try {
-      addLog(`Creando campaña promocional "${name}" por $${amount} ALPHA...`);
+      addLog(`Creando campaña promocional "${name}" por $${amount} VIRAJE...`);
       const client = getWalletClient(activeKey);
       const amountWei = parseEther(amount);
       const tx = await client.writeContract({
@@ -261,13 +261,13 @@ export function useAdminActions({
         typeBadge: 'Incentivo de Gobernanza',
         targetContractName: 'PromotionalIncentiveVault.sol',
         targetContractAddress: CONTRACT_ADDRESSES.PROMOTIONAL_VAULT,
-        inputAmount: `${amount} ALPHA`,
+        inputAmount: `${amount} VIRAJE`,
         inputSymbol: 'Presupuesto Promocional',
         expectedOutput: 'Campaña Activa',
         expectedOutputSymbol: 'Promoción On-Chain',
         details: [
           { label: 'Nombre de la Campaña', value: name },
-          { label: 'Fondo Asignado', value: `${amount} ALPHA` }
+          { label: 'Fondo Asignado', value: `${amount} VIRAJE` }
         ],
         confirmButtonText: '✍️ Confirmar y Crear Campaña',
         confirmButtonVariant: 'pink'

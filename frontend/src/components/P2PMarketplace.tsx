@@ -495,7 +495,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                   ) : loan.collateralSymbol === 'WETH' ? (
                     <Badge variant="blue" size="sm">🔷 {loan.collateralAmount} WETH</Badge>
                   ) : (
-                    <Badge variant="emerald" size="sm">🥩 {loan.collateralAmount} ALPHA</Badge>
+                    <Badge variant="emerald" size="sm">🥩 {loan.collateralAmount} VIRAJE</Badge>
                   )}
                 </td>
                 <td data-label="Monto" className={styles.tableBold}>
