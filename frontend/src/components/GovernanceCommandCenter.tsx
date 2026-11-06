@@ -94,6 +94,12 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
   const [pqcStatusMsg, setPqcStatusMsg] = useState<string>('');
   const [isPqcProcessing, setIsPqcProcessing] = useState<boolean>(false);
 
+  const handleCopyAddress = (addr: string, name: string) => {
+    if (!addr) return;
+    navigator.clipboard?.writeText(addr);
+    web3Data.addToast?.('success', 'Dirección Copiada', `Dirección de ${name} copiada al portapapeles.`);
+  };
+
   // Derived Web3 Data
   const {
     navPerShareNum,
@@ -590,7 +596,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
       variant="surface"
       collapsible
       defaultExpanded={true}
-      headerTitle={`⚖️ ${UI_STRINGS.GOVERNANCE.TITLE}`}
+      headerTitle={UI_STRINGS.GOVERNANCE.TITLE}
       headerSubtitle={UI_STRINGS.GOVERNANCE.SUBTITLE}
       headerAction={
         <div className={styles.headerBadgesRow}>
@@ -634,11 +640,11 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
         {/* 🧭 Sub-Tabs Navigation */}
         <div className={styles.subTabsBar}>
           {[
-            { key: 'proposals', label: UI_STRINGS.GOVERNANCE.TAB_PROPOSALS_LIST, icon: '📜' },
-            { key: 'create', label: UI_STRINGS.GOVERNANCE.TAB_PARAM_CONTROL, icon: '➕' },
-            { key: 'metrics', label: UI_STRINGS.GOVERNANCE.TAB_AUDIT_METRICS, icon: '📊' },
-            { key: 'wallets', label: UI_STRINGS.GOVERNANCE.TAB_PROTOCOL_VAULTS, icon: '💼' },
-            { key: 'security', label: UI_STRINGS.GOVERNANCE.TAB_SECURITY, icon: '🛡️' }
+            { key: 'proposals', label: UI_STRINGS.GOVERNANCE.TAB_PROPOSALS_LIST, shortLabel: '📜 Propuestas' },
+            { key: 'create', label: UI_STRINGS.GOVERNANCE.TAB_PARAM_CONTROL, shortLabel: '➕ Crear' },
+            { key: 'metrics', label: UI_STRINGS.GOVERNANCE.TAB_AUDIT_METRICS, shortLabel: '📊 Parámetros' },
+            { key: 'wallets', label: UI_STRINGS.GOVERNANCE.TAB_PROTOCOL_VAULTS, shortLabel: '💼 Bóvedas' },
+            { key: 'security', label: UI_STRINGS.GOVERNANCE.TAB_SECURITY, shortLabel: '🛡️ Seguridad' }
           ].map((tab) => (
             <button
               key={tab.key}
@@ -647,8 +653,8 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
               onClick={() => setActiveSubTab(tab.key as any)}
               className={activeSubTab === tab.key ? styles.subTabBtnActive : styles.subTabBtn}
             >
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
+              <span className={styles.desktopTabLabel}>{tab.label}</span>
+              <span className={styles.mobileTabLabel}>{tab.shortLabel}</span>
             </button>
           ))}
         </div>
@@ -660,7 +666,6 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
           <div className={styles.proposalsList}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <h3 className={styles.sectionHeading} style={{ margin: 0 }}>
-                <span>📜</span>
                 <span>{UI_STRINGS.GOVERNANCE.PROPOSALS_TABLE_TITLE} ({proposals.length})</span>
               </h3>
               <Button
@@ -852,7 +857,6 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
         {activeSubTab === 'create' && (
           <div>
             <h3 className={styles.sectionHeading}>
-              <span>🏛️</span>
               <span>{UI_STRINGS.GOVERNANCE.CARD_PROPOSE_TITLE}</span>
             </h3>
 
@@ -863,12 +867,12 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
             {/* Template Selector */}
             <div className={styles.templateSelector}>
               {[
-                { key: 'weights', label: UI_STRINGS.GOVERNANCE.TEMPLATE_WEIGHTS, icon: '⚖️' },
-                { key: 'fees', label: UI_STRINGS.GOVERNANCE.TEMPLATE_FEES, icon: '💰' },
-                { key: 'circuit_breaker', label: UI_STRINGS.GOVERNANCE.TEMPLATE_CIRCUIT_BREAKER, icon: '⚡' },
-                { key: 'buyback', label: UI_STRINGS.GOVERNANCE.TEMPLATE_BUYBACK, icon: '🔥' },
-                { key: 'grant', label: UI_STRINGS.GOVERNANCE.TEMPLATE_GRANT, icon: '🏦' },
-                { key: 'custom', label: UI_STRINGS.GOVERNANCE.TEMPLATE_CUSTOM, icon: '🛠️' }
+                { key: 'weights', label: UI_STRINGS.GOVERNANCE.TEMPLATE_WEIGHTS, shortLabel: '⚖️ Ponderaciones' },
+                { key: 'fees', label: UI_STRINGS.GOVERNANCE.TEMPLATE_FEES, shortLabel: '💰 Comisiones' },
+                { key: 'circuit_breaker', label: UI_STRINGS.GOVERNANCE.TEMPLATE_CIRCUIT_BREAKER, shortLabel: '⚡ Breaker' },
+                { key: 'buyback', label: UI_STRINGS.GOVERNANCE.TEMPLATE_BUYBACK, shortLabel: '🔥 Buyback' },
+                { key: 'grant', label: UI_STRINGS.GOVERNANCE.TEMPLATE_GRANT, shortLabel: '🏦 Subvención' },
+                { key: 'custom', label: UI_STRINGS.GOVERNANCE.TEMPLATE_CUSTOM, shortLabel: '🛠️ Calldata' }
               ].map((tmpl) => (
                 <button
                   key={tmpl.key}
@@ -876,8 +880,8 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                   onClick={() => setActiveTemplate(tmpl.key as any)}
                   className={activeTemplate === tmpl.key ? styles.templateBtnActive : styles.templateBtn}
                 >
-                  <span>{tmpl.icon}</span>
-                  <span>{tmpl.label}</span>
+                  <span className={styles.desktopTabLabel}>{tmpl.label}</span>
+                  <span className={styles.mobileTabLabel}>{tmpl.shortLabel}</span>
                 </button>
               ))}
             </div>
@@ -938,27 +942,30 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
               {/* TEMPLATE 2: FEES */}
               {activeTemplate === 'fees' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div className={styles.feeButtonGroup}>
                     <Button
                       variant={selectedFeeType === 'deposit' ? 'primary' : 'secondary'}
                       size="sm"
                       onClick={() => setSelectedFeeType('deposit')}
                     >
-                      Comisión Depósito Tesorería
+                      <span className={styles.desktopTabLabel}>Comisión Depósito Tesorería</span>
+                      <span className={styles.mobileTabLabel}>Depósito Tesorería</span>
                     </Button>
                     <Button
                       variant={selectedFeeType === 'redeem' ? 'primary' : 'secondary'}
                       size="sm"
                       onClick={() => setSelectedFeeType('redeem')}
                     >
-                      Comisión Canje / Redeem
+                      <span className={styles.desktopTabLabel}>Comisión Canje / Redeem</span>
+                      <span className={styles.mobileTabLabel}>Canje / Redeem</span>
                     </Button>
                     <Button
                       variant={selectedFeeType === 'p2p' ? 'primary' : 'secondary'}
                       size="sm"
                       onClick={() => setSelectedFeeType('p2p')}
                     >
-                      Fee Originación P2P
+                      <span className={styles.desktopTabLabel}>Fee Originación P2P</span>
+                      <span className={styles.mobileTabLabel}>Originación P2P</span>
                     </Button>
                   </div>
 
@@ -1059,7 +1066,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
               {/* TEMPLATE 5: GRANT */}
               {activeTemplate === 'grant' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <div className={styles.grantPrefillRow}>
                     <Button
                       variant="secondary"
                       size="sm"
@@ -1069,7 +1076,8 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                         setProposalTitle('Financiación de Auditoría Comunitaria On-Chain (Code4rena / Cantina Escrow)');
                       }}
                     >
-                      🛡️ Pre-llenar Auditoría Comunitaria (Code4rena Escrow 25K USDC)
+                      <span className={styles.desktopTabLabel}>🛡️ Pre-llenar Auditoría Comunitaria (Code4rena Escrow 25K USDC)</span>
+                      <span className={styles.mobileTabLabel}>🛡️ Pre-llenar Auditoría (Code4rena 25k USDC)</span>
                     </Button>
                   </div>
                   <div className={styles.twoColInputs}>
@@ -1222,7 +1230,6 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
             </div>
 
             <h3 className={styles.sectionHeading}>
-              <span>🎯</span>
               <span>
                 {UI_STRINGS.GOVERNANCE.SECTION_TARGET_DISTRIB} ({twStables.toFixed(1)} / {twWbtc.toFixed(1)} / {twWeth.toFixed(1)} / {twAlts.toFixed(1)})
               </span>
@@ -1297,7 +1304,6 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
         {activeSubTab === 'wallets' && (
           <div>
             <h3 className={styles.sectionHeading}>
-              <span>💼</span>
               <span>{UI_STRINGS.GOVERNANCE.SECTION_VAULT_ADDRESSES}</span>
             </h3>
 
@@ -1307,12 +1313,22 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                   <span className={styles.vaultLabel}>{UI_STRINGS.GOVERNANCE.LABEL_BUNKER_WALLET}</span>
                   <Badge variant="blue" size="sm">Bunker Sub-Reserves</Badge>
                 </div>
-                <input
-                  type="text"
-                  readOnly
-                  value={CONTRACT_ADDRESSES.TREASURY || '0x...'}
-                  className={styles.vaultInput}
-                />
+                <div className={styles.vaultInputRow}>
+                  <input
+                    type="text"
+                    readOnly
+                    value={CONTRACT_ADDRESSES.TREASURY || '0x...'}
+                    className={styles.vaultInput}
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleCopyAddress(CONTRACT_ADDRESSES.TREASURY, 'Bunker Tesorería')}
+                    className={styles.copyVaultBtn}
+                  >
+                    📋 Copiar
+                  </Button>
+                </div>
               </div>
 
               <div className={styles.vaultItem}>
@@ -1320,12 +1336,22 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                   <span className={styles.vaultLabel}>{UI_STRINGS.GOVERNANCE.LABEL_COMMUNITY_YIELD_VAULT}</span>
                   <Badge variant="emerald" size="sm">Community Real Yield</Badge>
                 </div>
-                <input
-                  type="text"
-                  readOnly
-                  value={CONTRACT_ADDRESSES.COMMUNITY_YIELD_VAULT || '0x...'}
-                  className={styles.vaultInput}
-                />
+                <div className={styles.vaultInputRow}>
+                  <input
+                    type="text"
+                    readOnly
+                    value={CONTRACT_ADDRESSES.COMMUNITY_YIELD_VAULT || '0x...'}
+                    className={styles.vaultInput}
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleCopyAddress(CONTRACT_ADDRESSES.COMMUNITY_YIELD_VAULT, 'Community Yield Vault')}
+                    className={styles.copyVaultBtn}
+                  >
+                    📋 Copiar
+                  </Button>
+                </div>
               </div>
 
               <div className={styles.vaultItem}>
@@ -1333,12 +1359,22 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                   <span className={styles.vaultLabel}>⏱️ CONTRATO TIMELOCK CONTROLLER (ADMIN SOLEMNE PROTOCOLO)</span>
                   <Badge variant="purple" size="sm">72h Safety Delay</Badge>
                 </div>
-                <input
-                  type="text"
-                  readOnly
-                  value={CONTRACT_ADDRESSES.TIMELOCK || '0x...'}
-                  className={styles.vaultInput}
-                />
+                <div className={styles.vaultInputRow}>
+                  <input
+                    type="text"
+                    readOnly
+                    value={CONTRACT_ADDRESSES.TIMELOCK || '0x...'}
+                    className={styles.vaultInput}
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleCopyAddress(CONTRACT_ADDRESSES.TIMELOCK, 'Timelock Controller')}
+                    className={styles.copyVaultBtn}
+                  >
+                    📋 Copiar
+                  </Button>
+                </div>
               </div>
 
               <div className={styles.vaultItem}>
@@ -1346,12 +1382,22 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                   <span className={styles.vaultLabel}>🏛️ CONTRATO GOVERNOR VIRAJE (DAO ON-CHAIN)</span>
                   <Badge variant="blue" size="sm">Bravo-Standard Governor</Badge>
                 </div>
-                <input
-                  type="text"
-                  readOnly
-                  value={CONTRACT_ADDRESSES.GOVERNOR || '0x...'}
-                  className={styles.vaultInput}
-                />
+                <div className={styles.vaultInputRow}>
+                  <input
+                    type="text"
+                    readOnly
+                    value={CONTRACT_ADDRESSES.GOVERNOR || '0x...'}
+                    className={styles.vaultInput}
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleCopyAddress(CONTRACT_ADDRESSES.GOVERNOR, 'Governor Viraje')}
+                    className={styles.copyVaultBtn}
+                  >
+                    📋 Copiar
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -1363,7 +1409,6 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
         {activeSubTab === 'security' && (
           <div>
             <h3 className={styles.sectionHeading}>
-              <span>🛡️</span>
               <span>{UI_STRINGS.GOVERNANCE.SECTION_SECURITY_TITLE}</span>
             </h3>
 

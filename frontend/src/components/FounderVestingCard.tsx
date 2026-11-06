@@ -34,7 +34,7 @@ export const FounderVestingCard: React.FC<FounderVestingCardProps> = ({
     <Card
       variant="surface"
       collapsible
-      defaultExpanded={true}
+      defaultExpanded={false}
       headerTitle="🏛️ Asignación Propietario / Fundador"
       headerSubtitle="Liberación de vesting ligada estrictamente a la salud y excedente de reservas del protocolo (Máx 10% / 72h)"
       headerAction={

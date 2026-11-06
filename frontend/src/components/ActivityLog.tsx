@@ -12,7 +12,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ logs }) => {
       variant="surface"
       collapsible
       defaultExpanded={false}
-      headerTitle={`📜 ${UI_STRINGS.MODALS.ACTIVITY_LOG.TITLE}`}
+      headerTitle={UI_STRINGS.MODALS.ACTIVITY_LOG.TITLE}
       headerSubtitle="Registro cronológico en tiempo real de llamadas Web3, oráculos y transacciones"
     >
       <div data-testid="activity-log-container" className="activity-log-box">

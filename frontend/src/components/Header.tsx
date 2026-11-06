@@ -220,7 +220,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={onOpenReferral}
               className={styles.referralBtn}
             >
-              🤝 {UI_STRINGS.COMMON.BTN_INVITE_FRIENDS}
+              {UI_STRINGS.COMMON.BTN_INVITE_FRIENDS}
             </button>
 
             {blockDateStr && (

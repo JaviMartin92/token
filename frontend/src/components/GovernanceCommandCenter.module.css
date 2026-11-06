@@ -17,6 +17,40 @@
   flex-wrap: wrap;
 }
 
+.desktopTabLabel {
+  display: inline;
+}
+
+.mobileTabLabel {
+  display: none;
+}
+
+.feeButtonGroup {
+  display: flex;
+  gap: var(--space-2);
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.grantPrefillRow {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.vaultInputRow {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  width: 100%;
+}
+
+.copyVaultBtn {
+  white-space: nowrap;
+  min-height: 40px;
+  flex-shrink: 0;
+}
+
 /* 🧭 Barra de Sub-Pestañas Institucional */
 .subTabsBar {
   display: flex;
@@ -881,9 +915,51 @@
 }
 
 @media (max-width: 768px) {
+  .desktopTabLabel {
+    display: none;
+  }
+
+  .mobileTabLabel {
+    display: inline;
+    white-space: nowrap;
+  }
+
   .headerBadgesRow {
     gap: 4px;
     width: 100%;
+  }
+
+  .feeButtonGroup {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .feeButtonGroup button {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .grantPrefillRow {
+    justify-content: stretch;
+  }
+
+  .grantPrefillRow button {
+    width: 100%;
+    min-height: 42px;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .vaultInputRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .copyVaultBtn {
+    width: 100%;
+    min-height: 40px;
   }
 
   .antiSpamBanner,

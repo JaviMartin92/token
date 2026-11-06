@@ -66,7 +66,7 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
               size="sm"
               onClick={onFaucetUSDC}
             >
-              🚰 {UI_STRINGS.TREASURY.BTN_FAUCET}
+              {UI_STRINGS.TREASURY.BTN_FAUCET}
             </Button>
           ) : null
         }
