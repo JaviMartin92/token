@@ -1,0 +1,321 @@
+/* ==========================================================================
+   👛 MODAL DE CONEXIÓN DE BILLETERAS MÓVILES Y ESCRITORIO
+   Institutional Web3 Connection Center
+   ========================================================================== */
+
+.modalBox {
+  max-width: 500px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  box-sizing: border-box;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.headerIcon {
+  font-size: 1.75rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin: 4px 0 0 0;
+  line-height: 1.45;
+}
+
+.closeBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.closeBtn:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-surface-hover);
+}
+
+/* ⚠️ Error Banner */
+.errorBanner {
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--color-crimson-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.errorIcon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.errorText {
+  font-size: 0.75rem;
+  color: var(--color-crimson-light);
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+/* 🟢 Billetera Inyectada Detectada */
+.detectedCard {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.06) 100%);
+  border: 1px solid var(--color-emerald-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.detectedHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detectedDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-emerald);
+  box-shadow: 0 0 8px var(--color-emerald);
+}
+
+.detectedTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-emerald-light);
+}
+
+.detectedDesc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.detectedBtn {
+  width: 100%;
+  margin-top: var(--space-2);
+  min-height: 44px;
+}
+
+/* 📱 Sección de Billeteras Móviles */
+.walletSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.sectionLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+}
+
+.walletGrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.walletOptionBtn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+  box-sizing: border-box;
+  min-height: 52px;
+}
+
+.walletOptionBtn:hover {
+  background-color: var(--bg-surface-hover);
+  border-color: var(--color-blue-border);
+  transform: translateY(-1px);
+}
+
+.walletOptionBtn:active {
+  transform: translateY(0);
+}
+
+.walletOptionLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.walletOptionIcon {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.walletOptionText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.walletOptionName {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.popularBadge {
+  font-size: 0.625rem;
+  padding: 1px 6px;
+  background-color: var(--color-emerald-subtle);
+  color: var(--color-emerald-light);
+  border: 1px solid var(--color-emerald-border);
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.walletOptionSub {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  line-height: 1.25;
+}
+
+.walletOptionArrow {
+  font-size: 1rem;
+  color: var(--text-tertiary);
+  transition: transform var(--transition-fast), color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.walletOptionBtn:hover .walletOptionArrow {
+  color: var(--color-blue-light);
+  transform: translateX(3px);
+}
+
+.copyBadge {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--color-blue-light);
+  border: 1px solid var(--color-blue-border);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* 🏠 Nota Localhost */
+.localhostNote {
+  background-color: rgba(245, 158, 11, 0.08);
+  border: 1px solid var(--color-amber-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.72rem;
+  color: var(--color-amber-light);
+  line-height: 1.4;
+}
+
+/* 💡 Caja de Ayuda */
+.helpBox {
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.helpTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.helpDesc {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+/* 📱 Responsive */
+@media (max-width: 640px) {
+  .modalBox {
+    padding: var(--space-1);
+    gap: var(--space-3);
+  }
+
+  .title {
+    font-size: 1rem;
+  }
+
+  .subtitle {
+    font-size: 0.75rem;
+  }
+
+  .walletOptionBtn {
+    padding: var(--space-2) var(--space-3);
+    min-height: 48px;
+  }
+
+  .walletOptionIcon {
+    font-size: 1.3rem;
+  }
+
+  .walletOptionName {
+    font-size: 0.8125rem;
+  }
+
+  .walletOptionSub {
+    font-size: 0.6875rem;
+  }
+}

@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useConnect, useDisconnect } from 'wagmi';
 import { injected } from 'wagmi/connectors';
 import { UI_STRINGS } from '../constants/strings.js';
 import { Badge } from './common/Badge.js';
 import { Button } from './common/Button.js';
+import { ConnectWalletModal } from './ConnectWalletModal.js';
 import styles from './Header.module.css';
 
 interface HeaderProps {
@@ -36,12 +37,42 @@ export const Header: React.FC<HeaderProps> = ({
   const { connectAsync, connectors } = useConnect();
   const { disconnect } = useDisconnect();
 
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
+
   const handleConnectWallet = async () => {
-    try {
-      const targetConnector = connectors.find(c => c.type === 'injected') || connectors[0] || injected();
-      await connectAsync({ connector: targetConnector });
-    } catch (e: any) {
-      console.warn('[Wallet] Conexión:', e?.message || e);
+    setConnectError(null);
+    const hasEthereum = typeof window !== 'undefined' && Boolean((window as any).ethereum);
+
+    if (hasEthereum) {
+      setIsConnecting(true);
+      try {
+        // Solicitud directa EIP-1102 para activar la hoja nativa en navegadores móviles (MetaMask, Trust, etc.)
+        if ((window as any).ethereum?.request) {
+          try {
+            await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
+          } catch (eipErr: any) {
+            if (eipErr?.code === 4001) {
+              setConnectError('Conexión cancelada por el usuario en su billetera.');
+              setIsConnecting(false);
+              return;
+            }
+          }
+        }
+        const targetConnector = connectors.find((c) => c.type === 'injected') || connectors[0] || injected();
+        await connectAsync({ connector: targetConnector });
+        setIsWalletModalOpen(false);
+      } catch (err: any) {
+        console.warn('[Wallet] Error de conexión directa:', err);
+        setConnectError(err?.message || 'Error al conectar con la billetera.');
+        setIsWalletModalOpen(true);
+      } finally {
+        setIsConnecting(false);
+      }
+    } else {
+      // Sin proveedor inyectado (ej. Safari o Chrome en smartphone): abrir modal con deep-links automáticos
+      setIsWalletModalOpen(true);
     }
   };
 
@@ -86,6 +117,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {walletConnected ? (
             <Button
+              type="button"
               variant="secondary"
               size="sm"
               className={styles.disconnectBtn}
@@ -95,10 +127,13 @@ export const Header: React.FC<HeaderProps> = ({
             </Button>
           ) : (
             <Button
+              type="button"
               variant="primary"
               size="sm"
               className={styles.connectBtn}
               onClick={handleConnectWallet}
+              isLoading={isConnecting}
+              loadingText="Conectando..."
             >
               {UI_STRINGS.HEADER.BTN_CONNECT}
             </Button>
@@ -208,6 +243,14 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
       </nav>
+
+      <ConnectWalletModal
+        isOpen={isWalletModalOpen}
+        onClose={() => setIsWalletModalOpen(false)}
+        onConnectInjected={handleConnectWallet}
+        isConnecting={isConnecting}
+        errorMsg={connectError}
+      />
     </header>
   );
 };

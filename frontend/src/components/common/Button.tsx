@@ -20,6 +20,7 @@ export const Button: React.FC<ButtonProps> = ({
   iconRight,
   className = '',
   disabled,
+  type = 'button',
   ...props
 }) => {
   const variantClass = styles[variant] || styles.primary;
@@ -27,6 +28,7 @@ export const Button: React.FC<ButtonProps> = ({
 
   return (
     <button
+      type={type}
       className={`${styles.button} ${variantClass} ${sizeClass} ${className}`}
       disabled={disabled || isLoading}
       {...props}
