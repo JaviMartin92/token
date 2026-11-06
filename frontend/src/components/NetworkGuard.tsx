@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAccount, useSwitchChain } from 'wagmi';
+import { ENV } from '../config/env.js';
 
 export const NetworkGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { chain, isConnected } = useAccount();
@@ -19,13 +20,6 @@ export const NetworkGuard: React.FC<{ children: React.ReactNode }> = ({ children
         if (typeof window !== 'undefined' && (window as any).ethereum) {
           try {
             const chainConfigs: Record<number, any> = {
-              42161: {
-                chainId: '0xa4b1',
-                chainName: 'Arbitrum One',
-                nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-                rpcUrls: ['https://arb1.arbitrum.io/rpc'],
-                blockExplorerUrls: ['https://arbiscan.io']
-              },
               421614: {
                 chainId: '0x66eee',
                 chainName: 'Arbitrum Sepolia',
@@ -33,12 +27,21 @@ export const NetworkGuard: React.FC<{ children: React.ReactNode }> = ({ children
                 rpcUrls: ['https://sepolia-rollup.arbitrum.io/rpc'],
                 blockExplorerUrls: ['https://sepolia.arbiscan.io']
               },
-              31337: {
-                chainId: '0x7a69',
-                chainName: 'Anvil Localhost',
+              42161: {
+                chainId: '0xa4b1',
+                chainName: 'Arbitrum One',
                 nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-                rpcUrls: [window.location.origin + '/rpc', 'http://127.0.0.1:8545'],
-              }
+                rpcUrls: ['https://arb1.arbitrum.io/rpc'],
+                blockExplorerUrls: ['https://arbiscan.io']
+              },
+              ...(ENV.VITE_CHAIN_ID === 31337 ? {
+                31337: {
+                  chainId: '0x7a69',
+                  chainName: 'Anvil Localhost',
+                  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+                  rpcUrls: [window.location.origin + '/rpc', 'http://127.0.0.1:8545'],
+                }
+              } : {})
             };
 
             const config = chainConfigs[targetChainId];
@@ -65,7 +68,7 @@ export const NetworkGuard: React.FC<{ children: React.ReactNode }> = ({ children
           </div>
           <h2 id="network-guard-title" className="text-2xl font-bold text-white mb-2">Red No Compatible</h2>
           <p className="text-gray-400 mb-6 text-sm">
-            Viraje Protocol está desplegado en la red de Capa 2 <strong>Arbitrum One</strong> (y Arbitrum Sepolia en pruebas). Por favor conecta tu billetera a una de las redes compatibles para operar.
+            Viraje Protocol está configurado para operar en <strong>Arbitrum Sepolia</strong> (Chain ID: 421614) para pruebas beta. Por favor conecta tu billetera a la red compatible.
           </p>
           <div className="flex flex-col gap-3">
             {chains.map((supportedChain) => (

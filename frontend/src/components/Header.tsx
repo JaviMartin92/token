@@ -38,16 +38,10 @@ export const Header: React.FC<HeaderProps> = ({
 
   const handleConnectWallet = async () => {
     try {
-      if (typeof window !== 'undefined' && (window as any).ethereum) {
-        await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
-      }
       const targetConnector = connectors.find(c => c.type === 'injected') || connectors[0] || injected();
       await connectAsync({ connector: targetConnector });
     } catch (e: any) {
       console.warn('[Wallet] Conexión:', e?.message || e);
-      if (typeof window !== 'undefined' && !(window as any).ethereum) {
-        console.warn('[Wallet] No Web3 provider detected in window.ethereum');
-      }
     }
   };
 

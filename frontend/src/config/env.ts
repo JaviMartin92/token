@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 const envSchema = z.object({
-  VITE_CHAIN_ID: z.coerce.number().default(31337),
-  VITE_PUBLIC_RPC_URL: z.string().url().or(z.string().min(1)).default('http://127.0.0.1:8545'),
+  VITE_CHAIN_ID: z.coerce.number().default(421614),
+  VITE_PUBLIC_RPC_URL: z.string().url().or(z.string().min(1)).default('https://sepolia-rollup.arbitrum.io/rpc'),
   VITE_WALLET_CONNECT_PROJECT_ID: z.string().optional(),
   VITE_ENABLE_ANALYTICS: z.coerce.boolean().default(false),
   MODE: z.string().default('development'),

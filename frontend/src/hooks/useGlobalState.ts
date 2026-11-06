@@ -1,24 +1,27 @@
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { publicClient } from '../utils/web3.js';
+import { ENV } from '../config/env.js';
 
 export function useGlobalState() {
   const { address: userAddress, isConnected: walletConnected } = useAccount();
   const [snapshotId, setSnapshotId] = useState('');
-  const [chainId, setChainId] = useState<number>(31337);
+  const [chainId, setChainId] = useState<number>(ENV.VITE_CHAIN_ID || 421614);
   const [blockDateStr, setBlockDateStr] = useState('');
 
   useEffect(() => {
     const initSnapshot = async () => {
-      try {
-        const snap = await (publicClient.request as any)({ method: 'evm_snapshot', params: [] });
-        setSnapshotId(snap);
-      } catch (e) {}
+      if (ENV.VITE_CHAIN_ID === 31337) {
+        try {
+          const snap = await (publicClient.request as any)({ method: 'evm_snapshot', params: [] });
+          setSnapshotId(snap);
+        } catch (e) {}
+      }
       try {
         const cId = await publicClient.getChainId();
         setChainId(cId);
       } catch (e) {
-        setChainId(31337);
+        setChainId(ENV.VITE_CHAIN_ID || 421614);
       }
     };
     initSnapshot();
@@ -58,18 +61,18 @@ export function useGlobalState() {
     } catch (e) {}
 
     const interval = setInterval(fetchBlock, 15000);
+
     return () => {
       if (unwatch) unwatch();
       clearInterval(interval);
     };
   }, []);
 
-  // Browser wallets sign every transaction. Private keys are never bundled into the UI.
   const activeKey = userAddress || '';
   const effectiveUserAddress = userAddress || '';
 
   return {
-    walletConnected,
+    walletConnected: !!walletConnected,
     userAddress: effectiveUserAddress,
     account: { address: effectiveUserAddress },
     snapshotId,

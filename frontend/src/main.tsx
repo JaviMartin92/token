@@ -4,7 +4,7 @@ import './index.css'
 import App from './App.tsx'
 
 import { WagmiProvider, createConfig, http } from 'wagmi'
-import { arbitrum, arbitrumSepolia, foundry } from 'wagmi/chains'
+import { arbitrumSepolia, arbitrum, foundry } from 'wagmi/chains'
 import { injected } from 'wagmi/connectors'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ENV } from './config/env.js'
@@ -14,11 +14,11 @@ const arbitrumRpcUrl = ENV.VITE_CHAIN_ID === 42161 && ENV.VITE_PUBLIC_RPC_URL ? 
 const arbitrumSepoliaRpcUrl = ENV.VITE_CHAIN_ID === 421614 && ENV.VITE_PUBLIC_RPC_URL ? ENV.VITE_PUBLIC_RPC_URL : 'https://sepolia-rollup.arbitrum.io/rpc';
 
 const config = createConfig({
-  chains: [arbitrum, arbitrumSepolia, foundry],
+  chains: [arbitrumSepolia, arbitrum, foundry],
   connectors: [injected()],
   transports: {
-    [arbitrum.id]: http(arbitrumRpcUrl),
     [arbitrumSepolia.id]: http(arbitrumSepoliaRpcUrl),
+    [arbitrum.id]: http(arbitrumRpcUrl),
     [foundry.id]: http(localRpcUrl),
   },
 })
