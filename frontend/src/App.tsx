@@ -219,8 +219,6 @@ export default function App() {
         circuitBreakerFrozen={treasuryMetrics.circuitBreakerFrozen}
         onOpenReferral={() => setIsReferralOpen(true)}
         onOpenApyModal={() => setIsApyModalOpen(true)}
-        onFaucetUSDC={treasury.handleFaucetUSDC}
-        isTestnet={global.isTestnet}
       />
 
       <ApyBreakdownModal

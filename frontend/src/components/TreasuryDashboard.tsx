@@ -58,18 +58,6 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
         defaultExpanded={true}
         headerTitle={UI_STRINGS.TREASURY.CARD_DEPOSIT_TITLE}
         headerSubtitle={UI_STRINGS.TREASURY.SUBTITLE}
-        headerAction={
-          (isSandbox || isAdmin || isTestnet) ? (
-            <Button
-              data-testid="treasury-faucet-btn"
-              variant="outline"
-              size="sm"
-              onClick={onFaucetUSDC}
-            >
-              {UI_STRINGS.TREASURY.BTN_FAUCET}
-            </Button>
-          ) : null
-        }
       >
         {/* 🛡️ Guarded Genesis Cap Progress Bar */}
         <div className={styles.genesisCapBox}>
@@ -110,7 +98,7 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
               </div>
             </div>
             <Button
-              data-testid="treasury-banner-faucet-btn"
+              data-testid="treasury-faucet-btn"
               variant="outline"
               size="sm"
               onClick={onFaucetUSDC}

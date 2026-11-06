@@ -29,6 +29,7 @@
   height: 6px;
   border-radius: 50%;
   background-color: currentColor;
+  flex-shrink: 0;
 }
 
 /* Variantes Semánticas */
@@ -66,4 +67,17 @@
   background-color: rgba(255, 255, 255, 0.05);
   color: var(--text-secondary);
   border-color: var(--border-subtle);
+}
+
+@media (max-width: 768px) {
+  .badge {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    text-align: left;
+    line-height: 1.35;
+    max-width: 100%;
+    box-sizing: border-box;
+    height: auto;
+  }
 }

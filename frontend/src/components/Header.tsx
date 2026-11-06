@@ -18,8 +18,6 @@ interface HeaderProps {
   circuitBreakerFrozen: boolean;
   onOpenReferral: () => void;
   onOpenApyModal: () => void;
-  onFaucetUSDC?: () => void;
-  isTestnet?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -33,9 +31,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenReferral,
   onOpenApyModal,
   walletConnected,
-  userAddress,
-  onFaucetUSDC,
-  isTestnet = true
+  userAddress
 }) => {
   const { connectAsync, connectors } = useConnect();
   const { disconnect } = useDisconnect();
@@ -87,25 +83,6 @@ export const Header: React.FC<HeaderProps> = ({
                 : UI_STRINGS.COMMON.STATUS_DISCONNECTED}
             </span>
           </div>
-
-          {(isTestnet ?? true) && onFaucetUSDC && (
-            <Button
-              data-testid="header-faucet-btn"
-              variant="outline"
-              size="sm"
-              onClick={walletConnected ? onFaucetUSDC : handleConnectWallet}
-              title={walletConnected ? 'Solicitar 10,000 USDC Mock gratis para pruebas' : 'Conectar billetera para solicitar 10,000 USDC Mock'}
-              className={styles.headerFaucetBtn}
-              style={{
-                borderColor: '#10b981',
-                color: '#34d399',
-                fontWeight: 600
-              }}
-            >
-              <span className={styles.faucetDesktopText}>🚰 Faucet 10k USDC</span>
-              <span className={styles.faucetMobileText}>🚰 10k USDC</span>
-            </Button>
-          )}
 
           {walletConnected ? (
             <Button
