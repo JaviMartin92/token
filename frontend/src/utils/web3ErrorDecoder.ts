@@ -114,6 +114,23 @@ export function decodeWeb3Error(err: any): DecodedWeb3Error {
     };
   }
 
+  // 3. Unauthorized Account or Method (EIP-1193 Error 4100)
+  if (
+    err.code === 4100 ||
+    (err.message && (
+      err.message.includes('not been authorized by the user') ||
+      err.message.includes('account has not been authorized')
+    ))
+  ) {
+    return {
+      title: 'Cuenta de Billetera No Autorizada',
+      message: 'Tu billetera no ha autorizado esta cuenta para el sitio o la cuenta activa cambió en MetaMask.',
+      actionableHint: 'Haz clic en "Conectar Wallet" y autoriza la cuenta activa en MetaMask para continuar.',
+      code: 4100,
+      isUserRejection: false
+    };
+  }
+
   // 3. Try to decode custom Solidity Error Hex Data
   const rawData = err.data || err.error?.data || (typeof err.walk === 'function' ? err.walk((e: any) => Boolean(e.data))?.data : null);
   if (rawData && typeof rawData === 'string' && rawData.startsWith('0x')) {

@@ -42,15 +42,105 @@ export const getExplorerTxUrl = (txHash: string, chainId: number = ENV.VITE_CHAI
   return `https://arbiscan.io/tx/${txHash}`;
 };
 
+export const ensureTargetChain = async (): Promise<void> => {
+  if (typeof window === 'undefined' || !(window as any).ethereum) return;
+  const targetChainId = ENV.VITE_CHAIN_ID;
+  if (!targetChainId || targetChainId === 31337) return;
+
+  const hexTargetChainId = `0x${targetChainId.toString(16)}`;
+  try {
+    const currentHex = await (window as any).ethereum.request({ method: 'eth_chainId' });
+    if (typeof currentHex === 'string' && currentHex.toLowerCase() !== hexTargetChainId.toLowerCase()) {
+      try {
+        await (window as any).ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: hexTargetChainId }]
+        });
+      } catch (switchErr: any) {
+        if (switchErr?.code === 4902 || switchErr?.message?.includes('Unrecognized chain')) {
+          if (targetChainId === 421614) {
+            await (window as any).ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: '0x66eee',
+                chainName: 'Arbitrum Sepolia',
+                nativeCurrency: { name: 'Sepolia Ether', symbol: 'ETH', decimals: 18 },
+                rpcUrls: ['https://sepolia-rollup.arbitrum.io/rpc'],
+                blockExplorerUrls: ['https://sepolia.arbiscan.io']
+              }]
+            });
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[Web3] Verificación de red:', e);
+  }
+};
+
+export const getActiveAuthorizedAccount = async (preferredAddress?: string): Promise<`0x${string}`> => {
+  if (typeof window === 'undefined' || !(window as any).ethereum) {
+    throw new Error('Conecta una cartera compatible (como MetaMask) para firmar transacciones.');
+  }
+
+  const provider = (window as any).ethereum;
+
+  // Asegurar red Arbitrum Sepolia
+  await ensureTargetChain();
+
+  // 1. Consultar cuentas ya autorizadas en MetaMask
+  let accounts: string[] = [];
+  try {
+    accounts = await provider.request({ method: 'eth_accounts' });
+  } catch (e) {}
+
+  // 2. Si no hay cuenta autorizada, solicitar conexión explícita (pop-up de MetaMask)
+  if (!accounts || accounts.length === 0) {
+    try {
+      accounts = await provider.request({ method: 'eth_requestAccounts' });
+    } catch (err: any) {
+      if (err?.code === 4001) {
+        throw new Error('Conexión cancelada por el usuario en MetaMask.');
+      }
+      throw new Error('Por favor conecta y autoriza tu billetera para continuar.');
+    }
+  }
+
+  if (!accounts || accounts.length === 0) {
+    throw new Error('No se detectó ninguna cuenta autorizada en tu billetera.');
+  }
+
+  // 3. Si la dirección solicitada está entre las autorizadas, respetarla
+  if (
+    preferredAddress &&
+    preferredAddress.startsWith('0x') &&
+    preferredAddress !== '0x0000000000000000000000000000000000000000'
+  ) {
+    const matched = accounts.find((a) => a.toLowerCase() === preferredAddress.toLowerCase());
+    if (matched) return matched as `0x${string}`;
+  }
+
+  // 4. Por defecto, usar la cuenta actualmente activa seleccionada en MetaMask
+  return accounts[0] as `0x${string}`;
+};
+
 export const getWalletClient = (userAddress?: string) => {
   if (typeof window === 'undefined' || !(window as any).ethereum) {
     throw new Error('Conecta una cartera compatible para firmar transacciones.');
   }
-  const account = (userAddress && userAddress.startsWith('0x') ? (userAddress as `0x${string}`) : '0x0000000000000000000000000000000000000000');
+  const provider = (window as any).ethereum;
+  const activeAddr = (
+    userAddress && userAddress.startsWith('0x') && userAddress !== '0x0000000000000000000000000000000000000000'
+      ? userAddress
+      : provider?.selectedAddress && provider.selectedAddress.startsWith('0x')
+        ? provider.selectedAddress
+        : (userAddress && userAddress.startsWith('0x') ? userAddress : '0x0000000000000000000000000000000000000000')
+  ) as `0x${string}`;
+
   return createWalletClient({
-    account,
+    account: activeAddr,
     chain: activeChain,
-    transport: custom((window as any).ethereum)
+    transport: custom(provider)
   });
 };
 

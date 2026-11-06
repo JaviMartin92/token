@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { publicClient, getWalletClient, getFreshNonce, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
+import { publicClient, getWalletClient, getActiveAuthorizedAccount, getFreshNonce, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
 import { parseUnits, parseEther, formatEther } from 'viem';
 import { UI_STRINGS } from '../constants/strings.js';
 import { simulatePreflightTransaction } from '../utils/preflightSimulation.js';
@@ -19,25 +19,15 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
   const [depositAmount, setDepositAmount] = useState('');
   const [redeemAmount, setRedeemAmount] = useState('');
 
-  const getEffectiveAccount = async (client: any): Promise<`0x${string}`> => {
-    if (userAddress && userAddress.startsWith('0x')) {
-      return userAddress as `0x${string}`;
-    }
-    const addresses = await client.getAddresses();
-    if (addresses && addresses.length > 0) {
-      return addresses[0];
-    }
-    throw new Error('Por favor conecta tu billetera para firmar la transacción.');
-  };
-
   const handleFaucetUSDC = async () => {
     try {
       addLog(UI_STRINGS.TOASTS_AND_LOGS.FAUCET_INFO);
-      addToast('info', 'Faucet USDC', 'Enviando transacción...');
-      const client = getWalletClient(userAddress || activeKey);
-      const account = await getEffectiveAccount(client);
+      addToast('info', 'Faucet USDC', 'Solicitando autorización en tu billetera...');
+      const account = await getActiveAuthorizedAccount(userAddress || activeKey);
+      const client = getWalletClient(account);
       const nonce = await getFreshNonce(account);
 
+      addToast('info', 'Faucet USDC', 'Confirmando transacción en MetaMask...');
       const tx = await client.writeContract({
         address: CONTRACT_ADDRESSES.USDC,
         abi: ABIS.ERC20,
@@ -62,8 +52,8 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
     try {
       addLog(UI_STRINGS.TOASTS_AND_LOGS.DEPOSIT_START);
       const amountWei = parseUnits(depositAmount, 6);  // USDC = 6 decimals
-      const client = getWalletClient(userAddress || activeKey);
-      const account = await getEffectiveAccount(client);
+      const account = await getActiveAuthorizedAccount(userAddress || activeKey);
+      const client = getWalletClient(account);
 
       // Gas optimization: check allowance first
       const currentAllowance = (await publicClient.readContract({
@@ -209,8 +199,8 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
     try {
       addLog(UI_STRINGS.TOASTS_AND_LOGS.REDEEM_START);
       const amountWei = parseUnits(redeemAmount, 18); // ALPHA = 18 decimals
-      const client = getWalletClient(userAddress || activeKey);
-      const account = await getEffectiveAccount(client);
+      const account = await getActiveAuthorizedAccount(userAddress || activeKey);
+      const client = getWalletClient(account);
 
       // Gas optimization: check allowance first
       const currentAllowance = (await publicClient.readContract({

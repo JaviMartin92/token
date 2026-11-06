@@ -23,6 +23,14 @@ describe('web3ErrorDecoder Unit Tests', () => {
     expect(decoded.title).toBe('Protección Anti-Arbitraje Flash Loan');
   });
 
+  it('identifies unauthorized account error code 4100', () => {
+    const err = { code: 4100, message: 'The requested method and/or account has not been authorized by the user.' };
+    const decoded = decodeWeb3Error(err);
+    expect(decoded.isUserRejection).toBe(false);
+    expect(decoded.title).toBe('Cuenta de Billetera No Autorizada');
+    expect(decoded.code).toBe(4100);
+  });
+
   it('handles null / undefined cleanly without crashing', () => {
     const decoded = decodeWeb3Error(null);
     expect(decoded.title).toBe('Error Desconocido');
