@@ -5,6 +5,14 @@
   width: 100%;
 }
 
+.desktopOnly {
+  display: inline;
+}
+
+.mobileOnly {
+  display: none;
+}
+
 .headerRow {
   display: flex;
   justify-content: space-between;
@@ -138,6 +146,14 @@
 
 /* 📱 ADAPTACIÓN RESPONSIVA TOTAL SMARTPHONES (<= 768px) */
 @media (max-width: 768px) {
+  .desktopOnly {
+    display: none;
+  }
+
+  .mobileOnly {
+    display: inline;
+  }
+
   .container {
     gap: var(--space-4);
   }
@@ -170,11 +186,16 @@
     flex-direction: column;
     align-items: flex-start;
     padding: var(--space-3);
-    gap: var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .surplusHeading {
+    font-size: 0.8125rem;
+    line-height: 1.35;
   }
 
   .surplusText {
-    font-size: 0.75rem;
+    display: none; /* Elimina sobrecarga de párrafos extensos en móvil */
   }
 
   .surplusNote {
@@ -358,15 +379,65 @@
   .formulaFlow {
     flex-direction: column;
     align-items: stretch;
+    padding: var(--space-3);
+    gap: 4px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .formulaStep {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .formulaStepValue {
+    font-size: 1rem;
+    word-break: break-word;
   }
 
   .formulaOperator {
     transform: rotate(90deg);
-    padding: var(--space-1) 0;
+    padding: 2px 0;
+    font-size: 1rem;
+  }
+
+  .explainerCard {
+    padding: var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .explainerBody {
+    font-size: 0.75rem;
+    line-height: 1.45;
+  }
+
+  .explainerList {
+    margin: var(--space-1) 0 0 var(--space-3);
+    font-size: 0.75rem;
+    gap: 2px;
   }
 
   .supplyPillsGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+
+  .supplyPillCard {
+    padding: var(--space-2);
+  }
+
+  .supplyPillTitle {
+    font-size: 0.625rem;
+  }
+
+  .supplyPillValue {
+    font-size: 0.8125rem;
+  }
+
+  .supplyPillDesc {
+    font-size: 0.625rem;
   }
 }
 

@@ -10,6 +10,13 @@
   width: 100%;
 }
 
+.headerBadgesRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
 /* 🧭 Barra de Sub-Pestañas Institucional */
 .subTabsBar {
   display: flex;
@@ -536,6 +543,40 @@
   margin-bottom: var(--space-4);
 }
 
+.antiSpamContent {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.antiSpamIcon {
+  font-size: 1.25rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.antiSpamDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.antiSpamSubtext {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.antiSpamSep {
+  color: var(--text-tertiary);
+  user-select: none;
+}
+
 .proposalsList {
   display: flex;
   flex-direction: column;
@@ -722,6 +763,12 @@
   border-top: 1px solid var(--border-subtle);
 }
 
+.proposalActionHint {
+  font-size: 0.8125rem;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+}
+
 .voteButtonGroup {
   display: flex;
   align-items: center;
@@ -834,9 +881,185 @@
 }
 
 @media (max-width: 768px) {
-  .proposalVotesGrid,
-  .templateSelector,
+  .headerBadgesRow {
+    gap: 4px;
+    width: 100%;
+  }
+
+  .antiSpamBanner,
+  .antiSpamSuccess {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+    padding: var(--space-3);
+  }
+
+  .antiSpamContent {
+    gap: var(--space-2);
+  }
+
+  .antiSpamDetails {
+    font-size: 0.8125rem;
+  }
+
+  .antiSpamSubtext {
+    font-size: 0.6875rem;
+    gap: 4px;
+  }
+
+  .subTabsBar {
+    gap: 4px;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+
+  .subTabBtn {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    min-height: 38px;
+    gap: 4px;
+  }
+
+  .proposalCard {
+    padding: var(--space-3);
+    gap: var(--space-3);
+  }
+
+  .proposalTitleBlock {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .proposalTitle {
+    font-size: 0.9375rem;
+  }
+
+  .proposalMeta {
+    gap: var(--space-2);
+    font-size: 0.6875rem;
+  }
+
+  .proposalTargetBox {
+    font-size: 0.6875rem;
+    padding: 6px var(--space-2);
+    word-break: break-all;
+    overflow-wrap: anywhere;
+  }
+
+  .proposalVotesGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .voteTallyCard {
+    padding: var(--space-2);
+    text-align: center;
+    align-items: center;
+    border-radius: var(--radius-sm);
+  }
+
+  .voteTallyLabel {
+    font-size: 0.625rem;
+  }
+
+  .voteTallyValFor,
+  .voteTallyValAgainst,
+  .voteTallyValAbstain {
+    font-size: 0.75rem;
+  }
+
+  .quorumHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    font-size: 0.6875rem;
+  }
+
+  .proposalActionsRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .proposalActionHint {
+    font-size: 0.75rem;
+  }
+
+  .voteButtonGroup {
+    width: 100%;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .voteButtonGroup button {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  .templateSelector {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .templateBtn {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    min-height: 44px;
+    gap: 6px;
+  }
+
+  .pureBanner {
+    font-size: 0.75rem;
+    padding: var(--space-2) var(--space-3);
+    line-height: 1.4;
+  }
+
+  .promoForm {
+    padding: var(--space-3);
+    gap: var(--space-3);
+  }
+
+  .paramCard {
+    padding: var(--space-3);
+  }
+
+  .calldataPreview {
+    padding: var(--space-2);
+  }
+
+  .calldataCode {
+    max-height: 100px;
+    overflow-y: auto;
+    font-size: 0.6875rem;
+  }
+
   .rulesGrid {
     grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+
+  .ruleItem {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .ruleDesc {
+    font-size: 0.6875rem;
+  }
+
+  .vaultItem {
+    padding: var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .vaultInput {
+    font-size: 0.75rem;
+    padding: var(--space-2);
+    word-break: break-all;
+  }
+
+  .secDesc {
+    font-size: 0.75rem;
+    line-height: 1.4;
   }
 }

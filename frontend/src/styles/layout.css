@@ -272,3 +272,57 @@
     border-radius: var(--radius-md);
   }
 }
+
+/* ==========================================================================
+   📜 REGISTRO DE ACTIVIDAD (ACTIVITY LOG CONSOLE)
+   ========================================================================== */
+.activity-log-box {
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  max-height: 260px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.activity-log-empty {
+  color: var(--text-tertiary);
+  font-style: italic;
+  padding: var(--space-2) 0;
+}
+
+.activity-log-item-normal {
+  color: var(--text-secondary);
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+.activity-log-item-error {
+  color: var(--color-crimson-light);
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.activity-log-item-reset {
+  color: var(--color-blue-light);
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 768px) {
+  .activity-log-box {
+    max-height: 180px;
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.6875rem;
+  }
+}

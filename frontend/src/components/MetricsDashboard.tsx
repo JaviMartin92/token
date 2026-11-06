@@ -101,7 +101,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
       <Card
         variant="surface"
         collapsible
-        defaultExpanded={false}
+        defaultExpanded={true}
         headerTitle={UI_STRINGS.METRICS.TITLE}
         headerSubtitle={UI_STRINGS.METRICS.SUBTITLE}
         headerAction={
@@ -110,7 +110,8 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
             size="sm"
             onClick={onOpenApyModal}
           >
-            ⚡ Desglose Matemático APY ({liveApyStr})
+            <span className={styles.desktopOnly}>⚡ Desglose Matemático APY ({liveApyStr})</span>
+            <span className={styles.mobileOnly}>⚡ APY ({liveApyStr})</span>
           </Button>
         }
       >
@@ -189,7 +190,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
       <Card
         variant="surface"
         collapsible
-        defaultExpanded={true}
+        defaultExpanded={false}
         headerTitle="💎 Conciliación On-Chain: Desglose de Reservas, Deuda y NAV"
         headerSubtitle="Transparencia fiduciaria y matemática: por qué cada cuota de VIRAJE está 100% respaldada sin pasivos ocultos"
       >

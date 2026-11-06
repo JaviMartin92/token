@@ -593,7 +593,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
       headerTitle={`⚖️ ${UI_STRINGS.GOVERNANCE.TITLE}`}
       headerSubtitle={UI_STRINGS.GOVERNANCE.SUBTITLE}
       headerAction={
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <div className={styles.headerBadgesRow}>
           <Badge variant="blue" size="sm">
             EVM Chain {currentChainId}
           </Badge>
@@ -612,14 +612,19 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
       <div className={styles.container}>
         {/* Anti-Spam & Quorum Global Status Banner */}
         <div className={canPropose ? styles.antiSpamSuccess : styles.antiSpamBanner}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>{canPropose ? '✅' : '⚠️'}</span>
-            <span>
-              <strong>{UI_STRINGS.GOVERNANCE.VOTING_POWER_LABEL}</strong>{' '}
-              {userStakedBalanceNum.toLocaleString('en-US', { minimumFractionDigits: 2 })} stVIRAJE |{' '}
-              <strong>{UI_STRINGS.GOVERNANCE.LABEL_PROPOSAL_THRESHOLD}</strong> {UI_STRINGS.GOVERNANCE.VAL_PROPOSAL_THRESHOLD} |{' '}
-              <strong>{UI_STRINGS.GOVERNANCE.LABEL_QUORUM_REQUIRED}</strong> {UI_STRINGS.GOVERNANCE.VAL_QUORUM_REQUIRED}
-            </span>
+          <div className={styles.antiSpamContent}>
+            <span className={styles.antiSpamIcon}>{canPropose ? '✅' : '⚠️'}</span>
+            <div className={styles.antiSpamDetails}>
+              <div>
+                <strong>{UI_STRINGS.GOVERNANCE.VOTING_POWER_LABEL}</strong>{' '}
+                {userStakedBalanceNum.toLocaleString('en-US', { minimumFractionDigits: 2 })} stVIRAJE
+              </div>
+              <div className={styles.antiSpamSubtext}>
+                <span><strong>{UI_STRINGS.GOVERNANCE.LABEL_PROPOSAL_THRESHOLD}</strong> {UI_STRINGS.GOVERNANCE.VAL_PROPOSAL_THRESHOLD}</span>
+                <span className={styles.antiSpamSep}>•</span>
+                <span><strong>{UI_STRINGS.GOVERNANCE.LABEL_QUORUM_REQUIRED}</strong> {UI_STRINGS.GOVERNANCE.VAL_QUORUM_REQUIRED}</span>
+              </div>
+            </div>
           </div>
           <Badge variant={canPropose ? 'emerald' : 'amber'} size="sm">
             {canPropose ? UI_STRINGS.GOVERNANCE.ELIGIBLE_BADGE : UI_STRINGS.GOVERNANCE.INELIGIBLE_BADGE}
@@ -771,7 +776,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
 
                     {/* Proposal Action Buttons */}
                     <div className={styles.proposalActionsRow}>
-                      <span style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>
+                      <span className={styles.proposalActionHint}>
                         {prop.state === 1 && !prop.hasUserVoted && 'Emite tu voto ponderado con tu saldo stVIRAJE:'}
                         {prop.state === 1 && prop.hasUserVoted && 'Has participado en esta votación on-chain.'}
                         {prop.state === 4 && 'La propuesta ha superado el quórum y puede ser puesta en cola en Timelock (72h).'}
