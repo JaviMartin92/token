@@ -38,6 +38,9 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
     error LoanNotLiquidatable();
     error NoClaimableEquity();
     error InsufficientBalance();
+    error TreasuryLoanCapExceeded(uint256 requested, uint256 capacity);
+    error CircularCollateralCapExceeded(uint256 requested, uint256 capacity);
+    error OutstandingTreasuryDebt();
 
     address public immutable stablecoin;
     VaultPositionNFT public immutable positionNFT;
@@ -52,6 +55,21 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
     mapping(uint256 => address) public loanCollateralAsset;
     mapping(address => mapping(address => uint256)) public claimableBorrowerEquityAssets;
 
+    /// @notice Haircut applied to vested-bond NFTs when sizing new loans and health factors.
+    /// @dev Bond NFTs are claims on the very treasury that funds these loans (reflexive
+    ///      collateral). 50% by default; timelock-governed.
+    uint256 public bondCollateralHaircutBps = 5000;
+    /// @notice Valuation floor used to refund liquidation surplus to the borrower.
+    uint256 public bondLiquidationFloorBps = 8500;
+    /// @notice Haircut applied to ALPHA collateral (a direct NAV claim on the treasury).
+    uint256 public alphaCollateralHaircutBps = 5000;
+    /// @notice Maximum share of the treasury credit facility that may be collateralised by
+    ///         reflexive assets (bond NFTs + ALPHA), in BPS of the facility limit.
+    uint256 public circularCollateralCapBps = 2500; // 25% of the 20% facility = 5% of reserves
+    /// @notice Treasury-funded debt currently collateralised by reflexive assets.
+    uint256 public treasuryCircularDebtUSD;
+    uint256 public constant MAX_COLLATERAL_HAIRCUT_BPS = 10000;
+
     event TokenomicsEngineUpdated(address oldEngine, address newEngine);
     event AlphaTokenUpdated(address oldToken, address newToken);
     event WbtcTokenUpdated(address oldToken, address newToken);
@@ -61,6 +79,12 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
     event TreasuryUpdated(address oldTreasury, address newTreasury);
     event BorrowerAssetEquityClaimed(address indexed borrower, address indexed asset, uint256 amount);
     event TokensSwept(address indexed token, address indexed to, uint256 amount);
+    event CollateralHaircutsUpdated(
+        uint256 bondCollateralHaircutBps,
+        uint256 bondLiquidationFloorBps,
+        uint256 alphaCollateralHaircutBps,
+        uint256 circularCollateralCapBps
+    );
 
     function setTokenomicsEngine(address _tokenomicsEngine) external onlyOwner {
         if (_tokenomicsEngine == address(0)) revert IProtocolErrors.ZeroAddress();
@@ -97,6 +121,37 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         address old = circuitBreaker;
         circuitBreaker = _circuitBreaker;
         emit CircuitBreakerUpdated(old, _circuitBreaker);
+    }
+
+    /**
+     * @notice Updates collateral risk parameters. Timelock-governed.
+     * @dev Haircuts can only tighten (never exceed 100%); the concentration cap can only
+     *      reduce exposure to reflexive collateral beyond 100% of the facility.
+     */
+    function setCollateralRiskParams(
+        uint256 _bondCollateralHaircutBps,
+        uint256 _bondLiquidationFloorBps,
+        uint256 _alphaCollateralHaircutBps,
+        uint256 _circularCollateralCapBps
+    ) external onlyOwner {
+        if (
+            _bondCollateralHaircutBps > MAX_COLLATERAL_HAIRCUT_BPS
+                || _bondLiquidationFloorBps > MAX_COLLATERAL_HAIRCUT_BPS
+                || _alphaCollateralHaircutBps > MAX_COLLATERAL_HAIRCUT_BPS
+                || _circularCollateralCapBps > MAX_COLLATERAL_HAIRCUT_BPS
+        ) {
+            revert IProtocolErrors.InvalidParameters();
+        }
+        bondCollateralHaircutBps = _bondCollateralHaircutBps;
+        bondLiquidationFloorBps = _bondLiquidationFloorBps;
+        alphaCollateralHaircutBps = _alphaCollateralHaircutBps;
+        circularCollateralCapBps = _circularCollateralCapBps;
+        emit CollateralHaircutsUpdated(
+            _bondCollateralHaircutBps,
+            _bondLiquidationFloorBps,
+            _alphaCollateralHaircutBps,
+            _circularCollateralCapBps
+        );
     }
 
     uint256 public constant MAX_LTV_BPS = 7000; // Max 70% LTV
@@ -180,9 +235,81 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
 
     function setTreasury(address _treasury) external onlyOwner {
         if (_treasury == address(0)) revert IProtocolErrors.ZeroAddress();
+        if (_treasuryActiveLoansReceivableUSD > 0) revert OutstandingTreasuryDebt();
         address old = treasury;
         treasury = _treasury;
         emit TreasuryUpdated(old, _treasury);
+    }
+
+    // =========================================================================
+    // COLLATERAL VALUATION (C-03)
+    // =========================================================================
+
+    /**
+     * @notice Sizes a vested-bond NFT at a haircut of its purchase price.
+     * @dev Bond NFTs are liabilities of the same treasury that funds the loan, so they are
+     *      discounted heavily and additionally bounded by the circular-collateral budget.
+     */
+    function _bondCollateralValueUSD(VaultPositionNFT.Position memory pos) internal view returns (uint256) {
+        uint256 base = pos.discountedPricePaid > 0 ? pos.discountedPricePaid : pos.principalAmount;
+        return (base * bondCollateralHaircutBps) / 10000;
+    }
+
+    /// @notice Sizes ALPHA collateral at a haircut of its treasury NAV.
+    function _alphaCollateralValueUSD(uint256 amount) internal view returns (uint256) {
+        if (treasury == address(0) || amount == 0) return 0;
+        uint256 navPerShare = ITreasury(treasury).getNAVPerShare(); // 18 decimals
+        uint256 fullUSD = (amount * navPerShare) / 1e30; // 6 decimals
+        return (fullUSD * alphaCollateralHaircutBps) / 10000;
+    }
+
+    function _isCircularLoan(uint256 loanId, Loan storage loan) internal view returns (bool) {
+        if (loan.positionTokenId > 0) return true;
+        return loanCollateralAsset[loanId] == alphaToken;
+    }
+
+    /**
+     * @notice Enforces the aggregate treasury credit cap and the reflexive-collateral budget.
+     * @param borrowAmount Principal being disbursed by the treasury.
+     * @param circular Whether the loan is collateralised by a treasury claim.
+     */
+    function _assertTreasuryCapacity(uint256 borrowAmount, bool circular) internal view {
+        if (treasury == address(0)) return;
+        (uint256 limit,, uint256 capacity) = ITreasury(treasury).treasuryLoanLimits();
+
+        if (borrowAmount > capacity) revert TreasuryLoanCapExceeded(borrowAmount, capacity);
+
+        if (circular) {
+            uint256 circularLimit = (limit * circularCollateralCapBps) / 10000;
+            uint256 circularOutstanding = treasuryCircularDebtUSD;
+            uint256 circularCapacity =
+                circularLimit > circularOutstanding ? circularLimit - circularOutstanding : 0;
+            if (borrowAmount > circularCapacity) {
+                revert CircularCollateralCapExceeded(borrowAmount, circularCapacity);
+            }
+        }
+    }
+
+    /// @notice Books treasury-funded reflexive exposure when a loan is disbursed.
+    function _bookCircularDebt(uint256 loanId, Loan storage loan) internal {
+        if (loan.lender == treasury && _isCircularLoan(loanId, loan)) {
+            treasuryCircularDebtUSD += loan.borrowAmount;
+        }
+    }
+
+    /// @notice Releases reflexive exposure when a treasury loan is settled.
+    function _releaseCircularDebt(uint256 loanId, Loan storage loan) internal {
+        if (loan.lender != treasury || !_isCircularLoan(loanId, loan)) return;
+        uint256 debt = treasuryCircularDebtUSD;
+        treasuryCircularDebtUSD = loan.borrowAmount >= debt ? 0 : debt - loan.borrowAmount;
+    }
+
+    /// @notice Mirrors a treasury loan settlement into the treasury's aggregate exposure counter.
+    function _settleTreasuryLoan(Loan storage loan) internal {
+        if (treasury == address(0) || loan.lender != treasury) return;
+        uint256 principal = loan.borrowAmount;
+        if (principal == 0) return;
+        try ITreasury(treasury).recordTreasuryLoanRepayment(principal) {} catch {}
     }
 
     function _getTreasuryBorrowAprBps() internal view returns (uint256) {
@@ -214,8 +341,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         VaultPositionNFT.Position memory pos = positionNFT.getPosition(positionTokenId);
         if (pos.isRagequitted || pos.isMaturedClaimed) revert InactivePosition();
 
-        uint256 baseCollateral = pos.discountedPricePaid > 0 ? pos.discountedPricePaid : pos.principalAmount;
-        uint256 posCollateralUSD = (baseCollateral * 8500) / 10000;
+        uint256 posCollateralUSD = _bondCollateralValueUSD(pos);
         uint256 maxBorrow = (posCollateralUSD * MAX_LTV_BPS) / 10000;
         if (borrowAmount > maxBorrow) revert MaxLTVExceeded(borrowAmount, maxBorrow);
 
@@ -315,10 +441,10 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         VaultPositionNFT.Position memory pos = positionNFT.getPosition(positionTokenId);
         if (pos.isRagequitted || pos.isMaturedClaimed) revert InactivePosition();
 
-        uint256 baseCollateral = pos.discountedPricePaid > 0 ? pos.discountedPricePaid : pos.principalAmount;
-        uint256 posCollateralUSD = (baseCollateral * 8500) / 10000;
+        uint256 posCollateralUSD = _bondCollateralValueUSD(pos);
         uint256 maxBorrow = (posCollateralUSD * MAX_LTV_BPS) / 10000;
         if (borrowAmount > maxBorrow) revert MaxLTVExceeded(borrowAmount, maxBorrow);
+        _assertTreasuryCapacity(borrowAmount, true);
 
         loanId = nextLoanId;
         unchecked {
@@ -342,6 +468,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
 
         _totalActiveLoansReceivableUSD += borrowAmount;
         _treasuryActiveLoansReceivableUSD += borrowAmount;
+        _bookCircularDebt(loanId, loans[loanId]);
 
         uint256 originationFee = (borrowAmount * ORIGINATION_FEE_BPS) / 10000; // 0.5%
         uint256 netBorrow = borrowAmount - originationFee;
@@ -393,8 +520,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
 
         if (collateralAsset == alphaToken) {
             maxLtvBps = 5000; // 50% Max LTV for ALPHA
-            uint256 navPerShare = ITreasury(treasury).getNAVPerShare(); // 18 decimals
-            collateralUSD = (collateralAmount * navPerShare) / 1e30; // 6 decimals
+            collateralUSD = _alphaCollateralValueUSD(collateralAmount); // 6 decimals, haircut NAV
         } else if (collateralAsset == wbtcToken) {
             maxLtvBps = 7000; // 70% Max LTV for WBTC
             if (priceFeed == address(0)) revert IProtocolErrors.ZeroAddress();
@@ -411,6 +537,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
 
         uint256 maxBorrow = (collateralUSD * maxLtvBps) / 10000;
         if (borrowAmount > maxBorrow) revert MaxLTVExceeded(borrowAmount, maxBorrow);
+        _assertTreasuryCapacity(borrowAmount, collateralAsset == alphaToken);
 
         loanId = nextLoanId;
         unchecked {
@@ -436,6 +563,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
 
         _totalActiveLoansReceivableUSD += borrowAmount;
         _treasuryActiveLoansReceivableUSD += borrowAmount;
+        _bookCircularDebt(loanId, loans[loanId]);
 
         uint256 originationFee = (borrowAmount * ORIGINATION_FEE_BPS) / 10000; // 0.5%
         uint256 netBorrow = borrowAmount - originationFee;
@@ -544,8 +672,10 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
 
         // If funded by Treasury / Admin operator:
         if (treasury != address(0) && (msg.sender == owner() || msg.sender == treasury)) {
+            _assertTreasuryCapacity(loan.borrowAmount, loan.positionTokenId > 0);
             loan.lender = treasury;
             _treasuryActiveLoansReceivableUSD += loan.borrowAmount;
+            _bookCircularDebt(loanId, loan);
             ITreasury(treasury).disburseTreasuryLoan(address(this), loan.borrowAmount);
             IERC20(stablecoin).safeTransfer(loan.borrower, netBorrow);
             if (originationFee > 0 && feeCollector != address(0)) {
@@ -602,19 +732,16 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         uint256 collateralUSD = 0;
         if (loan.positionTokenId > 0 && address(positionNFT) != address(0)) {
             try positionNFT.getPosition(loan.positionTokenId) returns (VaultPositionNFT.Position memory pos) {
-                uint256 baseCollateral = pos.discountedPricePaid > 0 ? pos.discountedPricePaid : pos.principalAmount;
-                collateralUSD = (baseCollateral * 8500) / 10000;
+                collateralUSD = _bondCollateralValueUSD(pos);
             } catch {
                 collateralUSD = loan.collateralAmount;
             }
         } else if (loan.collateralAmount > 0) {
             address colAsset = loanCollateralAsset[loanId];
             if (colAsset == alphaToken && treasury != address(0)) {
-                try ITreasury(treasury).getNAVPerShare() returns (uint256 nav) {
-                    collateralUSD = (loan.collateralAmount * nav) / 1e30;
-                } catch {
-                    collateralUSD = loan.collateralAmount;
-                }
+                // NAV failure must not silently fall back to raw token units (H-04). A
+                // revert blocks liquidations instead of mispricing them.
+                collateralUSD = _alphaCollateralValueUSD(loan.collateralAmount);
             } else if (colAsset != address(0) && priceFeed != address(0)) {
                 try IOracleHub(priceFeed).getAssetUsdValue(colAsset, loan.collateralAmount) returns (uint256 val18) {
                     collateralUSD = val18 / 1e12;
@@ -671,6 +798,8 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
             } else {
                 _treasuryActiveLoansReceivableUSD = 0;
             }
+            _releaseCircularDebt(loanId, loan);
+            _settleTreasuryLoan(loan);
             address vaultTarget = treasury;
             try ITreasury(treasury).alphaVault() returns (address av) {
                 if (av != address(0)) vaultTarget = av;
@@ -746,6 +875,8 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
             } else {
                 _treasuryActiveLoansReceivableUSD = 0;
             }
+            _releaseCircularDebt(loanId, loan);
+            _settleTreasuryLoan(loan);
         }
 
         uint256 totalCollateral = loan.collateralAmount;
@@ -792,7 +923,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
     function _liquidateNFTCollateral(Loan storage loan, uint256 totalOwed) private {
         try positionNFT.getPosition(loan.positionTokenId) returns (VaultPositionNFT.Position memory pos) {
             uint256 nftBasePrice = pos.discountedPricePaid > 0 ? pos.discountedPricePaid : pos.principalAmount;
-            uint256 nftFloorValue = (nftBasePrice * 8500) / 10000;
+            uint256 nftFloorValue = (nftBasePrice * bondLiquidationFloorBps) / 10000;
             uint256 maxLiquidatorReward = (totalOwed * (10000 + LIQUIDATION_BONUS_BPS)) / 10000;
             if (nftFloorValue > maxLiquidatorReward) {
                 uint256 borrowerRefund = nftFloorValue - maxLiquidatorReward;

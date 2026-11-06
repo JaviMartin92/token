@@ -23,7 +23,7 @@ function validateEnv() {
 
   const result = envSchema.safeParse(rawEnv);
   if (!result.success) {
-    console.error('❌ [Alpha Centauri] Invalid environment configuration:', result.error.format());
+    console.error('❌ [Viraje Protocol] Invalid environment configuration:', result.error.format());
     throw new Error(`[Config] Environment validation failed: ${result.error.message}`);
   }
 

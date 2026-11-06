@@ -1,6 +1,6 @@
 import { decodeErrorResult } from 'viem';
 
-// Custom Solidity Errors definitions aggregated across Alpha Centauri smart contracts
+// Custom Solidity Errors definitions aggregated across Viraje Protocol smart contracts
 const PROTOCOL_CUSTOM_ERRORS_ABI = [
   // General & Auth
   { type: 'error', name: 'Unauthorized', inputs: [] },
@@ -164,8 +164,8 @@ export function decodeWeb3Error(err: any): DecodedWeb3Error {
   if (msg.includes('ProposalThresholdNotMet')) {
     return {
       title: 'Umbral de Gobernanza No Alcanzado',
-      message: 'Se requieren al menos 25,000 stALPHA en staking para presentar propuestas a la DAO.',
-      actionableHint: 'Haz staking de tokens ALPHA en la sección de Gobernanza para participar.',
+      message: 'Se requieren al menos 25,000 stVIRAJE en staking para presentar propuestas a la DAO.',
+      actionableHint: 'Haz staking de tokens VIRAJE en la sección de Gobernanza para participar.',
       isUserRejection: false
     };
   }
@@ -234,7 +234,7 @@ function mapSolidityErrorToMessage(errorName: string): DecodedWeb3Error {
     case 'InvariantNAVDecreased':
       return {
         title: 'Protección Anti-Dilución NAV',
-        message: 'La operación provocaría una caída en el valor contable por cuota de ALPHA.',
+        message: 'La operación provocaría una caída en el valor contable por cuota de VIRAJE.',
         actionableHint: 'Todas las emisiones y reembolsos se realizan a valor liquidativo par.',
         isUserRejection: false
       };
@@ -248,14 +248,14 @@ function mapSolidityErrorToMessage(errorName: string): DecodedWeb3Error {
     case 'ProposalThresholdNotMet':
       return {
         title: 'Umbral Anti-Spam Insuficiente',
-        message: 'No posees los 25,000 stALPHA requeridos para registrar una propuesta en la DAO.',
+        message: 'No posees los 25,000 stVIRAJE requeridos para registrar una propuesta en la DAO.',
         actionableHint: 'Incrementa tu posición en staking de gobernanza para proponer.',
         isUserRejection: false
       };
     case 'QuorumNotReached':
       return {
         title: 'Quórum Mínimo No Alcanzado',
-        message: 'La propuesta no alcanzó el quórum mínimo de 80,000 votos stALPHA para ser aprobada.',
+        message: 'La propuesta no alcanzó el quórum mínimo de 80,000 votos stVIRAJE para ser aprobada.',
         isUserRejection: false
       };
     case 'InsufficientLiquidity':

@@ -188,7 +188,7 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
         inputAmount: `$${num.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
         inputSymbol: 'USDC (Bruto Ingresado)',
         expectedOutput: `${expectedShares}`,
-        expectedOutputSymbol: `ALPHA Shares (Acuñadas a $${spotNavNum.toFixed(4)} NAV)`,
+        expectedOutputSymbol: `VIRAJE Shares (Acuñadas a $${spotNavNum.toFixed(4)} NAV)`,
         details: [
           { label: 'Monto Bruto Ingresado', value: `$${num.toFixed(2)} USDC` },
           { label: `Comisión Dinámica Adaptativa (${dynamicFeePct}%)`, value: `$${fee} USDC`, badge: `Slippage BPS: ${dynamicFeeBps}` },
@@ -221,8 +221,8 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
       })) as bigint;
 
       if (currentAllowance < amountWei) {
-        addLog(`Aprobando ${redeemAmount} ALPHA para contrato de Tesorería...`);
-        addToast('info', 'Aprobación ALPHA', `Autorizando ${redeemAmount} ALPHA en tu billetera...`);
+        addLog(`Aprobando ${redeemAmount} VIRAJE para contrato de Tesorería...`);
+        addToast('info', 'Aprobación VIRAJE', `Autorizando ${redeemAmount} VIRAJE en tu billetera...`);
         const appHash = await client.writeContract({
           address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
           abi: ABIS.ERC20,
@@ -262,7 +262,7 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
         return;
       }
 
-      addToast('info', 'Rescate Tesorería', `Confirmando rescate de ${redeemAmount} ALPHA...`);
+      addToast('info', 'Rescate Tesorería', `Confirmando rescate de ${redeemAmount} VIRAJE...`);
       const tx = await client.writeContract({
         address: CONTRACT_ADDRESSES.TREASURY,
         abi: ABIS.TREASURY,
@@ -294,22 +294,22 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
       const feeCommunity = (num * 0.005).toFixed(2);
 
       requestConfirmation({
-        title: 'Rescate de ALPHA Shares por USDC',
+        title: 'Rescate de VIRAJE Shares por USDC',
         actionIcon: '🏛️',
         typeBadge: 'Quema de Shares & Salida',
         targetContractName: 'Treasury.sol',
         targetContractAddress: CONTRACT_ADDRESSES.TREASURY,
         inputAmount: `${num.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-        inputSymbol: 'ALPHA Shares a Quemar',
+        inputSymbol: 'VIRAJE Shares a Quemar',
         expectedOutput: `$${(parseFloat(net) * (navPerShareNum || 1.0)).toFixed(2)}`,
         expectedOutputSymbol: `USDC Netos Recibidos (Canje a $${(navPerShareNum || 1.0).toFixed(4)} NAV)`,
         details: [
-          { label: 'Shares Presentadas para Rescate', value: `${num.toFixed(2)} ALPHA Shares` },
+          { label: 'Shares Presentadas para Rescate', value: `${num.toFixed(2)} VIRAJE Shares` },
           { label: 'Comisión de Rescate (1.00%)', value: `$${fee} USDC`, badge: 'Reparto 50%/50%' },
           { label: 'Destino 50% Comisión (Reservas)', value: `$${feeReserves} USDC (Acrece NAV del Protocolo)` },
           { label: 'Destino 50% Comisión (Community Yield Vault)', value: `$${feeCommunity} USDC (Liquid Real Yield para stakers)` }
         ],
-        warningNote: 'Tus participaciones ALPHA serán quemadas y recibirás el monto neto en USDC a valor NAV.',
+        warningNote: 'Tus participaciones VIRAJE serán quemadas y recibirás el monto neto en USDC a valor NAV.',
         confirmButtonText: '✍️ Confirmar Rescate',
         confirmButtonVariant: 'amber'
       }, executeRedeem);

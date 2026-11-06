@@ -379,15 +379,15 @@ export default function App() {
         <span data-testid="por-row-wbtc-val">${universalYield.porBreakdown.wbtc.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</span>
         <span data-testid="por-row-weth-val">${universalYield.porBreakdown.weth.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</span>
         <span data-testid="por-row-alpha-val">${(parseFloat((stakingMetrics.treasuryStakedSupply || '0').replace(/,/g, '')) * (parseFloat((treasuryMetrics.navPerShareUSD || '1.0').replace('$', '').replace(' USDC', '')) || 1.0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</span>
-        <span data-testid="staking-circulating-supply">{stakingMetrics.circulatingSupply} ALPHA</span>
-        <span data-testid="staking-community-staked">{stakingMetrics.communityStakedSupply} stALPHA</span>
-        <span data-testid="staking-community-vault-staked">{stakingMetrics.communityVaultStakedSupply} stALPHA</span>
-        <span data-testid="staking-vaults-staked">{stakingMetrics.communityVaultStakedSupply} stALPHA</span>
-        <span data-testid="staking-reserves-staked">{stakingMetrics.treasuryStakedSupply} stALPHA</span>
-        <span data-testid="staking-total-staked">{stakingMetrics.totalStakedSupply} ALPHA ({stakingMetrics.stakingRatioPct})</span>
-        <span data-testid="staking-global-staked">{stakingMetrics.totalStakedSupply} ALPHA ({stakingMetrics.stakingRatioPct})</span>
-        <span data-testid="staking-deflation-burned">{treasuryMetrics.totalBurnedTokens} ALPHA</span>
-        <span data-testid="staking-deflation-destroyed">{treasuryMetrics.totalBurnedTokens} ALPHA</span>
+        <span data-testid="staking-circulating-supply">{stakingMetrics.circulatingSupply} VIRAJE</span>
+        <span data-testid="staking-community-staked">{stakingMetrics.communityStakedSupply} stVIRAJE</span>
+        <span data-testid="staking-community-vault-staked">{stakingMetrics.communityVaultStakedSupply} stVIRAJE</span>
+        <span data-testid="staking-vaults-staked">{stakingMetrics.communityVaultStakedSupply} stVIRAJE</span>
+        <span data-testid="staking-reserves-staked">{stakingMetrics.treasuryStakedSupply} stVIRAJE</span>
+        <span data-testid="staking-total-staked">{stakingMetrics.totalStakedSupply} VIRAJE ({stakingMetrics.stakingRatioPct})</span>
+        <span data-testid="staking-global-staked">{stakingMetrics.totalStakedSupply} VIRAJE ({stakingMetrics.stakingRatioPct})</span>
+        <span data-testid="staking-deflation-burned">{treasuryMetrics.totalBurnedTokens} VIRAJE</span>
+        <span data-testid="staking-deflation-destroyed">{treasuryMetrics.totalBurnedTokens} VIRAJE</span>
         <span data-testid="escrow-total-lent">${activeTreasuryLoansSum.toFixed(2)} USD</span>
       </div>
     </div>

@@ -23,6 +23,7 @@ import "./interfaces/IRealYieldRouter.sol";
 import "./interfaces/IUniversalYieldAdapter.sol";
 import "./interfaces/IProtocolErrors.sol";
 import "./interfaces/ITreasury.sol";
+import "./interfaces/IVestedDiscountVault.sol";
 
 /**
  * @title TreasuryManager
@@ -52,6 +53,8 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     error UnauthorizedDisburseLoans();
     error UnauthorizedVaultPayout();
     error InsufficientLiquidity();
+    error UnauthorizedRedemption(address caller, address beneficiary);
+    error TreasuryLoanCapExceeded(uint256 requested, uint256 capacity);
 
     ProtocolAddressProvider public immutable addressProvider;
 
@@ -79,6 +82,14 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
 
     uint256 public lastSettledNAVPerShare = 1e18;
 
+    // --- Treasury Credit Facility (C-03) ---
+    /// @notice Aggregate outstanding treasury loan principal, denominated in redemption token units.
+    uint256 public treasuryLoansOutstanding;
+    /// @notice Maximum share of stablecoin reserves that may be lent through the P2P market (BPS).
+    uint256 public treasuryLoanCapBps = 2000; // 20% default, timelock-governed
+    uint256 public constant MAX_TREASURY_LOAN_CAP_BPS = 5000; // Hard ceiling: 50%
+    uint256 public constant BPS_DENOMINATOR = 10000;
+
     // --- Events ---
     event WhitelistUpdated(address indexed account, bool isWhitelisted);
     event Deposited(address indexed user, uint256 usdcAmount, uint256 sharesMinted);
@@ -96,6 +107,9 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     event KYCForcedUpdated(bool forced);
     event TokensBurnedRecorded(address indexed caller, uint256 amount, uint256 totalBurned);
     event ReserveFeeNotified(address indexed caller, uint256 feeAmount, uint256 sweptToVault);
+    event TreasuryLoanCapUpdated(uint256 oldCapBps, uint256 newCapBps);
+    event TreasuryLoanDisbursed(address indexed recipient, uint256 amount, uint256 outstanding);
+    event TreasuryLoanRepaymentRecorded(address indexed caller, uint256 amount, uint256 outstanding);
 
     modifier onlyWhitelisted(address account) {
         if (kycForced && !kycWhitelist[account] && !kycWhitelist[msg.sender]) revert KYCRequired(account);
@@ -142,6 +156,10 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
         redemptionTokenDecimals = _redemptionTokenDecimals;
         tvlCap = 50_000_000 * 1e18; // Base 18 USD (configurable via Timelock DAO proposal)
         slippageToleranceBps = 100; // 1% default
+        // Proxy storage does not inherit implementation state-variable initialisers, so the
+        // sensible defaults must be written here as well.
+        lastSettledNAVPerShare = 1e18;
+        treasuryLoanCapBps = 2000; // 20% of stablecoin reserves, timelock-governed
 
         currentWeights = AssetWeights({stablecoins: 5000, wbtc: 2500, weth: 1250, alphaProtocolStaking: 1250});
     }
@@ -430,6 +448,8 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     {
         if (beneficiary == address(0)) revert ZeroAddress();
         if (stableAmount == 0) revert ZeroAmount();
+        // C-02: settle matured bonds before pricing shares.
+        _accrueVestedVault();
         uint256 grossDepositUSD = stableAmount * (10 ** (18 - redemptionTokenDecimals));
         if (tvlCap > 0 && getTotalNavUSD() + grossDepositUSD > tvlCap) {
             revert TVLCapExceeded(getTotalNavUSD() + grossDepositUSD, tvlCap);
@@ -569,6 +589,13 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     {
         if (beneficiary == address(0) || recipient == address(0)) revert ZeroAddress();
         if (sharesAmount == 0) revert ZeroAmount();
+        // C-01: shares are burned from msg.sender, therefore msg.sender MUST be the
+        // beneficiary whose KYC status and cooldown are enforced. Without this check any
+        // unverified holder could burn their own shares while passing a whitelisted
+        // address as beneficiary, defeating the regulatory perimeter.
+        if (msg.sender != beneficiary) revert UnauthorizedRedemption(msg.sender, beneficiary);
+        // C-02: settle matured bonds before pricing shares.
+        _accrueVestedVault();
         if (
             lastDepositBlock[beneficiary] >= block.number ||
             lastDepositBlock[recipient] >= block.number ||
@@ -625,6 +652,19 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     }
 
     /**
+     * @notice Settles matured vested bonds before any NAV-based pricing decision.
+     * @dev C-02: without this, a bond that matured since the last interaction is still valued
+     *      on its linear curve (slightly overstated), which would let a depositor mint shares
+     *      below fair NAV and profit when the next accrual corrects the curve. A revert from
+     *      the registered vault is surfaced instead of silently pricing on stale data.
+     */
+    function _accrueVestedVault() internal {
+        address vested = addressProvider.getVestedVault();
+        if (vested == address(0) || vested.code.length == 0) return;
+        IVestedDiscountVault(vested).accrue();
+    }
+
+    /**
      * @notice Emergency redemption for accounts whose KYC whitelist status was revoked.
      *         Applies a 5.0% retention fee synchronously routed to RealYieldRouter to prevent arbitrage.
      * @param sharesAmount The amount of Alpha shares to redeem.
@@ -642,6 +682,9 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
 
         AlphaToken token = AlphaToken(addressProvider.getAlphaToken());
         if (token.balanceOf(msg.sender) < sharesAmount) revert InsufficientShareBalance();
+
+        // C-02: settle matured bonds before pricing shares.
+        _accrueVestedVault();
 
         (,, uint256 preRatioBps) = getProofOfReserves();
         uint256 netCirculating = getNetCirculatingShares();
@@ -696,6 +739,8 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
             revert Unauthorized();
         }
         if (stableAmount == 0) revert ZeroAmount();
+        // C-02: settle matured bonds before pricing shares.
+        _accrueVestedVault();
 
         AlphaVault vault = AlphaVault(addressProvider.getAddress(addressProvider.ID_ALPHA_VAULT()));
         uint256 localBal = IERC20(redemptionToken).balanceOf(address(this));
@@ -719,7 +764,77 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     }
 
     /**
-     * @notice Disburses loans from AlphaVault for the P2PLendingMarket
+     * @notice Total stablecoin reserves backing redemptions: liquid vault balance plus
+     *         funds deployed in active ERC-4626 adapters.
+     */
+    function treasuryStableReserves() public view returns (uint256 total) {
+        address vaultAddr = addressProvider.getAlphaVault();
+        if (vaultAddr == address(0)) return 0;
+
+        AlphaVault vault = AlphaVault(vaultAddr);
+        total = vault.getBalance(redemptionToken) + IERC20(redemptionToken).balanceOf(address(this));
+
+        uint256 len = activeYieldAdapters.length;
+        for (uint256 i = 0; i < len;) {
+            address adapter = activeYieldAdapters[i];
+            try IUniversalYieldAdapter(adapter).balanceOf(vaultAddr) returns (uint256 shares) {
+                if (shares > 0) {
+                    try IUniversalYieldAdapter(adapter).convertToAssets(shares) returns (uint256 assets) {
+                        total += assets;
+                    } catch {}
+                }
+            } catch {}
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    /**
+     * @notice Returns the aggregate treasury credit facility limits.
+     * @return limit Maximum principal that may be outstanding, in redemption token units.
+     * @return outstanding Current outstanding principal.
+     * @return capacity Additional principal that may be disbursed right now.
+     */
+    function treasuryLoanLimits() public view returns (uint256 limit, uint256 outstanding, uint256 capacity) {
+        limit = (treasuryStableReserves() * treasuryLoanCapBps) / BPS_DENOMINATOR;
+        outstanding = treasuryLoansOutstanding;
+        capacity = limit > outstanding ? limit - outstanding : 0;
+    }
+
+    /**
+     * @notice Updates the maximum share of stablecoin reserves that may be lent out.
+     * @dev Timelock-governed. Hard-capped at 50% to preserve redemption liquidity.
+     */
+    function setTreasuryLoanCapBps(uint256 newCapBps) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (newCapBps > MAX_TREASURY_LOAN_CAP_BPS) {
+            revert IProtocolErrors.InvalidParameters();
+        }
+        uint256 oldCap = treasuryLoanCapBps;
+        treasuryLoanCapBps = newCapBps;
+        emit TreasuryLoanCapUpdated(oldCap, newCapBps);
+    }
+
+    /**
+     * @notice Retires outstanding treasury credit when the P2P market settles a loan.
+     * @dev Only the registered P2P market (or the DAO admin) may record repayments.
+     */
+    function recordTreasuryLoanRepayment(uint256 amount) external {
+        if (
+            msg.sender != addressProvider.getAddress(addressProvider.ID_P2P_MARKET())
+                && !hasRole(DEFAULT_ADMIN_ROLE, msg.sender)
+        ) {
+            revert UnauthorizedDisburseLoans();
+        }
+        uint256 outstanding = treasuryLoansOutstanding;
+        treasuryLoansOutstanding = amount >= outstanding ? 0 : outstanding - amount;
+        emit TreasuryLoanRepaymentRecorded(msg.sender, amount, treasuryLoansOutstanding);
+    }
+
+    /**
+     * @notice Disburses loans from AlphaVault for the P2PLendingMarket.
+     * @dev Enforces a hard aggregate cap against stablecoin reserves so that a single
+     *      borrower cannot drain the liquidity backing redemptions (C-03).
      */
     function disburseTreasuryLoan(address recipient, uint256 amount) external nonReentrant {
         if (
@@ -729,6 +844,13 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
             revert UnauthorizedDisburseLoans();
         }
         if (amount == 0) revert ZeroAmount();
+        if (recipient == address(0)) revert ZeroAddress();
+
+        uint256 limit = (treasuryStableReserves() * treasuryLoanCapBps) / BPS_DENOMINATOR;
+        uint256 outstanding = treasuryLoansOutstanding;
+        if (outstanding + amount > limit) {
+            revert TreasuryLoanCapExceeded(amount, limit > outstanding ? limit - outstanding : 0);
+        }
 
         AlphaVault vault = AlphaVault(addressProvider.getAddress(addressProvider.ID_ALPHA_VAULT()));
 
@@ -741,7 +863,9 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
             if (available < amount) revert InsufficientLiquidity();
         }
 
+        treasuryLoansOutstanding = outstanding + amount;
         vault.transferFunds(redemptionToken, recipient, amount);
+        emit TreasuryLoanDisbursed(recipient, amount, treasuryLoansOutstanding);
     }
 
     /**

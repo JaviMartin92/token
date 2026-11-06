@@ -227,10 +227,12 @@ contract DeployMainnet is Script {
         addressProvider.setAddress(keccak256("DISCOUNT_BUYBACK_ENGINE"), address(buybackEngine));
         console.log("[16] DiscountBuybackEngine deployed:", address(buybackEngine));
 
+        // Founder beneficiary is configurable; administration is ALWAYS handed to the timelock.
+        address founderBeneficiary = vm.envOr("FOUNDER_BENEFICIARY", deployer);
         founderVault = new FounderReserveVestingVault(
             address(alphaToken),
             address(treasury),
-            deployer,
+            founderBeneficiary,
             deployer
         );
         console.log("[17] FounderReserveVestingVault deployed:", address(founderVault));
@@ -240,7 +242,6 @@ contract DeployMainnet is Script {
             address(alphaToken),
             deployer
         );
-        treasury.setKYCStatus(address(gateway), true);
         console.log("[18] CompliantTreasuryGateway deployed:", address(gateway));
 
         atomicSwap = new AtomicSwapReceiver(
@@ -265,6 +266,12 @@ contract DeployMainnet is Script {
         treasury.grantRole(ProtocolRoles.BURNER_ROLE, address(staking));
         treasury.grantRole(ProtocolRoles.BURNER_ROLE, address(buybackEngine));
         treasury.setConfig(ARB_WBTC, ARB_WETH, ARB_UNISWAP_V3_ROUTER);
+
+        // Gateway KYC enrolment must be performed by a COMPLIANCE holder. The deployer is
+        // granted the role temporarily and gives it up at the end of this function.
+        treasury.grantRole(ProtocolRoles.COMPLIANCE_ROLE, deployer);
+        treasury.setKYCStatus(address(gateway), true);
+        treasury.grantRole(ProtocolRoles.COMPLIANCE_ROLE, address(timelock));
 
         // Community vault & staking links
         communityVault.setStakingPool(address(staking));
@@ -294,8 +301,10 @@ contract DeployMainnet is Script {
 
         treasury.grantRole(treasury.DEFAULT_ADMIN_ROLE(), address(timelock));
         treasury.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        treasury.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(timelock));
         treasury.renounceRole(ProtocolRoles.VAULT_MANAGER_ROLE, deployer);
         treasury.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        treasury.renounceRole(ProtocolRoles.COMPLIANCE_ROLE, deployer);
         treasury.renounceRole(treasury.DEFAULT_ADMIN_ROLE(), deployer);
 
         positionNFT.grantRole(positionNFT.DEFAULT_ADMIN_ROLE(), address(timelock));
@@ -310,12 +319,28 @@ contract DeployMainnet is Script {
 
         p2pMarket.transferOwnership(address(timelock));
 
+        // C-04: the deployer EOA must not retain any operational or administrative power.
+        // Buyback execution is delegated to the timelock (keeper) only.
         buybackEngine.grantRole(ProtocolRoles.KEEPER_ROLE, address(timelock));
-        buybackEngine.grantRole(ProtocolRoles.KEEPER_ROLE, deployer);
+        buybackEngine.renounceRole(ProtocolRoles.KEEPER_ROLE, deployer);
         buybackEngine.grantRole(buybackEngine.DEFAULT_ADMIN_ROLE(), address(timelock));
         buybackEngine.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
         buybackEngine.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
         buybackEngine.renounceRole(buybackEngine.DEFAULT_ADMIN_ROLE(), deployer);
+
+        // C-04: gateway administration and compliance move to the timelock.
+        gateway.grantRole(gateway.DEFAULT_ADMIN_ROLE(), address(timelock));
+        gateway.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        gateway.grantRole(ProtocolRoles.COMPLIANCE_ROLE, address(timelock));
+        gateway.renounceRole(ProtocolRoles.COMPLIANCE_ROLE, deployer);
+        gateway.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        gateway.renounceRole(gateway.DEFAULT_ADMIN_ROLE(), deployer);
+
+        // C-04: founder vesting administration moves to the timelock (beneficiary unchanged).
+        founderVault.grantRole(founderVault.DEFAULT_ADMIN_ROLE(), address(timelock));
+        founderVault.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        founderVault.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        founderVault.renounceRole(founderVault.DEFAULT_ADMIN_ROLE(), deployer);
 
         addressProvider.grantRole(addressProvider.DEFAULT_ADMIN_ROLE(), address(timelock));
         addressProvider.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
@@ -329,11 +354,15 @@ contract DeployMainnet is Script {
 
         oracleHub.grantRole(oracleHub.DEFAULT_ADMIN_ROLE(), address(timelock));
         oracleHub.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        oracleHub.grantRole(ProtocolRoles.ORACLE_MANAGER_ROLE, address(timelock));
+        oracleHub.renounceRole(ProtocolRoles.ORACLE_MANAGER_ROLE, deployer);
         oracleHub.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
         oracleHub.renounceRole(oracleHub.DEFAULT_ADMIN_ROLE(), deployer);
 
         circuitBreaker.grantRole(circuitBreaker.DEFAULT_ADMIN_ROLE(), address(timelock));
         circuitBreaker.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        circuitBreaker.grantRole(ProtocolRoles.EMERGENCY_ADMIN_ROLE, address(timelock));
+        circuitBreaker.renounceRole(ProtocolRoles.EMERGENCY_ADMIN_ROLE, deployer);
         circuitBreaker.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
         circuitBreaker.renounceRole(circuitBreaker.DEFAULT_ADMIN_ROLE(), deployer);
 
@@ -358,9 +387,15 @@ contract DeployMainnet is Script {
         realYieldRouter.renounceRole(realYieldRouter.DEFAULT_ADMIN_ROLE(), deployer);
 
         pqcGuard.grantRole(pqcGuard.DEFAULT_ADMIN_ROLE(), address(timelock));
-        pqcGuard.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
-        pqcGuard.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        pqcGuard.grantRole(pqcGuard.QUANTUM_OPERATOR_ROLE(), address(timelock));
+        pqcGuard.renounceRole(pqcGuard.QUANTUM_OPERATOR_ROLE(), deployer);
         pqcGuard.renounceRole(pqcGuard.DEFAULT_ADMIN_ROLE(), deployer);
+
+        // Governor administration is self-sovereign through the timelock.
+        governor.grantRole(governor.DEFAULT_ADMIN_ROLE(), address(timelock));
+        governor.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        governor.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        governor.renounceRole(governor.DEFAULT_ADMIN_ROLE(), deployer);
 
         atomicSwap.grantRole(atomicSwap.DEFAULT_ADMIN_ROLE(), address(timelock));
         atomicSwap.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));

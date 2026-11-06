@@ -1,4 +1,4 @@
-# 🚀 ALPHA CENTAURI PROTOCOL — V6.2.0 (AUDIT-READY / PURE DEFI)
+# 🚀 VIRAJE PROTOCOL — V6.2.0 (AUDIT-READY / PURE DEFI)
 
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.20-blue.svg)](https://soliditylang.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.2.1-purple.svg)](https://vitejs.dev/)
@@ -31,11 +31,11 @@
 
 ## 🏛️ Visión General & Modelo de Reservas Exógenas Puras
 
-El **Protocolo Alpha Centauri** es una infraestructura financiera descentralizada construida sobre Ethereum/EVM que opera bajo un **Modelo de Reservas Exógenas Puras (100% Exógeno)** con Proof of Reserves (PoR) en tiempo real:
+El **Protocolo Viraje** (Viraje Protocol) es una infraestructura financiera descentralizada construida sobre Ethereum/EVM que opera bajo un **Modelo de Reservas Exógenas Puras (100% Exógeno)** con Proof of Reserves (PoR) en tiempo real:
 - **50.00% Stablecoins (USDC)**: Destinados a Bóvedas Morpho Blue y Préstamos P2P sobrecolateralizados.
 - **25.00% Bitcoin (WBTC)**: Colateral exógeno de máxima solidez y reserva de valor.
 - **12.50% Ethereum (WETH)**: Colateral exógeno de alta liquidez e infraestructura base DeFi.
-- **12.50% Sub-Reserva POL (stALPHA)**: Liquidez propiedad del protocolo auto-bloqueada en staking de gobernanza.
+- **12.50% Sub-Reserva POL (stVIRAJE)**: Liquidez propiedad del protocolo auto-bloqueada en staking de gobernanza.
 
 > [!IMPORTANT]
 > - El token nativo del protocolo ($ALPHA$) es de tipo endógeno de gobernanza/staking y se encuentra **estrictamente excluido** del cálculo de reservas exógenas en la tabla PoR, garantizando colateralización sólida basada únicamente en activos externos líquidos.

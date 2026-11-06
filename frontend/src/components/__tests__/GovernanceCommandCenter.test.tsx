@@ -58,8 +58,8 @@ describe('GovernanceCommandCenter - Pure DeFi Mainnet Module', () => {
     // Anti-Spam Badge
     expect(screen.getByText(UI_STRINGS.GOVERNANCE.ELIGIBLE_BADGE)).toBeDefined();
     // Threshold & Quorum information
-    expect(screen.getAllByText(/25,000 stALPHA/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/80,000 stALPHA/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/25,000 stVIRAJE/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/80,000 stVIRAJE/i).length).toBeGreaterThan(0);
   });
 
   it('displays anti-spam ineligible warning when user staked balance < 25,000', () => {

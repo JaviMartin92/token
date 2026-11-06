@@ -2,7 +2,7 @@
 set -e
 
 echo "=========================================="
-echo "🚀 Pre-flight checks for Alpha Centauri   "
+echo "🚀 Pre-flight checks for Viraje Protocol   "
 echo "=========================================="
 
 # 1. Environment Validation

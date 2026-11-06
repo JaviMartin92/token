@@ -1,7 +1,7 @@
-# PowerShell Sandbox Launcher for Alpha Centauri (V4)
+# PowerShell Sandbox Launcher for Viraje Protocol (V4)
 
 Write-Host "=========================================" -ForegroundColor Cyan
-Write-Host "  ALPHA CENTAURI LOCAL SANDBOX LAUNCHER" -ForegroundColor Cyan
+Write-Host "  VIRAJE PROTOCOL LOCAL SANDBOX LAUNCHER" -ForegroundColor Cyan
 Write-Host "=========================================" -ForegroundColor Cyan
 
 # 1. Environment Setup

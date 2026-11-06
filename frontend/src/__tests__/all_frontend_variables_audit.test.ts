@@ -214,7 +214,7 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
         inputAmount: '1,000.00',
         inputSymbol: 'USDC',
         expectedOutput: '990.05',
-        expectedOutputSymbol: 'ALPHA',
+        expectedOutputSymbol: 'VIRAJE',
         details: [
           { label: 'Comisión de Emisión (0.50%)', value: '$5.00 USDC' },
           { label: 'Valor Neto a Tesorería', value: '$995.00 USDC' }

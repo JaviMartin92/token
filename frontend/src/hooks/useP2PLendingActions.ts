@@ -406,7 +406,7 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
           { label: 'Monto TOTAL a Pagar en USDC', value: `$${totalToPay.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC`, badge: 'Pago Total' },
           { label: 'Colateral en Custodia a Recibir', value: collateralStr, badge: 'Liberación 100%' },
           { label: 'Spread de Margen de Interés (10.00%)', value: `$${interestSpreadVal.toFixed(2)} USDC -> Flywheel Real Yield Stakers`, badge: 'Reparto a Stakers' },
-          { label: 'Acrecimiento a Reservas Tesorería', value: `$${treasuryAccretionVal.toFixed(2)} USDC -> Inyectado a Reservas`, badge: 'Incrementa NAV ALPHA' }
+          { label: 'Acrecimiento a Reservas Tesorería', value: `$${treasuryAccretionVal.toFixed(2)} USDC -> Inyectado a Reservas`, badge: 'Incrementa NAV VIRAJE' }
         ],
         warningNote: `Al confirmar, pagarás exactamente $${totalToPay.toFixed(2)} USDC para cancelar el préstamo #${loanId} y recuperarás tu colateral (${collateralStr}).`,
         confirmButtonText: '✍️ Confirmar y Reembolsar Préstamo',
@@ -710,14 +710,14 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
       } else if (collateralType === 'alpha') {
         const colAmtWei = parseUnits(tokenIdOrAmountStr || '0', 18);
         if (colAmtWei === 0n) {
-          addToast('warning', 'Monto de ALPHA Requerido', 'Calcula o introduce una cantidad válida de tokens ALPHA como colateral.');
+          addToast('warning', 'Monto de VIRAJE Requerido', 'Calcula o introduce una cantidad válida de tokens VIRAJE como colateral.');
           return;
         }
 
-        addLog(`[Tesorería] Solicitando préstamo institucional de $${amountStr} USDC con ${tokenIdOrAmountStr} ALPHA de colateral...`);
-        addToast('info', 'Préstamo Tesorería', 'Verificando aprobación de tokens ALPHA...');
+        addLog(`[Tesorería] Solicitando préstamo institucional de $${amountStr} USDC con ${tokenIdOrAmountStr} VIRAJE de colateral...`);
+        addToast('info', 'Préstamo Tesorería', 'Verificando aprobación de tokens VIRAJE...');
 
-        // Approve ALPHA tokens to P2PLendingMarket
+        // Approve VIRAJE tokens to P2PLendingMarket
         const appHash = await userClient.writeContract({
           address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
           abi: ABIS.ERC20,
@@ -727,7 +727,7 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         await publicClient.waitForTransactionReceipt({ hash: appHash });
         await new Promise((res) => setTimeout(res, 500));
 
-        addLog(`Desembolsando $${amountStr} USDC desde Reservas con respaldo de ${tokenIdOrAmountStr} ALPHA...`);
+        addLog(`Desembolsando $${amountStr} USDC desde Reservas con respaldo de ${tokenIdOrAmountStr} VIRAJE...`);
         const txBorrow = await userClient.writeContract({
           address: CONTRACT_ADDRESSES.P2P_MARKET,
           abi: ABIS.P2P_MARKET,
@@ -736,8 +736,8 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         });
         await publicClient.waitForTransactionReceipt({ hash: txBorrow });
 
-        addLog(`¡Préstamo con respaldo ALPHA desembolsado con éxito! $${amountStr} USDC recibidos en tu billetera.`);
-        addToast('success', 'Préstamo Desembolsado', `$${amountStr} USDC recibidos con colateral ALPHA (Activo)`);
+        addLog(`¡Préstamo con respaldo VIRAJE desembolsado con éxito! $${amountStr} USDC recibidos en tu billetera.`);
+        addToast('success', 'Préstamo Desembolsado', `$${amountStr} USDC recibidos con colateral VIRAJE (Activo)`);
         await fetchData();
       } else if (collateralType === 'wbtc') {
         const colAmtWei = parseUnits(tokenIdOrAmountStr || '0', 8); // WBTC = 8 decimals
@@ -802,7 +802,7 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         addToast('success', 'Préstamo Desembolsado', `$${amountStr} USDC recibidos con colateral WETH (Activo)`);
         await fetchData();
       } else {
-        addToast('info', 'Colateral no soportado', 'Selecciona NFT de Bono Vestado (vPOS), ALPHA, WBTC o WETH.');
+        addToast('info', 'Colateral no soportado', 'Selecciona NFT de Bono Vestado (vPOS), VIRAJE, WBTC o WETH.');
       }
     } catch (err: any) {
       addLog(`[Error] Préstamo con Tesorería falló: ${err.message || err}`);

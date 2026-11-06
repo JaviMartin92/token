@@ -105,8 +105,8 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
 
   const currentChainId = web3Data.chainId ?? 31337;
   const userStakedBalanceNum = parseFloat((web3Data.stakedBalance || '0').replace(/,/g, ''));
-  const PROPOSAL_THRESHOLD = 25000; // 25,000 stALPHA required to submit proposals
-  const QUORUM_REQUIRED = 80000;    // 80,000 stALPHA required to pass
+  const PROPOSAL_THRESHOLD = 25000; // 25,000 stVIRAJE required to submit proposals
+  const QUORUM_REQUIRED = 80000;    // 80,000 stVIRAJE required to pass
   const canPropose = userStakedBalanceNum >= PROPOSAL_THRESHOLD;
 
   const twStables = targetWeights?.stables ?? 50.00;
@@ -323,7 +323,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
         return {
           generatedTarget: CONTRACT_ADDRESSES.TREASURY as `0x${string}`,
           generatedCalldata: data,
-          generatedDescription: proposalTitle.trim() || `Rebalanceo de Ponderaciones de Reserva: ${weightStables}% USDC / ${weightWbtc}% WBTC / ${weightWeth}% WETH / ${weightAlts}% stALPHA`
+          generatedDescription: proposalTitle.trim() || `Rebalanceo de Ponderaciones de Reserva: ${weightStables}% USDC / ${weightWbtc}% WBTC / ${weightWeth}% WETH / ${weightAlts}% stVIRAJE`
         };
       }
 
@@ -460,7 +460,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
   // ---------------------------------------------------------------------------
   const handleSubmitProposal = async () => {
     if (!canPropose) {
-      web3Data.addToast?.('warning', 'Umbral Insuficiente', `Posees ${userStakedBalanceNum} stALPHA. Se requieren al menos ${PROPOSAL_THRESHOLD.toLocaleString()} stALPHA para presentar propuestas.`);
+      web3Data.addToast?.('warning', 'Umbral Insuficiente', `Posees ${userStakedBalanceNum} stVIRAJE. Se requieren al menos ${PROPOSAL_THRESHOLD.toLocaleString()} stVIRAJE para presentar propuestas.`);
       return;
     }
     if (!generatedCalldata || generatedCalldata === '0x') {
@@ -604,7 +604,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
             <span data-testid="admin-nav-per-share">${navValueNum.toFixed(4)} NAV</span>
           </Badge>
           <Badge variant={canPropose ? 'emerald' : 'amber'} size="sm">
-            {userStakedBalanceNum.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} stALPHA Voto
+            {userStakedBalanceNum.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} stVIRAJE Voto
           </Badge>
         </div>
       }
@@ -616,7 +616,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
             <span>{canPropose ? '✅' : '⚠️'}</span>
             <span>
               <strong>{UI_STRINGS.GOVERNANCE.VOTING_POWER_LABEL}</strong>{' '}
-              {userStakedBalanceNum.toLocaleString('en-US', { minimumFractionDigits: 2 })} stALPHA |{' '}
+              {userStakedBalanceNum.toLocaleString('en-US', { minimumFractionDigits: 2 })} stVIRAJE |{' '}
               <strong>{UI_STRINGS.GOVERNANCE.LABEL_PROPOSAL_THRESHOLD}</strong> {UI_STRINGS.GOVERNANCE.VAL_PROPOSAL_THRESHOLD} |{' '}
               <strong>{UI_STRINGS.GOVERNANCE.LABEL_QUORUM_REQUIRED}</strong> {UI_STRINGS.GOVERNANCE.VAL_QUORUM_REQUIRED}
             </span>
@@ -674,7 +674,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                   🏛️ {UI_STRINGS.GOVERNANCE.NO_PROPOSALS_FOUND}
                 </p>
                 <p style={{ margin: '8px 0 0 0', fontSize: '0.8125rem' }}>
-                  Utiliza la pestaña <strong>"{UI_STRINGS.GOVERNANCE.TAB_PARAM_CONTROL}"</strong> para crear la primera propuesta de la DAO con tus tokens stALPHA.
+                  Utiliza la pestaña <strong>"{UI_STRINGS.GOVERNANCE.TAB_PARAM_CONTROL}"</strong> para crear la primera propuesta de la DAO con tus tokens stVIRAJE.
                 </p>
               </div>
             ) : (
@@ -734,19 +734,19 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                       <div className={styles.voteTallyCard}>
                         <span className={styles.voteTallyLabel}>{UI_STRINGS.GOVERNANCE.TH_VOTES_FOR}</span>
                         <span className={styles.voteTallyValFor}>
-                          {forNum.toLocaleString('en-US', { maximumFractionDigits: 0 })} stALPHA
+                          {forNum.toLocaleString('en-US', { maximumFractionDigits: 0 })} stVIRAJE
                         </span>
                       </div>
                       <div className={styles.voteTallyCard}>
                         <span className={styles.voteTallyLabel}>{UI_STRINGS.GOVERNANCE.TH_VOTES_AGAINST}</span>
                         <span className={styles.voteTallyValAgainst}>
-                          {againstNum.toLocaleString('en-US', { maximumFractionDigits: 0 })} stALPHA
+                          {againstNum.toLocaleString('en-US', { maximumFractionDigits: 0 })} stVIRAJE
                         </span>
                       </div>
                       <div className={styles.voteTallyCard}>
                         <span className={styles.voteTallyLabel}>Abstención</span>
                         <span className={styles.voteTallyValAbstain}>
-                          {abstainNum.toLocaleString('en-US', { maximumFractionDigits: 0 })} stALPHA
+                          {abstainNum.toLocaleString('en-US', { maximumFractionDigits: 0 })} stVIRAJE
                         </span>
                       </div>
                     </div>
@@ -755,10 +755,10 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                     <div className={styles.quorumContainer}>
                       <div className={styles.quorumHeader}>
                         <span>
-                          Quórum de Participación: <strong>{totalParticipationNum.toLocaleString('en-US', { maximumFractionDigits: 0 })} / {QUORUM_REQUIRED.toLocaleString('en-US')} stALPHA</strong> ({quorumPct.toFixed(1)}%)
+                          Quórum de Participación: <strong>{totalParticipationNum.toLocaleString('en-US', { maximumFractionDigits: 0 })} / {QUORUM_REQUIRED.toLocaleString('en-US')} stVIRAJE</strong> ({quorumPct.toFixed(1)}%)
                         </span>
                         <span className={quorumMet ? styles.quorumMetText : styles.quorumPendingText}>
-                          {quorumMet ? '✅ Quórum Alcanzado' : `Faltan ${(QUORUM_REQUIRED - totalParticipationNum).toLocaleString('en-US', { maximumFractionDigits: 0 })} stALPHA`}
+                          {quorumMet ? '✅ Quórum Alcanzado' : `Faltan ${(QUORUM_REQUIRED - totalParticipationNum).toLocaleString('en-US', { maximumFractionDigits: 0 })} stVIRAJE`}
                         </span>
                       </div>
                       <div className={styles.quorumProgressBar}>
@@ -772,7 +772,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                     {/* Proposal Action Buttons */}
                     <div className={styles.proposalActionsRow}>
                       <span style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>
-                        {prop.state === 1 && !prop.hasUserVoted && 'Emite tu voto ponderado con tu saldo stALPHA:'}
+                        {prop.state === 1 && !prop.hasUserVoted && 'Emite tu voto ponderado con tu saldo stVIRAJE:'}
                         {prop.state === 1 && prop.hasUserVoted && 'Has participado en esta votación on-chain.'}
                         {prop.state === 4 && 'La propuesta ha superado el quórum y puede ser puesta en cola en Timelock (72h).'}
                         {prop.state === 5 && 'Propuesta asegurada en Timelock. Lista para ejecución definitiva al cumplir el plazo.'}
@@ -917,7 +917,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                       />
                     </div>
                     <div className={styles.paramCard}>
-                      <span className={styles.paramLabel}>🥩 Staked ALPHA (%)</span>
+                      <span className={styles.paramLabel}>🥩 Staked VIRAJE (%)</span>
                       <input
                         type="number"
                         step="0.5"
@@ -1338,7 +1338,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
 
               <div className={styles.vaultItem}>
                 <div className={styles.vaultHeader}>
-                  <span className={styles.vaultLabel}>🏛️ CONTRATO GOVERNOR ALPHA CENTAURI (DAO ON-CHAIN)</span>
+                  <span className={styles.vaultLabel}>🏛️ CONTRATO GOVERNOR VIRAJE (DAO ON-CHAIN)</span>
                   <Badge variant="blue" size="sm">Bravo-Standard Governor</Badge>
                 </div>
                 <input

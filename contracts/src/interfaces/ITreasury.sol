@@ -85,9 +85,19 @@ interface ITreasury {
     function recordBurn(uint256 amount) external;
 
     /**
-     * @notice Disburses a Treasury reserve loan (up to 20% max of total reserves) to P2PLendingMarket.
+     * @notice Disburses a Treasury reserve loan, bounded by the aggregate credit facility cap.
      */
     function disburseTreasuryLoan(address recipient, uint256 amount) external;
+
+    /**
+     * @notice Returns the aggregate treasury credit facility limits in redemption token units.
+     */
+    function treasuryLoanLimits() external view returns (uint256 limit, uint256 outstanding, uint256 capacity);
+
+    /**
+     * @notice Retires outstanding treasury credit when a P2P loan is repaid or liquidated.
+     */
+    function recordTreasuryLoanRepayment(uint256 amount) external;
 
     /**
      * @notice Returns the total amount of burned tokens recorded by the Treasury.

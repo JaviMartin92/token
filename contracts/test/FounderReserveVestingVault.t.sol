@@ -44,6 +44,8 @@ contract MockTreasuryForVesting is ITreasury {
     function recordBurn(uint256) external {}
     function alphaVault() external pure returns (address) { return address(0); }
     function disburseTreasuryLoan(address, uint256) external {}
+    function treasuryLoanLimits() external pure returns (uint256, uint256, uint256) { return (0, 0, 0); }
+    function recordTreasuryLoanRepayment(uint256) external {}
     function totalBurnedTokens() external pure returns (uint256) { return 0; }
 }
 

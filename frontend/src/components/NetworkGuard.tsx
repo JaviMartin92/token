@@ -65,7 +65,7 @@ export const NetworkGuard: React.FC<{ children: React.ReactNode }> = ({ children
           </div>
           <h2 id="network-guard-title" className="text-2xl font-bold text-white mb-2">Red No Compatible</h2>
           <p className="text-gray-400 mb-6 text-sm">
-            Alpha Centauri está desplegado en la red de Capa 2 <strong>Arbitrum One</strong> (y Arbitrum Sepolia en pruebas). Por favor conecta tu billetera a una de las redes compatibles para operar.
+            Viraje Protocol está desplegado en la red de Capa 2 <strong>Arbitrum One</strong> (y Arbitrum Sepolia en pruebas). Por favor conecta tu billetera a una de las redes compatibles para operar.
           </p>
           <div className="flex flex-col gap-3">
             {chains.map((supportedChain) => (

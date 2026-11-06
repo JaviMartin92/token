@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Alpha Centauri Protocol: Native Linux / Cloud Sandbox Launcher (start_app.sh)
+# Viraje Protocol: Native Linux / Cloud Sandbox Launcher (start_app.sh)
 # Optimized for Google AI Studio, Argon, GitHub Codespaces & Headless Linux
 # ==============================================================================
 
@@ -14,7 +14,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 echo -e "${CYAN}=======================================================${NC}"
-echo -e "${CYAN} ALPHA CENTAURI PROTOCOL: LAUNCHER CLOUD / LINUX       ${NC}"
+echo -e "${CYAN} VIRAJE PROTOCOL: LAUNCHER CLOUD / LINUX                ${NC}"
 echo -e "${CYAN} Optimizado para AI Studio, Argon y entornos Sandbox  ${NC}"
 echo -e "${CYAN}=======================================================${NC}\n"
 
@@ -96,7 +96,7 @@ echo -e "\n${YELLOW}[*] Compilando bundle de producción de Frontend Web3...${NC
 (cd frontend && npm run build:sandbox)
 
 echo -e "\n${GREEN}=======================================================${NC}"
-echo -e "${GREEN} PROTOCOLO ALPHA CENTAURI DESPLEGADO Y LISTO!          ${NC}"
+echo -e "${GREEN} PROTOCOLO VIRAJE DESPLEGADO Y LISTO!                   ${NC}"
 echo -e "${GREEN}=======================================================${NC}"
 echo -e " Servidor activo en:"
 echo -e " -> ${CYAN}http://0.0.0.0:5173${NC} (Para Cloud Web Previews en AI Studio)"

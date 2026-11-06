@@ -9,9 +9,9 @@ import "./ProtocolAddressProvider.sol";
 import "./interfaces/IProtocolErrors.sol";
 
 /**
- * @title AlphaToken (ALPHA)
- * @author Alpha Centauri Architecture Team
- * @notice Token de cuota patrimonial y gobernanza del protocolo Alpha Centauri con soporte EIP-2612 (Permit).
+ * @title VirajeToken (VIRAJE)
+ * @author Viraje Architecture Team
+ * @notice Token de cuota patrimonial y gobernanza del protocolo Viraje Protocol con soporte EIP-2612 (Permit).
  * @dev Cada token ALPHA representa una participación proporcional sobre la cesta de activos exógenos
  *      (USDC, WBTC, WETH) custodiados en la tesorería. La emisión y quema están estrictamente restringidas
  *      a contratos autorizados mediante RBAC (MINTER_ROLE y BURNER_ROLE).
@@ -27,8 +27,8 @@ contract AlphaToken is ERC20, ERC20Permit, AccessControl {
      * @param initialAdmin Dirección que recibe el rol inicial DEFAULT_ADMIN_ROLE (transferido al Timelock en mainnet).
      */
     constructor(ProtocolAddressProvider _addressProvider, address initialAdmin)
-        ERC20("Alpha Centauri Shares", "ALPHA")
-        ERC20Permit("Alpha Centauri Shares")
+        ERC20("Viraje Shares", "VIRAJE")
+        ERC20Permit("Viraje Shares")
     {
         if (address(_addressProvider) == address(0)) {
             revert IProtocolErrors.ZeroAddressProvider();

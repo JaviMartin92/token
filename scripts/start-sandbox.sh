@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Bash Sandbox Launcher for Alpha Centauri (V4)
+# Bash Sandbox Launcher for Viraje Protocol (V4)
 
 echo -e "\033[0;36m=========================================\033[0m"
-echo -e "\033[0;36m  ALPHA CENTAURI LOCAL SANDBOX LAUNCHER\033[0m"
+echo -e "\033[0;36m  VIRAJE PROTOCOL LOCAL SANDBOX LAUNCHER\033[0m"
 echo -e "\033[0;36m=========================================\033[0m"
 
 # 1. Environment Setup

@@ -29,7 +29,7 @@ export function useStakingActions({
 
   const executeStake = async () => {
     try {
-      addLog(`Iniciando staking de ${stakeAmount} ALPHA (Comisión de entrada 1.00%)...`);
+      addLog(`Iniciando staking de ${stakeAmount} VIRAJE (Comisión de entrada 1.00%)...`);
       const client = getWalletClient(activeKey);
       const amountWei = parseEther(stakeAmount);
       const userAddr = (userAddress || activeKey) as `0x${string}`;
@@ -43,7 +43,7 @@ export function useStakingActions({
       })) as bigint;
 
       if (currentAllowance < amountWei) {
-        addToast('info', 'Aprobación ALPHA', `Autorizando ${stakeAmount} ALPHA para Staking...`);
+        addToast('info', 'Aprobación VIRAJE', `Autorizando ${stakeAmount} VIRAJE para Staking...`);
         const appHash = await client.writeContract({
           address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
           abi: ABIS.ERC20,
@@ -74,7 +74,7 @@ export function useStakingActions({
         args: [amountWei]
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
-      addLog(`¡Staking exitoso de ${stakeAmount} ALPHA! (99% en stake, 0.5% quemado, 0.5% a Community Vault).`);
+      addLog(`¡Staking exitoso de ${stakeAmount} VIRAJE! (99% en stake, 0.5% quemado, 0.5% a Community Vault).`);
       addToast('success', 'Staking Exitoso', UI_STRINGS.TOASTS_AND_LOGS.STAKE_SUCCESS, tx);
       await fetchData();
     } catch (err: any) {
@@ -93,21 +93,21 @@ export function useStakingActions({
 
     if (requestConfirmation) {
       requestConfirmation({
-        title: 'Bloquear Tokens ALPHA en Staking de Gobernanza',
+        title: 'Bloquear Tokens VIRAJE en Staking de Gobernanza',
         actionIcon: '🔒',
         typeBadge: 'Staking con Real Yield & Deflación',
         targetContractName: 'GovernanceStaking.sol',
         targetContractAddress: CONTRACT_ADDRESSES.STAKING,
         inputAmount: `${num.toLocaleString('en-US')}`,
-        inputSymbol: 'ALPHA',
+        inputSymbol: 'VIRAJE',
         expectedOutput: `${net}`,
-        expectedOutputSymbol: 'stALPHA (Tokens Staked)',
+        expectedOutputSymbol: 'stVIRAJE (Tokens Staked)',
         details: [
-          { label: 'Monto Bruto Ingresado', value: `${num.toLocaleString('en-US')} ALPHA Tokens` },
-          { label: 'Comisión de Entrada a Staking (1.00%)', value: `${fee} ALPHA`, badge: 'Reparto 50%/50%' },
-          { label: 'Destino 50% Comisión (Quema Deflacionaria)', value: `${(num * 0.005).toFixed(2)} ALPHA (Quema permanente en Tesorería)`, isHighlight: true },
-          { label: 'Destino 50% Comisión (Community Yield Vault)', value: `${(num * 0.005).toFixed(2)} ALPHA (CommunityYieldVault Real Yield Pool)` },
-          { label: 'Balance Neto Acreditado', value: `${net} stALPHA (Balance Staked On-Chain)`, badge: '100% Reembolsable en Unstake' },
+          { label: 'Monto Bruto Ingresado', value: `${num.toLocaleString('en-US')} VIRAJE Tokens` },
+          { label: 'Comisión de Entrada a Staking (1.00%)', value: `${fee} VIRAJE`, badge: 'Reparto 50%/50%' },
+          { label: 'Destino 50% Comisión (Quema Deflacionaria)', value: `${(num * 0.005).toFixed(2)} VIRAJE (Quema permanente en Tesorería)`, isHighlight: true },
+          { label: 'Destino 50% Comisión (Community Yield Vault)', value: `${(num * 0.005).toFixed(2)} VIRAJE (CommunityYieldVault Real Yield Pool)` },
+          { label: 'Balance Neto Acreditado', value: `${net} stVIRAJE (Balance Staked On-Chain)`, badge: '100% Reembolsable en Unstake' },
           { label: 'Rendimiento Pasivo Asignado', value: 'Reparto Pro-Rata del APY de Reservas e Inyecciones de Comisiones en Liquid USDC', badge: 'Cobro en Tiempo Real' },
           { label: 'Beneficio Exclusivo Staking', value: 'Loyalty Tier Status: Hasta +5.00% Extra de Descuento en Bonos Vestados', badge: 'VIP Holder' },
           { label: 'Productividad del Yield', value: 'Auto-Compounding Activo: El Yield no reclamado sigue generando APY pasivo', badge: '🔄 Auto-Compound' }
@@ -123,7 +123,7 @@ export function useStakingActions({
 
   const executeUnstake = async () => {
     try {
-      addLog(`Unstaking ${stakeAmount} ALPHA tokens...`);
+      addLog(`Unstaking ${stakeAmount} VIRAJE tokens...`);
       const client = getWalletClient(activeKey);
       const tx = await client.writeContract({
         address: CONTRACT_ADDRESSES.STAKING,
@@ -132,7 +132,7 @@ export function useStakingActions({
         args: [parseEther(stakeAmount)]
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
-      addLog(`¡Unstake de ${stakeAmount} ALPHA completado!`);
+      addLog(`¡Unstake de ${stakeAmount} VIRAJE completado!`);
       addToast('success', 'Unstake Exitoso', UI_STRINGS.TOASTS_AND_LOGS.UNSTAKE_SUCCESS);
       await fetchData();
     } catch (err: any) {
@@ -148,15 +148,15 @@ export function useStakingActions({
 
     if (requestConfirmation) {
       requestConfirmation({
-        title: 'Liberar (Unstake) ALPHA Tokens',
+        title: 'Liberar (Unstake) Tokens VIRAJE',
         actionIcon: '🔓',
         typeBadge: 'Retiro de Staking Pool',
         targetContractName: 'GovernanceStaking.sol',
         targetContractAddress: CONTRACT_ADDRESSES.STAKING,
         inputAmount: `${num.toLocaleString('en-US')}`,
-        inputSymbol: 'stALPHA Bloqueados',
+        inputSymbol: 'stVIRAJE Bloqueados',
         expectedOutput: `${num.toLocaleString('en-US')}`,
-        expectedOutputSymbol: 'ALPHA Liberados a Billetera',
+        expectedOutputSymbol: 'VIRAJE Liberados a Billetera',
         details: [
           { label: 'Penalización de Retiro', value: '0.00% (Sin Penalización)' }
         ],
@@ -201,10 +201,10 @@ export function useStakingActions({
         inputAmount: yieldAmountStr,
         inputSymbol: 'Yield Acumulado On-Chain',
         expectedOutput: outputStr,
-        expectedOutputSymbol: 'Cesta Multiactivo (USDC, WBTC, WETH, ALPHA)',
+        expectedOutputSymbol: 'Cesta Multiactivo (USDC, WBTC, WETH, VIRAJE)',
         details: [
           ...(claimableUsdNum && claimableUsdNum > 0 ? [{ label: 'Monto Total Dividendos Devengados', value: `$${claimableUsdNum.toFixed(2)} USD`, badge: 'Real Yield' }] : []),
-          { label: 'Modo de Distribución', value: 'Cesta Universal (50% USDC, 25% WBTC, 12.5% WETH, 12.5% ALPHA)' },
+          { label: 'Modo de Distribución', value: 'Cesta Universal (50% USDC, 25% WBTC, 12.5% WETH, 12.5% VIRAJE)' },
           { label: 'Comisión de Distribución', value: '0.00% (Transferencia Directa de Contrato)' }
         ],
         confirmButtonText: '✍️ Confirmar Cobro de Yield',

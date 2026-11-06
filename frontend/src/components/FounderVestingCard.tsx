@@ -48,7 +48,7 @@ export const FounderVestingCard: React.FC<FounderVestingCardProps> = ({
         <div className={styles.gridKpi}>
           <StatCard
             title="Asignación Total Bloqueada"
-            value={`${totalAllocation} ALPHA`}
+            value={`${totalAllocation} VIRAJE`}
             variant="default"
             icon="🔒"
             subtext="100k Génesis Allocation"
@@ -56,10 +56,10 @@ export const FounderVestingCard: React.FC<FounderVestingCardProps> = ({
 
           <StatCard
             title="Restante por Liberar"
-            value={`${remainingAllocation} ALPHA`}
+            value={`${remainingAllocation} VIRAJE`}
             variant="amber"
             icon="⏳"
-            subtext={`Total Reclamado: ${totalClaimed} ALPHA`}
+            subtext={`Total Reclamado: ${totalClaimed} VIRAJE`}
           />
 
           <StatCard
@@ -72,7 +72,7 @@ export const FounderVestingCard: React.FC<FounderVestingCardProps> = ({
 
           <StatCard
             title="Reclamable Actual (10% Máx)"
-            value={`${claimableAlpha} ALPHA`}
+            value={`${claimableAlpha} VIRAJE`}
             variant="blue"
             icon="📥"
             subtext={cooldownRemainingSec > 0 ? `Próximo: ${nextAvailableDate}` : 'Cooldown Completado'}
@@ -106,7 +106,7 @@ export const FounderVestingCard: React.FC<FounderVestingCardProps> = ({
             className={styles.claimBtn}
           >
             {canClaim && claimableAlphaNum > 0
-              ? `📥 Reclamar ${claimableAlpha} ALPHA`
+              ? `📥 Reclamar ${claimableAlpha} VIRAJE`
               : surplusUSDNum <= 0
               ? '🔒 Sin Excedente de Reservas'
               : cooldownRemainingSec > 0

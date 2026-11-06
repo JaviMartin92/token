@@ -1,5 +1,5 @@
 /**
- * Centralized React Query Key Factory for Alpha Centauri Monorepo
+ * Centralized React Query Key Factory for Viraje Protocol Monorepo
  * Guarantees consistent cache keys, invalidation triggers, and zero collision.
  */
 

@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 console.log('============================================================');
-console.log('  ALPHA CENTAURI: INSTITUTIONAL QUALITY GATE CHECK');
+console.log('  VIRAJE PROTOCOL: INSTITUTIONAL QUALITY GATE CHECK');
 console.log('============================================================\n');
 
 const checks = [

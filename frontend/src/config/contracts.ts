@@ -63,7 +63,7 @@ function loadAndValidateContracts(): ValidatedContractsConfig {
 
   const parsed = contractsConfigSchema.safeParse(rawAddresses);
   if (!parsed.success) {
-    console.error('❌ [Alpha Centauri] Contract addresses validation failed:', parsed.error.format());
+    console.error('❌ [Viraje Protocol] Contract addresses validation failed:', parsed.error.format());
     throw new Error(`[Contracts] Address validation error: ${parsed.error.message}`);
   }
 

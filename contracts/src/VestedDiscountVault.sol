@@ -17,6 +17,10 @@ interface IGovStakingForVault {
     function stakedBalances(address user) external view returns (uint256);
 }
 
+interface IERC20MetadataLike {
+    function decimals() external view returns (uint8);
+}
+
 /**
  * @title VestedDiscountVault
  * @author Alpha Centauri Architecture Team
@@ -35,8 +39,10 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
     error NavInvariantViolated();
     error LockupActive();
     error NotTokenOwner();
+    error TreasuryInsolvent(uint256 totalAssetsUSD, uint256 totalLiabilitiesUSD);
 
     address public immutable stablecoin;
+    uint8 public immutable stablecoinDecimals;
     VaultPositionNFT public immutable positionNFT;
 
     address public treasuryBunker;
@@ -47,9 +53,45 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
     address public governanceStaking;
 
     uint256 public tvlCap = 10_000_000 * 10 ** 6; // Default 10M cap for Sandbox (USDC 6 decimals)
+    /// @notice Outstanding bond principal at face value, denominated in stablecoin units.
+    /// @dev Sum of the face values of every bond that has not been settled yet (including
+    ///      matured-but-unclaimed bonds). It bounds the aggregate liability and drives the
+    ///      TVL cap.
     uint256 public totalInvested;
-    uint256 public totalPresentObligation;
-    mapping(uint256 => uint256) public bondPresentObligation;
+    /// @notice Per-position face-value obligation, in stablecoin units (ABI compatibility).
+    mapping(uint256 => uint256) public bondPrincipalObligation;
+
+    /// @notice Discount accretion schedule for each outstanding bond (C-02).
+    /// @dev A bond is a zero-coupon instrument: the holder pays `discounted` at `startTime`
+    ///      and receives `principal` at `expiry`. The liability therefore accretes linearly
+    ///      from `discounted` to `principal`, instead of being recognised at either extreme.
+    ///      `accrualRate` is the per-second accretion in stablecoin units scaled by 1e18:
+    ///      `(principal - discounted) * 1e18 / (expiry - startTime)`.
+    struct BondAccounting {
+        uint256 principal;
+        uint256 discounted;
+        uint256 accrualRate;
+        uint256 startTime;
+        uint256 expiry;
+        bool settled;
+    }
+
+    /// @notice Accounting record per bond token.
+    mapping(uint256 => BondAccounting) public bondAccounting;
+
+    /// @notice Sum of discounted prices of bonds still tracked in the linear accumulator.
+    uint256 public discountedOutstanding;
+    /// @notice Sum of per-second accrual rates (1e18-scaled) of bonds in the linear accumulator.
+    uint256 public accrualRateSum;
+    /// @notice Sum of `accrualRate * startTime` of bonds in the linear accumulator.
+    uint256 public accrualStartSum;
+    /// @notice Sum of face values of bonds that reached maturity and were moved to the fixed bucket.
+    uint256 public settledPrincipal;
+
+    /// @notice Min-heap of token IDs ordered by expiry, so expired bonds can be settled in O(log n).
+    uint256[] private _expiryHeap;
+    /// @notice 1-based position of a token inside `_expiryHeap`; zero means "not in heap".
+    mapping(uint256 => uint256) private _heapIndex;
 
     uint256 public baseYieldRateBps = 500; // 5.00% per year (5% 1yr, 10% 2yr, 15% 3yr, 20% 4yr, 25% 5yr)
     uint256 public haircutBps = 2000; // 20% haircut on yield
@@ -73,6 +115,7 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
     );
     event Ragequitted(uint256 indexed tokenId, address indexed user, uint256 returnedAmount, uint256 penaltyTotal);
     event MaturedClaimed(uint256 indexed tokenId, address indexed user, uint256 principalAmount);
+    event BondSettled(uint256 indexed tokenId, uint256 principalAmount, uint256 timestamp);
     event TvlCapUpdated(uint256 newCap);
     event TokenomicsEngineUpdated(address indexed newEngine);
     event CircuitBreakerUpdated(address indexed newBreaker);
@@ -96,6 +139,9 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
 
         _grantRole(DEFAULT_ADMIN_ROLE, _initialOwner);
         _grantRole(ProtocolRoles.ADMIN_ROLE, _initialOwner);
+
+        stablecoinDecimals = IERC20MetadataLike(_stablecoin).decimals();
+        if (stablecoinDecimals > 18) revert IProtocolErrors.InvalidParameters();
 
         stablecoin = _stablecoin;
         positionNFT = VaultPositionNFT(_positionNFT);
@@ -215,6 +261,10 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
             if (ICircuitBreaker(circuitBreaker).isFrozen(stablecoin)) revert CircuitBreakerActive();
         }
 
+        // Settle any bond whose maturity already elapsed so the solvency check and the new
+        // bond's entry into the accumulator use an up-to-date liability curve.
+        _accrue();
+
         // Solvency check: ensure Treasury maintains baseline solvency prior to new issuance
         _validateSolvency();
 
@@ -243,13 +293,28 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         }
 
         totalInvested += principalAmount;
-        totalPresentObligation += discountedPrice;
 
         // Mint Position NFT
         tokenId = positionNFT.mintPosition(msg.sender, stablecoin, principalAmount, discountedPrice, lockYears);
 
+        uint256 expiry = block.timestamp + (lockYears * 365 days);
+        uint256 accrualRate = ((principalAmount - discountedPrice) * 1e18) / (expiry - block.timestamp);
+
+        bondAccounting[tokenId] = BondAccounting({
+            principal: principalAmount,
+            discounted: discountedPrice,
+            accrualRate: accrualRate,
+            startTime: block.timestamp,
+            expiry: expiry,
+            settled: false
+        });
+        discountedOutstanding += discountedPrice;
+        accrualRateSum += accrualRate;
+        accrualStartSum += accrualRate * block.timestamp;
+        _heapPush(tokenId);
+
         isVestedBond[tokenId] = true;
-        bondPresentObligation[tokenId] = discountedPrice;
+        bondPrincipalObligation[tokenId] = principalAmount;
 
         emit BondPurchased(msg.sender, tokenId, principalAmount, discountedPrice, lockYears, referrer);
     }
@@ -263,6 +328,9 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
 
         VaultPositionNFT.Position memory pos = positionNFT.getPosition(tokenId);
         if (pos.isRagequitted || pos.isMaturedClaimed) revert InactivePosition();
+
+        // Settle matured bonds first so the removed liability is exactly the face value.
+        _accrue();
 
         uint256 penaltyBps = RAGEQUIT_PENALTY_BPS;
         if (tokenomicsEngine != address(0)) {
@@ -284,22 +352,7 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         positionNFT.markRagequitted(tokenId);
         positionNFT.burn(tokenId);
 
-        if (totalInvested >= pos.principalAmount) {
-            totalInvested -= pos.principalAmount;
-        } else {
-            totalInvested = 0;
-        }
-
-        uint256 oblR = bondPresentObligation[tokenId];
-        if (oblR == 0) {
-            oblR = pos.principalAmount;
-        }
-        if (totalPresentObligation >= oblR) {
-            totalPresentObligation -= oblR;
-        } else {
-            totalPresentObligation = 0;
-        }
-        delete bondPresentObligation[tokenId];
+        _purgeBond(tokenId);
 
         // External asset transfers
         IERC20(stablecoin).safeTransfer(msg.sender, userReturn);
@@ -337,6 +390,9 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         if (pos.isRagequitted || pos.isMaturedClaimed) revert InactivePosition();
         if (block.timestamp < pos.expirationTimestamp) revert LockupActive();
 
+        // Move every matured bond into the fixed-principal bucket before settling this one.
+        _accrue();
+
         // Ensure sufficient balance
         uint256 currentBal = IERC20(stablecoin).balanceOf(address(this));
         if (currentBal < pos.principalAmount && treasuryBunker != address(0) && treasuryBunker.code.length > 0) {
@@ -348,22 +404,7 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         positionNFT.markClaimed(tokenId);
         positionNFT.burn(tokenId);
 
-        if (totalInvested >= pos.principalAmount) {
-            totalInvested -= pos.principalAmount;
-        } else {
-            totalInvested = 0;
-        }
-
-        uint256 oblC = bondPresentObligation[tokenId];
-        if (oblC == 0) {
-            oblC = pos.principalAmount;
-        }
-        if (totalPresentObligation >= oblC) {
-            totalPresentObligation -= oblC;
-        } else {
-            totalPresentObligation = 0;
-        }
-        delete bondPresentObligation[tokenId];
+        _purgeBond(tokenId);
 
         // Interactions: Payout to user
         IERC20(stablecoin).safeTransfer(msg.sender, pos.principalAmount);
@@ -372,12 +413,167 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
     }
 
     /**
-     * @notice Calculates the total Net Present Obligation Value of active vested bonds scaled to 18 decimals.
-     *         Enforces exact debt deduction from Treasury Net Equity so that bond issuance maintains invariant ΔNAV >= 0.
+     * @notice Accrues all matured bonds into the fixed-principal bucket.
+     * @dev Permissionless: anyone can close the accounting gap between a bond's maturity and
+     *      the next treasury interaction. Each call costs O(k log n), where k is the number of
+     *      bonds that expired since the previous call.
+     */
+    function accrue() external {
+        _accrue();
+    }
+
+    /**
+     * @notice Total present value of outstanding vested bonds, scaled to 18 decimals.
+     * @dev C-02: zero-coupon bonds accrete linearly from the discounted price paid at
+     *      issuance to their face value at maturity. Recognising only the purchase price
+     *      understated the treasury's debt for the whole life of every bond and created a
+     *      NAV cliff at maturity; recognising the full principal upfront overstated it and
+     *      made the treasury look insolvent at issuance.
+     *
+     *      The aggregate curve is maintained in O(1) with moments:
+     *          active(t) = discountedOutstanding + (t * accrualRateSum - accrualStartSum) / 1e18
+     *      Bonds past maturity are moved to `settledPrincipal` by `accrue()`, so each one
+     *      contributes exactly its face value and the curve is continuous at every expiry.
+     *
+     *      Between two `accrue()` calls a just-matured bond is still counted on its linear
+     *      curve, which overstates (never understates) the liability. The Treasury calls
+     *      `accrue()` before every NAV-based deposit/redemption, closing that window.
      */
     function totalPresentLiability() external view returns (uint256 totalLiabilityUSD) {
-        uint256 obl = totalPresentObligation > 0 ? totalPresentObligation : (totalInvested * 8500) / 10000;
-        return obl * 10 ** 12;
+        uint256 liability = settledPrincipal + discountedOutstanding;
+
+        uint256 rateSum = accrualRateSum;
+        if (rateSum > 0) {
+            uint256 accruedScaled = (block.timestamp * rateSum) - accrualStartSum;
+            liability += accruedScaled / 1e18;
+        }
+
+        // A bond can never be worth more than its face value: cap at aggregate principal.
+        uint256 principalCap = totalInvested;
+        if (liability > principalCap) {
+            liability = principalCap;
+        }
+
+        return liability * (10 ** (18 - stablecoinDecimals));
+    }
+
+    /**
+     * @notice Removes a bond from the liability accumulator and the expiry heap.
+     * @dev `_accrue()` must have run first so every matured bond is already in the fixed
+     *      bucket; this keeps the removal exact (face value) and prevents NAV jumps.
+     */
+    function _purgeBond(uint256 tokenId) private {
+        BondAccounting memory bond = bondAccounting[tokenId];
+
+        _heapRemove(tokenId);
+
+        if (bond.settled) {
+            settledPrincipal -= bond.principal;
+        } else {
+            discountedOutstanding -= bond.discounted;
+            accrualRateSum -= bond.accrualRate;
+            accrualStartSum -= bond.accrualRate * bond.startTime;
+        }
+
+        if (totalInvested >= bond.principal) {
+            totalInvested -= bond.principal;
+        } else {
+            totalInvested = 0;
+        }
+
+        delete bondAccounting[tokenId];
+        delete bondPrincipalObligation[tokenId];
+    }
+
+    /// @notice Settles every bond whose expiry is at or before the current timestamp.
+    function _accrue() private {
+        uint256 nowTs = block.timestamp;
+        while (_expiryHeap.length > 0) {
+            uint256 tokenId = _expiryHeap[0];
+            BondAccounting storage bond = bondAccounting[tokenId];
+            if (bond.expiry > nowTs) break;
+
+            discountedOutstanding -= bond.discounted;
+            accrualRateSum -= bond.accrualRate;
+            accrualStartSum -= bond.accrualRate * bond.startTime;
+            settledPrincipal += bond.principal;
+            bond.settled = true;
+
+            _heapRemove(tokenId);
+            emit BondSettled(tokenId, bond.principal, nowTs);
+        }
+    }
+
+    // --- Expiry min-heap -----------------------------------------------------
+
+    function _heapPush(uint256 tokenId) private {
+        _expiryHeap.push(tokenId);
+        uint256 idx = _expiryHeap.length;
+        _heapIndex[tokenId] = idx;
+        _siftUp(idx);
+    }
+
+    function _heapRemove(uint256 tokenId) private {
+        uint256 idx = _heapIndex[tokenId];
+        if (idx == 0) return;
+
+        uint256 lastIdx = _expiryHeap.length;
+        if (idx != lastIdx) {
+            uint256 lastToken = _expiryHeap[lastIdx - 1];
+            _expiryHeap[idx - 1] = lastToken;
+            _heapIndex[lastToken] = idx;
+            _expiryHeap.pop();
+            delete _heapIndex[tokenId];
+            _siftDown(idx);
+            _siftUp(_heapIndex[lastToken]);
+        } else {
+            _expiryHeap.pop();
+            delete _heapIndex[tokenId];
+        }
+    }
+
+    function _siftUp(uint256 idx) private {
+        while (idx > 1) {
+            uint256 parent = idx / 2;
+            if (!_heapLess(_expiryHeap[idx - 1], _expiryHeap[parent - 1])) break;
+            _heapSwap(idx, parent);
+            idx = parent;
+        }
+    }
+
+    function _siftDown(uint256 idx) private {
+        uint256 len = _expiryHeap.length;
+        while (true) {
+            uint256 left = idx * 2;
+            uint256 right = left + 1;
+            uint256 smallest = idx;
+
+            if (left <= len && _heapLess(_expiryHeap[left - 1], _expiryHeap[smallest - 1])) {
+                smallest = left;
+            }
+            if (right <= len && _heapLess(_expiryHeap[right - 1], _expiryHeap[smallest - 1])) {
+                smallest = right;
+            }
+            if (smallest == idx) break;
+
+            _heapSwap(idx, smallest);
+            idx = smallest;
+        }
+    }
+
+    function _heapSwap(uint256 a, uint256 b) private {
+        uint256 tokenA = _expiryHeap[a - 1];
+        uint256 tokenB = _expiryHeap[b - 1];
+        _expiryHeap[a - 1] = tokenB;
+        _expiryHeap[b - 1] = tokenA;
+        _heapIndex[tokenA] = b;
+        _heapIndex[tokenB] = a;
+    }
+
+    function _heapLess(uint256 a, uint256 b) private view returns (bool) {
+        uint256 expiryA = bondAccounting[a].expiry;
+        uint256 expiryB = bondAccounting[b].expiry;
+        return expiryA < expiryB || (expiryA == expiryB && a < b);
     }
 
     struct UserVestedOverview {
@@ -412,11 +608,14 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         }
     }
 
+    /// @notice Reverts if the treasury cannot cover its existing liabilities before new debt is issued.
     function _validateSolvency() private view {
         if (treasuryBunker != address(0) && treasuryBunker.code.length > 0) {
-            try ITreasury(treasuryBunker).getNAV() returns (uint256 netEquity) {
-                if (netEquity == 0) {
-                    revert InactivePosition();
+            try ITreasury(treasuryBunker).getProofOfReserves() returns (
+                uint256 totalAssetsUSD, uint256 totalLiabilitiesUSD, uint256 collateralRatioBps
+            ) {
+                if (totalAssetsUSD < totalLiabilitiesUSD || collateralRatioBps < 10000) {
+                    revert TreasuryInsolvent(totalAssetsUSD, totalLiabilitiesUSD);
                 }
             } catch {}
         }

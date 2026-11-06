@@ -222,12 +222,14 @@ contract FullSystemCoverageTest is Test {
         usdc.approve(address(vestedVault), 1000 * 10 ** 6);
         uint256 tokenId = vestedVault.buyVestedBond(1000 * 10 ** 6, 1, address(0));
         nft.approve(address(p2pMarket), tokenId);
-        uint256 loanId = p2pMarket.createLoanOffer(tokenId, 500 * 10 ** 6, 1000, 30);
+        // C-03: bond NFTs are sized at a 50% haircut, so max LTV is 332.5 USDC on a
+        // 950 USDC discounted bond. Use 300 USDC to stay below the new limit.
+        uint256 loanId = p2pMarket.createLoanOffer(tokenId, 300 * 10 ** 6, 1000, 30);
         vm.stopPrank();
 
-        usdc.mint(lender, 500 * 10 ** 6);
+        usdc.mint(lender, 300 * 10 ** 6);
         vm.startPrank(lender);
-        usdc.approve(address(p2pMarket), 500 * 10 ** 6);
+        usdc.approve(address(p2pMarket), 300 * 10 ** 6);
         p2pMarket.fundLoanOffer(loanId);
         vm.stopPrank();
 

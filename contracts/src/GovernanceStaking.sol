@@ -16,9 +16,9 @@ interface IBurnable {
 
 /**
  * @title GovernanceStaking
- * @notice Staking pool for ALPHA governance token holders to earn real yield from protocol fees.
+ * @notice Staking pool for VIRAJE governance token holders to earn real yield from protocol fees.
  *         Unallocated yields for non-staked tokens are automatically redistributed to active stakers.
- *         Inherits ERC20 ("Staked ALPHA", "stALPHA") with block-based voting checkpoints for DAO governance.
+ *         Inherits ERC20 ("Staked Viraje", "stVIRAJE") with block-based voting checkpoints for DAO governance.
  */
 contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -158,7 +158,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
     event ReserveVaultsUpdated(address indexed alphaVault, address indexed promoVault);
     event AuthorizedCallerUpdated(address indexed caller, bool authorized);
 
-    constructor(address _govToken, address _rewardToken, address _initialOwner) ERC20("Staked ALPHA", "stALPHA") {
+    constructor(address _govToken, address _rewardToken, address _initialOwner) ERC20("Staked Viraje", "stVIRAJE") {
         if (_govToken == address(0) || _rewardToken == address(0)) revert IProtocolErrors.ZeroAddress();
         govToken = IERC20(_govToken);
         rewardToken = IERC20(_rewardToken);

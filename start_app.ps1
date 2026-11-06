@@ -1,4 +1,4 @@
-# Alpha Centauri High-Performance Launcher Script (Windows PowerShell)
+# Viraje Protocol High-Performance Launcher Script (Windows PowerShell)
 
 # Garantizar deteccion de Node.js en Windows si la sesion no refresco PATH
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) {

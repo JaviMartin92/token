@@ -56,7 +56,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* 🏛️ Barra Superior: Marca, Billetera y Controles */}
       <div className={styles.topBar}>
         <div className={styles.brandGroup}>
-          <div className={styles.brandLogo} aria-hidden="true">α</div>
+          <div className={styles.brandLogo} aria-hidden="true">V</div>
           <div className={styles.brandText}>
             <div className={styles.titleRow}>
               <h1 className={styles.brandTitle}>{UI_STRINGS.HEADER.TITLE}</h1>

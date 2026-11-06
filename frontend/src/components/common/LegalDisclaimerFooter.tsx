@@ -38,14 +38,14 @@ export const LegalDisclaimerFooter: React.FC<LegalDisclaimerFooterProps> = ({ ch
         </div>
 
         <p className={styles.disclaimerText}>
-          Alpha Centauri es una infraestructura de contratos inteligentes autónomos, no custodiales y de código abierto.
+          Viraje Protocol es una infraestructura de contratos inteligentes autónomos, no custodiales y de código abierto.
           No existen entidades intermediarias, figuras corporativas ni llaves maestras individuales. El Valor Patrimonial
           Neto (NAV) y las cuotas de rendimiento se determinan exclusivamente mediante la actividad on-chain y los colaterales exógenos (USDC, WBTC, WETH).
         </p>
 
         <div className={styles.bottomRow}>
-          <span>© 2026 Alpha Centauri DAO. Public Good Autonomous Protocol.</span>
-          <span>Build Integrity: Verified SHA-256 Manifest • Resolution: alphacentauri.eth</span>
+          <span>© 2026 Viraje Protocol DAO. Public Good Autonomous Protocol.</span>
+          <span>Build Integrity: Verified SHA-256 Manifest • Resolution: virajeprotocol.eth</span>
         </div>
       </div>
 
@@ -70,7 +70,7 @@ export const LegalDisclaimerFooter: React.FC<LegalDisclaimerFooterProps> = ({ ch
               <p>
                 De acuerdo con el Considerando 22 del Reglamento MiCA de la Unión Europea, los servicios de criptoactivos prestados
                 de manera totalmente descentralizada sin intermediarios quedan excluidos del ámbito de aplicación del reglamento.
-                Alpha Centauri no cobra comisiones de gestión corporativa; el 100% de las comisiones generadas se reparte algorítmicamente
+                Viraje Protocol no cobra comisiones de gestión corporativa; el 100% de las comisiones generadas se reparte algorítmicamente
                 en un 50% para fortalecimiento de reservas (accretion) y un 50% para dividendos de stakers comunitarios.
               </p>
             </div>
@@ -78,7 +78,7 @@ export const LegalDisclaimerFooter: React.FC<LegalDisclaimerFooterProps> = ({ ch
             <div className={styles.modalSection}>
               <h4>2. Carácter Flotante del NAV y No Promisión de Rendimiento</h4>
               <p>
-                El token ALPHA representa una cuota proporcional sobre la cesta de activos exógenos reales custodiados en los smart contracts.
+                El token VIRAJE representa una cuota proporcional sobre la cesta de activos exógenos reales custodiados en los smart contracts.
                 El NAV fluctúa en tiempo real según la cotización de los colaterales (USDC, WBTC, WETH) auditados por Chainlink.
                 Ningún porcentaje o APY estimado mostrado en la interfaz constituye una garantía de rentabilidad financiera ni un depósito bancario.
               </p>
@@ -95,7 +95,7 @@ export const LegalDisclaimerFooter: React.FC<LegalDisclaimerFooterProps> = ({ ch
             <div className={styles.modalSection}>
               <h4>4. Gobernanza Descentralizada & Timelock de 72 Horas</h4>
               <p>
-                Cualquier actualización de parámetros o contratos requiere la aprobación mayoritaria de los tenedores de stALPHA a través
+                Cualquier actualización de parámetros o contratos requiere la aprobación mayoritaria de los tenedores de stVIRAJE a través
                 de la DAO y está sujeta a un retraso de seguridad inmutable de 72 horas gestionado por TimelockController.sol.
               </p>
             </div>

@@ -1,5 +1,5 @@
 /**
- * Alpha Centauri Protocol - Centralized Backend Strings & Logging Dictionary
+ * Viraje Protocol - Centralized Backend Strings & Logging Dictionary
  * 
  * Centralizes all service log messages, error templates, audit status keys,
  * and watchdog alert descriptions across core microservices and indexers.
@@ -7,7 +7,7 @@
 
 export const BACKEND_STRINGS = {
   SERVICES: {
-    CORE_START: '[*] Starting Alpha Centauri Core Management Service...',
+    CORE_START: '[*] Starting Viraje Protocol Core Management Service...',
     CORE_CRASH: '[!] Core runtime crash:',
     REDIS_SUB_ERROR: '[!] Failed to subscribe to Redis events channel:',
     REDIS_SUB_SUCCESS: (channel: string) => `[+] Subscribed to real-time events channel: "${channel}"`,
