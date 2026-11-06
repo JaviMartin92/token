@@ -72,67 +72,39 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
         }
       >
         {/* 🛡️ Guarded Genesis Cap Progress Bar */}
-        <div style={{
-          marginBottom: 'var(--space-3)',
-          padding: 'var(--space-3) var(--space-4)',
-          background: 'rgba(245, 158, 11, 0.08)',
-          border: '1px solid rgba(245, 158, 11, 0.3)',
-          borderRadius: 'var(--radius-md)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 'var(--space-2)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className={styles.genesisCapBox}>
+          <div className={styles.genesisCapHeader}>
+            <div className={styles.genesisCapTitleRow}>
               <Badge variant="amber" size="sm" dot>🛡️ Guarded Launch Phase 1</Badge>
-              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+              <span className={styles.genesisCapLabel}>
                 Tope de TVL de Seguridad (Anti-Exploit Cap)
               </span>
             </div>
-            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f59e0b' }}>
-              ${_porAssets} / $100,000.00 USD ({Math.min(100, Math.round((parseFloat(_porAssets.replace(/,/g, '')) / 100000) * 100))}% del Cap)
+            <span className={styles.genesisCapValue}>
+              ${_porAssets} / $100K ({Math.min(100, Math.round((parseFloat(_porAssets.replace(/,/g, '')) / 100000) * 100))}% del Cap)
             </span>
           </div>
-          <div style={{
-            width: '100%',
-            height: '6px',
-            background: 'var(--bg-surface-elevated)',
-            borderRadius: '3px',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              width: `${Math.min(100, (parseFloat(_porAssets.replace(/,/g, '')) / 100000) * 100)}%`,
-              height: '100%',
-              background: 'linear-gradient(90deg, #f59e0b, #10b981)',
-              borderRadius: '3px'
-            }} />
+          <div className={styles.genesisCapTrack}>
+            <div
+              className={styles.genesisCapFill}
+              style={{ width: `${Math.min(100, (parseFloat(_porAssets.replace(/,/g, '')) / 100000) * 100)}%` }}
+            />
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+          <div className={styles.genesisCapNotice}>
             🔒 El protocolo limita autónomamente la exposición del capital hasta que la DAO vote financiar la auditoría externa formal mediante el Escrow on-chain.
           </div>
         </div>
 
         {/* 🚰 Faucet de Fondos de Prueba Banner */}
         {(isSandbox || isAdmin || isTestnet) && (
-          <div style={{
-            marginBottom: 'var(--space-3)',
-            padding: 'var(--space-3) var(--space-4)',
-            background: 'rgba(16, 185, 129, 0.08)',
-            border: '1px solid rgba(16, 185, 129, 0.25)',
-            borderRadius: 'var(--radius-md)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 'var(--space-2)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '1.4rem' }}>🚰</span>
+          <div className={styles.faucetBanner}>
+            <div className={styles.faucetBannerContent}>
+              <span className={styles.faucetBannerIcon}>🚰</span>
               <div>
-                <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                <div className={styles.faucetBannerTitle}>
                   Faucet de Fondos de Prueba (Arbitrum Sepolia)
                 </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                <div className={styles.faucetBannerDesc}>
                   Solicita 10,000 USDC Mock gratis directamente a tu wallet para probar suscripciones, bóvedas, staking y préstamos.
                 </div>
               </div>
@@ -142,12 +114,7 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
               variant="outline"
               size="sm"
               onClick={onFaucetUSDC}
-              style={{
-                borderColor: '#10b981',
-                color: '#34d399',
-                fontWeight: 600,
-                whiteSpace: 'nowrap'
-              }}
+              className={styles.faucetBannerBtn}
             >
               🚰 Solicitar 10,000 USDC Mock
             </Button>
@@ -176,21 +143,7 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
         </div>
 
         {/* ℹ️ Transparencia de Valor Liquidativo (NAV) */}
-        <div style={{
-          marginTop: 'var(--space-3)',
-          marginBottom: 'var(--space-2)',
-          padding: 'var(--space-3) var(--space-4)',
-          background: 'var(--bg-surface-elevated)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-md)',
-          fontSize: '0.8125rem',
-          color: 'var(--text-secondary)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 'var(--space-2)'
-        }}>
+        <div className={styles.navTransparencyBox}>
           <div>
             💎 <strong>Transparencia Contable NAV:</strong> Cada cuota está respaldada estrictamente por el <em>Patrimonio Neto libre de pasivos</em> (Activos en Reservas menos Deuda de Bonos Vestados), protegiéndote contra dilución.
           </div>

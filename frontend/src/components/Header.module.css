@@ -292,6 +292,26 @@
   }
 }
 
+.labelMobile {
+  display: none;
+}
+
+.labelDesktop {
+  display: inline;
+}
+
+.faucetMobileText {
+  display: none;
+}
+
+.faucetDesktopText {
+  display: inline;
+}
+
+.genesisBadge {
+  display: inline-flex;
+}
+
 /* 📱 ADAPTACIÓN SMARTPHONE / MÓVIL (< 768px) */
 @media (max-width: 768px) {
   .topBar {
@@ -307,17 +327,45 @@
     display: none; /* Oculta subtítulo largo en móvil para no saturar la pantalla */
   }
 
-  .envBadge {
+  .envBadge,
+  .genesisBadge {
+    display: none; /* Oculta badges técnicos en móvil para evitar saltos de línea antiestéticos */
+  }
+
+  .faucetMobileText {
+    display: inline;
+  }
+
+  .faucetDesktopText {
+    display: none;
+  }
+
+  .labelMobile {
+    display: inline;
+    font-weight: 700;
+  }
+
+  .labelDesktop {
     display: none;
   }
 
   .walletGroup {
     gap: var(--space-1);
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
   .walletBadge {
-    padding: 4px 8px;
-    font-size: 0.75rem;
+    padding: 3px 7px;
+    font-size: 0.72rem;
+  }
+
+  .headerFaucetBtn,
+  .disconnectBtn,
+  .connectBtn {
+    padding: 3px 8px !important;
+    font-size: 0.72rem !important;
+    min-height: 32px !important;
   }
 
   .mobileReferralBtn {

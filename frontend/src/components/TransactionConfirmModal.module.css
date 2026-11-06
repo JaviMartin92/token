@@ -137,3 +137,43 @@
   align-items: center;
   gap: var(--space-2);
 }
+
+@media (max-width: 480px) {
+  .flowCard {
+    flex-direction: column;
+    gap: var(--space-2);
+    text-align: center;
+    padding: var(--space-3);
+  }
+
+  .flowArrow {
+    transform: rotate(90deg);
+  }
+
+  .flowValInput,
+  .flowValOutput {
+    font-size: 1.05rem;
+  }
+
+  .itemRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: var(--space-2);
+  }
+
+  .itemRow > div:last-child {
+    align-self: flex-end;
+  }
+
+  .targetRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .targetAddr {
+    word-break: break-all;
+    font-size: 0.72rem;
+  }
+}

@@ -63,6 +63,132 @@
   min-height: 44px;
 }
 
+/* 🛡️ Guarded Genesis Cap */
+.genesisCapBox {
+  margin-bottom: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.genesisCapHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.genesisCapTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.genesisCapLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.genesisCapValue {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+.genesisCapTrack {
+  width: 100%;
+  height: 6px;
+  background: var(--bg-surface-elevated);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.genesisCapFill {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b, #10b981);
+  border-radius: 3px;
+}
+
+.genesisCapNotice {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* 🚰 Faucet Banner */
+.faucetBanner {
+  margin-bottom: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.faucetBannerContent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.faucetBannerIcon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.faucetBannerTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.faucetBannerDesc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.faucetBannerBtn {
+  border-color: #10b981 !important;
+  color: #34d399 !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  flex-shrink: 0;
+}
+
+/* ℹ️ Transparencia NAV */
+.navTransparencyBox {
+  margin-top: var(--space-3);
+  margin-bottom: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  box-sizing: border-box;
+  width: 100%;
+}
+
 /* 🌾 Estrategias Institucionales (Admin - 4 Columnas Fraccionales) */
 .strategyGrid {
   display: grid;
@@ -124,6 +250,35 @@
     gap: var(--space-4);
   }
 
+  .genesisCapLabel {
+    display: none;
+  }
+
+  .genesisCapNotice {
+    display: none;
+  }
+
+  .faucetBanner {
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .faucetBannerDesc {
+    display: none;
+  }
+
+  .faucetBannerBtn {
+    width: 100%;
+    justify-content: center;
+    min-height: 40px;
+  }
+
+  .navTransparencyBox {
+    display: none;
+  }
+
   .balancesGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-2);
@@ -140,7 +295,7 @@
   }
 
   .actionCard {
-    padding: var(--space-4);
+    padding: var(--space-3);
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
@@ -148,13 +303,14 @@
   }
 
   .submitBtn {
-    min-height: 48px;
+    min-height: 44px;
   }
 }
 
 @media (max-width: 480px) {
   .balancesGrid {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
   }
 
   .operationsGrid,

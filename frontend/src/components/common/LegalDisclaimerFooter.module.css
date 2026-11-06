@@ -165,3 +165,31 @@
   line-height: 1.5;
   color: #94a3b8;
 }
+
+@media (max-width: 640px) {
+  .footer {
+    margin-top: 1.5rem;
+    padding: 1rem 0.75rem;
+  }
+
+  .badges {
+    display: none; /* Oculta badges técnicos en móvil para aligerar la vista */
+  }
+
+  .topRow {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .disclaimerText {
+    display: none; /* Oculta el bloque denso de texto legal en móvil; se consulta mediante el modal */
+  }
+
+  .bottomRow {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.35rem;
+    font-size: 0.65rem;
+  }
+}

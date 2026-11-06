@@ -61,11 +61,11 @@ export const Header: React.FC<HeaderProps> = ({
               <Badge variant="blue" size="sm" className={styles.envBadge}>
                 {UI_STRINGS.HEADER.BADGE_ENV_PROD}
               </Badge>
-              <Badge variant="amber" size="sm" dot>
+              <Badge variant="amber" size="sm" dot className={styles.genesisBadge}>
                 🛡️ Guarded Genesis Cap: $100K
               </Badge>
               {circuitBreakerFrozen && (
-                <Badge variant="crimson" size="sm" dot>
+                <Badge variant="crimson" size="sm" dot className={styles.breakerBadge}>
                   ⚡ {UI_STRINGS.ADMIN.BREAKER_STATUS_FROZEN}
                 </Badge>
               )}
@@ -95,13 +95,15 @@ export const Header: React.FC<HeaderProps> = ({
               size="sm"
               onClick={walletConnected ? onFaucetUSDC : handleConnectWallet}
               title={walletConnected ? 'Solicitar 10,000 USDC Mock gratis para pruebas' : 'Conectar billetera para solicitar 10,000 USDC Mock'}
+              className={styles.headerFaucetBtn}
               style={{
                 borderColor: '#10b981',
                 color: '#34d399',
                 fontWeight: 600
               }}
             >
-              🚰 Faucet 10k USDC
+              <span className={styles.faucetDesktopText}>🚰 Faucet 10k USDC</span>
+              <span className={styles.faucetMobileText}>🚰 10k USDC</span>
             </Button>
           )}
 
@@ -109,6 +111,7 @@ export const Header: React.FC<HeaderProps> = ({
             <Button
               variant="secondary"
               size="sm"
+              className={styles.disconnectBtn}
               onClick={() => disconnect()}
             >
               {UI_STRINGS.HEADER.BTN_DISCONNECT}
@@ -117,6 +120,7 @@ export const Header: React.FC<HeaderProps> = ({
             <Button
               variant="primary"
               size="sm"
+              className={styles.connectBtn}
               onClick={handleConnectWallet}
             >
               {UI_STRINGS.HEADER.BTN_CONNECT}
@@ -148,19 +152,28 @@ export const Header: React.FC<HeaderProps> = ({
             tabIndex={0}
             title={UI_STRINGS.MODALS.APY_BREAKDOWN.TITLE}
           >
-            <span className={styles.metricLabel}>{UI_STRINGS.HEADER.LABEL_APY_BREAKDOWN_TOOLTIP}</span>
-            <span className={`${styles.metricValue} ${styles.metricPurple}`}>{protocolApy} APR ℹ️</span>
+            <span className={styles.metricLabel}>
+              <span className={styles.labelDesktop}>{UI_STRINGS.HEADER.LABEL_APY_BREAKDOWN_TOOLTIP}</span>
+              <span className={styles.labelMobile}>⚡ APY REAL</span>
+            </span>
+            <span className={`${styles.metricValue} ${styles.metricPurple}`}>{protocolApy} APR</span>
           </div>
 
           <div className={styles.metricPill}>
-            <span className={styles.metricLabel}>{UI_STRINGS.HEADER.LABEL_POR_RATIO}</span>
+            <span className={styles.metricLabel}>
+              <span className={styles.labelDesktop}>{UI_STRINGS.HEADER.LABEL_POR_RATIO}</span>
+              <span className={styles.labelMobile}>RATIO PoR</span>
+            </span>
             <span data-testid="header-por-ratio" className={`${styles.metricValue} ${styles.metricEmerald}`}>
               {porRatio}
             </span>
           </div>
 
           <div className={styles.metricPill}>
-            <span className={styles.metricLabel}>{UI_STRINGS.HEADER.LABEL_NAV}</span>
+            <span className={styles.metricLabel}>
+              <span className={styles.labelDesktop}>{UI_STRINGS.HEADER.LABEL_NAV}</span>
+              <span className={styles.labelMobile}>VALOR NAV</span>
+            </span>
             <span data-testid="header-nav-value" className={`${styles.metricValue} ${styles.metricBlue}`}>
               {navValue}
             </span>
