@@ -219,6 +219,8 @@ export default function App() {
         circuitBreakerFrozen={treasuryMetrics.circuitBreakerFrozen}
         onOpenReferral={() => setIsReferralOpen(true)}
         onOpenApyModal={() => setIsApyModalOpen(true)}
+        onFaucetUSDC={treasury.handleFaucetUSDC}
+        isTestnet={global.isTestnet}
       />
 
       <ApyBreakdownModal
@@ -254,8 +256,9 @@ export default function App() {
               onRedeem={treasury.handleRedeem}
               onFaucetUSDC={treasury.handleFaucetUSDC}
               onAuditPoR={treasury.handleAuditPoR}
-              isAdmin={global.isSandbox && global.walletConnected}
+              isAdmin={(global.isSandbox || global.isTestnet) && global.walletConnected}
               isSandbox={global.isSandbox}
+              isTestnet={global.isTestnet}
               loansList={p2pMarket.loansList}
             />
 

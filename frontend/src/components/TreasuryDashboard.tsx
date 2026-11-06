@@ -21,6 +21,7 @@ interface TreasuryDashboardProps {
   onAuditPoR: () => void;
   isAdmin?: boolean;
   isSandbox?: boolean;
+  isTestnet?: boolean;
   loansList?: any[];
 }
 
@@ -41,6 +42,7 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
   onAuditPoR,
   isAdmin = false,
   isSandbox = false,
+  isTestnet = true,
   loansList = []
 }) => {
   const totalLentUsd = loansList
@@ -53,11 +55,11 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
       <Card
         variant="surface"
         collapsible
-        defaultExpanded={false}
+        defaultExpanded={true}
         headerTitle={UI_STRINGS.TREASURY.CARD_DEPOSIT_TITLE}
         headerSubtitle={UI_STRINGS.TREASURY.SUBTITLE}
         headerAction={
-          (isSandbox || isAdmin) ? (
+          (isSandbox || isAdmin || isTestnet) ? (
             <Button
               data-testid="treasury-faucet-btn"
               variant="outline"
@@ -109,6 +111,48 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
             🔒 El protocolo limita autónomamente la exposición del capital hasta que la DAO vote financiar la auditoría externa formal mediante el Escrow on-chain.
           </div>
         </div>
+
+        {/* 🚰 Faucet de Fondos de Prueba Banner */}
+        {(isSandbox || isAdmin || isTestnet) && (
+          <div style={{
+            marginBottom: 'var(--space-3)',
+            padding: 'var(--space-3) var(--space-4)',
+            background: 'rgba(16, 185, 129, 0.08)',
+            border: '1px solid rgba(16, 185, 129, 0.25)',
+            borderRadius: 'var(--radius-md)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 'var(--space-2)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '1.4rem' }}>🚰</span>
+              <div>
+                <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  Faucet de Fondos de Prueba (Arbitrum Sepolia)
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                  Solicita 10,000 USDC Mock gratis directamente a tu wallet para probar suscripciones, bóvedas, staking y préstamos.
+                </div>
+              </div>
+            </div>
+            <Button
+              data-testid="treasury-banner-faucet-btn"
+              variant="outline"
+              size="sm"
+              onClick={onFaucetUSDC}
+              style={{
+                borderColor: '#10b981',
+                color: '#34d399',
+                fontWeight: 600,
+                whiteSpace: 'nowrap'
+              }}
+            >
+              🚰 Solicitar 10,000 USDC Mock
+            </Button>
+          </div>
+        )}
 
         {/* 👛 Saldos Disponibles del Usuario */}
         <div className={styles.balancesGrid}>

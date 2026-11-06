@@ -80,6 +80,7 @@ export function useGlobalState() {
     chainId,
     blockDateStr,
     activeKey,
-    isSandbox: chainId === 31337
+    isSandbox: chainId === 31337,
+    isTestnet: chainId !== 42161 && chainId !== 1
   };
 }
