@@ -26,7 +26,7 @@ library TreasuryFeeLib {
      * @return dynamicFeeBps Fee in basis points (e.g. 50 = 0.50%).
      */
     function calculateDynamicFeeBps(uint256 grossDepositUSD, uint256 totalAssetsExogenousUSD)
-        internal
+        public
         pure
         returns (uint256)
     {
@@ -47,7 +47,7 @@ library TreasuryFeeLib {
      * @param grossUsdValue Gross USD value of redeemed shares (18 decimals).
      * @return emergencyFeeUsd Retained USD fee (18 decimals).
      */
-    function calculateEmergencyFee(uint256 grossUsdValue) internal pure returns (uint256) {
+    function calculateEmergencyFee(uint256 grossUsdValue) public pure returns (uint256) {
         return (grossUsdValue * EMERGENCY_FEE_BPS) / 10000;
     }
 
@@ -55,7 +55,7 @@ library TreasuryFeeLib {
      * @notice Computes emergency redemption amounts and fees while optimizing EVM stack depth.
      */
     function calculateEmergencyRedemption(uint256 sharesAmount, uint256 netEquityUSD, uint256 totalShares, uint8 decimals)
-        internal
+        public
         pure
         returns (RedeemCalculation memory calc)
     {
@@ -72,7 +72,7 @@ library TreasuryFeeLib {
      * @notice Computes standard redemption amounts and fees while optimizing EVM stack depth.
      */
     function calculateRedemption(uint256 sharesAmount, uint256 totalNavUSD, uint256 totalShares, uint8 decimals)
-        internal
+        public
         pure
         returns (RedeemCalculation memory calc)
     {

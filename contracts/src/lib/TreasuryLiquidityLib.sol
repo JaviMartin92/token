@@ -10,6 +10,36 @@ import "../interfaces/IUniversalYieldAdapter.sol";
  */
 library TreasuryLiquidityLib {
     /**
+     * @notice Computes total stablecoin reserves backing redemptions: liquid vault balance plus
+     *         funds deployed in active ERC-4626 adapters.
+     */
+    function calculateStableReserves(
+        address vaultAddr,
+        address redemptionToken,
+        address[] memory activeYieldAdapters,
+        address treasuryContract
+    ) public view returns (uint256 total) {
+        if (vaultAddr == address(0)) return 0;
+        AlphaVault vault = AlphaVault(vaultAddr);
+        total = vault.getBalance(redemptionToken) + IERC20(redemptionToken).balanceOf(treasuryContract);
+
+        uint256 len = activeYieldAdapters.length;
+        for (uint256 i = 0; i < len;) {
+            address adapter = activeYieldAdapters[i];
+            try IUniversalYieldAdapter(adapter).balanceOf(vaultAddr) returns (uint256 shares) {
+                if (shares > 0) {
+                    try IUniversalYieldAdapter(adapter).convertToAssets(shares) returns (uint256 assets) {
+                        total += assets;
+                    } catch {}
+                }
+            } catch {}
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    /**
      * @notice Ensures sufficient liquid stablecoins in AlphaVault by auto-withdrawing from active Yield Adapters.
      * @param vault The protocol AlphaVault instance.
      * @param redemptionToken Address of the primary stablecoin (USDC).
@@ -23,7 +53,7 @@ library TreasuryLiquidityLib {
         address[] memory activeYieldAdapters,
         uint256 requiredUsdc,
         address treasuryContract
-    ) internal {
+    ) public {
         uint256 vaultBal = vault.getBalance(redemptionToken);
         if (vaultBal >= requiredUsdc) return;
 

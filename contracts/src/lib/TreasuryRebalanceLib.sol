@@ -43,7 +43,7 @@ library TreasuryRebalanceLib {
     /**
      * @notice Executes automatic swap rebalancing into WBTC, WETH and allocates ALPHA sub-reserves.
      */
-    function executeRebalanceSwaps(RebalanceParams memory params) internal {
+    function executeRebalanceSwaps(RebalanceParams memory params) public {
         if (params.swapRouter != address(0)) {
             // 1. WBTC Rebalance Swap
             uint256 btcUsdc = (params.netDeposited * params.wbtcWeight) / 10000;
@@ -116,7 +116,7 @@ library TreasuryRebalanceLib {
     /**
      * @notice Dynamically allocates ALPHA sub-reserve via DEX swap with automatic NAV Fallback mint + auto-staking.
      */
-    function allocateAlphaReserve(RebalanceParams memory params, uint256 altsUsdc) internal {
+    function allocateAlphaReserve(RebalanceParams memory params, uint256 altsUsdc) public {
         if (altsUsdc == 0) return;
 
         address alphaTokenAddr = address(params.token);

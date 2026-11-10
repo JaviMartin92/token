@@ -53,7 +53,7 @@ library TreasuryPoRLib {
      * @notice Computes total USD value of all exogenous reserves (USDC, WBTC, WETH, P2P loans, Yield Adapters).
      */
     function calculatePoRAssets(PoRContext memory ctx, address[] memory activeYieldAdapters)
-        internal
+        public
         view
         returns (uint256 totalAssetsUSD)
     {
@@ -113,7 +113,7 @@ library TreasuryPoRLib {
     /**
      * @notice Computes total USD liabilities (Circulating ALPHA at settled NAV + Vested Discount liabilities).
      */
-    function calculatePoRLiabilities(PoRContext memory ctx) internal view returns (uint256 totalLiabilitiesUSD) {
+    function calculatePoRLiabilities(PoRContext memory ctx) public view returns (uint256 totalLiabilitiesUSD) {
         AlphaVault vault = AlphaVault(ctx.addressProvider.getAlphaVault());
         AlphaToken token = AlphaToken(ctx.addressProvider.getAlphaToken());
         address govAddr = ctx.addressProvider.getGovernanceStaking();
@@ -158,7 +158,7 @@ library TreasuryPoRLib {
      * @notice Calculates Proof of Reserves and Solvency ratio.
      */
     function getProofOfReserves(PoRContext memory ctx, address[] memory activeYieldAdapters)
-        internal
+        public
         view
         returns (uint256 totalAssetsUSD, uint256 totalLiabilitiesUSD, uint256 solvencyRatioBps)
     {
@@ -173,7 +173,7 @@ library TreasuryPoRLib {
     }
 
     function getNetCirculatingShares(ProtocolAddressProvider addressProvider, address treasuryManagerContract)
-        internal
+        public
         view
         returns (uint256)
     {
@@ -214,7 +214,7 @@ library TreasuryPoRLib {
     /**
      * @notice Computes total external debt obligations (e.g. active Vested Bonds liability) to deduct from Net Equity.
      */
-    function getDebtLiabilitiesUSD(ProtocolAddressProvider addressProvider) internal view returns (uint256 debtUSD) {
+    function getDebtLiabilitiesUSD(ProtocolAddressProvider addressProvider) public view returns (uint256 debtUSD) {
         address vestedAddr = addressProvider.getVestedVault();
         if (vestedAddr != address(0)) {
             try IVestedDiscountVaultPoR(vestedAddr).totalPresentLiability() returns (uint256 vL) {
@@ -229,7 +229,7 @@ library TreasuryPoRLib {
      * @notice Detailed asset breakdown for frontend dashboards and transparent auditing.
      */
     function getAssetBreakdown(AssetBreakdownParams memory params, address[] memory activeYieldAdapters)
-        internal
+        public
         view
         returns (uint256 stablesUsd, uint256 wbtcUsd, uint256 wethUsd, uint256 loansUsd)
     {

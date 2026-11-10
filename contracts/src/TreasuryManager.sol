@@ -426,10 +426,10 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
      * @return sharesMinted The amount of Alpha shares minted to the user.
      */
     function deposit(uint256 stableAmount) external override returns (uint256 sharesMinted) {
-        return deposit(stableAmount, 0);
+        return depositFor(msg.sender, stableAmount, 0);
     }
 
-    function deposit(uint256 stableAmount, uint256 minSharesOut) public override returns (uint256 sharesMinted) {
+    function deposit(uint256 stableAmount, uint256 minSharesOut) external override returns (uint256 sharesMinted) {
         return depositFor(msg.sender, stableAmount, minSharesOut);
     }
 
@@ -525,7 +525,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
         } catch {
             // Fallback: Proceed if approval was granted via standard approve()
         }
-        return deposit(stableAmount, minSharesOut);
+        return depositFor(msg.sender, stableAmount, minSharesOut);
     }
 
     /**
@@ -569,7 +569,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
         return redeemFor(msg.sender, msg.sender, sharesAmount, 0);
     }
 
-    function redeem(uint256 sharesAmount, uint256 minUsdcOut) public override returns (uint256 assetsReceived) {
+    function redeem(uint256 sharesAmount, uint256 minUsdcOut) external override returns (uint256 assetsReceived) {
         return redeemFor(msg.sender, msg.sender, sharesAmount, minUsdcOut);
     }
 
@@ -768,26 +768,12 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
      *         funds deployed in active ERC-4626 adapters.
      */
     function treasuryStableReserves() public view returns (uint256 total) {
-        address vaultAddr = addressProvider.getAlphaVault();
-        if (vaultAddr == address(0)) return 0;
-
-        AlphaVault vault = AlphaVault(vaultAddr);
-        total = vault.getBalance(redemptionToken) + IERC20(redemptionToken).balanceOf(address(this));
-
-        uint256 len = activeYieldAdapters.length;
-        for (uint256 i = 0; i < len;) {
-            address adapter = activeYieldAdapters[i];
-            try IUniversalYieldAdapter(adapter).balanceOf(vaultAddr) returns (uint256 shares) {
-                if (shares > 0) {
-                    try IUniversalYieldAdapter(adapter).convertToAssets(shares) returns (uint256 assets) {
-                        total += assets;
-                    } catch {}
-                }
-            } catch {}
-            unchecked {
-                ++i;
-            }
-        }
+        return TreasuryLiquidityLib.calculateStableReserves(
+            addressProvider.getAlphaVault(),
+            redemptionToken,
+            activeYieldAdapters,
+            address(this)
+        );
     }
 
     /**
@@ -882,16 +868,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
         if (amount == 0) revert ZeroAmount();
 
         AlphaVault vault = AlphaVault(addressProvider.getAlphaVault());
-        uint256 available = vault.getBalance(redemptionToken);
-        if (available < amount) {
-            TreasuryLiquidityLib.ensureLiquidBuffer(
-                vault, redemptionToken, activeYieldAdapters, amount, address(this)
-            );
-            available = vault.getBalance(redemptionToken);
-            if (available < amount) revert InsufficientLiquidity();
-        }
-
-        vault.transferFunds(redemptionToken, recipient, amount);
+        _transferWithLiquidity(vault, recipient, amount);
     }
 
     /**
@@ -910,6 +887,11 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
         if (amount == 0) revert ZeroAmount();
 
         AlphaVault vault = AlphaVault(addressProvider.getAlphaVault());
+        _transferWithLiquidity(vault, recipient, amount);
+        emit TreasuryGrantDisbursed(recipient, amount, "DAO Proposal Grant / Audit Escrow");
+    }
+
+    function _transferWithLiquidity(AlphaVault vault, address recipient, uint256 amount) internal {
         uint256 available = vault.getBalance(redemptionToken);
         if (available < amount) {
             TreasuryLiquidityLib.ensureLiquidBuffer(
@@ -918,9 +900,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
             available = vault.getBalance(redemptionToken);
             if (available < amount) revert InsufficientLiquidity();
         }
-
         vault.transferFunds(redemptionToken, recipient, amount);
-        emit TreasuryGrantDisbursed(recipient, amount, "DAO Proposal Grant / Audit Escrow");
     }
 
     // Reserved storage gap to prevent storage collisions in future UUPS upgrades
