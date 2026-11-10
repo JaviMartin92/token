@@ -45,6 +45,7 @@
     "dev:down": "docker-compose down"
   },
   "devDependencies": {
+    "solc": "^0.8.20",
     "solhint": "^5.0.3"
   }
 }
