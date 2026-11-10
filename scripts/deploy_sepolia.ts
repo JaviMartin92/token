@@ -321,6 +321,15 @@ async function main() {
     await sendTx('Habilitar KYC para Wallet de Prueba', treasuryProxyAddr, tmCompiled.abi, 'setKYCStatus', [userTestWallet, true]);
   }
 
+  // Permisos cruzados de Real Yield y Staking
+  await sendTx('Configurar Protocol Vaults en RealYieldRouter', realYieldRouterAddr, routerArtifact.abi, 'setProtocolVaults', [treasuryProxyAddr, communityVaultAddr]);
+  await sendTx('Autorizar Tesorería en RealYieldRouter', realYieldRouterAddr, routerArtifact.abi, 'setAuthorizedYieldCaller', [treasuryProxyAddr, true]);
+  await sendTx('Autorizar VestedVault en RealYieldRouter', realYieldRouterAddr, routerArtifact.abi, 'setAuthorizedYieldCaller', [vestedVaultAddr, true]);
+  await sendTx('Autorizar Tesorería en Staking', stakingAddr, stArtifact.abi, 'setAuthorizedCaller', [treasuryProxyAddr, true]);
+  await sendTx('Autorizar RealYieldRouter en Staking', stakingAddr, stArtifact.abi, 'setAuthorizedCaller', [realYieldRouterAddr, true]);
+  await sendTx('Autorizar CommunityVault en Staking', stakingAddr, stArtifact.abi, 'setAuthorizedCaller', [communityVaultAddr, true]);
+  await sendTx('Excluir Tesorería de Recompensas Staking', stakingAddr, stArtifact.abi, 'setExcludedAddress', [treasuryProxyAddr, true]);
+
   // 12. Actualizar contracts.json
   console.log('\n--- PASO 9: PERSISTENCIA DE DIRECCIONES EN EL ECOSISTEMA ---');
   contractsConfig['USDC'] = usdcAddr;
