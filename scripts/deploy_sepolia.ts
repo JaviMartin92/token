@@ -265,6 +265,23 @@ async function main() {
 
   await sendTx('Autorizar Minteo vPOS a VestedVault', positionNftAddr, nftArtifact.abi, 'grantRole', [MINTER_ROLE, vestedVaultAddr]);
 
+  // 8b. Desplegar P2PLendingMarket (Préstamos con Colateral)
+  const p2pArtifact = loadArtifact('P2PLendingMarket');
+  const p2pMarketAddr = await deploy('P2PLendingMarket (Préstamos)', p2pArtifact.abi, p2pArtifact.bytecode.object, [
+    usdcAddr,
+    positionNftAddr,
+    realYieldRouterAddr,
+    oracleHubAddr,
+    account.address
+  ]);
+
+  await sendTx('Configurar PriceFeed en P2PLendingMarket', p2pMarketAddr, p2pArtifact.abi, 'setPriceFeed', [oracleHubAddr]);
+  await sendTx('Configurar Tesorería en P2PLendingMarket', p2pMarketAddr, p2pArtifact.abi, 'setTreasury', [treasuryProxyAddr]);
+  await sendTx('Configurar CircuitBreaker en P2PLendingMarket', p2pMarketAddr, p2pArtifact.abi, 'setCircuitBreaker', [circuitBreakerAddr]);
+  await sendTx('Configurar AlphaToken en P2PLendingMarket', p2pMarketAddr, p2pArtifact.abi, 'setAlphaToken', [alphaTokenAddr]);
+  await sendTx('Configurar WBTC en P2PLendingMarket', p2pMarketAddr, p2pArtifact.abi, 'setWbtcToken', [wbtcAddr]);
+  await sendTx('Configurar WETH en P2PLendingMarket', p2pMarketAddr, p2pArtifact.abi, 'setWethToken', [wethAddr]);
+
   // 9. Desplegar Módulos de Tokenomics, Buyback y Seguridad Post-Cuántica
   console.log('\n--- PASO 6: EXTENSIONES Y MÓDULOS INSTITUCIONALES ---');
   const pteArtifact = loadArtifact('ProtocolTokenomicsEngine');
@@ -306,6 +323,7 @@ async function main() {
   await sendTx('Registrar DISCOUNT_BUYBACK_ENGINE', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('DISCOUNT_BUYBACK_ENGINE')), buybackEngineAddr]);
   await sendTx('Registrar POST_QUANTUM_GUARD', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('POST_QUANTUM_GUARD')), pqcGuardAddr]);
   await sendTx('Registrar FOUNDER_VESTING_VAULT', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('FOUNDER_VESTING_VAULT')), founderVaultAddr]);
+  await sendTx('Registrar P2P_MARKET', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('P2P_MARKET')), p2pMarketAddr]);
 
   // 11. Concesión de Permisos Cruzados de Seguridad RBAC
   console.log('\n--- PASO 8: ASIGNACIÓN DE ROLES RBAC Y WHITELISTS ---');
@@ -313,6 +331,9 @@ async function main() {
   await sendTx('Conceder BURNER_ROLE en AlphaToken a Tesorería', alphaTokenAddr, atArtifact.abi, 'grantRole', [BURNER_ROLE, treasuryProxyAddr]);
   await sendTx('Conceder VAULT_MANAGER en AlphaVault a Tesorería', alphaVaultAddr, avArtifact.abi, 'grantRole', [VAULT_MANAGER_ROLE, treasuryProxyAddr]);
   await sendTx('Conceder COMPLIANCE_ROLE en Tesorería al Desplegador', treasuryProxyAddr, tmCompiled.abi, 'grantRole', [COMPLIANCE_ROLE, account.address]);
+  await sendTx('Conceder BURNER_ROLE en Tesorería a GovernanceStaking', treasuryProxyAddr, tmCompiled.abi, 'grantRole', [BURNER_ROLE, stakingAddr]);
+  await sendTx('Conceder BURNER_ROLE en Tesorería a DiscountBuybackEngine', treasuryProxyAddr, tmCompiled.abi, 'grantRole', [BURNER_ROLE, buybackEngineAddr]);
+  await sendTx('Configurar TokenomicsEngine en P2PLendingMarket', p2pMarketAddr, p2pArtifact.abi, 'setTokenomicsEngine', [tokenomicsEngineAddr]);
 
   // Registrar KYC para el desplegador y para la cuenta del usuario de prueba
   await sendTx('Habilitar KYC para Desplegador', treasuryProxyAddr, tmCompiled.abi, 'setKYCStatus', [account.address, true]);
@@ -325,6 +346,7 @@ async function main() {
   await sendTx('Configurar Protocol Vaults en RealYieldRouter', realYieldRouterAddr, routerArtifact.abi, 'setProtocolVaults', [treasuryProxyAddr, communityVaultAddr]);
   await sendTx('Autorizar Tesorería en RealYieldRouter', realYieldRouterAddr, routerArtifact.abi, 'setAuthorizedYieldCaller', [treasuryProxyAddr, true]);
   await sendTx('Autorizar VestedVault en RealYieldRouter', realYieldRouterAddr, routerArtifact.abi, 'setAuthorizedYieldCaller', [vestedVaultAddr, true]);
+  await sendTx('Autorizar P2P_MARKET en RealYieldRouter', realYieldRouterAddr, routerArtifact.abi, 'setAuthorizedYieldCaller', [p2pMarketAddr, true]);
   await sendTx('Autorizar Tesorería en Staking', stakingAddr, stArtifact.abi, 'setAuthorizedCaller', [treasuryProxyAddr, true]);
   await sendTx('Autorizar RealYieldRouter en Staking', stakingAddr, stArtifact.abi, 'setAuthorizedCaller', [realYieldRouterAddr, true]);
   await sendTx('Autorizar CommunityVault en Staking', stakingAddr, stArtifact.abi, 'setAuthorizedCaller', [communityVaultAddr, true]);
@@ -356,6 +378,7 @@ async function main() {
   contractsConfig['DISCOUNT_BUYBACK_ENGINE'] = buybackEngineAddr;
   contractsConfig['POST_QUANTUM_GUARD'] = pqcGuardAddr;
   contractsConfig['FOUNDER_VESTING_VAULT'] = founderVaultAddr;
+  contractsConfig['P2P_MARKET'] = p2pMarketAddr;
 
   fs.writeFileSync(contractsJsonPath, JSON.stringify(contractsConfig, null, 2), 'utf8');
   console.log(`[+] frontend/src/contracts.json actualizado con éxito.`);

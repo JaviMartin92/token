@@ -290,6 +290,22 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         }
     }
 
+    function _disburseAndRouteFees(address recipient, uint256 borrowAmount) internal {
+        uint256 originationFee = (borrowAmount * ORIGINATION_FEE_BPS) / 10000;
+        uint256 netBorrow = borrowAmount - originationFee;
+        ITreasury(treasury).disburseTreasuryLoan(address(this), borrowAmount);
+        IERC20(stablecoin).safeTransfer(recipient, netBorrow);
+        if (originationFee > 0) {
+            address feeDest = feeCollector != address(0) ? feeCollector : treasury;
+            if (feeDest != address(0)) {
+                IERC20(stablecoin).safeTransfer(feeDest, originationFee);
+                if (feeDest == feeCollector && feeCollector.code.length > 0) {
+                    try IRealYieldRouter(feeCollector).routeUniversalFee(stablecoin) {} catch {}
+                }
+            }
+        }
+    }
+
     /// @notice Books treasury-funded reflexive exposure when a loan is disbursed.
     function _bookCircularDebt(uint256 loanId, Loan storage loan) internal {
         if (loan.lender == treasury && _isCircularLoan(loanId, loan)) {
@@ -470,24 +486,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         _treasuryActiveLoansReceivableUSD += borrowAmount;
         _bookCircularDebt(loanId, loans[loanId]);
 
-        uint256 originationFee = (borrowAmount * ORIGINATION_FEE_BPS) / 10000; // 0.5%
-        uint256 netBorrow = borrowAmount - originationFee;
-
-        ITreasury(treasury).disburseTreasuryLoan(address(this), borrowAmount);
-        IERC20(stablecoin).safeTransfer(msg.sender, netBorrow);
-        if (originationFee > 0) {
-            address feeDest = feeCollector != address(0) ? feeCollector : treasury;
-            if (feeDest != address(0)) {
-                IERC20(stablecoin).safeTransfer(feeDest, originationFee);
-                if (feeDest == feeCollector && feeCollector.code.length > 0) {
-                    try IRealYieldRouter(feeCollector).routeUniversalFee(stablecoin) {
-                        // Fee routed
-                    } catch {
-                        // Ignore fee routing error
-                    }
-                }
-            }
-        }
+        _disburseAndRouteFees(msg.sender, borrowAmount);
 
         emit LoanCreated(loanId, treasury, positionTokenId, borrowAmount);
         emit LoanAccepted(loanId, msg.sender, borrowAmount);
@@ -565,24 +564,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         _treasuryActiveLoansReceivableUSD += borrowAmount;
         _bookCircularDebt(loanId, loans[loanId]);
 
-        uint256 originationFee = (borrowAmount * ORIGINATION_FEE_BPS) / 10000; // 0.5%
-        uint256 netBorrow = borrowAmount - originationFee;
-
-        ITreasury(treasury).disburseTreasuryLoan(address(this), borrowAmount);
-        IERC20(stablecoin).safeTransfer(msg.sender, netBorrow);
-        if (originationFee > 0) {
-            address feeDest = feeCollector != address(0) ? feeCollector : treasury;
-            if (feeDest != address(0)) {
-                IERC20(stablecoin).safeTransfer(feeDest, originationFee);
-                if (feeDest == feeCollector && feeCollector.code.length > 0) {
-                    try IRealYieldRouter(feeCollector).routeUniversalFee(stablecoin) {
-                        // Fee routed
-                    } catch {
-                        // Ignore fee routing error
-                    }
-                }
-            }
-        }
+        _disburseAndRouteFees(msg.sender, borrowAmount);
 
         emit LoanCreated(loanId, treasury, 0, borrowAmount);
         emit LoanAccepted(loanId, msg.sender, borrowAmount);
@@ -676,20 +658,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
             loan.lender = treasury;
             _treasuryActiveLoansReceivableUSD += loan.borrowAmount;
             _bookCircularDebt(loanId, loan);
-            ITreasury(treasury).disburseTreasuryLoan(address(this), loan.borrowAmount);
-            IERC20(stablecoin).safeTransfer(loan.borrower, netBorrow);
-            if (originationFee > 0 && feeCollector != address(0)) {
-                IERC20(stablecoin).safeTransfer(feeCollector, originationFee);
-                if (feeCollector.code.length > 0) {
-                    try IRealYieldRouter(feeCollector).routeUniversalFee(stablecoin) {
-                        // Origination fee routed to yield pool
-                    } catch {
-                        // Ignore yield routing revert on market execution
-                    }
-                }
-            } else if (originationFee > 0 && treasury != address(0)) {
-                IERC20(stablecoin).safeTransfer(treasury, originationFee);
-            }
+            _disburseAndRouteFees(loan.borrower, loan.borrowAmount);
         } else {
             // Standard P2P Lender
             IERC20(stablecoin).safeTransferFrom(msg.sender, loan.borrower, netBorrow);
