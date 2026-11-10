@@ -137,11 +137,33 @@ export const getWalletClient = (userAddress?: string) => {
         : (userAddress && userAddress.startsWith('0x') ? userAddress : '0x0000000000000000000000000000000000000000')
   ) as `0x${string}`;
 
-  return createWalletClient({
+  const client = createWalletClient({
     account: activeAddr,
     chain: activeChain,
     transport: custom(provider)
   });
+
+  // Arbitrum EIP-1559 Dynamic Gas Buffer Shield
+  const rawWriteContract = client.writeContract.bind(client);
+  (client as any).writeContract = async (args: any) => {
+    if (ENV.VITE_CHAIN_ID !== 31337 && !args.maxFeePerGas) {
+      try {
+        const fees = await publicClient.estimateFeesPerGas();
+        if (fees && fees.maxFeePerGas) {
+          // Provide 50% buffer to maxFeePerGas to prevent sequencer rejections during micro-spikes
+          args.maxFeePerGas = (fees.maxFeePerGas * 150n) / 100n;
+          if (fees.maxPriorityFeePerGas && fees.maxPriorityFeePerGas > 0n) {
+            args.maxPriorityFeePerGas = (fees.maxPriorityFeePerGas * 125n) / 100n;
+          }
+        }
+      } catch (e) {
+        console.warn('[Gas Buffer Shield] Reverted to provider defaults:', e);
+      }
+    }
+    return await rawWriteContract(args);
+  };
+
+  return client;
 };
 
 export const getFreshNonce = async (account: `0x${string}`): Promise<number | undefined> => {
