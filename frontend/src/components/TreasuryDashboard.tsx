@@ -17,7 +17,7 @@ interface TreasuryDashboardProps {
   setRedeemAmount: (val: string) => void;
   onDeposit: () => void;
   onRedeem: () => void;
-  onFaucetUSDC: () => void;
+  onFaucetUSDC?: () => void;
   onAuditPoR: () => void;
   isAdmin?: boolean;
   isSandbox?: boolean;
@@ -26,10 +26,10 @@ interface TreasuryDashboardProps {
 }
 
 export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
-  porAssets: _porAssets = '100,000.00',
-  porLiabilities: _porLiabilities = '100,000.00',
+  porAssets: _porAssets = '0.00',
+  porLiabilities: _porLiabilities = '0.00',
   porRatio: _porRatio = '100.00%',
-  porBreakdown = { stables: 50000, wbtc: 25000, weth: 12500, alphaStaking: 12500 },
+  porBreakdown = { stables: 0, wbtc: 0, weth: 0, alphaStaking: 0 },
   usdcBalance,
   sharesBalance,
   depositAmount,
@@ -38,11 +38,11 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
   setRedeemAmount,
   onDeposit,
   onRedeem,
-  onFaucetUSDC,
+  onFaucetUSDC: _onFaucetUSDC,
   onAuditPoR,
   isAdmin = false,
-  isSandbox = false,
-  isTestnet = true,
+  isSandbox: _isSandbox = false,
+  isTestnet: _isTestnet = true,
   loansList = []
 }) => {
   const totalLentUsd = loansList
@@ -69,45 +69,19 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
               </span>
             </div>
             <span className={styles.genesisCapValue}>
-              ${_porAssets} / $100K ({Math.min(100, Math.round((parseFloat(_porAssets.replace(/,/g, '')) / 100000) * 100))}% del Cap)
+              ${_porAssets} / $1M ({Math.min(100, Math.round((parseFloat(_porAssets.replace(/,/g, '')) / 1000000) * 100))}% del Cap)
             </span>
           </div>
           <div className={styles.genesisCapTrack}>
             <div
               className={styles.genesisCapFill}
-              style={{ width: `${Math.min(100, (parseFloat(_porAssets.replace(/,/g, '')) / 100000) * 100)}%` }}
+              style={{ width: `${Math.min(100, (parseFloat(_porAssets.replace(/,/g, '')) / 1000000) * 100)}%` }}
             />
           </div>
           <div className={styles.genesisCapNotice}>
             🔒 El protocolo limita autónomamente la exposición del capital hasta que la DAO vote financiar la auditoría externa formal mediante el Escrow on-chain.
           </div>
         </div>
-
-        {/* 🚰 Faucet de Fondos de Prueba Banner */}
-        {(isSandbox || isAdmin || isTestnet) && (
-          <div className={styles.faucetBanner}>
-            <div className={styles.faucetBannerContent}>
-              <span className={styles.faucetBannerIcon}>🚰</span>
-              <div>
-                <div className={styles.faucetBannerTitle}>
-                  Faucet de Fondos de Prueba (Arbitrum Sepolia)
-                </div>
-                <div className={styles.faucetBannerDesc}>
-                  Solicita 10,000 USDC Mock gratis directamente a tu wallet para probar suscripciones, bóvedas, staking y préstamos.
-                </div>
-              </div>
-            </div>
-            <Button
-              data-testid="treasury-faucet-btn"
-              variant="outline"
-              size="sm"
-              onClick={onFaucetUSDC}
-              className={styles.faucetBannerBtn}
-            >
-              🚰 Solicitar 10,000 USDC Mock
-            </Button>
-          </div>
-        )}
 
         {/* 👛 Saldos Disponibles del Usuario */}
         <div className={styles.balancesGrid}>

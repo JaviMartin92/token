@@ -124,52 +124,6 @@
   line-height: 1.4;
 }
 
-/* 🚰 Faucet Banner */
-.faucetBanner {
-  margin-bottom: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  border-radius: var(--radius-md);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-3);
-  box-sizing: border-box;
-  width: 100%;
-}
-
-.faucetBannerContent {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.faucetBannerIcon {
-  font-size: 1.4rem;
-  flex-shrink: 0;
-}
-
-.faucetBannerTitle {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.faucetBannerDesc {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-}
-
-.faucetBannerBtn {
-  border-color: #10b981 !important;
-  color: #34d399 !important;
-  font-weight: 600 !important;
-  white-space: nowrap !important;
-  flex-shrink: 0;
-}
-
 /* ℹ️ Transparencia NAV */
 .navTransparencyBox {
   margin-top: var(--space-3);
@@ -268,30 +222,6 @@
 
   .genesisCapNotice {
     display: none;
-  }
-
-  .faucetBanner {
-    flex-direction: column;
-    align-items: stretch;
-    padding: var(--space-3);
-    gap: var(--space-2);
-  }
-
-  .faucetBannerContent {
-    min-width: 0;
-    width: 100%;
-  }
-
-  .faucetBannerDesc {
-    display: none;
-  }
-
-  .faucetBannerBtn {
-    width: 100%;
-    justify-content: center;
-    min-height: 42px;
-    white-space: normal !important;
-    text-align: center;
   }
 
   .navTransparencyBox {

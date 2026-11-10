@@ -39,6 +39,8 @@
     "test:contracts:fast:native": "cd contracts && forge test --no-match-test \"testFuzz|Invariant\"",
     "quality:contracts:native": "cd contracts && forge fmt --check",
     "prepare": "node scripts/install-hooks.mjs",
+    "deploy:sepolia": "powershell -ExecutionPolicy Bypass -File ./scripts/deploy-sepolia.ps1",
+    "mint": "powershell -Command \"$env:NODE_PATH='./frontend/node_modules;./services/core/node_modules'; npx tsx scripts/mint_tokens.ts\"",
     "dev": "docker-compose up -d",
     "dev:down": "docker-compose down"
   },

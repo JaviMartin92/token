@@ -89,7 +89,7 @@ export const Header: React.FC<HeaderProps> = ({
                 {UI_STRINGS.HEADER.BADGE_ENV_PROD}
               </Badge>
               <Badge variant="amber" size="sm" dot className={styles.genesisBadge}>
-                🛡️ Guarded Genesis Cap: $100K
+                🛡️ Guarded Genesis Cap: $1M
               </Badge>
               {circuitBreakerFrozen && (
                 <Badge variant="crimson" size="sm" dot className={styles.breakerBadge}>

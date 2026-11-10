@@ -153,7 +153,7 @@ export function decodeWeb3Error(err: any): DecodedWeb3Error {
 
   if (msg.includes('TVLCapExceeded') || msg.includes('tvl cap')) {
     return {
-      title: 'Tope de TVL Alcanzado ($100,000 USD)',
+      title: 'Tope de TVL Alcanzado ($1,000,000 USD)',
       message: 'El protocolo se encuentra en fase de Guarded Launch y ha alcanzado su tope máximo de TVL.',
       actionableHint: 'La DAO puede votar incrementar el tope mediante propuesta de gobernanza.',
       isUserRejection: false
@@ -236,7 +236,7 @@ function mapSolidityErrorToMessage(errorName: string): DecodedWeb3Error {
   switch (errorName) {
     case 'TVLCapExceeded':
       return {
-        title: 'Tope de TVL Alcanzado ($100,000 USD)',
+        title: 'Tope de TVL Alcanzado ($1,000,000 USD)',
         message: 'El protocolo se encuentra en fase de Guarded Launch y ha alcanzado su capacidad máxima permitida.',
         actionableHint: 'La DAO puede votar aumentar el tope a través de una propuesta de gobernanza.',
         isUserRejection: false

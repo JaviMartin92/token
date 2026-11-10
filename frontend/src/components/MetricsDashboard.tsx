@@ -63,6 +63,14 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   // Real Treasury Surplus calculation based on NAV growth above par ($1.00 USD baseline)
   const numericNav = parseFloat((navPerShareUSD || '1.0').replace('$', '').replace(' USDC', '')) || 1.0;
   const numericCirculating = parseFloat((circulatingSupply || '0').replace(/,/g, '')) || 0;
+  const numericBurned = parseFloat((totalBurnedTokens || '0').replace(/,/g, '')) || 0;
+  const numericTotalEmitted = numericCirculating + numericBurned;
+  const totalEmittedDisplay = numericTotalEmitted > 0
+    ? numericTotalEmitted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : '0.00';
+  const vestingReserveDisplay = numericTotalEmitted >= 100000
+    ? '100,000.00'
+    : (numericTotalEmitted > 0 ? numericTotalEmitted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00');
   const parNominalLiabilities = numericCirculating * 1.0;
   const treasurySurplusUSD = (numericNav > 1.0 && numericCirculating > 0)
     ? (numericNav - 1.0) * numericCirculating
@@ -309,12 +317,12 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
                 <div className={styles.supplyPillsGrid}>
                   <div className={styles.supplyPillCard}>
                     <span className={styles.supplyPillTitle}>Total Emitido</span>
-                    <span className={styles.supplyPillValue}>111,995.22</span>
-                    <span className={styles.supplyPillDesc}>Acuñado Génesis</span>
+                    <span className={styles.supplyPillValue}>{totalEmittedDisplay}</span>
+                    <span className={styles.supplyPillDesc}>Acuñado On-Chain</span>
                   </div>
                   <div className={styles.supplyPillCard}>
                     <span className={styles.supplyPillTitle}>Vesting Reserva</span>
-                    <span className={styles.supplyPillValue}>100,000.00</span>
+                    <span className={styles.supplyPillValue}>{vestingReserveDisplay}</span>
                     <span className={styles.supplyPillDesc}>Bloqueo Institucional</span>
                   </div>
                   <div className={styles.supplyPillCard}>

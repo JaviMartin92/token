@@ -7,9 +7,9 @@ export function useFounderVesting(userAddress?: string, addLog?: (msg: string) =
   const vestingAddress = (CONTRACT_ADDRESSES as any).FOUNDER_VESTING_VAULT;
 
   const { data: vestingData = {
-    totalAllocation: '100,000.00',
+    totalAllocation: '0.00',
     totalClaimed: '0.00',
-    remainingAllocation: '100,000.00',
+    remainingAllocation: '0.00',
     beneficiary: '',
     claimableAlpha: '0.00',
     claimableAlphaNum: 0,
@@ -24,9 +24,9 @@ export function useFounderVesting(userAddress?: string, addLog?: (msg: string) =
     queryFn: async () => {
       if (!vestingAddress || vestingAddress === '0x0000000000000000000000000000000000000000') {
         return {
-          totalAllocation: '100,000.00',
+          totalAllocation: '0.00',
           totalClaimed: '0.00',
-          remainingAllocation: '100,000.00',
+          remainingAllocation: '0.00',
           beneficiary: '',
           claimableAlpha: '0.00',
           claimableAlphaNum: 0,
@@ -76,8 +76,10 @@ export function useFounderVesting(userAddress?: string, addLog?: (msg: string) =
         const nextDateStr = nextSec > 0 ? new Date(nextSec * 1000).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }) : 'Inmediato';
         const isBen = userAddress ? userAddress.toLowerCase() === (beneficiaryRaw as string).toLowerCase() : false;
 
+        const totalAllocNum = claimedNum + remainingNum;
+
         return {
-          totalAllocation: '100,000.00',
+          totalAllocation: totalAllocNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
           totalClaimed: claimedNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
           remainingAllocation: remainingNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
           beneficiary: beneficiaryRaw as string,
@@ -92,9 +94,9 @@ export function useFounderVesting(userAddress?: string, addLog?: (msg: string) =
         };
       } catch {
         return {
-          totalAllocation: '100,000.00',
+          totalAllocation: '0.00',
           totalClaimed: '0.00',
-          remainingAllocation: '100,000.00',
+          remainingAllocation: '0.00',
           beneficiary: '',
           claimableAlpha: '0.00',
           claimableAlphaNum: 0,
