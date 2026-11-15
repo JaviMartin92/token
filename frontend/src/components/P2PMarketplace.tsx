@@ -83,12 +83,14 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
   const [treasuryColType, setTreasuryColType] = useState<string>('nft');
 
   const MAX_LTV_MAP: Record<string, number> = {
-    alpha: 0.25, // 50% Haircut institucional x 50% Max LTV = 25% LTV efectivo
+    viraje: 0.25, // 50% Haircut institucional x 50% Max LTV = 25% LTV efectivo
+    alpha: 0.25,
     wbtc: 0.70,
     weth: 0.75
   };
 
   const ASSET_PRICE_MAP: Record<string, number> = {
+    viraje: navPerShareNum && navPerShareNum > 0 ? navPerShareNum : 1.0,
     alpha: navPerShareNum && navPerShareNum > 0 ? navPerShareNum : 1.0,
     wbtc: assetPrices?.wbtc && assetPrices.wbtc > 0 ? assetPrices.wbtc : 60000.0,
     weth: assetPrices?.weth && assetPrices.weth > 0 ? assetPrices.weth : 3000.0
@@ -187,7 +189,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                 className={styles.select}
               >
                 <option value="nft">🎫 {UI_STRINGS.P2P_MARKETPLACE.COL_NFT}</option>
-                <option value="alpha">🥩 {UI_STRINGS.P2P_MARKETPLACE.COL_ALPHA}</option>
+                <option value="viraje">🥩 {UI_STRINGS.P2P_MARKETPLACE.COL_VIRAJE}</option>
                 <option value="wbtc">🪙 {UI_STRINGS.P2P_MARKETPLACE.COL_WBTC}</option>
                 <option value="weth">🔷 {UI_STRINGS.P2P_MARKETPLACE.COL_WETH}</option>
               </select>
@@ -221,7 +223,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                 </>
               ) : (
                 <div className={styles.colCalcBox}>
-                  ⚡ {autoCalculatedColAmount} {treasuryColType.toUpperCase()} (${requiredUsdBacking.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD Respaldo @ {(currentLtv * 100).toFixed(0)}% LTV Efectivo [50% Haircut x 50% LTV])
+                  ⚡ {autoCalculatedColAmount} {(treasuryColType === 'viraje' || treasuryColType === 'alpha') ? 'VIRAJE' : treasuryColType.toUpperCase()} (${requiredUsdBacking.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD Respaldo @ {(currentLtv * 100).toFixed(0)}% LTV Efectivo [50% Haircut x 50% LTV])
                 </div>
               )}
             </div>
@@ -265,7 +267,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                 p2pDays
               )}
             >
-              {UI_STRINGS.P2P_MARKETPLACE.BTN_BORROW_TREASURY} ({treasuryColType.toUpperCase()})
+              {UI_STRINGS.P2P_MARKETPLACE.BTN_BORROW_TREASURY} ({(treasuryColType === 'viraje' || treasuryColType === 'alpha') ? 'VIRAJE' : treasuryColType.toUpperCase()})
             </Button>
           </div>
         </Card>

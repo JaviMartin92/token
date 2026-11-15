@@ -1265,7 +1265,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                     <td data-label="Rol Fiduciario" className={styles.tdMuted}>{UI_STRINGS.GOVERNANCE.ROLE_DEX_BUYS}</td>
                   </tr>
                   <tr className={styles.trBorder}>
-                    <td data-label="Activo" className={styles.tdBold}>🥩 Native {UI_STRINGS.COMMON.SYMBOL_ALPHA} Staked</td>
+                    <td data-label="Activo" className={styles.tdBold}>🥩 Tokens VIRAJE en Staking</td>
                     <td data-label="Valoración">${parseFloat(reserveBreakdown?.stakedAlphaUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</td>
                     <td data-label="Ponderación Objetivo" className={styles.tdGreen}>{twAlts.toFixed(2)}%</td>
                     <td data-label="Rol Fiduciario" className={styles.tdMuted}>{UI_STRINGS.GOVERNANCE.ROLE_AUTO_STAKE}</td>

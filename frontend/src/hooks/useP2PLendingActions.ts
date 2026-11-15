@@ -709,7 +709,7 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         addLog(`¡Préstamo de $${amountStr} USDC desembolsado por la Tesorería! Fondos acreditados en tu billetera.`);
         addToast('success', 'Préstamo Desembolsado', `$${amountStr} USDC recibidos en tu billetera (Activo)`);
         await fetchData();
-      } else if (collateralType === 'alpha') {
+      } else if (collateralType === 'viraje' || collateralType === 'alpha') {
         const colAmtWei = parseUnits(tokenIdOrAmountStr || '0', 18);
         if (colAmtWei === 0n) {
           addToast('warning', 'Monto de VIRAJE Requerido', 'Calcula o introduce una cantidad válida de tokens VIRAJE como colateral.');
@@ -832,7 +832,7 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
     }
 
     const numAmt = parseFloat(amountStr);
-    const colSymbol = collateralType.toUpperCase();
+    const colSymbol = (collateralType === 'viraje' || collateralType === 'alpha') ? 'VIRAJE' : collateralType.toUpperCase();
 
     if (requestConfirmation) {
       requestConfirmation({
@@ -846,7 +846,7 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         expectedOutput: `$${numAmt.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
         expectedOutputSymbol: 'USDC Desembolsado a tu Billetera',
         details: [
-          { label: 'Tipo de Colateral', value: collateralType === 'nft' ? 'NFT Posición (70% Max LTV)' : `${colSymbol} (${collateralType === 'alpha' ? '50%' : collateralType === 'weth' ? '75%' : '70%'} Max LTV)` },
+          { label: 'Tipo de Colateral', value: collateralType === 'nft' ? 'NFT Posición (70% Max LTV)' : `${colSymbol} (${(collateralType === 'viraje' || collateralType === 'alpha') ? '25% LTV Efectivo' : collateralType === 'weth' ? '75%' : '70%'} Max LTV)` },
           { label: 'Tasa Fija Tesorería', value: '8.00% APR (800 BPS)', badge: 'Garantía Institucional' },
           { label: 'Comisión de Originación (0.50%)', value: `$${(numAmt * 0.005).toFixed(2)} USDC`, badge: '100% Inyectado a Flywheel Real Yield' },
           { label: 'Interés Devengado Est. (' + (daysStr || '30') + ' Días)', value: `+$${(numAmt * 0.08 * (parseFloat(daysStr || '30') / 365)).toFixed(2)} USDC`, badge: '90% Tesorería / 10% Stakers' },
