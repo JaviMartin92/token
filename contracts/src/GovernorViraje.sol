@@ -388,5 +388,3 @@ contract GovernorViraje is AccessControl {
         emit QuorumVotesUpdated(newQuorum);
     }
 }
-
-/**

@@ -10,12 +10,14 @@ import "./interfaces/ICircuitBreaker.sol";
 import "./ProtocolAddressProvider.sol";
 import "./ProtocolRoles.sol";
 
+/* solhint-disable func-name-mixedcase */
 interface IP2PLendingMarketView {
     function totalActiveLoansReceivableUSD() external view returns (uint256);
     function virajeCollateralHaircutBps() external view returns (uint256);
     function MAX_LTV_BPS() external view returns (uint256);
     function bondCollateralHaircutBps() external view returns (uint256);
 }
+/* solhint-enable func-name-mixedcase */
 
 interface IVaultPositionNFTView {
     struct BondPosition {
@@ -413,8 +415,8 @@ contract VirajeHypervisor is IVirajeHypervisor, AccessControl {
             revert InvariantNAVDecreased(preNAVPerShare, postNAVPerShare);
         }
 
-        // Invariante 2: Ratio de colateralización no puede caer por debajo del mínimo institucional (100%)
-        if (postCollateralRatioBps < config.minCollateralRatioBps) {
+        // Invariante 2: Ratio de colateralización no puede caer por debajo del mínimo institucional ni descender
+        if (postCollateralRatioBps < config.minCollateralRatioBps || postCollateralRatioBps < preCollateralRatioBps) {
             revert InvariantSolvencyBreached(postCollateralRatioBps, config.minCollateralRatioBps);
         }
     }
