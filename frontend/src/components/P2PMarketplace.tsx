@@ -83,7 +83,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
   const [treasuryColType, setTreasuryColType] = useState<string>('nft');
 
   const MAX_LTV_MAP: Record<string, number> = {
-    alpha: 0.50,
+    alpha: 0.25, // 50% Haircut institucional x 50% Max LTV = 25% LTV efectivo
     wbtc: 0.70,
     weth: 0.75
   };
@@ -205,11 +205,15 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                     className={styles.select}
                   >
                     <option value="">{UI_STRINGS.COMMON.SELECT_OPTION_DEFAULT}</option>
-                    {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).map((pos) => (
-                      <option key={pos.id} value={pos.id.toString()}>
-                        NFT #{pos.id} (Principal: ${pos.principal} {UI_STRINGS.COMMON.SYMBOL_USDC})
-                      </option>
-                    ))}
+                    {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).map((pos) => {
+                      const paidVal = parseFloat((pos.paid || pos.principal || '0').replace(/,/g, ''));
+                      const maxBorrowUsd = Math.round(paidVal * 0.35);
+                      return (
+                        <option key={pos.id} value={pos.id.toString()}>
+                          NFT #{pos.id} (Principal: ${pos.principal} USDC — Crédito Máx: ~${maxBorrowUsd.toLocaleString()} USDC)
+                        </option>
+                      );
+                    })}
                     {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).length === 0 && (
                       <option value="" disabled>{UI_STRINGS.COMMON.NO_POSITIONS_AVAILABLE}</option>
                     )}
@@ -217,7 +221,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                 </>
               ) : (
                 <div className={styles.colCalcBox}>
-                  ⚡ {autoCalculatedColAmount} {treasuryColType.toUpperCase()} (${requiredUsdBacking.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD Respaldo @ {(currentLtv * 100).toFixed(0)}% LTV)
+                  ⚡ {autoCalculatedColAmount} {treasuryColType.toUpperCase()} (${requiredUsdBacking.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD Respaldo @ {(currentLtv * 100).toFixed(0)}% LTV Efectivo [50% Haircut x 50% LTV])
                 </div>
               )}
             </div>

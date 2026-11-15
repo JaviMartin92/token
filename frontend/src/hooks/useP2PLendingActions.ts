@@ -655,13 +655,15 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         addLog(`[Tesorería] Solicitando préstamo institucional de $${amountStr} USDC con NFT #${tokenIdBig}...`);
         addToast('info', 'Préstamo Tesorería', 'Verificando autorización del NFT...');
 
+        const ownerAddr = (userAddress || (userClient.account as any)?.address || userClient.account) as `0x${string}`;
+
         let isApproved = false;
         try {
           const isAllApproved = await publicClient.readContract({
             address: CONTRACT_ADDRESSES.POSITION_NFT,
             abi: ABIS.POSITION_NFT,
             functionName: 'isApprovedForAll',
-            args: [userClient.account.address, CONTRACT_ADDRESSES.P2P_MARKET]
+            args: [ownerAddr, CONTRACT_ADDRESSES.P2P_MARKET]
           }) as boolean;
           if (isAllApproved) isApproved = true;
         } catch (e) {}
@@ -714,20 +716,33 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
           return;
         }
 
-        addLog(`[Tesorería] Solicitando préstamo institucional de $${amountStr} USDC con ${tokenIdOrAmountStr} VIRAJE de colateral...`);
-        addToast('info', 'Préstamo Tesorería', 'Verificando aprobación de tokens VIRAJE...');
+        const ownerAddr = (userAddress || (userClient.account as any)?.address || userClient.account) as `0x${string}`;
 
-        // Approve VIRAJE tokens to P2PLendingMarket
-        const appHash = await userClient.writeContract({
-          address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
-          abi: ABIS.ERC20,
-          functionName: 'approve',
-          args: [CONTRACT_ADDRESSES.P2P_MARKET, colAmtWei * 2n]
-        });
-        await publicClient.waitForTransactionReceipt({ hash: appHash });
-        await new Promise((res) => setTimeout(res, 500));
+        let currentAllowance = 0n;
+        try {
+          currentAllowance = await publicClient.readContract({
+            address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
+            abi: ABIS.ERC20,
+            functionName: 'allowance',
+            args: [ownerAddr, CONTRACT_ADDRESSES.P2P_MARKET]
+          }) as bigint;
+        } catch (_) {}
 
-        addLog(`Desembolsando $${amountStr} USDC desde Reservas con respaldo de ${tokenIdOrAmountStr} VIRAJE...`);
+        if (currentAllowance < colAmtWei) {
+          addLog(`[Paso 1/2] Aprobando tokens VIRAJE para la Tesorería...`);
+          addToast('info', 'Paso 1/2: Autorización', 'Firma la autorización de VIRAJE en tu billetera (solo 1 vez)...');
+          const appHash = await userClient.writeContract({
+            address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
+            abi: ABIS.ERC20,
+            functionName: 'approve',
+            args: [CONTRACT_ADDRESSES.P2P_MARKET, colAmtWei * 2n]
+          });
+          await publicClient.waitForTransactionReceipt({ hash: appHash });
+          addToast('info', 'Paso 2/2: Desembolso', 'Autorización completada. Desembolsando crédito...');
+          await new Promise((res) => setTimeout(res, 500));
+        }
+
+        addLog(`[Paso 2/2] Desembolsando $${amountStr} USDC desde Reservas con respaldo de ${tokenIdOrAmountStr} VIRAJE...`);
         const txBorrow = await userClient.writeContract({
           address: CONTRACT_ADDRESSES.P2P_MARKET,
           abi: ABIS.P2P_MARKET,
