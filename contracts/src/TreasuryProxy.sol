@@ -6,7 +6,7 @@ import "./interfaces/IProtocolErrors.sol";
 
 /**
  * @title TreasuryProxy
- * @author Alpha Centauri Architecture Team
+ * @author Viraje Protocol Architecture Team
  * @notice ERC-1967 upgradeable proxy delegating calls to an implementation address.
  *         Uses standard EIP-1967 slots for implementation and admin to prevent storage collisions.
  *         Inline assembly is required by EIP-1967 specification for slot reading and delegatecall.

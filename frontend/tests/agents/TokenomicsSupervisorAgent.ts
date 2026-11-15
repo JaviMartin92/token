@@ -23,7 +23,7 @@ function loadContractsConfig(): Record<string, string> {
   return {
     TREASURY: '0x322813fd9a801c5507c9de605d63cea4f2ce6c44',
     STAKING: '0x95401dc811bb5740090279ba06cfa8fcf6113778',
-    ALPHA_TOKEN: '0x68b1d87f95878fe05b998f19b66f4baba5de1aed',
+    VIRAJE_TOKEN: '0x68b1d87f95878fe05b998f19b66f4baba5de1aed',
     VESTED_VAULT: '0x5f3f1dbd7b74c6b46e8c44f98792a1daf8d69154'
   };
 }
@@ -39,12 +39,12 @@ export interface ScreenMetrics {
   porRatioPct: number;
   liabilitiesUSD: number;
   assetsUSD: number;
-  circulatingAlpha: number;
-  communityStakedAlpha: number;
-  totalStakedAlpha: number;
-  burnedAlpha: number;
+  circulatingViraje: number;
+  communityStakedViraje: number;
+  totalStakedViraje: number;
+  burnedViraje: number;
   treasuryUsdc: number;
-  treasuryAlpha: number;
+  treasuryViraje: number;
 }
 
 export interface OnChainMetrics {
@@ -54,7 +54,7 @@ export interface OnChainMetrics {
   totalLiabilitiesUSD: number;
   circulatingShares: number;
   lastSettledNav: number;
-  totalSupplyAlpha: number;
+  totalSupplyViraje: number;
   communityStaked: number;
   treasuryStaked: number;
   globalTotalStaked: number;
@@ -66,7 +66,7 @@ export interface TheoreticalPrediction {
   expectedNavUSD: number;
   expectedAssetsUSD: number;
   expectedLiabilitiesUSD: number;
-  expectedCirculatingAlpha: number;
+  expectedCirculatingViraje: number;
   expectedFeeUSD: number;
   details: string;
 }
@@ -133,10 +133,10 @@ export class TokenomicsSupervisorAgent {
     const porText = await page.locator('[data-testid="header-por-ratio"]').textContent({ timeout: 2500 }).catch(() => '100%');
     const liabilitiesText = await page.locator('[data-testid="por-liabilities-total"]').textContent({ timeout: 1500 }).catch(() => '$0 USD');
     const assetsText = await page.locator('[data-testid="por-assets-total"]').textContent({ timeout: 1500 }).catch(() => '$0 USD');
-    const circText = await page.locator('[data-testid="staking-circulating-supply"]').textContent({ timeout: 1500 }).catch(() => '0 ALPHA');
-    const commStakedText = await page.locator('[data-testid="staking-community-staked"]').textContent({ timeout: 1500 }).catch(() => '0 stALPHA');
-    const totalStakedText = await page.locator('[data-testid="staking-total-staked"]').textContent({ timeout: 1500 }).catch(() => '0 ALPHA');
-    const burnedText = await page.locator('[data-testid="staking-deflation-burned"]').textContent({ timeout: 1500 }).catch(() => '0 ALPHA');
+    const circText = await page.locator('[data-testid="staking-circulating-supply"]').textContent({ timeout: 1500 }).catch(() => '0 VIRAJE');
+    const commStakedText = await page.locator('[data-testid="staking-community-staked"]').textContent({ timeout: 1500 }).catch(() => '0 stVIRAJE');
+    const totalStakedText = await page.locator('[data-testid="staking-total-staked"]').textContent({ timeout: 1500 }).catch(() => '0 VIRAJE');
+    const burnedText = await page.locator('[data-testid="staking-deflation-burned"]').textContent({ timeout: 1500 }).catch(() => '0 VIRAJE');
     const usdcText = await page.locator('[data-testid="treasury-usdc-balance"]').textContent({ timeout: 1500 }).catch(() => '0');
     const sharesText = await page.locator('[data-testid="treasury-shares-balance"]').textContent({ timeout: 1500 }).catch(() => '0');
 
@@ -152,12 +152,12 @@ export class TokenomicsSupervisorAgent {
       porRatioPct: parseNum(porText) || 100,
       liabilitiesUSD: parseNum(liabilitiesText),
       assetsUSD: parseNum(assetsText),
-      circulatingAlpha: parseNum(circText),
-      communityStakedAlpha: parseNum(commStakedText),
-      totalStakedAlpha: parseNum(totalStakedText),
-      burnedAlpha: parseNum(burnedText),
+      circulatingViraje: parseNum(circText),
+      communityStakedViraje: parseNum(commStakedText),
+      totalStakedViraje: parseNum(totalStakedText),
+      burnedViraje: parseNum(burnedText),
       treasuryUsdc: parseNum(usdcText),
-      treasuryAlpha: parseNum(sharesText),
+      treasuryViraje: parseNum(sharesText),
     };
   }
 
@@ -168,7 +168,7 @@ export class TokenomicsSupervisorAgent {
     try {
       const treasuryAddr = this.contracts.TREASURY as `0x${string}`;
       const stakingAddr = this.contracts.STAKING as `0x${string}`;
-      const alphaTokenAddr = this.contracts.ALPHA_TOKEN as `0x${string}`;
+      const virajeTokenAddr = this.contracts.VIRAJE_TOKEN as `0x${string}`;
       const vestedVaultAddr = this.contracts.VESTED_VAULT as `0x${string}`;
 
       const [porRes, navWei, netCircWei, lastSettledNavWei, stakingBreakdown, vestedLiabilityWei, totalSupplyWei] = await Promise.all([
@@ -241,7 +241,7 @@ export class TokenomicsSupervisorAgent {
         }).catch(() => 0n) as Promise<bigint>,
 
         this.client.readContract({
-          address: alphaTokenAddr,
+          address: virajeTokenAddr,
           abi: [{ name: 'totalSupply', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] }],
           functionName: 'totalSupply'
         }) as Promise<bigint>,
@@ -253,7 +253,7 @@ export class TokenomicsSupervisorAgent {
       const navUSD = parseFloat(formatEther(navWei));
       const circulatingShares = parseFloat(formatEther(netCircWei));
       const lastSettledNav = parseFloat(formatEther(lastSettledNavWei));
-      const totalSupplyAlpha = parseFloat(formatEther(totalSupplyWei));
+      const totalSupplyViraje = parseFloat(formatEther(totalSupplyWei));
       const vestedLiabilityUSD = parseFloat(formatEther(vestedLiabilityWei));
 
       const commStaked = parseFloat(formatEther(stakingBreakdown.communityStaked ?? stakingBreakdown[0] ?? 0n));
@@ -268,7 +268,7 @@ export class TokenomicsSupervisorAgent {
         totalLiabilitiesUSD: totalLiabilities,
         circulatingShares,
         lastSettledNav,
-        totalSupplyAlpha,
+        totalSupplyViraje,
         communityStaked: commStaked,
         treasuryStaked: treasStaked,
         globalTotalStaked: globStaked,
@@ -284,7 +284,7 @@ export class TokenomicsSupervisorAgent {
         totalLiabilitiesUSD: 0,
         circulatingShares: 0,
         lastSettledNav: 1.0,
-        totalSupplyAlpha: 0,
+        totalSupplyViraje: 0,
         communityStaked: 0,
         treasuryStaked: 0,
         globalTotalStaked: 0,
@@ -353,7 +353,7 @@ export class TokenomicsSupervisorAgent {
       const netEquity = expectedAssetsUSD - preVested;
       expectedNavUSD = expectedCirculating > 0 ? netEquity / expectedCirculating : preNav;
       expectedLiabilitiesUSD = (expectedCirculating * preChain.lastSettledNav) + preVested;
-      details = `Reembolso ${sharesToRedeem} ALPHA: Pago=$${payoutUSD.toFixed(2)} USDC, Fee=$${expectedFeeUSD.toFixed(2)}, NAV Esperado=$${expectedNavUSD.toFixed(4)}`;
+      details = `Reembolso ${sharesToRedeem} VIRAJE: Pago=$${payoutUSD.toFixed(2)} USDC, Fee=$${expectedFeeUSD.toFixed(2)}, NAV Esperado=$${expectedNavUSD.toFixed(4)}`;
 
     } else if (opId.includes('TX08_BUY_BOND') && inputAmount > 0) {
       const discountBps = Math.min(5000, lockYears * 500); // 5% por año
@@ -388,7 +388,7 @@ export class TokenomicsSupervisorAgent {
       expectedNavUSD,
       expectedAssetsUSD,
       expectedLiabilitiesUSD,
-      expectedCirculatingAlpha: expectedCirculating,
+      expectedCirculatingViraje: expectedCirculating,
       expectedFeeUSD,
       details,
     };
@@ -439,7 +439,7 @@ export class TokenomicsSupervisorAgent {
     const assetsDiff = postChain.totalAssetsUSD > 0
       ? Math.abs(postScreen.assetsUSD - postChain.totalAssetsUSD) / postChain.totalAssetsUSD
       : 0;
-    const circDiff = Math.abs(postScreen.circulatingAlpha - postChain.circulatingShares);
+    const circDiff = Math.abs(postScreen.circulatingViraje - postChain.circulatingShares);
 
     const notes: string[] = [];
     let hasDiscrepancy = false;

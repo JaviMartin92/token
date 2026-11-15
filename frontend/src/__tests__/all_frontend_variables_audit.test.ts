@@ -34,10 +34,10 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
       const stablesUSD = 60000.00; // OracleHub * USDC balance
       const wbtcUSD = 26670.00;    // OracleHub * WBTC balance ($60k/BTC)
       const wethUSD = 13330.00;    // OracleHub * WETH balance ($3k/ETH)
-      const alphaSubReserveUSD = 4737.50; // TreasuryManager.alphaVaultSubReserveUSD()
+      const virajeSubReserveUSD = 4737.50; // TreasuryManager.virajeVaultSubReserveUSD()
 
       const totalAssetsUSD = stablesUSD + wbtcUSD + wethUSD; // $100,000.00 USD
-      const totalLiabilitiesUSD = 70175.44; // AlphaToken.totalSupply() * NAV
+      const totalLiabilitiesUSD = 70175.44; // VirajeToken.totalSupply() * NAV
 
       const porRatio = (totalAssetsUSD / totalLiabilitiesUSD) * 100;
       const targetWeights = { stables: 50.00, wbtc: 25.00, weth: 12.50, alts: 12.50 };
@@ -45,7 +45,7 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
       expect(totalAssetsUSD).toBe(100000.00);
       expect(porRatio).toBeCloseTo(142.50, 1);
       expect(targetWeights.stables + targetWeights.wbtc + targetWeights.weth + targetWeights.alts).toBeCloseTo(100.00, 2);
-      expect(alphaSubReserveUSD).toBeGreaterThan(0);
+      expect(virajeSubReserveUSD).toBeGreaterThan(0);
     });
   });
 
@@ -55,7 +55,7 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
   describe('3. Tesorería & Billetera Personal (TreasuryDashboard.tsx)', () => {
     it('debe calcular los valores netos de depósito y canje considerando mint/redeem fee Bps', () => {
       const usdcBalance = 10000.00; // IERC20(USDC).balanceOf(user)
-      const alphaBalance = 5000.00;  // AlphaToken.balanceOf(user)
+      const virajeBalance = 5000.00;  // VirajeToken.balanceOf(user)
       const navPerShareUSD = 1.0050;
 
       const depositFeeBps = 50; // 0.50% de ProtocolTokenomicsEngine
@@ -63,14 +63,14 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
 
       const depositAmountUSD = 1000.00;
       const netDepositUSD = depositAmountUSD * (10000 - depositFeeBps) / 10000; // $995.00
-      const expectedSharesMinted = netDepositUSD / navPerShareUSD; // ~990.05 ALPHA
+      const expectedSharesMinted = netDepositUSD / navPerShareUSD; // ~990.05 VIRAJE
 
       const redeemShares = 500.00;
       const grossRedeemUSD = redeemShares * navPerShareUSD; // $502.50 USD
       const netRedeemUSD = grossRedeemUSD * (10000 - redeemFeeBps) / 10000; // $497.475 USD
 
       expect(usdcBalance).toBe(10000.00);
-      expect(alphaBalance).toBe(5000.00);
+      expect(virajeBalance).toBe(5000.00);
       expect(netDepositUSD).toBe(995.00);
       expect(expectedSharesMinted).toBeCloseTo(990.05, 2);
       expect(netRedeemUSD).toBeCloseTo(497.475, 2);
@@ -83,7 +83,7 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
   describe('4. Gobernanza, Staking & Deflación (GovernanceStakingUI.tsx)', () => {
     it('debe calcular la distribución 50/50 de bóvedas y la quema deflacionaria de staking', () => {
       const totalStakedSupply = 10000.00; // GovernanceStaking.totalStakedSupply()
-      const totalSupply = 100000.00;      // AlphaToken.totalSupply()
+      const totalSupply = 100000.00;      // VirajeToken.totalSupply()
       const navPerShareUSD = 1.0050;
 
       const stakingRatioPct = (totalStakedSupply / totalSupply) * 100; // 10.00%
@@ -91,18 +91,18 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
 
       // Staking Fee: 1.00% (50% quemado, 50% recompensa)
       const stakeAmount = 3000.00;
-      const feeAmount = stakeAmount * 0.01; // 30 ALPHA
-      const burnedAmount = feeAmount * 0.50; // 15 ALPHA quemados
-      const stAlphaReceived = stakeAmount - feeAmount; // 2970 stALPHA
+      const feeAmount = stakeAmount * 0.01; // 30 VIRAJE
+      const burnedAmount = feeAmount * 0.50; // 15 VIRAJE quemados
+      const stVirajeReceived = stakeAmount - feeAmount; // 2970 stVIRAJE
 
       // Bóvedas Canónicas Pure DeFi: 50% Treasury Reserves, 50% Community Yield Vault
-      const treasuryBunkerStaked = totalStakedSupply * 0.50; // 5000 stALPHA
-      const communityYieldStaked = totalStakedSupply * 0.50;  // 5000 stALPHA
+      const treasuryBunkerStaked = totalStakedSupply * 0.50; // 5000 stVIRAJE
+      const communityYieldStaked = totalStakedSupply * 0.50;  // 5000 stVIRAJE
 
       expect(stakingRatioPct).toBe(10.00);
       expect(stakingBackingNav).toBeCloseTo(10050.00, 2);
       expect(burnedAmount).toBe(15.00);
-      expect(stAlphaReceived).toBe(2970.00);
+      expect(stVirajeReceived).toBe(2970.00);
       expect(treasuryBunkerStaked + communityYieldStaked).toBe(totalStakedSupply);
     });
   });
@@ -143,7 +143,7 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
       const maxLtvNft = 70.00;   // 7000 Bps
       const maxLtvWbtc = 70.00;  // 7000 Bps
       const maxLtvWeth = 75.00;  // 7500 Bps
-      const maxLtvAlpha = 50.00; // 5000 Bps
+      const maxLtvViraje = 50.00; // 5000 Bps
 
       const healthFactor = escrowCoverageRatio; // 175% >= 140% (Seguro)
 
@@ -152,7 +152,7 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
       expect(maxLtvNft).toBe(70.00);
       expect(maxLtvWbtc).toBe(70.00);
       expect(maxLtvWeth).toBe(75.00);
-      expect(maxLtvAlpha).toBe(50.00);
+      expect(maxLtvViraje).toBe(50.00);
     });
   });
 
@@ -185,7 +185,7 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
     it('debe ejecutar las fórmulas matemáticas dinámicas del APY Modal', () => {
       const res = calculateProtocolApyMath(
         '100000.00',
-        { stables: 60000, wbtc: 26670, weth: 13330, alphaStaking: 0 },
+        { stables: 60000, wbtc: 26670, weth: 13330, virajeStaking: 0 },
         '10000',
         1000,
         5000,
@@ -201,7 +201,7 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
       expect(res.morphoUSDYield).toBe(4320.00);
       expect(res.totalAnnualYieldUSD).toBeCloseTo(5786.60, 2);
       expect(res.realTimeBaseApyPct).toBeCloseTo(5.7866, 3);
-      expect(res.numericStakedAlpha * 1.05).toBe(10500.00); // NAV Backing
+      expect(res.numericStakedViraje * 1.05).toBe(10500.00); // NAV Backing
     });
 
     it('debe estructurar correctamente la confirmación EIP-712 de transacciones', () => {

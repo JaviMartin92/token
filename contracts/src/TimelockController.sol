@@ -7,7 +7,7 @@ import "./interfaces/IProtocolErrors.sol";
 
 /**
  * @title TimelockController
- * @author Alpha Centauri Architecture Team
+ * @author Viraje Protocol Architecture Team
  * @notice Delays administrative and governance operations by 72 hours (configurable 1 to 30 days)
  *         for transparency and user protection (pure DeFi ragequit window).
  * @dev Enforces Checks-Effects-Interactions pattern for proposal executions.

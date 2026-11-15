@@ -4,8 +4,8 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../src/ProtocolAddressProvider.sol";
-import "../src/AlphaToken.sol";
-import "../src/AlphaVault.sol";
+import "../src/VirajeToken.sol";
+import "../src/VirajeVault.sol";
 import "../src/OracleHub.sol";
 import "../src/TreasuryManager.sol";
 import "../src/TreasuryProxy.sol";
@@ -65,8 +65,8 @@ contract SecurityRemediationPR1Test is Test {
     uint256 internal constant FACILITY_CAP_BPS = 2000;
 
     ProtocolAddressProvider internal provider;
-    AlphaToken internal alphaToken;
-    AlphaVault internal vault;
+    VirajeToken internal virajeToken;
+    VirajeVault internal vault;
     OracleHub internal oracleHub;
     TreasuryManager internal manager;
     RealYieldRouter internal router;
@@ -96,11 +96,11 @@ contract SecurityRemediationPR1Test is Test {
 
         provider = new ProtocolAddressProvider(admin);
 
-        alphaToken = new AlphaToken(provider, admin);
-        provider.setAddress(provider.ID_ALPHA_TOKEN(), address(alphaToken));
+        virajeToken = new VirajeToken(provider, admin);
+        provider.setAddress(provider.ID_VIRAJE_TOKEN(), address(virajeToken));
 
-        vault = new AlphaVault(provider, admin);
-        provider.setAddress(provider.ID_ALPHA_VAULT(), address(vault));
+        vault = new VirajeVault(provider, admin);
+        provider.setAddress(provider.ID_VIRAJE_VAULT(), address(vault));
 
         oracleHub = new OracleHub(provider, admin);
         provider.setAddress(provider.ID_ORACLE_HUB(), address(oracleHub));
@@ -119,7 +119,7 @@ contract SecurityRemediationPR1Test is Test {
         communityVault = new CommunityYieldVault(address(usdc), admin);
         provider.setAddress(provider.ID_COMMUNITY_YIELD_VAULT(), address(communityVault));
 
-        staking = new GovernanceStaking(address(alphaToken), address(usdc), admin);
+        staking = new GovernanceStaking(address(virajeToken), address(usdc), admin);
         staking.setTreasury(address(manager));
         staking.setProtocolVaults(address(communityVault));
         provider.setAddress(provider.ID_GOVERNANCE_STAKING(), address(staking));
@@ -135,7 +135,7 @@ contract SecurityRemediationPR1Test is Test {
             address(nft),
             address(manager),
             address(router),
-            address(alphaToken),
+            address(virajeToken),
             admin
         );
         vestedVault.setTokenomicsEngine(address(engine));
@@ -145,15 +145,15 @@ contract SecurityRemediationPR1Test is Test {
 
         p2pMarket = new P2PLendingMarket(address(usdc), address(nft), address(router), address(oracleHub), admin);
         p2pMarket.setTreasury(address(manager));
-        p2pMarket.setAlphaToken(address(alphaToken));
+        p2pMarket.setVirajeToken(address(virajeToken));
         p2pMarket.setWbtcToken(address(wbtc));
         provider.setAddress(provider.ID_P2P_MARKET(), address(p2pMarket));
 
         nft.setMinter(address(vestedVault));
 
-        alphaToken.grantRole(ProtocolRoles.MINTER_ROLE, address(manager));
-        alphaToken.grantRole(ProtocolRoles.BURNER_ROLE, address(manager));
-        alphaToken.grantRole(ProtocolRoles.MINTER_ROLE, admin);
+        virajeToken.grantRole(ProtocolRoles.MINTER_ROLE, address(manager));
+        virajeToken.grantRole(ProtocolRoles.BURNER_ROLE, address(manager));
+        virajeToken.grantRole(ProtocolRoles.MINTER_ROLE, admin);
         vault.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(manager));
         vault.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(router));
 
@@ -166,11 +166,11 @@ contract SecurityRemediationPR1Test is Test {
     // Helpers
     // =========================================================================
 
-    /// @dev Seeds NAV = 1.1 USD/share: 1.1M of reserves against 1M circulating ALPHA.
+    /// @dev Seeds NAV = 1.1 USD/share: 1.1M of reserves against 1M circulating VIRAJE.
     function _seedTreasury() internal {
         usdc.mint(address(vault), SEED_ASSETS);
         vm.prank(admin);
-        alphaToken.mint(investor, SEED_SHARES);
+        virajeToken.mint(investor, SEED_SHARES);
     }
 
     function _buyBond(uint256 principal, uint256 lockYears) internal returns (uint256 tokenId) {
@@ -191,7 +191,7 @@ contract SecurityRemediationPR1Test is Test {
         // The attacker holds shares but is not the beneficiary. Give them a balance so the
         // old vulnerable path would have burned it.
         vm.prank(admin);
-        alphaToken.mint(attacker, 100 * 1e18);
+        virajeToken.mint(attacker, 100 * 1e18);
 
         vm.startPrank(admin);
         manager.setKYCForced(true);
@@ -210,7 +210,7 @@ contract SecurityRemediationPR1Test is Test {
 
         address user = address(0xCAFE);
         vm.prank(admin);
-        alphaToken.mint(user, 1_000 * 1e18);
+        virajeToken.mint(user, 1_000 * 1e18);
 
         vm.startPrank(admin);
         manager.setKYCForced(true);
@@ -218,18 +218,18 @@ contract SecurityRemediationPR1Test is Test {
         vm.stopPrank();
 
         vm.startPrank(user);
-        alphaToken.approve(address(manager), 1_000 * 1e18);
+        virajeToken.approve(address(manager), 1_000 * 1e18);
         uint256 assets = manager.redeemFor(user, user, 1_000 * 1e18, 0);
         vm.stopPrank();
         assertGt(assets, 0);
-        assertEq(alphaToken.balanceOf(user), 0);
+        assertEq(virajeToken.balanceOf(user), 0);
     }
 
     function test_C01_GatewayRedemptionStillWorks() public {
         _seedTreasury();
 
         address institution = address(0x1234);
-        gateway = new CompliantTreasuryGateway(address(manager), address(alphaToken), admin);
+        gateway = new CompliantTreasuryGateway(address(manager), address(virajeToken), admin);
 
         vm.startPrank(admin);
         manager.setKYCForced(true);
@@ -247,12 +247,12 @@ contract SecurityRemediationPR1Test is Test {
         assertGt(shares, 0);
 
         vm.roll(block.number + 1);
-        alphaToken.approve(address(gateway), shares);
+        virajeToken.approve(address(gateway), shares);
         uint256 assets = gateway.redeemCompliant(shares, 0);
         vm.stopPrank();
 
         assertGt(assets, 0);
-        assertEq(alphaToken.balanceOf(institution), 0);
+        assertEq(virajeToken.balanceOf(institution), 0);
     }
 
     // =========================================================================
@@ -404,24 +404,24 @@ contract SecurityRemediationPR1Test is Test {
         assertEq(manager.treasuryLoanCapBps(), 5000);
     }
 
-    function test_C03_AlphaCollateralHaircutReducesBorrowingPower() public {
+    function test_C03_VirajeCollateralHaircutReducesBorrowingPower() public {
         _seedTreasury();
 
         address borrower = address(0xBEEF);
         vm.prank(admin);
-        alphaToken.mint(borrower, 1_000 * 1e18);
+        virajeToken.mint(borrower, 1_000 * 1e18);
 
         vm.startPrank(borrower);
-        alphaToken.approve(address(p2pMarket), 1_000 * 1e18);
+        virajeToken.approve(address(p2pMarket), 1_000 * 1e18);
 
-        // 1,000 ALPHA at the current NAV, with the 50% haircut and the 50% ALPHA LTV.
+        // 1,000 VIRAJE at the current NAV, with the 50% haircut and the 50% VIRAJE LTV.
         uint256 nav = manager.getNAVPerShare();
-        uint256 collateralUSD = (((1_000 * 1e18 * nav) / 1e30) * p2pMarket.alphaCollateralHaircutBps()) / 10000;
+        uint256 collateralUSD = (((1_000 * 1e18 * nav) / 1e30) * p2pMarket.virajeCollateralHaircutBps()) / 10000;
         uint256 maxBorrow = (collateralUSD * 5000) / 10000;
         vm.expectRevert(abi.encodeWithSelector(P2PLendingMarket.MaxLTVExceeded.selector, 300 * 1e6, maxBorrow));
-        p2pMarket.borrowFromTreasuryWithAlpha(1_000 * 1e18, 300 * 1e6, 30);
+        p2pMarket.borrowFromTreasuryWithViraje(1_000 * 1e18, 300 * 1e6, 30);
 
-        p2pMarket.borrowFromTreasuryWithAlpha(1_000 * 1e18, maxBorrow, 30);
+        p2pMarket.borrowFromTreasuryWithViraje(1_000 * 1e18, maxBorrow, 30);
         vm.stopPrank();
 
         assertEq(usdc.balanceOf(borrower), (maxBorrow * 9950) / 10000);

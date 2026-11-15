@@ -1,4 +1,4 @@
-# Auditoría técnica integral — Alpha Centauri
+# Auditoría técnica integral — Viraje Protocol
 
 **Fecha:** 2026-11-03
 **Rama auditada:** `desarrollo` @ `843f277`
@@ -25,7 +25,7 @@ Los tres riesgos que más me preocupan, por orden:
    pagado, no el principal que se paga al vencimiento. El NAV queda sobreestimado y el último
    inversor en salir paga el interés de todos.
 3. **El crédito de tesorería no tiene tope agregado** y está colateralizado, en parte, con activos
-   cuyo valor depende de la propia tesorería (NFTs de bono y ALPHA). Es riesgo circular y reflexivo.
+   cuyo valor depende de la propia tesorería (NFTs de bono y VIRAJE). Es riesgo circular y reflexivo.
 
 Además, el despliegue de mainnet deja al EOA del despliegador con `KEEPER_ROLE` en el motor de
 buyback y como admin del gateway y del vault de fundadores; nunca registra el vault de fundadores
@@ -65,8 +65,8 @@ en el `ProtocolAddressProvider`, nunca mintea su reserva y no aplica el TVL cap 
 | H-04 | Alta | Health factor cae a cantidades brutas si falla el oráculo | `P2PLendingMarket.sol:610-626` |
 | H-05 | Alta | Equity del prestatario queda permanentemente irretirable | `P2PLendingMarket.sol:805,848` vs `860` |
 | H-06 | Alta | `routeUniversalFee` enruta tokens no-USDC a un vault que solo acepta USDC | `RealYieldRouter.sol` / `CommunityYieldVault.sol:67-69` |
-| H-07 | Alta | Período de votación = ~3,5 h en Arbitrum, no 7 días | `GovernorAlphaCentauri.sol:44` |
-| H-08 | Alta | `cancel` es griefable por cualquiera | `GovernorAlphaCentauri.sol:276-289` |
+| H-07 | Alta | Período de votación = ~3,5 h en Arbitrum, no 7 días | `GovernorViraje.sol:44` |
+| H-08 | Alta | `cancel` es griefable por cualquiera | `GovernorViraje.sol:276-289` |
 | H-09 | Alta | Frontend de producción sirve direcciones de Anvil | `frontend/src/contracts.json` |
 | H-10 | Alta | Watchdog de liquidaciones es un stub | `services/core/src/watchdog/LiquidationWatchdog.ts` |
 | M-01 | Media | Motor de tokenomics no integrado en el cálculo de fees | `TreasuryFeeLib.sol` |
@@ -77,7 +77,7 @@ en el `ProtocolAddressProvider`, nunca mintea su reserva y no aplica el TVL cap 
 | M-06 | Media | `mintCorporateFeeShares` barre USDC local y mintea al caller | `TreasuryManager.sol:693-719` |
 | M-07 | Media | Backend confía en JSON de Redis sin validar y hardcodea el token | `services/core/src/index.ts` |
 | M-08 | Media | `emergencyRedeem` permite salir sin KYC (por diseño) sin control de sanciones | `TreasuryManager.sol:634` |
-| M-09 | Media | Buyback sin feed de ALPHA configurado → inoperante | `DeployMainnet.s.sol:220` |
+| M-09 | Media | Buyback sin feed de VIRAJE configurado → inoperante | `DeployMainnet.s.sol:220` |
 
 ---
 
@@ -92,7 +92,7 @@ function redeemFor(address beneficiary, address recipient, uint256 sharesAmount,
     public nonReentrant onlyWhitelisted(beneficiary) ...
 {
     ...
-    AlphaToken(...).burnFrom(msg.sender, sharesAmount);   // quema las shares del caller
+    VirajeToken(...).burnFrom(msg.sender, sharesAmount);   // quema las shares del caller
     vault.transferFunds(redemptionToken, recipient, assetsReceived); // paga al recipient
 }
 ```
@@ -159,7 +159,7 @@ reservas que no está implementado en ninguna parte.
 
 Además el colateral es, en parte, **una claim sobre la propia tesorería**:
 - NFTs de bono valorados a `discountedPricePaid` (:318-320, :605-606).
-- ALPHA valorado con `getNAVPerShare()` (:612-617), que es el NAV de la tesorería.
+- VIRAJE valorado con `getNAVPerShare()` (:612-617), que es el NAV de la tesorería.
 
 Si el NAV cae, cae a la vez el colateral y la liquidez que lo respalda. Es riesgo reflexivo: el
 prestamista y el colateral son la misma entidad económica.
@@ -169,7 +169,7 @@ liquidaciones de colateral que vale menos precisamente cuando más se necesita.
 
 **Remediación**
 - Tope duro: `treasuryLoansOutstanding <= X% de reservas líquidas`, con X gobernado por timelock.
-- Excluir ALPHA y NFTs de bono del cómputo de colateral elegible, o aplicar haircuts explícitos y
+- Excluir VIRAJE y NFTs de bono del cómputo de colateral elegible, o aplicar haircuts explícitos y
   un límite de concentración.
 - Añadir un presupuesto de liquidez de redención: reservar un buffer mínimo antes de prestar.
 
@@ -207,7 +207,7 @@ compromiso de la clave del deployer es un vector directo de pérdida de fondos.
 
 ### H-01 — Vault de fundadores no operativo
 `DeployMainnet.s.sol:230-236` despliega el vault, pero `_wirePermissions` no lo registra en el
-`ProtocolAddressProvider`, no le da rol de minter sobre ALPHA, no lo financia y no mintea la
+`ProtocolAddressProvider`, no le da rol de minter sobre VIRAJE, no lo financia y no mintea la
 reserva fundacional. El sandbox (`services/core/src/deploy.ts`) sí lo hace. Resultado: el token
 sale a mainnet sin la asignación de fundadores y con getters que devuelven `address(0)`.
 
@@ -235,15 +235,15 @@ otros activos queda bloqueado en el contrato.
 ### H-06 — Router universal incompatible con el vault comunitario
 `RealYieldRouter.routeUniversalFee(token)` es genérico, pero `CommunityYieldVault.depositYield`
 siempre hace `stablecoin.safeTransferFrom(...)` (`CommunityYieldVault.sol:69`). Si se enruta WBTC,
-WETH o ALPHA, la llamada revierte o los fondos quedan atrapados según el `try/catch` del caller.
+WETH o VIRAJE, la llamada revierte o los fondos quedan atrapados según el `try/catch` del caller.
 
 ### H-07 — Ventana de votación insuficiente en Arbitrum
-`GovernorAlphaCentauri.sol:44`: `VOTING_PERIOD = 50400` bloques. En Arbitrum (~0,25 s/bloque) son
+`GovernorViraje.sol:44`: `VOTING_PERIOD = 50400` bloques. En Arbitrum (~0,25 s/bloque) son
 ~3,5 horas, no los 7 días que indica el comentario. Una governance de timelock de 72 h con 3,5 h de
 votación es operativamente insegura.
 
 ### H-08 — `cancel` griefable
-`GovernorAlphaCentauri.sol:276-289`: cualquiera puede cancelar si el proposer bajó del threshold.
+`GovernorViraje.sol:276-289`: cualquiera puede cancelar si el proposer bajó del threshold.
 Un atacante puede forzar la salida del proposer (p. ej. moviendo delegaciones) y cancelar
 propuestas legítimas en curso.
 
@@ -270,7 +270,7 @@ on-chain. No protege nada; da falsa sensación de monitorización.
 | Founder vault admin | — | Deployer |
 | Buyback keeper | — | Deployer + timelock |
 | `TreasuryProxy.admin` | Deployer | Timelock ✔ |
-| Price feed ALPHA (buyback) | Configurado | Ausente |
+| Price feed VIRAJE (buyback) | Configurado | Ausente |
 | Feeds secundarios de oráculo | — | Ausentes |
 
 Esta divergencia es en sí un hallazgo: **el script de producción no es el artefacto que se prueba**.
@@ -318,7 +318,7 @@ mínimos: solvencia (`assets >= liabilities`), conservación de shares y no-regr
 
 ### PR-2 — Operatividad de mainnet (1 semana)
 6. H-01/H-02/M-05/M-09: cablear founder vault, aplicar TVL cap, registrar governor/timelock,
-   configurar feed de ALPHA.
+   configurar feed de VIRAJE.
 7. H-07/H-08: voting period basado en tiempo o por red, y `cancel` restringido.
 8. H-03: conectar `checkAssetDeviation` a los flujos críticos.
 9. Test de fork de Arbitrum que ejecute el script completo y valide el estado final.

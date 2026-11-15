@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../AlphaVault.sol";
+import "../VirajeVault.sol";
 import "../interfaces/IUniversalYieldAdapter.sol";
 
 /**
@@ -20,7 +20,7 @@ library TreasuryLiquidityLib {
         address treasuryContract
     ) public view returns (uint256 total) {
         if (vaultAddr == address(0)) return 0;
-        AlphaVault vault = AlphaVault(vaultAddr);
+        VirajeVault vault = VirajeVault(vaultAddr);
         total = vault.getBalance(redemptionToken) + IERC20(redemptionToken).balanceOf(treasuryContract);
 
         uint256 len = activeYieldAdapters.length;
@@ -40,15 +40,15 @@ library TreasuryLiquidityLib {
     }
 
     /**
-     * @notice Ensures sufficient liquid stablecoins in AlphaVault by auto-withdrawing from active Yield Adapters.
-     * @param vault The protocol AlphaVault instance.
+     * @notice Ensures sufficient liquid stablecoins in VirajeVault by auto-withdrawing from active Yield Adapters.
+     * @param vault The protocol VirajeVault instance.
      * @param redemptionToken Address of the primary stablecoin (USDC).
      * @param activeYieldAdapters Array of registered yield adapters.
      * @param requiredUsdc Total USDC required for payout.
      * @param treasuryContract Address of the calling TreasuryManager contract.
      */
     function ensureLiquidBuffer(
-        AlphaVault vault,
+        VirajeVault vault,
         address redemptionToken,
         address[] memory activeYieldAdapters,
         uint256 requiredUsdc,
@@ -69,7 +69,7 @@ library TreasuryLiquidityLib {
 
     function _withdrawFromAdapter(
         address adapter,
-        AlphaVault vault,
+        VirajeVault vault,
         address treasuryContract,
         uint256 deficit
     ) private returns (uint256) {

@@ -153,8 +153,8 @@ contract DeployMainnetRolesTest is Test {
 
     function test_DeployerLosesDefaultAdminEverywhere() public view {
         _assertNoDefaultAdmin(address(script.addressProvider()), deployer);
-        _assertNoDefaultAdmin(address(script.alphaVault()), deployer);
-        _assertNoDefaultAdmin(address(script.alphaToken()), deployer);
+        _assertNoDefaultAdmin(address(script.virajeVault()), deployer);
+        _assertNoDefaultAdmin(address(script.virajeToken()), deployer);
         _assertNoDefaultAdmin(address(script.oracleHub()), deployer);
         _assertNoDefaultAdmin(address(script.circuitBreaker()), deployer);
         _assertNoDefaultAdmin(address(script.treasury()), deployer);

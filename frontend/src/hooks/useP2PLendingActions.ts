@@ -647,7 +647,27 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
             addToast('warning', 'Sin Propiedad del NFT', `El NFT #${tokenIdBig} pertenece a otra dirección y no a tu billetera activa.`);
             return;
           }
-        } catch (e) {
+
+          // Pre-validate position state and 25% effective LTV limit (50% haircut x 50% max LTV)
+          const pos = await publicClient.readContract({
+            address: CONTRACT_ADDRESSES.POSITION_NFT,
+            abi: ABIS.POSITION_NFT,
+            functionName: 'getPosition',
+            args: [tokenIdBig]
+          }) as any;
+          if (pos.isRagequitted || pos.isMaturedClaimed) {
+            addToast('warning', 'Posición Inactiva', 'Este bono ya ha sido liquidado o reclamado.');
+            return;
+          }
+          const basePrice = (pos.discountedPricePaid && pos.discountedPricePaid > 0n) ? pos.discountedPricePaid : pos.principalAmount;
+          const maxBorrowAllowed = (basePrice * 2500n) / 10000n; // 25% LTV efectivo
+          if (amountWei > maxBorrowAllowed) {
+            const maxUsdStr = formatUnits(maxBorrowAllowed, 6);
+            addToast('warning', 'Límite LTV Excedido', `El crédito máximo permitido para el NFT #${tokenIdBig} es de $${maxUsdStr} USDC (25% LTV efectivo con haircut).`);
+            return;
+          }
+        } catch (e: any) {
+          if (e?.message && e.message.includes('Límite LTV')) return;
           addToast('error', 'NFT Inexistente', `El NFT #${tokenIdBig} no existe on-chain. Adquiere un Bono con Descuento primero para obtener un NFT.`);
           return;
         }
@@ -709,7 +729,7 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         addLog(`¡Préstamo de $${amountStr} USDC desembolsado por la Tesorería! Fondos acreditados en tu billetera.`);
         addToast('success', 'Préstamo Desembolsado', `$${amountStr} USDC recibidos en tu billetera (Activo)`);
         await fetchData();
-      } else if (collateralType === 'viraje' || collateralType === 'alpha') {
+      } else if (collateralType === 'viraje') {
         const colAmtWei = parseUnits(tokenIdOrAmountStr || '0', 18);
         if (colAmtWei === 0n) {
           addToast('warning', 'Monto de VIRAJE Requerido', 'Calcula o introduce una cantidad válida de tokens VIRAJE como colateral.');
@@ -721,7 +741,7 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         let currentAllowance = 0n;
         try {
           currentAllowance = await publicClient.readContract({
-            address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
+            address: CONTRACT_ADDRESSES.VIRAJE_TOKEN,
             abi: ABIS.ERC20,
             functionName: 'allowance',
             args: [ownerAddr, CONTRACT_ADDRESSES.P2P_MARKET]
@@ -732,7 +752,7 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
           addLog(`[Paso 1/2] Aprobando tokens VIRAJE para la Tesorería...`);
           addToast('info', 'Paso 1/2: Autorización', 'Firma la autorización de VIRAJE en tu billetera (solo 1 vez)...');
           const appHash = await userClient.writeContract({
-            address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
+            address: CONTRACT_ADDRESSES.VIRAJE_TOKEN,
             abi: ABIS.ERC20,
             functionName: 'approve',
             args: [CONTRACT_ADDRESSES.P2P_MARKET, colAmtWei * 2n]
@@ -746,8 +766,8 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         const txBorrow = await userClient.writeContract({
           address: CONTRACT_ADDRESSES.P2P_MARKET,
           abi: ABIS.P2P_MARKET,
-          functionName: 'borrowFromTreasuryWithAlpha',
-          args: [colAmtWei, amountWei, daysBig]
+          functionName: 'borrowFromTreasuryWithAsset',
+          args: [CONTRACT_ADDRESSES.VIRAJE_TOKEN, colAmtWei, amountWei, daysBig]
         });
         await publicClient.waitForTransactionReceipt({ hash: txBorrow });
 
@@ -832,7 +852,7 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
     }
 
     const numAmt = parseFloat(amountStr);
-    const colSymbol = (collateralType === 'viraje' || collateralType === 'alpha') ? 'VIRAJE' : collateralType.toUpperCase();
+    const colSymbol = collateralType === 'viraje' ? 'VIRAJE' : collateralType.toUpperCase();
 
     if (requestConfirmation) {
       requestConfirmation({
@@ -846,7 +866,7 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         expectedOutput: `$${numAmt.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
         expectedOutputSymbol: 'USDC Desembolsado a tu Billetera',
         details: [
-          { label: 'Tipo de Colateral', value: collateralType === 'nft' ? 'NFT Posición (70% Max LTV)' : `${colSymbol} (${(collateralType === 'viraje' || collateralType === 'alpha') ? '25% LTV Efectivo' : collateralType === 'weth' ? '75%' : '70%'} Max LTV)` },
+          { label: 'Tipo de Colateral', value: collateralType === 'nft' ? 'NFT Posición (25% LTV Efectivo [50% Haircut x 50% LTV])' : `${colSymbol} (${collateralType === 'viraje' ? '25% LTV Efectivo' : collateralType === 'weth' ? '75%' : '70%'} Max LTV)` },
           { label: 'Tasa Fija Tesorería', value: '8.00% APR (800 BPS)', badge: 'Garantía Institucional' },
           { label: 'Comisión de Originación (0.50%)', value: `$${(numAmt * 0.005).toFixed(2)} USDC`, badge: '100% Inyectado a Flywheel Real Yield' },
           { label: 'Interés Devengado Est. (' + (daysStr || '30') + ' Días)', value: `+$${(numAmt * 0.08 * (parseFloat(daysStr || '30') / 365)).toFixed(2)} USDC`, badge: '90% Tesorería / 10% Stakers' },

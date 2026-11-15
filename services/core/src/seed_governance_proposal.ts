@@ -34,7 +34,7 @@ async function main() {
   console.log('[*] Seeding Governance Staking & Initial Proposal on Anvil...');
 
   const usdcAddr = contractsJson.USDC as `0x${string}`;
-  const alphaToken = contractsJson.ALPHA_TOKEN as `0x${string}`;
+  const virajeToken = contractsJson.VIRAJE_TOKEN as `0x${string}`;
   const stakingAddr = contractsJson.STAKING as `0x${string}`;
   const governorAddr = contractsJson.GOVERNOR as `0x${string}`;
   const treasuryAddr = contractsJson.TREASURY as `0x${string}`;
@@ -58,8 +58,8 @@ async function main() {
   });
   await publicClient.waitForTransactionReceipt({ hash: txApproveUSDC });
 
-  // 3. Deposit 50,000 USDC into TreasuryManager to receive fully-backed ALPHA shares (preserving NAV >= $1.00 and PoR = 100%)
-  console.log('[*] Depositing 50,000 USDC into TreasuryManager to mint backed ALPHA...');
+  // 3. Deposit 50,000 USDC into TreasuryManager to receive fully-backed VIRAJE shares (preserving NAV >= $1.00 and PoR = 100%)
+  console.log('[*] Depositing 50,000 USDC into TreasuryManager to mint backed VIRAJE...');
   const txDeposit = await delegateWallet.writeContract({
     address: treasuryAddr,
     abi: [{ name: 'deposit', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'stableAmount', type: 'uint256' }, { name: 'minSharesOut', type: 'uint256' }], outputs: [{ name: 'sharesMinted', type: 'uint256' }] }],
@@ -68,39 +68,39 @@ async function main() {
   });
   await publicClient.waitForTransactionReceipt({ hash: txDeposit });
 
-  // Check ALPHA balance of delegate
-  const alphaBalance = await publicClient.readContract({
-    address: alphaToken,
+  // Check VIRAJE balance of delegate
+  const virajeBalance = await publicClient.readContract({
+    address: virajeToken,
     abi: [{ name: 'balanceOf', type: 'function', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [{ name: '', type: 'uint256' }] }],
     functionName: 'balanceOf',
     args: [delegateAccount.address]
   }) as bigint;
 
-  // 4. Approve GovernanceStaking to stake ALPHA
-  console.log(`[*] Approving ${alphaBalance} ALPHA to GovernanceStaking...`);
+  // 4. Approve GovernanceStaking to stake VIRAJE
+  console.log(`[*] Approving ${virajeBalance} VIRAJE to GovernanceStaking...`);
   const txApprove = await delegateWallet.writeContract({
-    address: alphaToken,
+    address: virajeToken,
     abi: [{ name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ name: '', type: 'bool' }] }],
     functionName: 'approve',
-    args: [stakingAddr, alphaBalance]
+    args: [stakingAddr, virajeBalance]
   });
   await publicClient.waitForTransactionReceipt({ hash: txApprove });
 
-  // 5. Stake ALPHA into GovernanceStaking to acquire stALPHA voting power
-  console.log('[*] Staking ALPHA into GovernanceStaking for stALPHA voting power...');
+  // 5. Stake VIRAJE into GovernanceStaking to acquire stVIRAJE voting power
+  console.log('[*] Staking VIRAJE into GovernanceStaking for stVIRAJE voting power...');
   const txStake = await delegateWallet.writeContract({
     address: stakingAddr,
     abi: [{ name: 'stake', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'amount', type: 'uint256' }], outputs: [] }],
     functionName: 'stake',
-    args: [alphaBalance]
+    args: [virajeBalance]
   });
   await publicClient.waitForTransactionReceipt({ hash: txStake });
 
   // 6. Advance 1 block on Anvil for checkpoint snapshot
   await publicClient.request({ method: 'evm_mine' as any });
 
-  // 7. Submit Proposal #1 to GovernorAlphaCentauri
-  console.log('[*] Submitting Proposal #1 to GovernorAlphaCentauri...');
+  // 7. Submit Proposal #1 to GovernorViraje
+  console.log('[*] Submitting Proposal #1 to GovernorViraje...');
   const weightsCalldata = encodeFunctionData({
     abi: [{
       name: 'setAssetWeights',
@@ -137,11 +137,11 @@ async function main() {
       treasuryAddr,
       0n,
       weightsCalldata,
-      'Ajuste Trimestral de Ponderaciones de Reserva (50% USDC / 25% WBTC / 12.5% WETH / 12.5% stALPHA)'
+      'Ajuste Trimestral de Ponderaciones de Reserva (50% USDC / 25% WBTC / 12.5% WETH / 12.5% stVIRAJE)'
     ]
   });
   await publicClient.waitForTransactionReceipt({ hash: txPropose });
-  console.log('[+] Proposal #1 created successfully on GovernorAlphaCentauri!');
+  console.log('[+] Proposal #1 created successfully on GovernorViraje!');
 
   // 8. Advance 2 blocks to open voting period
   await publicClient.request({ method: 'evm_mine' as any });

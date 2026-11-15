@@ -25,29 +25,29 @@ Generado el: 2026-10-29T14:47:24.043Z
 - por-row-usdc-val: $134,468.63 USD
 - por-row-wbtc-val: $56,550.68 USD
 - por-row-weth-val: $28,275.35 USD
-- por-row-alpha-val: $28,718.01 USD
+- por-row-viraje-val: $28,718.01 USD
 - treasury-faucet-btn: 🚰 🚰 Solicitar 10,000 USDC Mock
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
 - treasury-usdc-balance: 32,800.00 USDC
-- treasury-shares-balance: 7,194.95 ALPHA
+- treasury-shares-balance: 7,194.95 VIRAJE
 - treasury-deposit-input: [No visible / N/A]
-- treasury-deposit-btn: Suscribir ALPHA (Mint)
+- treasury-deposit-btn: Suscribir VIRAJE (Mint)
 - treasury-redeem-input: [No visible / N/A]
 - treasury-redeem-btn: Reembolsar USDC (Redeem)
-- staking-stalpha-balance: 11,880.00 stALPHA
+- staking-stviraje-balance: 11,880.00 stVIRAJE
 - staking-real-yield: $0.00 USD
-- staking-total-burned: 78,793.2943 ALPHA
-- staking-circulating-supply: 213,191.70 ALPHA
-- staking-community-staked: 75,388.50 stALPHA
-- staking-vaults-staked: 0.00 stALPHA
-- staking-reserves-staked: 27,233.77 stALPHA
-- staking-global-staked: 102,622.27 ALPHA (42.68%)
+- staking-total-burned: 78,793.2943 VIRAJE
+- staking-circulating-supply: 213,191.70 VIRAJE
+- staking-community-staked: 75,388.50 stVIRAJE
+- staking-vaults-staked: 0.00 stVIRAJE
+- staking-reserves-staked: 27,233.77 stVIRAJE
+- staking-global-staked: 102,622.27 VIRAJE (42.68%)
 - staking-backing-nav: [No visible / N/A]
-- staking-deflation-destroyed: 78,793.2943 ALPHA
+- staking-deflation-destroyed: 78,793.2943 VIRAJE
 - staking-amount-input: 1000
-- staking-stake-btn: 🔒 Bloquear ALPHA en Staking
+- staking-stake-btn: 🔒 Bloquear VIRAJE en Staking
 - staking-unstake-btn: 🔓 Confirmar Retiro (Unstake)
 - yield-claim-btn: 🎁 Reclamar Cesta Multiactivo de Rendimiento
 - yield-gasless-btn: ⚡ Reclamar vía Gasless (YieldStreamingVault)
@@ -87,7 +87,7 @@ Generado el: 2026-10-29T14:47:24.043Z
 - admin-weight-usdc-input: [No visible / N/A]
 - admin-weight-wbtc-input: [No visible / N/A]
 - admin-weight-weth-input: [No visible / N/A]
-- admin-weight-alpha-input: [No visible / N/A]
+- admin-weight-viraje-input: [No visible / N/A]
 - admin-rebalance-btn: [No visible / N/A]
 - admin-reset-governance-btn: [No visible / N/A]
 - admin-twap-amount-input: [No visible / N/A]
@@ -127,29 +127,29 @@ Generado el: 2026-10-29T14:47:24.043Z
 - por-row-usdc-val: $134,468.63 USD
 - por-row-wbtc-val: $56,550.68 USD
 - por-row-weth-val: $28,275.35 USD
-- por-row-alpha-val: $28,718.01 USD
+- por-row-viraje-val: $28,718.01 USD
 - treasury-faucet-btn: 🚰 🚰 Solicitar 10,000 USDC Mock
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
 - treasury-usdc-balance: 42,800.00 USDC
-- treasury-shares-balance: 7,194.95 ALPHA
+- treasury-shares-balance: 7,194.95 VIRAJE
 - treasury-deposit-input: [No visible / N/A]
-- treasury-deposit-btn: Suscribir ALPHA (Mint)
+- treasury-deposit-btn: Suscribir VIRAJE (Mint)
 - treasury-redeem-input: [No visible / N/A]
 - treasury-redeem-btn: Reembolsar USDC (Redeem)
-- staking-stalpha-balance: 11,880.00 stALPHA
+- staking-stviraje-balance: 11,880.00 stVIRAJE
 - staking-real-yield: $0.00 USD
-- staking-total-burned: 78,793.2943 ALPHA
-- staking-circulating-supply: 213,191.70 ALPHA
-- staking-community-staked: 75,388.50 stALPHA
-- staking-vaults-staked: 0.00 stALPHA
-- staking-reserves-staked: 27,233.77 stALPHA
-- staking-global-staked: 102,622.27 ALPHA (42.68%)
+- staking-total-burned: 78,793.2943 VIRAJE
+- staking-circulating-supply: 213,191.70 VIRAJE
+- staking-community-staked: 75,388.50 stVIRAJE
+- staking-vaults-staked: 0.00 stVIRAJE
+- staking-reserves-staked: 27,233.77 stVIRAJE
+- staking-global-staked: 102,622.27 VIRAJE (42.68%)
 - staking-backing-nav: [No visible / N/A]
-- staking-deflation-destroyed: 78,793.2943 ALPHA
+- staking-deflation-destroyed: 78,793.2943 VIRAJE
 - staking-amount-input: 1000
-- staking-stake-btn: 🔒 Bloquear ALPHA en Staking
+- staking-stake-btn: 🔒 Bloquear VIRAJE en Staking
 - staking-unstake-btn: 🔓 Confirmar Retiro (Unstake)
 - yield-claim-btn: 🎁 Reclamar Cesta Multiactivo de Rendimiento
 - yield-gasless-btn: ⚡ Reclamar vía Gasless (YieldStreamingVault)
@@ -189,7 +189,7 @@ Generado el: 2026-10-29T14:47:24.043Z
 - admin-weight-usdc-input: [No visible / N/A]
 - admin-weight-wbtc-input: [No visible / N/A]
 - admin-weight-weth-input: [No visible / N/A]
-- admin-weight-alpha-input: [No visible / N/A]
+- admin-weight-viraje-input: [No visible / N/A]
 - admin-rebalance-btn: [No visible / N/A]
 - admin-reset-governance-btn: [No visible / N/A]
 - admin-twap-amount-input: [No visible / N/A]
@@ -229,29 +229,29 @@ Generado el: 2026-10-29T14:47:24.043Z
 - por-row-usdc-val: $137,589.88 USD
 - por-row-wbtc-val: $57,793.18 USD
 - por-row-weth-val: $28,896.60 USD
-- por-row-alpha-val: $29,333.04 USD
+- por-row-viraje-val: $29,333.04 USD
 - treasury-faucet-btn: 🚰 🚰 Solicitar 10,000 USDC Mock
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
 - treasury-usdc-balance: 37,800.00 USDC
-- treasury-shares-balance: 11,908.25 ALPHA
+- treasury-shares-balance: 11,908.25 VIRAJE
 - treasury-deposit-input: [No visible / N/A]
-- treasury-deposit-btn: Suscribir ALPHA (Mint)
+- treasury-deposit-btn: Suscribir VIRAJE (Mint)
 - treasury-redeem-input: [No visible / N/A]
 - treasury-redeem-btn: Reembolsar USDC (Redeem)
-- staking-stalpha-balance: 11,880.00 stALPHA
+- staking-stviraje-balance: 11,880.00 stVIRAJE
 - staking-real-yield: $0.00 USD
-- staking-total-burned: 78,796.2399 ALPHA
-- staking-circulating-supply: 217,905.00 ALPHA
-- staking-community-staked: 75,388.50 stALPHA
-- staking-vaults-staked: 0.00 stALPHA
-- staking-reserves-staked: 27,817.01 stALPHA
-- staking-global-staked: 103,205.51 ALPHA (42.00%)
+- staking-total-burned: 78,796.2399 VIRAJE
+- staking-circulating-supply: 217,905.00 VIRAJE
+- staking-community-staked: 75,388.50 stVIRAJE
+- staking-vaults-staked: 0.00 stVIRAJE
+- staking-reserves-staked: 27,817.01 stVIRAJE
+- staking-global-staked: 103,205.51 VIRAJE (42.00%)
 - staking-backing-nav: [No visible / N/A]
-- staking-deflation-destroyed: 78,796.2399 ALPHA
+- staking-deflation-destroyed: 78,796.2399 VIRAJE
 - staking-amount-input: 1000
-- staking-stake-btn: 🔒 Bloquear ALPHA en Staking
+- staking-stake-btn: 🔒 Bloquear VIRAJE en Staking
 - staking-unstake-btn: 🔓 Confirmar Retiro (Unstake)
 - yield-claim-btn: 🎁 Reclamar Cesta Multiactivo de Rendimiento
 - yield-gasless-btn: ⚡ Reclamar vía Gasless (YieldStreamingVault)
@@ -291,7 +291,7 @@ Generado el: 2026-10-29T14:47:24.043Z
 - admin-weight-usdc-input: [No visible / N/A]
 - admin-weight-wbtc-input: [No visible / N/A]
 - admin-weight-weth-input: [No visible / N/A]
-- admin-weight-alpha-input: [No visible / N/A]
+- admin-weight-viraje-input: [No visible / N/A]
 - admin-rebalance-btn: [No visible / N/A]
 - admin-reset-governance-btn: [No visible / N/A]
 - admin-twap-amount-input: [No visible / N/A]
@@ -331,29 +331,29 @@ Generado el: 2026-10-29T14:47:24.043Z
 - por-row-usdc-val: $137,589.88 USD
 - por-row-wbtc-val: $57,793.18 USD
 - por-row-weth-val: $28,896.60 USD
-- por-row-alpha-val: $29,338.60 USD
+- por-row-viraje-val: $29,338.60 USD
 - treasury-faucet-btn: 🚰 🚰 Solicitar 10,000 USDC Mock
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
 - treasury-usdc-balance: 37,800.00 USDC
-- treasury-shares-balance: 8,908.25 ALPHA
+- treasury-shares-balance: 8,908.25 VIRAJE
 - treasury-deposit-input: [No visible / N/A]
-- treasury-deposit-btn: Suscribir ALPHA (Mint)
+- treasury-deposit-btn: Suscribir VIRAJE (Mint)
 - treasury-redeem-input: [No visible / N/A]
 - treasury-redeem-btn: Reembolsar USDC (Redeem)
-- staking-stalpha-balance: 14,850.00 stALPHA
+- staking-stviraje-balance: 14,850.00 stVIRAJE
 - staking-real-yield: $0.00 USD
-- staking-total-burned: 78,811.2399 ALPHA
-- staking-circulating-supply: 217,875.00 ALPHA
-- staking-community-staked: 78,358.50 stALPHA
-- staking-vaults-staked: 0.00 stALPHA
-- staking-reserves-staked: 27,817.01 stALPHA
-- staking-global-staked: 106,175.51 ALPHA (43.21%)
+- staking-total-burned: 78,811.2399 VIRAJE
+- staking-circulating-supply: 217,875.00 VIRAJE
+- staking-community-staked: 78,358.50 stVIRAJE
+- staking-vaults-staked: 0.00 stVIRAJE
+- staking-reserves-staked: 27,817.01 stVIRAJE
+- staking-global-staked: 106,175.51 VIRAJE (43.21%)
 - staking-backing-nav: [No visible / N/A]
-- staking-deflation-destroyed: 78,811.2399 ALPHA
+- staking-deflation-destroyed: 78,811.2399 VIRAJE
 - staking-amount-input: 3000
-- staking-stake-btn: 🔒 Bloquear ALPHA en Staking
+- staking-stake-btn: 🔒 Bloquear VIRAJE en Staking
 - staking-unstake-btn: 🔓 Confirmar Retiro (Unstake)
 - yield-claim-btn: 🎁 Reclamar Cesta Multiactivo de Rendimiento
 - yield-gasless-btn: ⚡ Reclamar vía Gasless (YieldStreamingVault)
@@ -393,7 +393,7 @@ Generado el: 2026-10-29T14:47:24.043Z
 - admin-weight-usdc-input: [No visible / N/A]
 - admin-weight-wbtc-input: [No visible / N/A]
 - admin-weight-weth-input: [No visible / N/A]
-- admin-weight-alpha-input: [No visible / N/A]
+- admin-weight-viraje-input: [No visible / N/A]
 - admin-rebalance-btn: [No visible / N/A]
 - admin-reset-governance-btn: [No visible / N/A]
 - admin-twap-amount-input: [No visible / N/A]
@@ -433,29 +433,29 @@ Generado el: 2026-10-29T14:47:24.043Z
 - por-row-usdc-val: $137,589.88 USD
 - por-row-wbtc-val: $57,793.18 USD
 - por-row-weth-val: $28,896.60 USD
-- por-row-alpha-val: $29,338.60 USD
+- por-row-viraje-val: $29,338.60 USD
 - treasury-faucet-btn: 🚰 🚰 Solicitar 10,000 USDC Mock
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
 - treasury-usdc-balance: 37,800.00 USDC
-- treasury-shares-balance: 8,908.25 ALPHA
+- treasury-shares-balance: 8,908.25 VIRAJE
 - treasury-deposit-input: [No visible / N/A]
-- treasury-deposit-btn: Suscribir ALPHA (Mint)
+- treasury-deposit-btn: Suscribir VIRAJE (Mint)
 - treasury-redeem-input: [No visible / N/A]
 - treasury-redeem-btn: Reembolsar USDC (Redeem)
-- staking-stalpha-balance: 14,850.00 stALPHA
+- staking-stviraje-balance: 14,850.00 stVIRAJE
 - staking-real-yield: $0.00 USD
-- staking-total-burned: 78,811.2399 ALPHA
-- staking-circulating-supply: 217,875.00 ALPHA
-- staking-community-staked: 78,358.50 stALPHA
-- staking-vaults-staked: 0.00 stALPHA
-- staking-reserves-staked: 27,817.01 stALPHA
-- staking-global-staked: 106,175.51 ALPHA (43.21%)
+- staking-total-burned: 78,811.2399 VIRAJE
+- staking-circulating-supply: 217,875.00 VIRAJE
+- staking-community-staked: 78,358.50 stVIRAJE
+- staking-vaults-staked: 0.00 stVIRAJE
+- staking-reserves-staked: 27,817.01 stVIRAJE
+- staking-global-staked: 106,175.51 VIRAJE (43.21%)
 - staking-backing-nav: [No visible / N/A]
-- staking-deflation-destroyed: 78,811.2399 ALPHA
+- staking-deflation-destroyed: 78,811.2399 VIRAJE
 - staking-amount-input: 3000
-- staking-stake-btn: 🔒 Bloquear ALPHA en Staking
+- staking-stake-btn: 🔒 Bloquear VIRAJE en Staking
 - staking-unstake-btn: 🔓 Confirmar Retiro (Unstake)
 - yield-claim-btn: 🎁 Reclamar Cesta Multiactivo de Rendimiento
 - yield-gasless-btn: ⚡ Reclamar vía Gasless (YieldStreamingVault)
@@ -495,7 +495,7 @@ Generado el: 2026-10-29T14:47:24.043Z
 - admin-weight-usdc-input: [No visible / N/A]
 - admin-weight-wbtc-input: [No visible / N/A]
 - admin-weight-weth-input: [No visible / N/A]
-- admin-weight-alpha-input: [No visible / N/A]
+- admin-weight-viraje-input: [No visible / N/A]
 - admin-rebalance-btn: [No visible / N/A]
 - admin-reset-governance-btn: [No visible / N/A]
 - admin-twap-amount-input: [No visible / N/A]
@@ -535,29 +535,29 @@ Generado el: 2026-10-29T14:47:24.043Z
 - por-row-usdc-val: $138,433.50 USD
 - por-row-wbtc-val: $57,793.18 USD
 - por-row-weth-val: $28,896.60 USD
-- por-row-alpha-val: $29,338.60 USD
+- por-row-viraje-val: $29,338.60 USD
 - treasury-faucet-btn: 🚰 🚰 Solicitar 10,000 USDC Mock
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
 - treasury-usdc-balance: 36,950.00 USDC
-- treasury-shares-balance: 8,908.25 ALPHA
+- treasury-shares-balance: 8,908.25 VIRAJE
 - treasury-deposit-input: [No visible / N/A]
-- treasury-deposit-btn: Suscribir ALPHA (Mint)
+- treasury-deposit-btn: Suscribir VIRAJE (Mint)
 - treasury-redeem-input: [No visible / N/A]
 - treasury-redeem-btn: Reembolsar USDC (Redeem)
-- staking-stalpha-balance: 14,850.00 stALPHA
+- staking-stviraje-balance: 14,850.00 stVIRAJE
 - staking-real-yield: $0.00 USD
-- staking-total-burned: 78,811.2399 ALPHA
-- staking-circulating-supply: 217,875.00 ALPHA
-- staking-community-staked: 78,358.50 stALPHA
-- staking-vaults-staked: 0.00 stALPHA
-- staking-reserves-staked: 27,817.01 stALPHA
-- staking-global-staked: 106,175.51 ALPHA (43.21%)
+- staking-total-burned: 78,811.2399 VIRAJE
+- staking-circulating-supply: 217,875.00 VIRAJE
+- staking-community-staked: 78,358.50 stVIRAJE
+- staking-vaults-staked: 0.00 stVIRAJE
+- staking-reserves-staked: 27,817.01 stVIRAJE
+- staking-global-staked: 106,175.51 VIRAJE (43.21%)
 - staking-backing-nav: [No visible / N/A]
-- staking-deflation-destroyed: 78,811.2399 ALPHA
+- staking-deflation-destroyed: 78,811.2399 VIRAJE
 - staking-amount-input: 3000
-- staking-stake-btn: 🔒 Bloquear ALPHA en Staking
+- staking-stake-btn: 🔒 Bloquear VIRAJE en Staking
 - staking-unstake-btn: 🔓 Confirmar Retiro (Unstake)
 - yield-claim-btn: 🎁 Reclamar Cesta Multiactivo de Rendimiento
 - yield-gasless-btn: ⚡ Reclamar vía Gasless (YieldStreamingVault)
@@ -597,7 +597,7 @@ Generado el: 2026-10-29T14:47:24.043Z
 - admin-weight-usdc-input: [No visible / N/A]
 - admin-weight-wbtc-input: [No visible / N/A]
 - admin-weight-weth-input: [No visible / N/A]
-- admin-weight-alpha-input: [No visible / N/A]
+- admin-weight-viraje-input: [No visible / N/A]
 - admin-rebalance-btn: [No visible / N/A]
 - admin-reset-governance-btn: [No visible / N/A]
 - admin-twap-amount-input: [No visible / N/A]
@@ -637,29 +637,29 @@ Generado el: 2026-10-29T14:47:24.043Z
 - por-row-usdc-val: $139,376.38 USD
 - por-row-wbtc-val: $57,793.18 USD
 - por-row-weth-val: $28,896.60 USD
-- por-row-alpha-val: $29,338.60 USD
+- por-row-viraje-val: $29,338.60 USD
 - treasury-faucet-btn: 🚰 🚰 Solicitar 10,000 USDC Mock
 - treasury-audit-btn: [No visible / N/A]
 
 [DESGLOSE DE OFERTA & STAKING]
 - treasury-usdc-balance: 36,000.00 USDC
-- treasury-shares-balance: 8,908.25 ALPHA
+- treasury-shares-balance: 8,908.25 VIRAJE
 - treasury-deposit-input: [No visible / N/A]
-- treasury-deposit-btn: Suscribir ALPHA (Mint)
+- treasury-deposit-btn: Suscribir VIRAJE (Mint)
 - treasury-redeem-input: [No visible / N/A]
 - treasury-redeem-btn: Reembolsar USDC (Redeem)
-- staking-stalpha-balance: 14,850.00 stALPHA
+- staking-stviraje-balance: 14,850.00 stVIRAJE
 - staking-real-yield: $0.00 USD
-- staking-total-burned: 78,811.2399 ALPHA
-- staking-circulating-supply: 217,875.00 ALPHA
-- staking-community-staked: 78,358.50 stALPHA
-- staking-vaults-staked: 0.00 stALPHA
-- staking-reserves-staked: 27,817.01 stALPHA
-- staking-global-staked: 106,175.51 ALPHA (43.21%)
+- staking-total-burned: 78,811.2399 VIRAJE
+- staking-circulating-supply: 217,875.00 VIRAJE
+- staking-community-staked: 78,358.50 stVIRAJE
+- staking-vaults-staked: 0.00 stVIRAJE
+- staking-reserves-staked: 27,817.01 stVIRAJE
+- staking-global-staked: 106,175.51 VIRAJE (43.21%)
 - staking-backing-nav: [No visible / N/A]
-- staking-deflation-destroyed: 78,811.2399 ALPHA
+- staking-deflation-destroyed: 78,811.2399 VIRAJE
 - staking-amount-input: 3000
-- staking-stake-btn: 🔒 Bloquear ALPHA en Staking
+- staking-stake-btn: 🔒 Bloquear VIRAJE en Staking
 - staking-unstake-btn: 🔓 Confirmar Retiro (Unstake)
 - yield-claim-btn: 🎁 Reclamar Cesta Multiactivo de Rendimiento
 - yield-gasless-btn: ⚡ Reclamar vía Gasless (YieldStreamingVault)
@@ -699,7 +699,7 @@ Generado el: 2026-10-29T14:47:24.043Z
 - admin-weight-usdc-input: [No visible / N/A]
 - admin-weight-wbtc-input: [No visible / N/A]
 - admin-weight-weth-input: [No visible / N/A]
-- admin-weight-alpha-input: [No visible / N/A]
+- admin-weight-viraje-input: [No visible / N/A]
 - admin-rebalance-btn: [No visible / N/A]
 - admin-reset-governance-btn: [No visible / N/A]
 - admin-twap-amount-input: [No visible / N/A]

@@ -4,8 +4,8 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "../../src/lib/token/ERC20/ERC20.sol";
 import "../../src/ProtocolAddressProvider.sol";
-import "../../src/AlphaToken.sol";
-import "../../src/AlphaVault.sol";
+import "../../src/VirajeToken.sol";
+import "../../src/VirajeVault.sol";
 import "../../src/TreasuryProxy.sol";
 import "../../src/OracleHub.sol";
 import "../../src/TreasuryManager.sol";
@@ -55,8 +55,8 @@ contract FuzzMockFeed {
  */
 contract TreasuryInvariantHandler is Test {
     TreasuryManager public manager;
-    AlphaToken public alphaToken;
-    AlphaVault public vault;
+    VirajeToken public virajeToken;
+    VirajeVault public vault;
     FuzzMockERC20 public usdc;
     FuzzMockFeed public usdcFeed;
 
@@ -68,13 +68,13 @@ contract TreasuryInvariantHandler is Test {
 
     constructor(
         TreasuryManager _manager,
-        AlphaToken _token,
-        AlphaVault _vault,
+        VirajeToken _token,
+        VirajeVault _vault,
         FuzzMockERC20 _usdc,
         FuzzMockFeed _feed
     ) {
         manager = _manager;
-        alphaToken = _token;
+        virajeToken = _token;
         vault = _vault;
         usdc = _usdc;
         usdcFeed = _feed;
@@ -103,13 +103,13 @@ contract TreasuryInvariantHandler is Test {
 
     function redeem(uint256 actorSeed, uint256 sharesRatioSeed) external {
         currentActor = actors[actorSeed % actors.length];
-        uint256 bal = alphaToken.balanceOf(currentActor);
+        uint256 bal = virajeToken.balanceOf(currentActor);
         if (bal == 0) return;
 
         uint256 redeemShares = bound(sharesRatioSeed, 1, bal);
 
         vm.startPrank(currentActor);
-        alphaToken.approve(address(manager), redeemShares);
+        virajeToken.approve(address(manager), redeemShares);
 
         try manager.redeem(redeemShares, 0) returns (uint256 out) {
             totalRedeemedUSDC += out;

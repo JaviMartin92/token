@@ -124,8 +124,8 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
     usdcUsd: String(porBreakdown.stables ?? 0),
     wbtcUsd: String(porBreakdown.wbtc ?? 0),
     wethUsd: String(porBreakdown.weth ?? 0),
-    stakedAlphaUsd: String(porBreakdown.alphaStaking ?? 0)
-  } : { usdcUsd: '0', wbtcUsd: '0', wethUsd: '0', stakedAlphaUsd: '0' };
+    stakedVirajeUsd: String((porBreakdown as any).virajeStaking ?? 0)
+  } : { usdcUsd: '0', wbtcUsd: '0', wethUsd: '0', stakedVirajeUsd: '0' };
 
   const totalAssetsVal = parseFloat(proofOfReserves?.totalAssetsUSD || '0');
   const totalLiabVal = parseFloat(proofOfReserves?.totalLiabilitiesUSD || '0');
@@ -319,7 +319,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
               { name: 'stablecoins', type: 'uint256' },
               { name: 'wbtc', type: 'uint256' },
               { name: 'weth', type: 'uint256' },
-              { name: 'alpha', type: 'uint256' }
+              { name: 'viraje', type: 'uint256' }
             ],
             outputs: []
           }] as const,
@@ -1212,7 +1212,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                 title={UI_STRINGS.STAKING.METRIC_TOTAL_BURNED}
                 value={
                   <span data-testid="admin-deflation-accumulated">
-                    {burnedTokensStr} {UI_STRINGS.COMMON.SYMBOL_ALPHA}
+                    {burnedTokensStr} {UI_STRINGS.COMMON.SYMBOL_VIRAJE}
                   </span>
                 }
                 variant="crimson"
@@ -1266,7 +1266,7 @@ export const GovernanceCommandCenter: React.FC<GovernanceCommandCenterProps> = (
                   </tr>
                   <tr className={styles.trBorder}>
                     <td data-label="Activo" className={styles.tdBold}>🥩 Tokens VIRAJE en Staking</td>
-                    <td data-label="Valoración">${parseFloat(reserveBreakdown?.stakedAlphaUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</td>
+                    <td data-label="Valoración">${parseFloat(reserveBreakdown?.stakedVirajeUsd || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</td>
                     <td data-label="Ponderación Objetivo" className={styles.tdGreen}>{twAlts.toFixed(2)}%</td>
                     <td data-label="Rol Fiduciario" className={styles.tdMuted}>{UI_STRINGS.GOVERNANCE.ROLE_AUTO_STAKE}</td>
                   </tr>

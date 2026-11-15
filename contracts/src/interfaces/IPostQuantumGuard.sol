@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 /**
  * @title IPostQuantumGuard
- * @notice Interfaz para el módulo de seguridad post-cuántica híbrida (PQC) en Alpha Centauri.
+ * @notice Interfaz para el módulo de seguridad post-cuántica híbrida (PQC) en Viraje Protocol.
  *         Implementa validación on-chain basada en cadenas de hash Winternitz OTS+ (W-OTS+ w=4).
  */
 interface IPostQuantumGuard {

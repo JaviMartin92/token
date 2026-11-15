@@ -5,7 +5,7 @@ export interface LoanData {
   borrower: string;
   lender: string;
   positionTokenId?: number;
-  collateralType?: 'nft' | 'alpha' | 'wbtc' | 'weth';
+  collateralType?: 'nft' | 'viraje' | 'wbtc' | 'weth';
   collateralAmount?: string;
   collateralValueUSD?: number;
   borrowAmountUSD: number;
@@ -90,7 +90,7 @@ export class LiquidationWatchdogService {
    */
   public evaluateLoan(
     loan: LoanData,
-    assetPrices: { wbtc: number; weth: number; alpha: number; usdc: number } = { wbtc: 60000, weth: 3000, alpha: 1.0, usdc: 1.0 },
+    assetPrices: { wbtc: number; weth: number; viraje: number; usdc: number } = { wbtc: 60000, weth: 3000, viraje: 1.0, usdc: 1.0 },
     currentTimestampSec: number = Math.floor(Date.now() / 1000)
   ): LoanEvaluation {
     if (loan.state !== 1) { // Not ACTIVE
@@ -118,8 +118,8 @@ export class LiquidationWatchdogService {
       collateralValueUSD = parseFloat(loan.collateralAmount) * assetPrices.wbtc;
     } else if (loan.collateralType === 'weth' && loan.collateralAmount) {
       collateralValueUSD = parseFloat(loan.collateralAmount) * assetPrices.weth;
-    } else if (loan.collateralType === 'alpha' && loan.collateralAmount) {
-      collateralValueUSD = parseFloat(loan.collateralAmount) * assetPrices.alpha;
+    } else if (loan.collateralType === 'viraje' && loan.collateralAmount) {
+      collateralValueUSD = parseFloat(loan.collateralAmount) * assetPrices.viraje;
     } else if (loan.collateralType === 'nft') {
       collateralValueUSD = loan.collateralValueUSD ?? (loan.borrowAmountUSD * 1.4);
     }
@@ -162,7 +162,7 @@ export class LiquidationWatchdogService {
    */
   public generateAuditReport(
     loans: LoanData[],
-    assetPrices?: { wbtc: number; weth: number; alpha: number; usdc: number },
+    assetPrices?: { wbtc: number; weth: number; viraje: number; usdc: number },
     currentTimestampSec?: number
   ): LiquidationWatchdogReport {
     const activeLoans = loans.filter((l) => l.state === 1);

@@ -3,8 +3,8 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 import "../src/ProtocolAddressProvider.sol";
-import "../src/AlphaToken.sol";
-import "../src/AlphaVault.sol";
+import "../src/VirajeToken.sol";
+import "../src/VirajeVault.sol";
 import "../src/TreasuryProxy.sol";
 import "../src/OracleHub.sol";
 import "../src/TreasuryManager.sol";
@@ -60,8 +60,8 @@ contract MockFeedCoverage {
 
 contract FullSystemCoverageTest is Test {
     ProtocolAddressProvider public provider;
-    AlphaToken public alphaToken;
-    AlphaVault public vault;
+    VirajeToken public virajeToken;
+    VirajeVault public vault;
     OracleHub public oracleHub;
     TreasuryManager public manager;
     RealYieldRouter public router;
@@ -96,11 +96,11 @@ contract FullSystemCoverageTest is Test {
 
         provider = new ProtocolAddressProvider(admin);
 
-        alphaToken = new AlphaToken(provider, admin);
-        provider.setAddress(keccak256("ALPHA_TOKEN"), address(alphaToken));
+        virajeToken = new VirajeToken(provider, admin);
+        provider.setAddress(keccak256("VIRAJE_TOKEN"), address(virajeToken));
 
-        vault = new AlphaVault(provider, admin);
-        provider.setAddress(keccak256("ALPHA_VAULT"), address(vault));
+        vault = new VirajeVault(provider, admin);
+        provider.setAddress(keccak256("VIRAJE_VAULT"), address(vault));
 
         oracleHub = new OracleHub(provider, admin);
         provider.setAddress(keccak256("ORACLE_HUB"), address(oracleHub));
@@ -113,7 +113,7 @@ contract FullSystemCoverageTest is Test {
         yieldVault = new CommunityYieldVault(address(usdc), admin);
         provider.setAddress(keccak256("COMMUNITY_YIELD_VAULT"), address(yieldVault));
 
-        staking = new GovernanceStaking(address(alphaToken), address(usdc), admin);
+        staking = new GovernanceStaking(address(virajeToken), address(usdc), admin);
         provider.setAddress(keccak256("GOVERNANCE_STAKING"), address(staking));
 
         router = new RealYieldRouter(address(usdc), address(wbtc), address(0), address(staking), admin);
@@ -131,13 +131,13 @@ contract FullSystemCoverageTest is Test {
 
         nft = new VaultPositionNFT(admin);
         vestedVault = new VestedDiscountVault(
-            address(usdc), address(nft), address(vault), address(router), address(alphaToken), admin
+            address(usdc), address(nft), address(vault), address(router), address(virajeToken), admin
         );
         provider.setAddress(keccak256("VESTED_VAULT"), address(vestedVault));
 
         p2pMarket = new P2PLendingMarket(address(usdc), address(nft), address(router), address(usdcFeed), admin);
         p2pMarket.setTreasury(address(manager));
-        p2pMarket.setAlphaToken(address(alphaToken));
+        p2pMarket.setVirajeToken(address(virajeToken));
         p2pMarket.setWbtcToken(address(wbtc));
         provider.setAddress(keccak256("P2P_MARKET"), address(p2pMarket));
 
@@ -146,18 +146,18 @@ contract FullSystemCoverageTest is Test {
         morphoAdapter = new MorphoYieldVaultAdapter(address(usdc), address(manager), admin);
         provider.setAddress(keccak256("MORPHO_ADAPTER"), address(morphoAdapter));
 
-        contribution = new ProtocolContribution(address(usdc), address(alphaToken), address(staking), address(0), admin);
-        promoVault = new PromotionalIncentiveVault(address(alphaToken), admin);
+        contribution = new ProtocolContribution(address(usdc), address(virajeToken), address(staking), address(0), admin);
+        promoVault = new PromotionalIncentiveVault(address(virajeToken), admin);
         yieldStream = new YieldStreamingVault(address(usdc), admin);
         atomicSwap = new AtomicSwapReceiver(address(usdc), address(usdc), address(0), address(vault), admin);
 
         nft.setMinter(address(vestedVault));
         staking.setProtocolVaults(address(yieldVault));
 
-        alphaToken.grantRole(ProtocolRoles.MINTER_ROLE, address(manager));
-        alphaToken.grantRole(ProtocolRoles.MINTER_ROLE, admin);
-        alphaToken.grantRole(ProtocolRoles.MINTER_ROLE, address(this));
-        alphaToken.grantRole(ProtocolRoles.BURNER_ROLE, address(manager));
+        virajeToken.grantRole(ProtocolRoles.MINTER_ROLE, address(manager));
+        virajeToken.grantRole(ProtocolRoles.MINTER_ROLE, admin);
+        virajeToken.grantRole(ProtocolRoles.MINTER_ROLE, address(this));
+        virajeToken.grantRole(ProtocolRoles.BURNER_ROLE, address(manager));
         vault.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(manager));
         vault.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(router));
 
@@ -198,10 +198,10 @@ contract FullSystemCoverageTest is Test {
     }
 
     function test_GovernanceStaking_FullCycle() public {
-        alphaToken.mint(user, 1000 * 10 ** 18);
+        virajeToken.mint(user, 1000 * 10 ** 18);
 
         vm.startPrank(user);
-        alphaToken.approve(address(staking), 1000 * 10 ** 18);
+        virajeToken.approve(address(staking), 1000 * 10 ** 18);
         staking.stake(1000 * 10 ** 18);
         assertEq(staking.balanceOf(user), 990 * 10 ** 18); // 1% staking fee
 
@@ -242,14 +242,14 @@ contract FullSystemCoverageTest is Test {
         assertEq(nft.ownerOf(tokenId), user);
     }
 
-    function test_P2PLendingMarket_BorrowWithAlpha_AndRepay() public {
-        alphaToken.mint(user, 1000 * 10 ** 18);
+    function test_P2PLendingMarket_BorrowWithViraje_AndRepay() public {
+        virajeToken.mint(user, 1000 * 10 ** 18);
         usdc.mint(address(vault), 10000 * 10 ** 6);
 
         vm.startPrank(user);
-        alphaToken.approve(address(p2pMarket), 1000 * 10 ** 18);
-        uint256 loanId = p2pMarket.borrowFromTreasuryWithAlpha(500 * 10 ** 18, 250 * 10 ** 6, 30);
-        assertEq(alphaToken.balanceOf(user), 500 * 10 ** 18);
+        virajeToken.approve(address(p2pMarket), 1000 * 10 ** 18);
+        uint256 loanId = p2pMarket.borrowFromTreasuryWithViraje(500 * 10 ** 18, 250 * 10 ** 6, 30);
+        assertEq(virajeToken.balanceOf(user), 500 * 10 ** 18);
         assertEq(usdc.balanceOf(user), (250 * 10 ** 6 * 9950) / 10000); // Net of 0.5% origination fee
 
         // Repay loan
@@ -258,8 +258,8 @@ contract FullSystemCoverageTest is Test {
         p2pMarket.repayLoan(loanId);
         vm.stopPrank();
 
-        // Check user recovered 100% of ALPHA collateral
-        assertEq(alphaToken.balanceOf(user), 1000 * 10 ** 18);
+        // Check user recovered 100% of VIRAJE collateral
+        assertEq(virajeToken.balanceOf(user), 1000 * 10 ** 18);
     }
 
     function test_P2PLendingMarket_BorrowWithCollateral_AndRepay() public {
@@ -296,12 +296,12 @@ contract FullSystemCoverageTest is Test {
         vm.stopPrank();
 
         // PromotionalIncentiveVault
-        alphaToken.mint(address(promoVault), 1000 * 10 ** 18);
+        virajeToken.mint(address(promoVault), 1000 * 10 ** 18);
         vm.startPrank(admin);
         uint256 cId = promoVault.createCampaign("TEST_CAMPAIGN", 500 * 10 ** 18);
         promoVault.distributeReward(cId, user, 100 * 10 ** 18);
         vm.stopPrank();
-        assertEq(alphaToken.balanceOf(user), 100 * 10 ** 18);
+        assertEq(virajeToken.balanceOf(user), 100 * 10 ** 18);
 
         // YieldStreamingVault
         usdc.mint(address(yieldStream), 500 * 10 ** 6);

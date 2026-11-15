@@ -198,13 +198,13 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
     if (!redeemAmount) return;
     try {
       addLog(UI_STRINGS.TOASTS_AND_LOGS.REDEEM_START);
-      const amountWei = parseUnits(redeemAmount, 18); // ALPHA = 18 decimals
+      const amountWei = parseUnits(redeemAmount, 18); // VIRAJE = 18 decimals
       const account = await getActiveAuthorizedAccount(userAddress || activeKey);
       const client = getWalletClient(account);
 
       // Gas optimization: check allowance first
       const currentAllowance = (await publicClient.readContract({
-        address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
+        address: CONTRACT_ADDRESSES.VIRAJE_TOKEN,
         abi: ABIS.ERC20,
         functionName: 'allowance',
         args: [account, CONTRACT_ADDRESSES.TREASURY]
@@ -214,7 +214,7 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
         addLog(`Aprobando ${redeemAmount} VIRAJE para contrato de Tesorería...`);
         addToast('info', 'Aprobación VIRAJE', `Autorizando ${redeemAmount} VIRAJE en tu billetera...`);
         const appHash = await client.writeContract({
-          address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
+          address: CONTRACT_ADDRESSES.VIRAJE_TOKEN,
           abi: ABIS.ERC20,
           functionName: 'approve',
           args: [CONTRACT_ADDRESSES.TREASURY, amountWei],

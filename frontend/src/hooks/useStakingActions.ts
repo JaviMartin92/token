@@ -36,7 +36,7 @@ export function useStakingActions({
 
       // Gas optimization: check allowance first
       const currentAllowance = (await publicClient.readContract({
-        address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
+        address: CONTRACT_ADDRESSES.VIRAJE_TOKEN,
         abi: ABIS.ERC20,
         functionName: 'allowance',
         args: [userAddr, CONTRACT_ADDRESSES.STAKING]
@@ -45,7 +45,7 @@ export function useStakingActions({
       if (currentAllowance < amountWei) {
         addToast('info', 'Aprobación VIRAJE', `Autorizando ${stakeAmount} VIRAJE para Staking...`);
         const appHash = await client.writeContract({
-          address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
+          address: CONTRACT_ADDRESSES.VIRAJE_TOKEN,
           abi: ABIS.ERC20,
           functionName: 'approve',
           args: [CONTRACT_ADDRESSES.STAKING, amountWei]

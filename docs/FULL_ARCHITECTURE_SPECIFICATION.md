@@ -1,24 +1,24 @@
-# Especificación Técnica y Arquitectura Institucional: Protocolo Alpha Centauri (v2.5 Enterprise Pure DeFi - Mainnet Ready)
+# Especificación Técnica y Arquitectura Institucional: Protocolo Viraje Protocol (v2.5 Enterprise Pure DeFi - Mainnet Ready)
 
 ---
 
 ## 1. Visión General, Filosofía & Invariantes Institucionales
 
-El **Protocolo Alpha Centauri** es una infraestructura financiera descentralizada (*Pure DeFi*) de grado institucional diseñada para la emisión, custodia y comercialización de un activo sintético de reserva respaldado por colateral exógeno ($ALPHA$). El protocolo opera de forma inmutable sobre Ethereum Virtual Machine (EVM) y capas de escalado Layer-2 (Base / Arbitrum), integrando gobernanza timelocked de cero privilegios corporativos, oráculos multicapa de alta resiliencia y un mercado monetario Peer-to-Peer (P2P) colateralizado por Tokens No Fungibles (NFTs ERC-721).
+El **Protocolo Viraje Protocol** es una infraestructura financiera descentralizada (*Pure DeFi*) de grado institucional diseñada para la emisión, custodia y comercialización de un activo sintético de reserva respaldado por colateral exógeno ($VIRAJE$). El protocolo opera de forma inmutable sobre Ethereum Virtual Machine (EVM) y capas de escalado Layer-2 (Base / Arbitrum), integrando gobernanza timelocked de cero privilegios corporativos, oráculos multicapa de alta resiliencia y un mercado monetario Peer-to-Peer (P2P) colateralizado por Tokens No Fungibles (NFTs ERC-721).
 
 ### 1.1. Invariantes Matemáticas y Defensas Formales
 
 El núcleo determinista del protocolo se rige por cuatro invariantes matemáticas estrictas que son verificadas on-chain en tiempo real antes de confirmar cualquier transacción de emisión, rescate, colateralización o distribución de comisiones:
 
 #### 1. Invariante de Proof of Reserves (PoR) $\ge 100\%$
-Cada token $ALPHA$ emitido y en circulación libre está respaldado en todo momento por reservas líquidas y exógenas de primera línea (USDC, WBTC, WETH). En ningún momento el pasivo circulante puede exceder el valor neto realizable de la reserva:
+Cada token $VIRAJE$ emitido y en circulación libre está respaldado en todo momento por reservas líquidas y exógenas de primera línea (USDC, WBTC, WETH). En ningún momento el pasivo circulante puede exceder el valor neto realizable de la reserva:
 
 $$\text{ProofOfReservesRatio} = \frac{\text{TotalAssetsUSD}_{\text{exogenous}}}{\text{TotalLiabilitiesUSD}_{\text{circulating}}} \ge 1.0000 \quad (100.00\%)$$
 
 #### 2. Monotonicidad del NAV Spot ($\Delta NAV_{\text{spot}} \ge 0$)
 Ninguna operación dentro del protocolo (depósito, rescate, emisión de bonos vestados, préstamo P2P, liquidación por oráculo o quema deflacionaria) puede resultar en una disminución del Valor Patrimonial Neto por share ($NAV_{\text{spot}}$). Si una transacción degrada el NAV por share, el contrato de validación [`ProtocolTokenomicsEngine.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/ProtocolTokenomicsEngine.sol) emite un `revert` atómico:
 
-$$NAV_{\text{spot}} = \frac{\text{TotalAssetsUSD}_{\text{exogenous}}}{\text{NetCirculatingShares}_{\text{ALPHA}}}$$
+$$NAV_{\text{spot}} = \frac{\text{TotalAssetsUSD}_{\text{exogenous}}}{\text{NetCirculatingShares}_{\text{VIRAJE}}}$$
 
 $$NAV_{t+1} \ge NAV_t$$
 
@@ -42,8 +42,8 @@ graph TD
         Shell["App.tsx (Main Layout & Providers)"]
         Web3State["useWeb3State.ts (Polling 4s & Multi-Call Reader)"]
         DashboardUI["MetricsDashboard.tsx (PoR, Solvency & Charts)"]
-        TreasuryUI["TreasuryDashboard.tsx (Deposit USDC / Redeem ALPHA)"]
-        StakingUI["GovernanceStakingUI.tsx (stALPHA Real Yield Pool)"]
+        TreasuryUI["TreasuryDashboard.tsx (Deposit USDC / Redeem VIRAJE)"]
+        StakingUI["GovernanceStakingUI.tsx (stVIRAJE Real Yield Pool)"]
         BondsUI["VestedVaults.tsx (NFT Bond Engine 1-5 Yrs)"]
         P2PUI["P2PMarketplace.tsx (P2P Collateralized Lending)"]
         GovUI["GovernanceCommandCenter.tsx (DAO Timelock Proposals)"]
@@ -57,8 +57,8 @@ graph TD
         subgraph CORE ["Núcleo de Emisión, Tesorería & Oráculos"]
             Treasury["TreasuryManager.sol (Pure DeFi NAV & Deposit Engine)"]
             Gateway["CompliantTreasuryGateway.sol (Stateless KYC Wrapper)"]
-            Vault["AlphaVault.sol (Exogenous Asset Cold Bunker)"]
-            Token["AlphaToken.sol (ERC-20 ALPHA)"]
+            Vault["VirajeVault.sol (Exogenous Asset Cold Bunker)"]
+            Token["VirajeToken.sol (ERC-20 VIRAJE)"]
             PriceHub["OracleHub.sol (Dual Oracles + L2 Sequencer Grace Period)"]
             YieldOracle["DynamicYieldOracleRouter.sol (Passive Yield APYs)"]
             Breaker["CircuitBreaker.sol (Volatility Freeze Guard)"]
@@ -67,10 +67,10 @@ graph TD
         end
 
         subgraph YIELD ["Ecosistema Real Yield & Gobernanza DAO"]
-            Staking["GovernanceStaking.sol (stALPHA & Voting Checkpoints)"]
+            Staking["GovernanceStaking.sol (stVIRAJE & Voting Checkpoints)"]
             Router["RealYieldRouter.sol (50/50 Liquid Fee Enforcer)"]
             YieldVault["CommunityYieldVault.sol (50% Staker Dividends)"]
-            Governor["GovernorAlphaCentauri.sol (DAO Executive)"]
+            Governor["GovernorViraje.sol (DAO Executive)"]
             Timelock["TimelockController.sol (72h Emergency Delay)"]
         end
 
@@ -128,9 +128,9 @@ sequenceDiagram
     participant App as Frontend (React/Viem)
     participant Treasury as TreasuryManager.sol
     participant Engine as ProtocolTokenomicsEngine.sol
-    participant Vault as AlphaVault.sol
+    participant Vault as VirajeVault.sol
     participant Router as RealYieldRouter.sol
-    participant Token as AlphaToken.sol
+    participant Token as VirajeToken.sol
 
     Investor->>App: Ingresa depositAmount (USDC)
     App->>Treasury: calculateDynamicFeeBps(amount)
@@ -195,21 +195,21 @@ El protocolo está compuesto por 25 smart contracts fuertemente desacoplados med
 #### 1. [`TreasuryManager.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/TreasuryManager.sol)
 - **Propósito**: Gestor central de emisión, rescate, valoración de NAV y control de solvencia.
 - **Funciones Principales**:
-  - `deposit(uint256 stableAmount)`: Recibe colateral en USDC, calcula la tasa de comisión dinámica adaptativa al impacto de liquidez (`calculateDynamicFeeBps`), acuña shares $ALPHA$ a valor NAV actual y enruta la comisión de entrada al `RealYieldRouter`.
-  - `redeem(uint256 sharesAmount)`: Destruye shares $ALPHA$, verifica las invariantes de monotonicidad de NAV y retiene la comisión de salida del 1%. Si la reserva líquida libre en `AlphaVault` es insuficiente, activa `_ensureLiquidBuffer` para rescatar capital desde `MorphoYieldVaultAdapter`.
+  - `deposit(uint256 stableAmount)`: Recibe colateral en USDC, calcula la tasa de comisión dinámica adaptativa al impacto de liquidez (`calculateDynamicFeeBps`), acuña shares $VIRAJE$ a valor NAV actual y enruta la comisión de entrada al `RealYieldRouter`.
+  - `redeem(uint256 sharesAmount)`: Destruye shares $VIRAJE$, verifica las invariantes de monotonicidad de NAV y retiene la comisión de salida del 1%. Si la reserva líquida libre en `VirajeVault` es insuficiente, activa `_ensureLiquidBuffer` para rescatar capital desde `MorphoYieldVaultAdapter`.
   - `getNetEquityUSD()`: Computa el Patrimonio Neto Libre deduciendo la deuda externa exigible (bonos vestados en `VestedDiscountVault`) del valor total de activos exógenos ($\text{NetEquityUSD} = \max(0, \text{TotalAssetsUSD} - \text{DebtLiabilitiesUSD})$).
-  - `getNAVPerShare()`: Calcula el NAV spot dividiendo el Patrimonio Neto Libre entre las shares netas en circulación ($NAV = \text{NetEquityUSD} / \text{NetCirculatingShares}$). Esto garantiza que la entrada de fondos por bonos no infle falsamente el valor intrínseco de ALPHA.
+  - `getNAVPerShare()`: Calcula el NAV spot dividiendo el Patrimonio Neto Libre entre las shares netas en circulación ($NAV = \text{NetEquityUSD} / \text{NetCirculatingShares}$). Esto garantiza que la entrada de fondos por bonos no infle falsamente el valor intrínseco de VIRAJE.
   - `getProofOfReserves()`: Devuelve `(totalAssetsUSD, totalLiabilitiesUSD, collateralRatioBps)`.
 - **Invariantes & Seguridad**: `nonReentrant`, `lastDepositBlock` anti-MEV cooldown, validación previa de congelamiento en `CircuitBreaker`.
 
-#### 2. [`AlphaVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/AlphaVault.sol)
+#### 2. [`VirajeVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/VirajeVault.sol)
 - **Propósito**: Búnker frío de custodia de activos de reserva (USDC, WBTC, WETH).
 - **Funciones Principales**:
   - `transferFunds(address token, address to, uint256 amount)`: Transfiere fondos autorizado únicamente por contratos con rol `VAULT_MANAGER_ROLE` (`TreasuryManager` y `RealYieldRouter`).
   - `notifyReserveFee(address token, uint256 amount)`: Recibe la inyección del 50% de las comisiones del protocolo, elevando instantáneamente el NAV Spot.
 
-#### 3. [`AlphaToken.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/AlphaToken.sol)
-- **Propósito**: Implementación ERC-20 del token sintético nativo $ALPHA$.
+#### 3. [`VirajeToken.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/VirajeToken.sol)
+- **Propósito**: Implementación ERC-20 del token sintético nativo $VIRAJE$.
 - **Control de Acceso**: Operaciones de acuñación restringidas a `MINTER_ROLE` (`TreasuryManager`) y quema a `BURNER_ROLE` (`TreasuryManager` y `GovernanceStaking`).
 
 #### 4. [`ProtocolAddressProvider.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/ProtocolAddressProvider.sol)
@@ -239,26 +239,26 @@ El protocolo está compuesto por 25 smart contracts fuertemente desacoplados med
 #### 8. [`RealYieldRouter.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/RealYieldRouter.sol)
 - **Propósito**: Enrutador universal inmutable de comisiones con cumplimiento MiCA Pure DeFi (50/50).
 - **Regla de Reparto**:
-  - **50%** $\rightarrow$ Inyección a `AlphaVault` (Sube NAV Spot de forma inmediata).
-  - **50%** $\rightarrow$ Transferencia a `CommunityYieldVault` / `GovernanceStaking` en USDC líquido para stakers de $stALPHA$.
+  - **50%** $\rightarrow$ Inyección a `VirajeVault` (Sube NAV Spot de forma inmediata).
+  - **50%** $\rightarrow$ Transferencia a `CommunityYieldVault` / `GovernanceStaking` en USDC líquido para stakers de $stVIRAJE$.
 - **Opciones de Cobro de Dividendos**:
   - `OPTION_A_STABLECOIN`: 100% en USDC líquido directo.
   - `OPTION_B_RESERVE_ASSET`: Auto-conversión a WBTC/WETH vía Uniswap v3 con verificación de oráculo Chainlink, protección de slippage (1.00%), fee tier configurable por DAO (`reserveFeeTier`), y fallback automático a USDC si el activo está congelado por el `CircuitBreaker`.
 - **Rescate de Fondos**: Función `sweepTokens(token, to)` administrada por la DAO para recuperar transferencias accidentales.
 
 #### 9. [`CommunityYieldVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/CommunityYieldVault.sol)
-- **Propósito**: Bóveda comunitaria de dividendos en USDC líquido para stakers de $stALPHA$.
+- **Propósito**: Bóveda comunitaria de dividendos en USDC líquido para stakers de $stVIRAJE$.
 - **Notificación $O(1)$**: Al recibir rendimiento, invoca `notifyRewardAmount` en `GovernanceStaking.sol` actualizando el acumulador global Synthetix en tiempo constante.
 
 #### 10. [`GovernanceStaking.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/GovernanceStaking.sol)
-- **Propósito**: Contrato de staking líquido ($stALPHA$) con registro histórico de checkpoints de voto para la DAO. Retiene una cuota de entrada del 1% (50% a quema permanente y 50% al pool de yield).
+- **Propósito**: Contrato de staking líquido ($stVIRAJE$) con registro histórico de checkpoints de voto para la DAO. Retiene una cuota de entrada del 1% (50% a quema permanente y 50% al pool de yield).
 - **Distribución de Dividendos**: Algoritmo de distribución continua $O(1)$ independiente del número de stakers.
 
-#### 11-12. [`GovernorAlphaCentauri.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/GovernorAlphaCentauri.sol) & [`TimelockController.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/TimelockController.sol)
+#### 11-12. [`GovernorViraje.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/GovernorViraje.sol) & [`TimelockController.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/TimelockController.sol)
 - **Propósito**: Sistema de gobernanza institucional DAO con retraso obligatorio de 72 horas para cualquier actualización de código o parámetros ("Right to Exit" para inversores).
 - **Características Institucionales**:
-  - *Veto Inmutable*: Bóvedas de reserva (`alphaVault`, `communityYieldVault`, `treasuryManager`) poseen 0 votos inmutables para impedir circularidad.
-  - *Votación de 3 Vías*: Soporte completo para `0 = Against`, `1 = For`, `2 = Abstain` (la abstención computa hacia el quórum de 10.000 stALPHA).
+  - *Veto Inmutable*: Bóvedas de reserva (`virajeVault`, `communityYieldVault`, `treasuryManager`) poseen 0 votos inmutables para impedir circularidad.
+  - *Votación de 3 Vías*: Soporte completo para `0 = Against`, `1 = For`, `2 = Abstain` (la abstención computa hacia el quórum de 10.000 stVIRAJE).
   - *Voto con Razón On-Chain*: `castVoteWithReason(proposalId, support, reason)` emite justificantes de voto en el evento `VoteCast`.
   - *Cancelación de Propuestas*: `cancel(proposalId)` permite al proponente o a la comunidad anular propuestas erróneas o huérfanas antes de su ejecución.
 
@@ -275,7 +275,7 @@ El protocolo está compuesto por 25 smart contracts fuertemente desacoplados med
 - **Propósito**: Token ERC-721 transferible que encapsula los derechos de cobro de un bono vestado.
 
 #### 17. [`P2PLendingMarket.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/P2PLendingMarket.sol)
-- **Propósito**: Mercado monetario multi-colateral (NFTs de bonos, WBTC, WETH, ALPHA) con originación P2P y línea de liquidez directa de Tesorería (hasta el 20% de las reservas exógenas).
+- **Propósito**: Mercado monetario multi-colateral (NFTs de bonos, WBTC, WETH, VIRAJE) con originación P2P y línea de liquidez directa de Tesorería (hasta el 20% de las reservas exógenas).
 - **Características Institucionales**:
   - *Fair Liquidation con Restitución de Equity*: En liquidaciones de colaterales ERC-20, el liquidador únicamente incauta el $\text{Principal} + \text{Interés} + 10\%$ de bonus. El colateral sobrante es restituido íntegramente al prestatario a través de `claimableBorrowerEquity`.
   - *Tasa APR Dinámica Ajustable por DAO*: Consulta `treasuryBorrowAprBps()` desde `ProtocolTokenomicsEngine.sol` (configurable entre 1% y 50% APR).
@@ -288,7 +288,7 @@ La Tesorería implementa un enrutador de rendimiento agnóstico que gestiona el 
 - *Extracción Automática de Liquidez (`_ensureLiquidBuffer`)*: Ante rescates masivos de capital, la tesorería extrae liquidez de los adaptadores sin romper el respaldo del 100%.
 
 #### 19. [`DiscountBuybackEngine.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/DiscountBuybackEngine.sol)
-- **Propósito**: Motor autónomo de estabilización algorítmica y quema deflacionaria que adquiere tokens $ALPHA$ con descuento en DEXs secundarios ($\ge 5.00\%$) y los quema inmediatamente on-chain.
+- **Propósito**: Motor autónomo de estabilización algorítmica y quema deflacionaria que adquiere tokens $VIRAJE$ con descuento en DEXs secundarios ($\ge 5.00\%$) y los quema inmediatamente on-chain.
 - **10 Candados de Control Matemático**:
   1. *Descuento Mínimo*: $DEX_{\text{price}} \le NAV_{\text{spot}} \times 0.95$.
   2. *Presupuesto Diario*: Máximo 2.50% de las reservas líquidas en 24h.
@@ -310,16 +310,16 @@ La Tesorería implementa un enrutador de rendimiento agnóstico que gestiona el 
 - **Aislamiento Regulatorio**: El contrato es 100% *stateless* (no custodia fondos ni fragmenta liquidez), enrutando las operaciones directamente a [`TreasuryManager.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/TreasuryManager.sol), preservando la condición de *Pure DeFi* del Core.
 
 #### 21. [`FounderReserveVestingVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/FounderReserveVestingVault.sol)
-- **Propósito**: Bóveda autónoma de custodia y vesting para la asignación génesis de 100,000 ALPHA del fundador/creador del protocolo.
+- **Propósito**: Bóveda autónoma de custodia y vesting para la asignación génesis de 100,000 VIRAJE del fundador/creador del protocolo.
 - **Desbloqueo Basado en Solvencia (Health-Backed Vesting)**: La liberación de participaciones no transcurre de forma ciega por calendario, sino que está condicionada de manera estricta al superávit matemático de las reservas ($\text{Solvencia} > 100.00\%$ y $\text{ActivosTotales} > \text{PasivosTotales}$).
 - **Cap de Reclamo (10% del Excedente) y Cooldown de 72 Horas**:
-  - En cada reclamo, el fundador solo puede liberar como máximo el 10% del superávit de reservas convertido a ALPHA mediante `getNAVPerShare()` oficial.
+  - En cada reclamo, el fundador solo puede liberar como máximo el 10% del superávit de reservas convertido a VIRAJE mediante `getNAVPerShare()` oficial.
   - Se impone un candado temporal inmutable de 72 horas entre reclamos sucesivos.
 - **Inmunidad Patrimonial de la Tesorería**:
-  - El reclamo transfiere exclusivamente tokens ALPHA custodiados dentro de la bóveda; **cero reservas (USDC, WBTC, WETH) son extraídas de la Tesorería**.
-  - El fundador recibe tokens ALPHA líquidos y es libre de conservarlos, delegarlos para voto en la DAO, colocarlos en el mercado P2P como colateral o stakearlos en gobernanza.
+  - El reclamo transfiere exclusivamente tokens VIRAJE custodiados dentro de la bóveda; **cero reservas (USDC, WBTC, WETH) son extraídas de la Tesorería**.
+  - El fundador recibe tokens VIRAJE líquidos y es libre de conservarlos, delegarlos para voto en la DAO, colocarlos en el mercado P2P como colateral o stakearlos en gobernanza.
 - **Aislamiento Génesis del Suministro Circulante**:
-  - Los 100,000 ALPHA en custodia de este contrato se deducen automáticamente del cálculo de circulante en [`TreasuryPoRLib.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/lib/TreasuryPoRLib.sol#L180-L195) y de las obligaciones pasivas, garantizando un Estado Génesis puro y limpio a bloque 0 (0.00 ALPHA en circulación y $1.0000 USD de NAV inicial).
+  - Los 100,000 VIRAJE en custodia de este contrato se deducen automáticamente del cálculo de circulante en [`TreasuryPoRLib.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/lib/TreasuryPoRLib.sol#L180-L195) y de las obligaciones pasivas, garantizando un Estado Génesis puro y limpio a bloque 0 (0.00 VIRAJE en circulación y $1.0000 USD de NAV inicial).
 
 ---
 
@@ -344,19 +344,19 @@ La Tesorería implementa un enrutador de rendimiento agnóstico que gestiona el 
 ### 4.1. Tasa de Comisión Dinámica Adaptativa
 $$Fee_{\text{BPS}} = \min \left( 500, \, Fee_{\text{base}} + \left\lfloor \frac{\text{DepositUSD} \times 10000}{\text{TotalAssetsUSD} + \text{DepositUSD}} \times \frac{\text{Sensitivity}}{10000} \right\rfloor \right)$$
 
-### 4.2. Acuñación de Shares $ALPHA$ por NAV
+### 4.2. Acuñación de Shares $VIRAJE$ por NAV
 $$\text{SharesToMint} = \begin{cases} 
 \text{DepositUSD}_{18} & \text{si } \text{TotalShares} = 0 \text{ o } \text{TotalAssetsUSD} = 0 \\
 \frac{\text{DepositUSD}_{18} \times \text{TotalShares}}{NAV_{\text{before}}} & \text{en otro caso}
 \end{cases}$$
 
 ### 4.3. Recompra Deflacionaria y Aumento de NAV ($\Delta NAV > 0$)
-Dado un gasto de $U$ dólares de reserva para recomprar $A$ tokens $ALPHA$ a precio de mercado $P_{\text{DEX}} \le NAV \times (1 - \text{Discount})$:
+Dado un gasto de $U$ dólares de reserva para recomprar $A$ tokens $VIRAJE$ a precio de mercado $P_{\text{DEX}} \le NAV \times (1 - \text{Discount})$:
 
 $$NAV_{\text{post}} = \frac{\text{Assets}_{\text{pre}} - U}{\text{Shares}_{\text{pre}} - A} > \frac{\text{Assets}_{\text{pre}}}{\text{Shares}_{\text{pre}}} = NAV_{\text{pre}}$$
 
 ### 4.4. Escala de Descuento en Bonos Vestados
-$$\text{Discount}_{\text{BPS}} = \min \left( 5000, \, (\text{LockYears} \times 500) + \text{TierBonus}_{\text{stALPHA}} \right)$$
+$$\text{Discount}_{\text{BPS}} = \min \left( 5000, \, (\text{LockYears} \times 500) + \text{TierBonus}_{\text{stVIRAJE}} \right)$$
 
 ### 4.5. Factor de Salud, Grace Period y Liquidación P2P
 $$\text{HealthFactor} = \frac{\text{CollateralUSD} \times 10000}{\text{PrincipalBorrowedUSD} + \text{InterestOwedUSD}}$$
@@ -374,7 +374,7 @@ La aplicación frontend implementa una arquitectura **Pure UI Rendering** donde 
 | Hook | Responsabilidad y Lecturas/Escrituras On-Chain |
 | :--- | :--- |
 | [`useWeb3State.ts`](file:///c:/Users/Admin/Desktop/token/frontend/src/hooks/useWeb3State.ts) | Realiza polling cada 4s mediante Viem `publicClient`. Lee balances, PoRAssets, PoRLiabilities, NAV Spot, APYs de `DynamicYieldOracleRouter` y préstamos P2P. |
-| [`useTreasuryActions.ts`](file:///c:/Users/Admin/Desktop/token/frontend/src/hooks/useTreasuryActions.ts) | Prepara y ejecuta firmas para `deposit(usdc)` y `redeem(alpha)` con modal de confirmación. |
+| [`useTreasuryActions.ts`](file:///c:/Users/Admin/Desktop/token/frontend/src/hooks/useTreasuryActions.ts) | Prepara y ejecuta firmas para `deposit(usdc)` y `redeem(viraje)` con modal de confirmación. |
 | [`useStakingActions.ts`](file:///c:/Users/Admin/Desktop/token/frontend/src/hooks/useStakingActions.ts) | Prepara transacciones de staking, unstaking y cobro de dividendos en USDC líquido. |
 | [`useVestedVaultActions.ts`](file:///c:/Users/Admin/Desktop/token/frontend/src/hooks/useVestedVaultActions.ts) | Emisión de bonos NFT, ejecuciones de `ragequit()` y cobro al vencimiento. |
 | [`useP2PLendingActions.ts`](file:///c:/Users/Admin/Desktop/token/frontend/src/hooks/useP2PLendingActions.ts) | Ofertas de préstamos P2P, financiamiento, repagos con deferencia de colateral en grace period y liquidaciones. |
@@ -386,9 +386,9 @@ La aplicación frontend implementa una arquitectura **Pure UI Rendering** donde 
 | Rol On-Chain | Identificador | Asignación Contractual | Permisos |
 | :--- | :--- | :--- | :--- |
 | `DEFAULT_ADMIN_ROLE` | `0x00` | `TimelockController.sol` (72h) | Modificación de parámetros clave. Cero llaves administradoras privadas. |
-| `MINTER_ROLE` | `keccak256("MINTER_ROLE")` | `TreasuryManager.sol` | Acuñación exclusiva de $ALPHA$ respaldado por colateral. |
-| `BURNER_ROLE` | `keccak256("BURNER_ROLE")` | `TreasuryManager.sol` & `DiscountBuybackEngine.sol` | Quema de tokens $ALPHA$ en rescates y recompras. |
-| `VAULT_MANAGER_ROLE` | `keccak256("VAULT_MANAGER_ROLE")` | `TreasuryManager.sol` & `RealYieldRouter.sol` | Extracción autorizada de fondos de `AlphaVault`. |
+| `MINTER_ROLE` | `keccak256("MINTER_ROLE")` | `TreasuryManager.sol` | Acuñación exclusiva de $VIRAJE$ respaldado por colateral. |
+| `BURNER_ROLE` | `keccak256("BURNER_ROLE")` | `TreasuryManager.sol` & `DiscountBuybackEngine.sol` | Quema de tokens $VIRAJE$ en rescates y recompras. |
+| `VAULT_MANAGER_ROLE` | `keccak256("VAULT_MANAGER_ROLE")` | `TreasuryManager.sol` & `RealYieldRouter.sol` | Extracción autorizada de fondos de `VirajeVault`. |
 | `ORACLE_MANAGER_ROLE` | `keccak256("ORACLE_MANAGER_ROLE")` | Dirección de Gobernanza (Timelock) | Registro de feeds primarios, secundarios y staleness limits. |
 
 ### 6.1. Descentralización Plena (MiCA Recital 22) y Pasarela KYC Stateless
@@ -452,7 +452,7 @@ Ubicada en [`services/core/src/agents/`](../services/core/src/agents/) y documen
   - *Elena (Retail Yield)*, *Marcus (Whale Bonos)*, *Sofia (Prestataria P2P)*, *Viktor (Keeper MEV)*, *Lucas (DAO Activista)*.
   - Campaña de 1 Hora: **43 rondas, 214 flujos ejecutados, 176 operaciones exitosas (82.24%)** y 38 bloqueos de salvaguarda matemática formal (`NoDiscountVsNAV()`), confirmando la invulnerabilidad de la tesorería ante recompras que no ofrecen descuento frente al NAV spot.
 - **Verificación de Invariantes On-Chain en Tiempo Real**:
-  - 100% de cumplimiento en Solvencia de Reservas ($\ge 100\%$), Monotonicidad de NAV ($\Delta NAV \ge 0$), respaldo 1:1 de stALPHA y límites de Circuit Breaker.
+  - 100% de cumplimiento en Solvencia de Reservas ($\ge 100\%$), Monotonicidad de NAV ($\Delta NAV \ge 0$), respaldo 1:1 de stVIRAJE y límites de Circuit Breaker.
 
 ---
 
@@ -464,7 +464,7 @@ Las infraestructuras de contratos inteligentes estándar dependen de la criptogr
 Por el contrario, las funciones de dispersión unidireccionales (hashes como Keccak-256) son inmunes a Shor y solo ven su seguridad reducida a la mitad mediante el **Algoritmo de Grover** ($O(\sqrt{N})$), lo cual mantiene una seguridad post-cuántica robusta de **128 bits** para digest de 256 bits, catalogada como de grado militar institucional por el NIST.
 
 ### 9.2. Arquitectura de Implementación: PostQuantumGuard.sol
-Para dotar al Protocolo Alpha Centauri de soberanía de seguridad cuántica, se incorpora el módulo [`PostQuantumGuard.sol`](../contracts/src/PostQuantumGuard.sol) alineado con las directrices de NIST SP 800-208 y RFC 8391:
+Para dotar al Protocolo Viraje Protocol de soberanía de seguridad cuántica, se incorpora el módulo [`PostQuantumGuard.sol`](../contracts/src/PostQuantumGuard.sol) alineado con las directrices de NIST SP 800-208 y RFC 8391:
 
 1. **Parámetro Winternitz ($w = 4$)**:
    - Cada mensaje de 256 bits se divide en $64$ nibbles de 4 bits (valores de $0$ a $15$).

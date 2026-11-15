@@ -63,7 +63,7 @@ contract MockSwapRouter is ISwapRouter, AccessControl {
             revert IProtocolErrors.InvalidParameters();
         }
 
-        // 1. Pull tokenIn from recipient (AlphaVault) or sender
+        // 1. Pull tokenIn from recipient (VirajeVault) or sender
         address payer = (params.recipient != address(0)
                 && IERC20(params.tokenIn).allowance(params.recipient, address(this)) >= params.amountIn)
             ? params.recipient

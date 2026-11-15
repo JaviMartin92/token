@@ -3,8 +3,8 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../ProtocolAddressProvider.sol";
-import "../AlphaVault.sol";
-import "../AlphaToken.sol";
+import "../VirajeVault.sol";
+import "../VirajeToken.sol";
 import "../OracleHub.sol";
 import "../interfaces/IUniversalYieldAdapter.sol";
 
@@ -57,7 +57,7 @@ library TreasuryPoRLib {
         view
         returns (uint256 totalAssetsUSD)
     {
-        AlphaVault vault = AlphaVault(ctx.addressProvider.getAlphaVault());
+        VirajeVault vault = VirajeVault(ctx.addressProvider.getVirajeVault());
         OracleHub oracle = OracleHub(ctx.addressProvider.getOracleHub());
 
         // 1. Treasury Stablecoin Balance (Vault + TreasuryManager contract)
@@ -111,36 +111,36 @@ library TreasuryPoRLib {
     }
 
     /**
-     * @notice Computes total USD liabilities (Circulating ALPHA at settled NAV + Vested Discount liabilities).
+     * @notice Computes total USD liabilities (Circulating VIRAJE at settled NAV + Vested Discount liabilities).
      */
     function calculatePoRLiabilities(PoRContext memory ctx) public view returns (uint256 totalLiabilitiesUSD) {
-        AlphaVault vault = AlphaVault(ctx.addressProvider.getAlphaVault());
-        AlphaToken token = AlphaToken(ctx.addressProvider.getAlphaToken());
+        VirajeVault vault = VirajeVault(ctx.addressProvider.getVirajeVault());
+        VirajeToken token = VirajeToken(ctx.addressProvider.getVirajeToken());
         address govAddr = ctx.addressProvider.getGovernanceStaking();
 
-        uint256 protocolOwnedAlpha = vault.getBalance(address(token)) + token.balanceOf(ctx.treasuryManagerContract);
+        uint256 protocolOwnedViraje = vault.getBalance(address(token)) + token.balanceOf(ctx.treasuryManagerContract);
         address founderVesting = ctx.addressProvider.getFounderVestingVault();
         if (founderVesting != address(0)) {
-            protocolOwnedAlpha += token.balanceOf(founderVesting);
+            protocolOwnedViraje += token.balanceOf(founderVesting);
         }
 
         if (govAddr != address(0)) {
-            protocolOwnedAlpha += IERC20(govAddr).balanceOf(address(vault))
+            protocolOwnedViraje += IERC20(govAddr).balanceOf(address(vault))
             + IERC20(govAddr).balanceOf(ctx.treasuryManagerContract);
             try IGovernanceStakingPoR(govAddr).communityYieldVault() returns (address yieldVault) {
                 if (yieldVault != address(0)) {
-                    protocolOwnedAlpha += token.balanceOf(yieldVault) + IERC20(govAddr).balanceOf(yieldVault);
+                    protocolOwnedViraje += token.balanceOf(yieldVault) + IERC20(govAddr).balanceOf(yieldVault);
                 }
             } catch {
                 // Ignore query revert on community vault
             }
         }
 
-        uint256 circulatingAlpha = token.totalSupply();
-        if (circulatingAlpha > protocolOwnedAlpha) {
-            uint256 netAlphaLiability = circulatingAlpha - protocolOwnedAlpha;
-            if (netAlphaLiability > 0) {
-                totalLiabilitiesUSD += (netAlphaLiability * ctx.lastSettledNAVPerShare) / 10 ** 18;
+        uint256 circulatingViraje = token.totalSupply();
+        if (circulatingViraje > protocolOwnedViraje) {
+            uint256 netVirajeLiability = circulatingViraje - protocolOwnedViraje;
+            if (netVirajeLiability > 0) {
+                totalLiabilitiesUSD += (netVirajeLiability * ctx.lastSettledNAVPerShare) / 10 ** 18;
             }
         }
 
@@ -177,13 +177,13 @@ library TreasuryPoRLib {
         view
         returns (uint256)
     {
-        address tokenAddr = addressProvider.getAlphaToken();
-        address vaultAddr = addressProvider.getAlphaVault();
+        address tokenAddr = addressProvider.getVirajeToken();
+        address vaultAddr = addressProvider.getVirajeVault();
         address govAddr = addressProvider.getGovernanceStaking();
 
         if (tokenAddr == address(0)) return 0;
 
-        AlphaToken token = AlphaToken(tokenAddr);
+        VirajeToken token = VirajeToken(tokenAddr);
         uint256 total = token.totalSupply();
         uint256 protocolOwned = (vaultAddr != address(0)) ? token.balanceOf(vaultAddr) : 0;
         protocolOwned += token.balanceOf(treasuryManagerContract);
@@ -233,7 +233,7 @@ library TreasuryPoRLib {
         view
         returns (uint256 stablesUsd, uint256 wbtcUsd, uint256 wethUsd, uint256 loansUsd)
     {
-        AlphaVault vault = AlphaVault(params.addressProvider.getAlphaVault());
+        VirajeVault vault = VirajeVault(params.addressProvider.getVirajeVault());
         OracleHub oracle = OracleHub(params.addressProvider.getOracleHub());
 
         uint256 treasuryStables = vault.getBalance(params.redemptionToken)

@@ -1,11 +1,11 @@
 /**
  * @title Certora Formal Verification Specification for TreasuryManager
  * @notice Mathematically verifies the continuous solvency, NAV monotonicity, 
- *         and Proof of Reserves (PoR) invariants of the Alpha Centauri Protocol.
+ *         and Proof of Reserves (PoR) invariants of the Viraje Protocol.
  */
 
-using AlphaToken as alphaToken;
-using AlphaVault as alphaVault;
+using VirajeToken as virajeToken;
+using VirajeVault as virajeVault;
 
 methods {
     function getNAV() external returns (uint256) envfree;
@@ -47,7 +47,7 @@ invariant positiveNavPerShareWhenCirculating()
 
 /**
  * @title Rule: Monotonic NAV Growth on Token Burn
- * @notice Burning ALPHA tokens (via buyback, staking penalties, or ragequit) strictly increases 
+ * @notice Burning VIRAJE tokens (via buyback, staking penalties, or ragequit) strictly increases 
  *         or preserves NAV per share, mathematically enriching existing holders.
  */
 rule navIncreasesOnTokenBurn(uint256 burnAmount, env e) {

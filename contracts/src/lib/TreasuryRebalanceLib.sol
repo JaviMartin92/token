@@ -2,8 +2,8 @@
 pragma solidity ^0.8.20;
 
 import "../ProtocolAddressProvider.sol";
-import "../AlphaVault.sol";
-import "../AlphaToken.sol";
+import "../VirajeVault.sol";
+import "../VirajeToken.sol";
 import "../interfaces/IOracleHub.sol";
 import "../interfaces/ISwapRouter.sol";
 import "../interfaces/ITreasury.sol";
@@ -15,14 +15,14 @@ interface IGovernanceStakingRebalance {
 
 /**
  * @title TreasuryRebalanceLib
- * @notice Internal library executing automatic DEX portfolio rebalancing and dynamic ALPHA sub-reserve allocation.
+ * @notice Internal library executing automatic DEX portfolio rebalancing and dynamic VIRAJE sub-reserve allocation.
  */
 library TreasuryRebalanceLib {
     using SafeERC20 for IERC20;
     struct RebalanceParams {
         ProtocolAddressProvider addressProvider;
-        AlphaVault vault;
-        AlphaToken token;
+        VirajeVault vault;
+        VirajeToken token;
         address swapRouter;
         address wbtcToken;
         address wethToken;
@@ -32,7 +32,7 @@ library TreasuryRebalanceLib {
         uint256 stableWeight;
         uint256 wbtcWeight;
         uint256 wethWeight;
-        uint256 alphaWeight;
+        uint256 virajeWeight;
         uint256 netDeposited;
         uint256 totalNavUSD;
         address treasuryContract;
@@ -41,7 +41,7 @@ library TreasuryRebalanceLib {
     event SwapRebalanceFailed(address indexed tokenOut, uint256 amountIn);
 
     /**
-     * @notice Executes automatic swap rebalancing into WBTC, WETH and allocates ALPHA sub-reserves.
+     * @notice Executes automatic swap rebalancing into WBTC, WETH and allocates VIRAJE sub-reserves.
      */
     function executeRebalanceSwaps(RebalanceParams memory params) public {
         if (params.swapRouter != address(0)) {
@@ -108,33 +108,33 @@ library TreasuryRebalanceLib {
             }
         }
 
-        // 3. ALPHA Dynamic Sub-Reserve Allocation
-        uint256 altsUsdc = (params.netDeposited * params.alphaWeight) / 10000;
-        allocateAlphaReserve(params, altsUsdc);
+        // 3. VIRAJE Dynamic Sub-Reserve Allocation
+        uint256 altsUsdc = (params.netDeposited * params.virajeWeight) / 10000;
+        allocateVirajeReserve(params, altsUsdc);
     }
 
     /**
-     * @notice Dynamically allocates ALPHA sub-reserve via DEX swap with automatic NAV Fallback mint + auto-staking.
+     * @notice Dynamically allocates VIRAJE sub-reserve via DEX swap with automatic NAV Fallback mint + auto-staking.
      */
-    function allocateAlphaReserve(RebalanceParams memory params, uint256 altsUsdc) public {
+    function allocateVirajeReserve(RebalanceParams memory params, uint256 altsUsdc) public {
         if (altsUsdc == 0) return;
 
-        address alphaTokenAddr = address(params.token);
+        address virajeTokenAddr = address(params.token);
         address stakingPool = params.addressProvider.getAddress(params.addressProvider.ID_GOVERNANCE_STAKING());
         if (stakingPool == address(0)) return;
 
         bool dexSuccess = false;
-        uint256 alphaObtained = 0;
+        uint256 virajeObtained = 0;
 
         // 1. DEX Swap Route
         if (params.swapRouter != address(0)) {
-            try IOracleHub(params.addressProvider.getOracleHub()).getPriceBase18(alphaTokenAddr) returns (
-                uint256 alphaPrice18
+            try IOracleHub(params.addressProvider.getOracleHub()).getPriceBase18(virajeTokenAddr) returns (
+                uint256 virajePrice18
             ) {
                 uint256 currentNav = ITreasury(params.treasuryContract).getNAVPerShare();
-                if (alphaPrice18 > 0 && alphaPrice18 <= currentNav) {
-                    uint256 expectedAlpha = (altsUsdc * 10 ** 30) / alphaPrice18;
-                    uint256 minAlpha = (expectedAlpha * (10000 - params.slippageToleranceBps)) / 10000;
+                if (virajePrice18 > 0 && virajePrice18 <= currentNav) {
+                    uint256 expectedViraje = (altsUsdc * 10 ** 30) / virajePrice18;
+                    uint256 minViraje = (expectedViraje * (10000 - params.slippageToleranceBps)) / 10000;
 
                     params.vault.approveFunds(params.redemptionToken, params.swapRouter, altsUsdc);
 
@@ -142,20 +142,20 @@ library TreasuryRebalanceLib {
                         .exactInputSingle(
                             ISwapRouter.ExactInputSingleParams(
                                 params.redemptionToken,
-                                alphaTokenAddr,
+                                virajeTokenAddr,
                                 3000,
                                 params.treasuryContract,
                                 block.timestamp + 15 minutes,
                                 altsUsdc,
-                                minAlpha,
+                                minViraje,
                                 0
                             )
                         ) returns (
                         uint256 amountOut
                     ) {
-                        if (amountOut >= minAlpha) {
+                        if (amountOut >= minViraje) {
                             dexSuccess = true;
-                            alphaObtained = amountOut;
+                            virajeObtained = amountOut;
                         }
                     } catch {
                         // DEX swap failed, fall back to NAV mint
@@ -163,7 +163,7 @@ library TreasuryRebalanceLib {
 
                     if (!dexSuccess) {
                         params.vault.approveFunds(params.redemptionToken, params.swapRouter, 0);
-                        emit SwapRebalanceFailed(alphaTokenAddr, altsUsdc);
+                        emit SwapRebalanceFailed(virajeTokenAddr, altsUsdc);
                     }
                 }
             } catch {
@@ -171,19 +171,23 @@ library TreasuryRebalanceLib {
             }
         }
 
-        // Never mint unbacked ALPHA when DEX swap is unavailable; retain USDC in AlphaVault.
+        // Never mint unbacked VIRAJE when DEX swap is unavailable; retain USDC in VirajeVault.
 
-        // 2. Auto-stake into GovernanceStaking for Treasury POL only if real ALPHA was obtained via swap
-        if (alphaObtained > 0) {
-            params.token.approve(stakingPool, alphaObtained);
-            try IGovernanceStakingRebalance(stakingPool).stake(alphaObtained) {
+        // 2. Auto-stake into GovernanceStaking for Treasury POL only if real VIRAJE was obtained via swap
+        if (virajeObtained > 0) {
+            params.token.approve(stakingPool, virajeObtained);
+            try IGovernanceStakingRebalance(stakingPool).stake(virajeObtained) {
                 // Auto-staked successfully
             } catch {
-                // Keep unstaked in treasury custody if staking pool reverts: transfer to AlphaVault
+                // Keep unstaked in treasury custody if staking pool reverts: transfer to VirajeVault
                 if (address(params.vault) != address(0)) {
-                    IERC20(address(params.token)).safeTransfer(address(params.vault), alphaObtained);
+                    IERC20(address(params.token)).safeTransfer(address(params.vault), virajeObtained);
                 }
             }
         }
+    }
+
+    function allocateAlphaReserve(RebalanceParams memory params, uint256 altsUsdc) external {
+        allocateVirajeReserve(params, altsUsdc);
     }
 }

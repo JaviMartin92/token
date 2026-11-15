@@ -5,7 +5,7 @@ describe('calculateProtocolApyMath', () => {
   it('should return 0 APY when reserves and rates are 0', () => {
     const res = calculateProtocolApyMath(
       '0.00',
-      { stables: 0, wbtc: 0, weth: 0, alphaStaking: 0 },
+      { stables: 0, wbtc: 0, weth: 0, virajeStaking: 0 },
       '0',
       0,
       0,
@@ -24,7 +24,7 @@ describe('calculateProtocolApyMath', () => {
   it('should calculate base reserve yield correctly with $100k reserves and dynamic NAV per share', () => {
     const res = calculateProtocolApyMath(
       '100000.00',
-      { stables: 60000, wbtc: 26670, weth: 13330, alphaStaking: 0 },
+      { stables: 60000, wbtc: 26670, weth: 13330, virajeStaking: 0 },
       '10000',
       1000,
       5000,
@@ -35,7 +35,7 @@ describe('calculateProtocolApyMath', () => {
     );
 
     expect(res.numericAssetsUSD).toBe(100000);
-    expect(res.numericStakedAlpha).toBe(10000);
+    expect(res.numericStakedViraje).toBe(10000);
     // Morpho (90% of $60,000 = $54,000 @ 8% = $4,320)
     expect(res.morphoUSDPool).toBe(54000);
     expect(res.morphoUSDYield).toBe(4320);

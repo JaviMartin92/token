@@ -1,8 +1,8 @@
-# 📜 BIBLIA DEFINITIVA DE TOKENOMICS — ALPHA CENTAURI PROTOCOL (PURE DEFI EDITION)
+# 📜 BIBLIA DEFINITIVA DE TOKENOMICS — Viraje Protocol (PURE DEFI EDITION)
 
 ## 🛡️ 0. DIRECTIVAS INMUTABLES E INVARIANTES DEL PROTOCOLO
 
-El Protocolo Alpha Centauri está gobernado por 3 Directivas Inmutables de Inmunidad Operativa, codificadas a nivel de bytecode en la EVM y no modificables por ninguna entidad:
+El Protocolo Viraje Protocol está gobernado por 3 Directivas Inmutables de Inmunidad Operativa, codificadas a nivel de bytecode en la EVM y no modificables por ninguna entidad:
 
 ### 1. Directiva de Invariante de Colateralización Incondicional
 
@@ -16,28 +16,28 @@ $$\text{Ratio}_{\text{post\_tx}} \ge \text{Ratio}_{\text{pre\_tx}} \ge 100.00\%$
 
 ### 2. Prohibición Absoluta de Minteado Inflacionario Sin Respaldo
 
-* **Regla Inquebrantable:** Ninguna billetera, equipo, inversor o fundador puede recibir tokens ALPHA minteados sin un ingreso patrimonial previo o sin estar respaldados al 100% por la masa de colateral exógeno.
+* **Regla Inquebrantable:** Ninguna billetera, equipo, inversor o fundador puede recibir tokens VIRAJE minteados sin un ingreso patrimonial previo o sin estar respaldados al 100% por la masa de colateral exógeno.
 * **Mecanismo:** La acuñación solo existe cuando ingresa colateral real en la Tesorería valorado a precio oficial $NAV_{\text{spot}}$, o a través de bonos con descuento temporalmente bloqueados en [`VestedDiscountVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/VestedDiscountVault.sol).
 * **Asignación del Propietario / Fundador (Bóveda Dedicada de Vesting por Superávit):**
-  - La asignación inicial del creador (100,000 ALPHA) se encuentra custodiada en el contrato autónomo [`FounderReserveVestingVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/FounderReserveVestingVault.sol).
-  - **Exclusión del Suministro Circulante:** Los 100,000 ALPHA bloqueados **no computan como circulante libre** ni como pasivo exigible en el estado génesis (garantizando un inicio limpio con 0.00 ALPHA en circulación y NAV exacto de $1.0000 USD).
+  - La asignación inicial del creador (100,000 VIRAJE) se encuentra custodiada en el contrato autónomo [`FounderReserveVestingVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/FounderReserveVestingVault.sol).
+  - **Exclusión del Suministro Circulante:** Los 100,000 VIRAJE bloqueados **no computan como circulante libre** ni como pasivo exigible en el estado génesis (garantizando un inicio limpio con 0.00 VIRAJE en circulación y NAV exacto de $1.0000 USD).
   - **Desbloqueo Dinámico Condicionado a la Salud de Reservas:** La liberación de tokens no depende del transcurso ciego del tiempo, sino del superávit matemático real de la Tesorería ($\text{Solvencia} > 100.00\%$):
     $$\text{Superávit USD} = \max\left(0, \text{Total Activos USD} - \text{Total Pasivos USD}\right)$$
-  - **Límite de Reclamo (10% Máximo) y Cooldown:** En cada ciclo solo se puede reclamar hasta el 10% del superávit convertido a ALPHA a valor NAV oficial, imponiendo un enfriamiento estricto de 72 horas entre reclamos sucesivos.
-  - **Inmunidad de Reservas:** El reclamo transfiere exclusivamente tokens ALPHA custodiados en la bóveda hacia la billetera del fundador; **ningún activo de reserva (USDC/WBTC/WETH) es extraído ni tocado jamás**, asegurando que el propietario nunca pueda drenar el respaldo del protocolo.
+  - **Límite de Reclamo (10% Máximo) y Cooldown:** En cada ciclo solo se puede reclamar hasta el 10% del superávit convertido a VIRAJE a valor NAV oficial, imponiendo un enfriamiento estricto de 72 horas entre reclamos sucesivos.
+  - **Inmunidad de Reservas:** El reclamo transfiere exclusivamente tokens VIRAJE custodiados en la bóveda hacia la billetera del fundador; **ningún activo de reserva (USDC/WBTC/WETH) es extraído ni tocado jamás**, asegurando que el propietario nunca pueda drenar el respaldo del protocolo.
 
 ---
 
 ### 3. Invariante Deflacionario Incondicional (Quema Permanente)
 
 * **Staking:** El 50% de la comisión de entrada al pool de gobernanza (0.50% del total bloqueado) es destruido de forma irreversible en la dirección de quema `0x000000000000000000000000000000000000dEaD` mediante `_burn`.
-* **Ragequit de Bonos:** Al cancelar anticipadamente un bono vestado, el 100% de los tokens ALPHA en vesting no consolidados son destruidos de forma irreversible, reteniendo además una penalización del 15.00% en USDC que acrece el NAV de la Tesorería.
+* **Ragequit de Bonos:** Al cancelar anticipadamente un bono vestado, el 100% de los tokens VIRAJE en vesting no consolidados son destruidos de forma irreversible, reteniendo además una penalización del 15.00% en USDC que acrece el NAV de la Tesorería.
 
 ---
 
 ## 🌟 Visión General y Filosofía de Real Yield Descentralizado
 
-Alpha Centauri opera bajo un modelo estricto de **Real Yield Respaldado por Activos Exógenos y Proof of Reserves (PoR) en Tiempo Real**. Todos los tokens ALPHA emitidos cuentan con respaldo patrimonial verificable on-chain con un ratio de solvencia garantizado $\ge 100.00\%$. 
+Viraje Protocol opera bajo un modelo estricto de **Real Yield Respaldado por Activos Exógenos y Proof of Reserves (PoR) en Tiempo Real**. Todos los tokens VIRAJE emitidos cuentan con respaldo patrimonial verificable on-chain con un ratio de solvencia garantizado $\ge 100.00\%$. 
 
 Bajo la arquitectura **Pure DeFi (MiCA Exemption Recital 22)**, el protocolo es un bien público inmutable sin comisiones corporativas ni intermediarios centralizados.
 
@@ -61,8 +61,8 @@ Toda comisión generada por cualquier operativa del ecosistema (depósitos, resc
         │ 💎 Community Yield Vault    │                   │ 🏛️ Reservas de Tesorería    │
         │ (`CommunityYieldVault.sol`) │                   │ (`TreasuryManager.sol`)     │
         │ Distribuido en tiempo real  │                   │ Inyectado directamente al   │
-        │ como dividendos en USDC a   │                   │ `AlphaVault.sol`, elevando  │
-        │ los stakers de `stALPHA`.   │                   │ el $NAV_{\text{spot}}$ de ALPHA. │
+        │ como dividendos en USDC a   │                   │ `VirajeVault.sol`, elevando  │
+        │ los stakers de `stVIRAJE`.   │                   │ el $NAV_{\text{spot}}$ de VIRAJE. │
         └─────────────────────────────┘                   └─────────────────────────────┘
 ```
 
@@ -74,10 +74,10 @@ La Tesorería de [`TreasuryManager.sol`](file:///c:/Users/Admin/Desktop/token/co
 
 | Activo de Reserva | Ponderación Objetivo | Rango Permitido (Min - Max) | Estrategia de Custodia y Rendimiento | Oráculo de Precio |
 | :--- | :---: | :---: | :--- | :--- |
-| **💵 USDC / Stablecoins** | **50.00%** (5,000 BPS) | 40.00% - 60.00% | • **80-90% Bóvedas Morpho Blue** (rendimiento pasivo institucional de bajo riesgo).<br>• **10-20% Búfer Líquido de Tesorería** en `AlphaVault.sol`. | Chainlink `USDC/USD` |
-| **🪙 Wrapped Bitcoin (WBTC)** | **25.00%** (2,500 BPS) | 20.00% - 30.00% | Colateral duro de máxima solidez y reserva de valor exógena custodiada en `AlphaVault.sol`. | Chainlink `BTC/USD` |
-| **💎 Wrapped Ethereum (WETH)** | **12.50%** (1,250 BPS) | 10.00% - 15.00% | Colateral exógeno de alta liquidez e infraestructura base DeFi en `AlphaVault.sol`. | Chainlink `ETH/USD` |
-| **🏛️ Sub-Reserva ALPHA Staking (POL)** | **12.50%** (1,250 BPS) | 5.00% - 15.00% | Sub-reserva institucional de Protocol-Owned Liquidity (POL) auto-bloqueada en `GovernanceStaking.sol`. | Valorado a $NAV_{\text{spot}}$ oficial |
+| **💵 USDC / Stablecoins** | **50.00%** (5,000 BPS) | 40.00% - 60.00% | • **80-90% Bóvedas Morpho Blue** (rendimiento pasivo institucional de bajo riesgo).<br>• **10-20% Búfer Líquido de Tesorería** en `VirajeVault.sol`. | Chainlink `USDC/USD` |
+| **🪙 Wrapped Bitcoin (WBTC)** | **25.00%** (2,500 BPS) | 20.00% - 30.00% | Colateral duro de máxima solidez y reserva de valor exógena custodiada en `VirajeVault.sol`. | Chainlink `BTC/USD` |
+| **💎 Wrapped Ethereum (WETH)** | **12.50%** (1,250 BPS) | 10.00% - 15.00% | Colateral exógeno de alta liquidez e infraestructura base DeFi en `VirajeVault.sol`. | Chainlink `ETH/USD` |
+| **🏛️ Sub-Reserva VIRAJE Staking (POL)** | **12.50%** (1,250 BPS) | 5.00% - 15.00% | Sub-reserva institucional de Protocol-Owned Liquidity (POL) auto-bloqueada en `GovernanceStaking.sol`. | Valorado a $NAV_{\text{spot}}$ oficial |
 
 ---
 
@@ -91,7 +91,7 @@ function getStakingBreakdown() external view returns (StakingBreakdown memory br
     breakdown.communityVaultStaked = balanceOf(communityYieldVault) + govToken.balanceOf(communityYieldVault);
     
     // 2. Stake en Reservas de Tesorería (Protocol-Owned Staking)
-    breakdown.treasuryStaked = balanceOf(treasury) + balanceOf(alphaVault) + balanceOf(promoVault);
+    breakdown.treasuryStaked = balanceOf(treasury) + balanceOf(virajeVault) + balanceOf(promoVault);
     
     // 3. Stake de la Comunidad (Inversores y Usuarios Particulares)
     breakdown.communityStaked = totalStaked - (communityVaultStaked + treasuryStaked);
@@ -105,9 +105,9 @@ function getStakingBreakdown() external view returns (StakingBreakdown memory br
 
 | Nivel de Stake | Dueño On-Chain | Propósito / Beneficio |
 | :--- | :--- | :--- |
-| **👤 Stake Comunidad** | Usuarios e inversores individuales. | Bloqueo de ALPHA a cambio de `stALPHA` (Poder de voto DAO 1:1 + cobro continuo de dividendos de Real Yield en USDC). |
+| **👤 Stake Comunidad** | Usuarios e inversores individuales. | Bloqueo de VIRAJE a cambio de `stVIRAJE` (Poder de voto DAO 1:1 + cobro continuo de dividendos de Real Yield en USDC). |
 | **💎 Stake Bóveda Comunitaria** | [`CommunityYieldVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/CommunityYieldVault.sol) | Fondo comunitario nutrido con el 50% de las comisiones de entrada a staking (0.50% del depósito) para programas de incentivo futuros. |
-| **🏛️ Stake Reservas** | [`TreasuryManager.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/TreasuryManager.sol) / [`AlphaVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/AlphaVault.sol) | Sub-reserva institucional de Protocol-Owned Liquidity (POL) para proteger la gobernanza y canalizar rendimientos de vuelta al NAV. |
+| **🏛️ Stake Reservas** | [`TreasuryManager.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/TreasuryManager.sol) / [`VirajeVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/VirajeVault.sol) | Sub-reserva institucional de Protocol-Owned Liquidity (POL) para proteger la gobernanza y canalizar rendimientos de vuelta al NAV. |
 
 ---
 
@@ -115,17 +115,17 @@ function getStakingBreakdown() external view returns (StakingBreakdown memory br
 
 Al ingresar al pool de gobernanza [`GovernanceStaking.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/GovernanceStaking.sol#L240):
 
-$$\text{Comisión Entrada} = \text{Monto ALPHA} \times 1.00\%$$
+$$\text{Comisión Entrada} = \text{Monto VIRAJE} \times 1.00\%$$
 
-* **50% de la Comisión (0.50% Total):** Se envía a la dirección de quema `0x000...dEaD` (**Quema Definitiva e Irreversible**). Reduce el suministro global de ALPHA permanentemente.
+* **50% de la Comisión (0.50% Total):** Se envía a la dirección de quema `0x000...dEaD` (**Quema Definitiva e Irreversible**). Reduce el suministro global de VIRAJE permanentemente.
 * **50% de la Comisión (0.50% Total):** Se transfiere a [`CommunityYieldVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/CommunityYieldVault.sol) (**Fondo de Reserva Comunitario**).
-* **99.00% Restante:** Se bloquea en el contrato de staking y se acuñan participaciones `stALPHA` 1:1 para el usuario.
+* **99.00% Restante:** Se bloquea en el contrato de staking y se acuñan participaciones `stVIRAJE` 1:1 para el usuario.
 
 ---
 
 ## 🛡️ 5. Mecanismo de Emisión Anti-Dilución: Dynamic Slippage Fee (NAV Protection)
 
-Para proteger la masa patrimonial del protocolo y evitar arbitrajes por depósitos masivos de ballenas, la emisión de nuevos tokens ALPHA a valor NAV utiliza un algoritmo de Slippage Dinámico:
+Para proteger la masa patrimonial del protocolo y evitar arbitrajes por depósitos masivos de ballenas, la emisión de nuevos tokens VIRAJE a valor NAV utiliza un algoritmo de Slippage Dinámico:
 
 $$\text{DynamicFeeBps} = \min\left(\text{FeeBase} + \left(\frac{\text{MontoUSD} \times 10000}{\text{ReservasActuales} + \text{MontoUSD}}\right) \times \frac{\gamma}{10000},\; \text{CapMax}\right)$$
 
@@ -146,7 +146,7 @@ $$\text{DynamicFeeBps} = \min\left(\text{FeeBase} + \left(\frac{\text{MontoUSD} 
 | **Entrada a Staking** | [`GovernanceStaking.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/GovernanceStaking.sol) | 1.00% Fijo | 50% Quema Permanente / 50% Community Yield |
 | **Originación Préstamo P2P** | [`P2PLendingMarket.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/P2PLendingMarket.sol) | 0.50% Fijo | 50% Reservas (Accretion) / 50% Community Yield |
 | **Spread de Margen Préstamos** | [`P2PLendingMarket.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/P2PLendingMarket.sol) | 10.00% del Interés | 90% Acrecimiento Tesorería / 10% Community Yield |
-| **Penalización Ragequit Bonos** | [`VestedDiscountVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/VestedDiscountVault.sol) | 15.00% Principal USDC | 100% Inyección a Reservas + Quema 100% ALPHA no vestado |
+| **Penalización Ragequit Bonos** | [`VestedDiscountVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/VestedDiscountVault.sol) | 15.00% Principal USDC | 100% Inyección a Reservas + Quema 100% VIRAJE no vestado |
 
 ---
 
@@ -154,21 +154,21 @@ $$\text{DynamicFeeBps} = \min\left(\text{FeeBase} + \left(\frac{\text{MontoUSD} 
 
 Los bonos con descuento se emiten como NFTs de Posición ERC-721 ([`VaultPositionNFT.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/VaultPositionNFT.sol)):
 
-| Plazo de Bloqueo | Descuento Base | Bonus VIP ($\ge 5\text{k stALPHA}$) | Descuento Máximo Cap | Penalización Ragequit |
+| Plazo de Bloqueo | Descuento Base | Bonus VIP ($\ge 5\text{k stVIRAJE}$) | Descuento Máximo Cap | Penalización Ragequit |
 | :---: | :---: | :---: | :---: | :---: |
-| **1 Año** | 5.00% | +1.00% | 50.00% | 15.00% USDC + Quema 100% ALPHA no vestado |
-| **2 Años** | 10.00% | +2.00% | 50.00% | 15.00% USDC + Quema 100% ALPHA no vestado |
-| **3 Años** | 15.00% | +3.00% | 50.00% | 15.00% USDC + Quema 100% ALPHA no vestado |
-| **4 Años** | 20.00% | +3.00% | 50.00% | 15.00% USDC + Quema 100% ALPHA no vestado |
+| **1 Año** | 5.00% | +1.00% | 50.00% | 15.00% USDC + Quema 100% VIRAJE no vestado |
+| **2 Años** | 10.00% | +2.00% | 50.00% | 15.00% USDC + Quema 100% VIRAJE no vestado |
+| **3 Años** | 15.00% | +3.00% | 50.00% | 15.00% USDC + Quema 100% VIRAJE no vestado |
+| **4 Años** | 20.00% | +3.00% | 50.00% | 15.00% USDC + Quema 100% VIRAJE no vestado |
 
 ---
 
 ## 🤝 8. Préstamos P2P y Línea de Crédito de Tesorería (`P2PLendingMarket.sol`)
 
-* **LTV Máximo Permitido:** 70.00% para Position NFTs (ERC-721) / 50.00% para colaterales ALPHA líquidos.
+* **LTV Máximo Permitido:** 70.00% para Position NFTs (ERC-721) / 50.00% para colaterales VIRAJE líquidos.
 * **Umbral Mínimo de Liquidación (Health Factor):** 115.00% ($HF < 1.15 \rightarrow \text{Liquidación}$).
 * **Línea de Crédito Institucional:** Hasta un 20.00% del búfer de stablecoins de la Tesorería puede ser colocado en préstamos sobrecolateralizados devengando intereses continuos para el protocolo.
-* **Colaterales Aceptados:** NFTs de Posición, WBTC, WETH y tokens ALPHA.
+* **Colaterales Aceptados:** NFTs de Posición, WBTC, WETH y tokens VIRAJE.
 
 ---
 
@@ -178,25 +178,25 @@ El contrato [`TreasuryManager.sol`](file:///c:/Users/Admin/Desktop/token/contrac
 
 $$\text{Activos Totales Exógenos USD} = \text{USDC}_{\text{Vault}} + \text{Morpho}_{\text{Yield}} + (\text{WBTC} \times P_{\text{BTC}}) + (\text{WETH} \times P_{\text{ETH}}) + \text{DeudaP2P}_{\text{USD}}$$
 
-$$\text{Pasivos Totales USD} = (\text{Circulante Neto ALPHA} \times \text{NAV}) + \text{Pasivos Deuda Bonos Vestados USD}$$
+$$\text{Pasivos Totales USD} = (\text{Circulante Neto VIRAJE} \times \text{NAV}) + \text{Pasivos Deuda Bonos Vestados USD}$$
 
 $$\text{Ratio PoR} = \left(\frac{\text{Activos Totales Exógenos USD}}{\text{Pasivos Totales USD}}\right) \times 100 \ge \mathbf{100.00\%}$$
 
 ### Cálculo Institucional de Patrimonio Neto (Net Equity) y NAV por Acción
-Para evitar que los fondos pagados por la compra de bonos vestados inflen artificialmente el NAV de ALPHA (ya que representan deuda u obligaciones de pago futuras, no patrimonio libre), el protocolo descuenta la deuda antes de calcular el valor liquidativo:
+Para evitar que los fondos pagados por la compra de bonos vestados inflen artificialmente el NAV de VIRAJE (ya que representan deuda u obligaciones de pago futuras, no patrimonio libre), el protocolo descuenta la deuda antes de calcular el valor liquidativo:
 
 $$\text{Patrimonio Neto Libre (Net Equity USD)} = \max\left(0, \text{Activos Totales Exógenos USD} - \text{Pasivos Deuda Bonos Vestados USD}\right)$$
 
-$$\mathbf{\text{NAV Oficial por Share}} = \frac{\text{Patrimonio Neto Libre (Net Equity USD)}}{\text{Circulante Neto ALPHA}}$$
+$$\mathbf{\text{NAV Oficial por Share}} = \frac{\text{Patrimonio Neto Libre (Net Equity USD)}}{\text{Circulante Neto VIRAJE}}$$
 
-* **Blindaje contra Distorsión:** La emisión de un bono mantiene invariable el NAV spot de ALPHA.
-* **Acreción Orgánica Real:** El NAV de ALPHA solo se incrementa de forma genuina cuando las reservas generan rendimientos pasivos (Morpho Blue / RWA / spread P2P) o cuando se recaudan cuotas de protocolo.
+* **Blindaje contra Distorsión:** La emisión de un bono mantiene invariable el NAV spot de VIRAJE.
+* **Acreción Orgánica Real:** El NAV de VIRAJE solo se incrementa de forma genuina cuando las reservas generan rendimientos pasivos (Morpho Blue / RWA / spread P2P) o cuando se recaudan cuotas de protocolo.
 
 ---
 
 ## 🔥 10. Motor Autónomo de Recompra por Descuento (`DiscountBuybackEngine.sol`)
 
-Cuando el token $ALPHA$ cotiza en mercados secundarios (DEX) con un descuento significativo respecto a su $NAV_{\text{spot}}$, el protocolo activa recompras directas utilizando reservas líquidas exógenas y destruye los tokens adquiridos en la misma transacción:
+Cuando el token $VIRAJE$ cotiza en mercados secundarios (DEX) con un descuento significativo respecto a su $NAV_{\text{spot}}$, el protocolo activa recompras directas utilizando reservas líquidas exógenas y destruye los tokens adquiridos en la misma transacción:
 
 ### 10 Candados de Control Matemático Estricto:
 

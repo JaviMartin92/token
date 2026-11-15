@@ -66,10 +66,10 @@ const deployP2pStaking = fs.readFileSync('scripts/deploy_p2p_and_fix_staking.ts'
 
 console.log('\n--- VERIFICACIÓN CRUZADA DE ASIGNACIÓN DE ROLES ---');
 const requiredGrants = [
-  { role: 'MINTER_ROLE', on: 'AlphaToken', to: 'Treasury' },
-  { role: 'BURNER_ROLE', on: 'AlphaToken', to: 'Treasury' },
-  { role: 'VAULT_MANAGER_ROLE', on: 'AlphaVault', to: 'Treasury' },
-  { role: 'VAULT_MANAGER_ROLE', on: 'AlphaVault', to: 'DiscountBuybackEngine' },
+  { role: 'MINTER_ROLE', on: 'VirajeToken', to: 'Treasury' },
+  { role: 'BURNER_ROLE', on: 'VirajeToken', to: 'Treasury' },
+  { role: 'VAULT_MANAGER_ROLE', on: 'VirajeVault', to: 'Treasury' },
+  { role: 'VAULT_MANAGER_ROLE', on: 'VirajeVault', to: 'DiscountBuybackEngine' },
   { role: 'BURNER_ROLE', on: 'Treasury', to: 'GovernanceStaking' },
   { role: 'BURNER_ROLE', on: 'Treasury', to: 'DiscountBuybackEngine' },
   { role: 'MINTER_ROLE', on: 'VaultPositionNFT', to: 'VestedDiscountVault' },

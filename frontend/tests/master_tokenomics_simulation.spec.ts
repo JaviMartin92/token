@@ -81,7 +81,7 @@ async function generateAndPrintStepReport(page: Page, stepIndex: string | number
         'por-row-usdc-val',
         'por-row-wbtc-val',
         'por-row-weth-val',
-        'por-row-alpha-val',
+        'por-row-viraje-val',
         'treasury-faucet-btn',
         'treasury-audit-btn'
       ]
@@ -95,7 +95,7 @@ async function generateAndPrintStepReport(page: Page, stepIndex: string | number
         'treasury-deposit-btn',
         'treasury-redeem-input',
         'treasury-redeem-btn',
-        'staking-stalpha-balance',
+        'staking-stviraje-balance',
         'staking-real-yield',
         'staking-total-burned',
         'staking-circulating-supply',
@@ -155,7 +155,7 @@ async function generateAndPrintStepReport(page: Page, stepIndex: string | number
         'admin-weight-usdc-input',
         'admin-weight-wbtc-input',
         'admin-weight-weth-input',
-        'admin-weight-alpha-input',
+        'admin-weight-viraje-input',
         'admin-rebalance-btn',
         'admin-reset-governance-btn',
         'admin-twap-amount-input',
@@ -199,7 +199,7 @@ async function generateAndPrintStepReport(page: Page, stepIndex: string | number
 interface UiState {
   // Wallet Balances & Core Metrics
   usdcBalance: number;
-  alphaShares: number;
+  virajeShares: number;
   stakedBalance: number;
   claimableYield: number;
   porRatio: number;
@@ -223,7 +223,7 @@ interface UiState {
   porRowUsdcVal: number;
   porRowWbtcVal: number;
   porRowWethVal: number;
-  porRowAlphaVal: number;
+  porRowVirajeVal: number;
 
   // Escrow & Lending Metrics
   escrowTotalLent: number;
@@ -251,8 +251,8 @@ async function readCurrentUiState(page: Page): Promise<UiState> {
   const map = await extractAllTestIdValues(page);
 
   const usdcBalance = parseUiValue(map['treasury-usdc-balance'] || '');
-  const alphaShares = parseUiValue(map['treasury-shares-balance'] || '');
-  const stakedBalance = parseUiValue(map['staking-stalpha-balance'] || '');
+  const virajeShares = parseUiValue(map['treasury-shares-balance'] || '');
+  const stakedBalance = parseUiValue(map['staking-stviraje-balance'] || '');
   const claimableYield = parseUiValue(map['staking-real-yield'] || '');
   const totalBurned = parseUiValue(map['staking-total-burned'] || '');
 
@@ -262,7 +262,7 @@ async function readCurrentUiState(page: Page): Promise<UiState> {
 
   return {
     usdcBalance,
-    alphaShares,
+    virajeShares,
     stakedBalance,
     claimableYield,
     porRatio,
@@ -283,7 +283,7 @@ async function readCurrentUiState(page: Page): Promise<UiState> {
     porRowUsdcVal: parseUiValue(map['por-row-usdc-val'] || ''),
     porRowWbtcVal: parseUiValue(map['por-row-wbtc-val'] || ''),
     porRowWethVal: parseUiValue(map['por-row-weth-val'] || ''),
-    porRowAlphaVal: parseUiValue(map['por-row-alpha-val'] || ''),
+    porRowVirajeVal: parseUiValue(map['por-row-viraje-val'] || ''),
 
     escrowTotalLent: parseUiValue(map['escrow-total-lent'] || ''),
     escrowTotalCollateral: parseUiValue(map['escrow-total-collateral'] || ''),
@@ -331,23 +331,23 @@ async function auditUiDeltas(page: Page, stepIndex: string | number, stepName: s
   }
 
   if (expectedDeltas.sharesDelta !== undefined) {
-    const expectedShares = baseline.alphaShares + expectedDeltas.sharesDelta;
-    assertStrictMetric(current.alphaShares, expectedShares, `${stepName} - Saldo ALPHA Shares`);
+    const expectedShares = baseline.virajeShares + expectedDeltas.sharesDelta;
+    assertStrictMetric(current.virajeShares, expectedShares, `${stepName} - Saldo VIRAJE Shares`);
   }
 
   if (expectedDeltas.stakedDelta !== undefined) {
     const expectedStaked = baseline.stakedBalance + expectedDeltas.stakedDelta;
-    assertStrictMetric(current.stakedBalance, expectedStaked, `${stepName} - Tu Staking (stALPHA)`);
+    assertStrictMetric(current.stakedBalance, expectedStaked, `${stepName} - Tu Staking (stVIRAJE)`);
   }
 
   if (expectedDeltas.burnedDelta !== undefined) {
     const expectedBurned = baseline.totalBurned + expectedDeltas.burnedDelta;
-    assertStrictMetric(current.totalBurned, expectedBurned, `${stepName} - Total Quemados (ALPHA)`);
+    assertStrictMetric(current.totalBurned, expectedBurned, `${stepName} - Total Quemados (VIRAJE)`);
   }
 
   if (expectedDeltas.corpStakedDelta !== undefined) {
     const expectedCorp = baseline.corporateStaked + expectedDeltas.corpStakedDelta;
-    assertStrictMetric(current.corporateStaked, expectedCorp, `${stepName} - Stake Bóvedas Corporativas (stALPHA)`);
+    assertStrictMetric(current.corporateStaked, expectedCorp, `${stepName} - Stake Bóvedas Corporativas (stVIRAJE)`);
   }
 
   if (expectedDeltas.minPor !== undefined) {
@@ -410,7 +410,7 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
     });
 
     // -------------------------------------------------------------------------
-    // PASO 3: DEPÓSITO DE $5,000 USDC (-5,000 USDC -> +4,975 ALPHA con 0.50% Mint Fee)
+    // PASO 3: DEPÓSITO DE $5,000 USDC (-5,000 USDC -> +4,975 VIRAJE con 0.50% Mint Fee)
     // -------------------------------------------------------------------------
     const depositInput = page.locator('[data-testid="treasury-deposit-input"]');
     await depositInput.fill('5000');
@@ -429,10 +429,10 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
       minPor: 99.9
     });
 
-    expect(statePostDeposit.alphaShares).toBeGreaterThan(0);
+    expect(statePostDeposit.virajeShares).toBeGreaterThan(0);
 
     // -------------------------------------------------------------------------
-    // PASO 4: STAKING DE 3,000 ALPHA (SNAPSHOT EXACTO EN PRE-STAKE)
+    // PASO 4: STAKING DE 3,000 VIRAJE (SNAPSHOT EXACTO EN PRE-STAKE)
     // -------------------------------------------------------------------------
     const statePreStake = await readCurrentUiState(page);
 
@@ -444,7 +444,7 @@ test.describe('Master Tokenomics Exhaustive E2E Simulation (0.1% Strict Audit)',
     await stakeBtn.scrollIntoViewIfNeeded();
     await stakeBtn.click();
 
-    const stakeModal = page.locator('text=Bloquear Tokens ALPHA en Staking de Gobernanza').first();
+    const stakeModal = page.locator('text=Bloquear Tokens VIRAJE en Staking de Gobernanza').first();
     await expect(stakeModal).toBeVisible({ timeout: 10000 });
     const confirmStakeBtn = page.locator('[data-testid="modal-confirm-btn"]').first();
     await confirmStakeBtn.click({ force: true });

@@ -81,7 +81,7 @@ const ROUTER_ABI = [
     { name: 'payoutAmount', type: 'uint256' },
     { name: 'wbtcPaid', type: 'uint256' },
     { name: 'wethPaid', type: 'uint256' },
-    { name: 'alphaPaid', type: 'uint256' }
+    { name: 'virajePaid', type: 'uint256' }
   ] },
   { name: 'notifyYield', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'amount', type: 'uint256' }], outputs: [] }
 ] as const;
@@ -105,9 +105,9 @@ interface MonthlyStats {
   assetsUsd: number;
   liabilitiesUsd: number;
   porRatioPct: number;
-  circulatingAlpha: number;
-  stakedAlpha: number;
-  burnedAlpha: number;
+  circulatingViraje: number;
+  stakedViraje: number;
+  burnedViraje: number;
   activeP2PLoans: number;
 }
 
@@ -123,7 +123,7 @@ async function main() {
   const maxApproval = 1000000000000000000000000000000000n;
 
   for (let i = 0; i < NUM_USERS; i++) {
-    const seed = keccak256(toHex(`alpha_horizon_user_${i}_v2_optimized`));
+    const seed = keccak256(toHex(`viraje_horizon_user_${i}_v2_optimized`));
     const acc = privateKeyToAccount(seed);
     const w = createWalletClient({ account: acc, transport: http(ANVIL_URL) });
     users.push({ id: i, account: acc, wallet: w, address: acc.address });
@@ -143,8 +143,8 @@ async function main() {
     await u.wallet.writeContract({ address: contracts.USDC as `0x${string}`, abi: ERC20_ABI, functionName: 'approve', args: [contracts.TREASURY as `0x${string}`, maxApproval] });
     await u.wallet.writeContract({ address: contracts.USDC as `0x${string}`, abi: ERC20_ABI, functionName: 'approve', args: [contracts.VESTED_VAULT as `0x${string}`, maxApproval] });
     await u.wallet.writeContract({ address: contracts.USDC as `0x${string}`, abi: ERC20_ABI, functionName: 'approve', args: [contracts.P2P_MARKET as `0x${string}`, maxApproval] });
-    await u.wallet.writeContract({ address: contracts.ALPHA_TOKEN as `0x${string}`, abi: ERC20_ABI, functionName: 'approve', args: [contracts.STAKING as `0x${string}`, maxApproval] });
-    await u.wallet.writeContract({ address: contracts.ALPHA_TOKEN as `0x${string}`, abi: ERC20_ABI, functionName: 'approve', args: [contracts.TREASURY as `0x${string}`, maxApproval] });
+    await u.wallet.writeContract({ address: contracts.VIRAJE_TOKEN as `0x${string}`, abi: ERC20_ABI, functionName: 'approve', args: [contracts.STAKING as `0x${string}`, maxApproval] });
+    await u.wallet.writeContract({ address: contracts.VIRAJE_TOKEN as `0x${string}`, abi: ERC20_ABI, functionName: 'approve', args: [contracts.TREASURY as `0x${string}`, maxApproval] });
     await u.wallet.writeContract({ address: contracts.POSITION_NFT as `0x${string}`, abi: POSITION_NFT_ABI, functionName: 'setApprovalForAll', args: [contracts.P2P_MARKET as `0x${string}`, true] });
   }
   console.log(`[✔] Pre-funded ${NUM_USERS} accounts with universal protocol approvals.`);
@@ -184,12 +184,12 @@ async function main() {
       } catch (err: any) {}
     }
 
-    // --- 2. Governance Staking (Staking 85% of newly minted ALPHA) ---
+    // --- 2. Governance Staking (Staking 85% of newly minted VIRAJE) ---
     for (let i = 0; i < users.length; i++) {
       const u = users[i];
       try {
         const bal = await client.readContract({
-          address: contracts.ALPHA_TOKEN as `0x${string}`,
+          address: contracts.VIRAJE_TOKEN as `0x${string}`,
           abi: ERC20_ABI,
           functionName: 'balanceOf',
           args: [u.address]
@@ -326,7 +326,7 @@ async function main() {
       const u = users[i + 2];
       try {
         const bal = await client.readContract({
-          address: contracts.ALPHA_TOKEN as `0x${string}`,
+          address: contracts.VIRAJE_TOKEN as `0x${string}`,
           abi: ERC20_ABI,
           functionName: 'balanceOf',
           args: [u.address]
@@ -375,7 +375,7 @@ async function main() {
         address: contracts.USDC as `0x${string}`,
         abi: ERC20_ABI,
         functionName: 'mint',
-        args: [contracts.ALPHA_VAULT as `0x${string}`, monthlyYieldUsdc]
+        args: [contracts.VIRAJE_VAULT as `0x${string}`, monthlyYieldUsdc]
       });
       await operatorWallet.writeContract({
         address: contracts.USDC as `0x${string}`,
@@ -461,15 +461,15 @@ async function main() {
       assetsUsd,
       liabilitiesUsd,
       porRatioPct: porRatio,
-      circulatingAlpha: circSharesVal,
-      stakedAlpha: stakedVal,
-      burnedAlpha: burnedVal,
+      circulatingViraje: circSharesVal,
+      stakedViraje: stakedVal,
+      burnedViraje: burnedVal,
       activeP2PLoans: activeLoans
     };
     allMonthlyStats.push(stats);
 
     const durationSec = ((Date.now() - epochStart) / 1000).toFixed(1);
-    console.log(`📅 Month ${month}/12 finished in ${durationSec}s | Txs: ${monthlyTx} | NAV: $${navVal.toFixed(4)} | Assets: $${assetsUsd.toLocaleString('en-US', { maximumFractionDigits: 0 })} | PoR: ${porRatio.toFixed(2)}% | Circulating: ${circSharesVal.toLocaleString('en-US', { maximumFractionDigits: 0 })} ALPHA`);
+    console.log(`📅 Month ${month}/12 finished in ${durationSec}s | Txs: ${monthlyTx} | NAV: $${navVal.toFixed(4)} | Assets: $${assetsUsd.toLocaleString('en-US', { maximumFractionDigits: 0 })} | PoR: ${porRatio.toFixed(2)}% | Circulating: ${circSharesVal.toLocaleString('en-US', { maximumFractionDigits: 0 })} VIRAJE`);
   }
 
   // Final Audit Call
@@ -511,10 +511,10 @@ async function main() {
   console.log(`Gross Exogenous Assets    : $${fAssets.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD`);
   console.log(`Bond Present Debt (Liab)  : $${fVestedDebt.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD`);
   console.log(`Net Protocol Equity       : $${fNetEquity.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD`);
-  console.log(`Net Circulating Supply    : ${fCirc.toLocaleString('en-US', { minimumFractionDigits: 2 })} ALPHA`);
+  console.log(`Net Circulating Supply    : ${fCirc.toLocaleString('en-US', { minimumFractionDigits: 2 })} VIRAJE`);
   console.log(`Final NAV Per Share       : $${fNav.toFixed(4)} USDC (+${((fNav - 1.0) * 100).toFixed(2)}% APY)`);
   console.log(`Solvency Ratio (PoR)      : ${fPoR.toFixed(2)}% (Backing 1:1 Guaranteed)`);
-  console.log(`Total Burned Tokens       : ${fBurn.toLocaleString('en-US', { minimumFractionDigits: 3 })} ALPHA`);
+  console.log(`Total Burned Tokens       : ${fBurn.toLocaleString('en-US', { minimumFractionDigits: 3 })} VIRAJE`);
   console.log(`Active P2P Loans in Book  : ${fActiveLoans} active loans ($${fP2PVolume.toLocaleString()} USD volume)`);
   console.log(`======================================================\n`);
 

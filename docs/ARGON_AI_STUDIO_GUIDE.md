@@ -1,5 +1,5 @@
 # 📘 MANUAL DE EJECUCIÓN INSTITUCIONAL EN GOOGLE AI STUDIO (ARGON GUIDE)
-> **ALPHA CENTAURI PROTOCOL — V6.2.0 (AUDIT-READY / PURE DEFI)**  
+> **Viraje Protocol — V6.2.0 (AUDIT-READY / PURE DEFI)**  
 > **Destinatario Principal:** Agente de IA **Argon** (Gemini) en el entorno Cloud Sandbox de **Google AI Studio**.  
 > **Propósito:** Proporcionar una guía técnica determinista, exhaustiva y libre de dependencias de Docker o Windows para compilar, desplegar, probar y servir el protocolo en entornos Linux Cloud.
 
@@ -19,9 +19,9 @@
 
 ## 🏛️ 1. Resumen Ejecutivo & Contexto de Argon
 
-El **Protocolo Alpha Centauri** es una infraestructura DeFi institucional con 26 Smart Contracts en Solidity, un frontend en React/Vite/Viem, un orquestador de despliegue en TypeScript y un marco de pruebas autónomas con agentes de IA.
+El **Protocolo Viraje Protocol** es una infraestructura DeFi institucional con 26 Smart Contracts en Solidity, un frontend en React/Vite/Viem, un orquestador de despliegue en TypeScript y un marco de pruebas autónomas con agentes de IA.
 
-En entornos de desarrollo locales en Windows, el proyecto utiliza Docker Desktop (`alpha-anvil` y `alpha-frontend`) y scripts PowerShell (`start_app.ps1`). Sin embargo, **Google AI Studio** opera dentro de contenedores sandbox Linux ligeros y no privilegiados donde:
+En entornos de desarrollo locales en Windows, el proyecto utiliza Docker Desktop (`viraje-anvil` y `viraje-frontend`) y scripts PowerShell (`start_app.ps1`). Sin embargo, **Google AI Studio** opera dentro de contenedores sandbox Linux ligeros y no privilegiados donde:
 - **No hay demonio de Docker** (`/var/run/docker.sock` no está disponible).
 - **No se pueden ejecutar scripts `.ps1` ni `.bat` de Windows**.
 - **Foundry (Anvil/Forge) no viene preinstalado en el PATH**.
@@ -70,7 +70,7 @@ A continuación se detallan los 8 errores más frecuentes al abrir el proyecto e
 
 ### ❌ Causa 7: Ausencia de Extensión Web3 (MetaMask) en el navegador del Sandbox
 * **Por qué ocurre:** Los visores embebidos de Google AI Studio son navegadores aislados que carecen de extensiones instaladas. Si la dApp requiere MetaMask obligatoriamente, se queda bloqueada en "Connect Wallet".
-* **Solución:** El frontend de Alpha Centauri incluye un **Mock EIP-1193 Integrado** ([`frontend/tests/helpers/eip1193.ts`](file:///c:/Users/javil/Desktop/token/frontend/tests/helpers/eip1193.ts)). El bundle de sandbox (`npm run build:sandbox`) activa automáticamente el modo de demostración con 10,000.00 USDC precargados, permitiendo probar toda la funcionalidad sin extensiones externas.
+* **Solución:** El frontend de Viraje Protocol incluye un **Mock EIP-1193 Integrado** ([`frontend/tests/helpers/eip1193.ts`](file:///c:/Users/javil/Desktop/token/frontend/tests/helpers/eip1193.ts)). El bundle de sandbox (`npm run build:sandbox`) activa automáticamente el modo de demostración con 10,000.00 USDC precargados, permitiendo probar toda la funcionalidad sin extensiones externas.
 
 ### ❌ Causa 8: Playwright faltante en Linux Headless (`Executable doesn't exist`)
 * **Por qué ocurre:** Playwright requiere binarios de navegador compilados para la arquitectura del sistema operativo.
@@ -101,7 +101,7 @@ npm run start:linux
 4. **Lanza Anvil en segundo plano:** Inicia el nodo local en `0.0.0.0:8545` con Chain ID `31337` y límite de tamaño de código ampliado a 120,000 bytes.
 5. **Genera Prisma Client:** Construye los esquemas de bases de datos de auditoría en `services/`.
 6. **Compila Smart Contracts:** Ejecuta `forge build --extra-output-files abi` generando ABIs y bytecodes en `contracts/out`.
-7. **Despliega los 26 Smart Contracts:** Ejecuta [`services/core/src/deploy.ts`](file:///c:/Users/javil/Desktop/token/services/core/src/deploy.ts) inicializando la Tesorería, los oráculos, el mercado P2P, los bonos vPOS, el Timelock 72h, acuñando los 100,000 ALPHA bloqueados en `FounderReserveVestingVault` y pre-fondeando 10,000 USDC.
+7. **Despliega los 26 Smart Contracts:** Ejecuta [`services/core/src/deploy.ts`](file:///c:/Users/javil/Desktop/token/services/core/src/deploy.ts) inicializando la Tesorería, los oráculos, el mercado P2P, los bonos vPOS, el Timelock 72h, acuñando los 100,000 VIRAJE bloqueados en `FounderReserveVestingVault` y pre-fondeando 10,000 USDC.
 8. **Compila y Sirve el Frontend:** Genera el bundle de producción Web3 y arranca el servidor en `http://0.0.0.0:5173` con proxy RPC `/rpc` transparente hacia Anvil.
 
 ---
@@ -178,7 +178,7 @@ Google AI Studio proporciona vistas previas web mediante túneles inversos HTTPS
 2. **Sin Bloqueos de Contenido Mixto:**
    Gracias a `/rpc`, el navegador nunca intenta conectarse directamente al puerto `8545` sobre HTTP no seguro desde un contexto HTTPS.
 3. **Persistencia de Estado Génesis:**
-   Cada vez que se reinicia Anvil, el protocolo regresa a **Estado 0 Puro** ($0.00 ALPHA en circulación, NAV exacto de $1.0000 USD, 100,000 ALPHA bloqueados en vesting). El servidor static emite cabeceras HTTP `Cache-Control: no-store` para evitar que el navegador almacene en caché estados obsoletos.
+   Cada vez que se reinicia Anvil, el protocolo regresa a **Estado 0 Puro** ($0.00 VIRAJE en circulación, NAV exacto de $1.0000 USD, 100,000 VIRAJE bloqueados en vesting). El servidor static emite cabeceras HTTP `Cache-Control: no-store` para evitar que el navegador almacene en caché estados obsoletos.
 
 ---
 
@@ -248,7 +248,7 @@ Argon **DEBE** adherirse estrictamente a las siguientes directivas institucional
 4. **FORMATO DE ENLACES A ARCHIVOS:**
    - Todos los enlaces a archivos del proyecto deben formatearse con enlaces clicables estilo Markdown con prefijo `file:///` (ejemplo: [`README.md`](file:///c:/Users/javil/Desktop/token/README.md)).
 5. **ESTADO GÉNESIS LIMPIO:**
-   - Al desplegar en Anvil, certificar que el suministro circulante de $ALPHA$ sea exactamente **0.00** y que los 100,000 ALPHA iniciales estén bloqueados en [`FounderReserveVestingVault.sol`](file:///c:/Users/javil/Desktop/token/contracts/src/FounderReserveVestingVault.sol).
+   - Al desplegar en Anvil, certificar que el suministro circulante de $VIRAJE$ sea exactamente **0.00** y que los 100,000 VIRAJE iniciales estén bloqueados en [`FounderReserveVestingVault.sol`](file:///c:/Users/javil/Desktop/token/contracts/src/FounderReserveVestingVault.sol).
 
 ---
-*Manual verificado y certificado para el entorno Google AI Studio / Argon. Alpha Centauri Protocol Core Engineering.*
+*Manual verificado y certificado para el entorno Google AI Studio / Argon. Viraje Protocol Core Engineering.*

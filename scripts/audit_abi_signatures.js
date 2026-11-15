@@ -15,8 +15,8 @@ const web3Content = fs.readFileSync('frontend/src/utils/web3.ts', 'utf8');
 
 const contractMap = {
   TREASURY: 'TreasuryManager',
-  ALPHA_TOKEN: 'AlphaToken',
-  ALPHA_VAULT: 'AlphaVault',
+  VIRAJE_TOKEN: 'VirajeToken',
+  VIRAJE_VAULT: 'VirajeVault',
   ORACLE_HUB: 'OracleHub',
   CIRCUIT_BREAKER: 'CircuitBreaker',
   POSITION_NFT: 'VaultPositionNFT',
@@ -29,7 +29,7 @@ const contractMap = {
   DISCOUNT_BUYBACK_ENGINE: 'DiscountBuybackEngine',
   FOUNDER_VESTING_VAULT: 'FounderReserveVestingVault',
   POST_QUANTUM_GUARD: 'PostQuantumGuard',
-  GOVERNOR: 'GovernorAlphaCentauri',
+  GOVERNOR: 'GovernorViraje',
   DYNAMIC_YIELD_ORACLE: 'DynamicYieldOracleRouter'
 };
 

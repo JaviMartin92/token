@@ -16,7 +16,7 @@ import "./interfaces/ITreasury.sol";
 
 /**
  * @title TreasuryReserveManager
- * @author Alpha Centauri Architecture Team
+ * @author Viraje Protocol Architecture Team
  * @notice Production Reserve Execution Manager connecting Treasury to:
  *         1. 1inch V5 Aggregator for zero-slippage / lowest fee DEX swaps (USDC -> WBTC / WETH).
  *         2. Lido wstETH for Liquid Ethereum Staking.
@@ -28,7 +28,7 @@ contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     address public treasury;
-    address public alphaVault;
+    address public virajeVault;
     address public usdcToken;
     address public wbtcToken;
     address public wethToken;
@@ -44,7 +44,12 @@ contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
     uint256 public totalRebalancedVolume;
     uint256 public lastProductionRebalanceTimestamp;
 
+    function virajeVault() external view returns (address) {
+        return virajeVault;
+    }
+
     // --- Events ---
+    event VirajeVaultUpdated(address indexed oldVault, address indexed newVault);
     event AlphaVaultUpdated(address indexed oldVault, address indexed newVault);
     event ProductionRebalanceExecuted(
         uint256 totalUsdcAllocated, uint256 liquidLoansPool, uint256 morphoVaultDeposit, uint256 timestamp
@@ -105,22 +110,30 @@ contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
     }
 
     /**
-     * @notice Configures the canonical AlphaVault custody address
+     * @notice Configures the canonical VirajeVault custody address
      */
-    function setAlphaVault(address _alphaVault) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_alphaVault == address(0)) revert IProtocolErrors.ZeroAddress();
-        address old = alphaVault;
-        alphaVault = _alphaVault;
-        emit AlphaVaultUpdated(old, _alphaVault);
+    function setVirajeVault(address _virajeVault) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_virajeVault == address(0)) revert IProtocolErrors.ZeroAddress();
+        address old = virajeVault;
+        virajeVault = _virajeVault;
+        emit VirajeVaultUpdated(old, _virajeVault);
+        emit AlphaVaultUpdated(old, _virajeVault);
+    }
+
+    function setAlphaVault(address _virajeVault) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        setVirajeVault(_virajeVault);
     }
 
     /**
      * @notice Returns target custody vault address
      */
     function getTargetVault() public view returns (address) {
-        if (alphaVault != address(0)) return alphaVault;
+        if (virajeVault != address(0)) return virajeVault;
         if (treasury != address(0) && treasury.code.length > 0) {
-            try ITreasury(treasury).alphaVault() returns (address av) {
+            try ITreasury(treasury).virajeVault() returns (address av) {
+                if (av != address(0)) return av;
+            } catch {}
+            try ITreasury(treasury).virajeVault() returns (address av) {
                 if (av != address(0)) return av;
             } catch {}
         }
@@ -143,35 +156,35 @@ contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
     /**
      * @notice Executes 1-click production rebalance allocating to a specified vault address
      */
-    function executeProductionRebalance(uint256 usdcAmount, address targetAlphaVault)
+    function executeProductionRebalance(uint256 usdcAmount, address targetVault)
         public
         onlyRole(DEFAULT_ADMIN_ROLE)
         nonReentrant
         returns (bool)
     {
         if (usdcAmount == 0) revert IProtocolErrors.ZeroAmount();
-        if (targetAlphaVault == address(0)) revert IProtocolErrors.ZeroAddress();
+        if (targetVault == address(0)) revert IProtocolErrors.ZeroAddress();
 
         IERC20(usdcToken).safeTransferFrom(msg.sender, address(this), usdcAmount);
 
         uint256 liquidReserve10 = (usdcAmount * 1000) / 10000; // 10%
         uint256 morphoVault90 = usdcAmount - liquidReserve10; // 90%
 
-        // Send 10% to AlphaVault for liquid buffer / P2P reserve line
-        IERC20(usdcToken).safeTransfer(targetAlphaVault, liquidReserve10);
+        // Send 10% to VirajeVault for liquid buffer / P2P reserve line
+        IERC20(usdcToken).safeTransfer(targetVault, liquidReserve10);
 
-        // Deposit 90% to Morpho Blue Vault if configured, minting shares to AlphaVault
+        // Deposit 90% to Morpho Blue Vault if configured, minting shares to VirajeVault
         if (morphoUsdcVault != address(0) && morphoUsdcVault.code.length > 0) {
             IERC20(usdcToken).safeApprove(morphoUsdcVault, 0);
             IERC20(usdcToken).safeApprove(morphoUsdcVault, morphoVault90);
-            try IMorphoVault(morphoUsdcVault).deposit(morphoVault90, targetAlphaVault) {
+            try IMorphoVault(morphoUsdcVault).deposit(morphoVault90, targetVault) {
                 // Morpho deposit successful
             } catch {
-                // Fallback: safe transfer to targetAlphaVault on vault error
-                IERC20(usdcToken).safeTransfer(targetAlphaVault, morphoVault90);
+                // Fallback: safe transfer to targetVault on vault error
+                IERC20(usdcToken).safeTransfer(targetVault, morphoVault90);
             }
         } else {
-            IERC20(usdcToken).safeTransfer(targetAlphaVault, morphoVault90);
+            IERC20(usdcToken).safeTransfer(targetVault, morphoVault90);
         }
 
         totalRebalancedVolume += usdcAmount;

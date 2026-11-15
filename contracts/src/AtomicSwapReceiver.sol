@@ -121,7 +121,7 @@ contract AtomicSwapReceiver is IAtomicSwapReceiver, AccessControl, ReentrancyGua
      * @notice Receives USDT from a user and atomically swaps it to USDC, then deposits into Treasury.
      * @param usdtAmount The amount of USDT being deposited.
      * @param minUsdcExpected Minimum USDC expected from Uniswap swap.
-     * @param minSharesOut Minimum ALPHA shares expected from Treasury deposit.
+     * @param minSharesOut Minimum VIRAJE shares expected from Treasury deposit.
      */
     function depositUSDT(uint256 usdtAmount, uint256 minUsdcExpected, uint256 minSharesOut)
         public
@@ -169,7 +169,7 @@ contract AtomicSwapReceiver is IAtomicSwapReceiver, AccessControl, ReentrancyGua
         // 4. Execute atomic swap on Uniswap V3
         usdcDeposited = ISwapRouter(swapRouter).exactInputSingle(params);
 
-        // 5. Transfer resulting USDC to Treasury & mint ALPHA to depositor
+        // 5. Transfer resulting USDC to Treasury & mint VIRAJE to depositor
         IERC20(usdcToken).safeApprove(treasury, 0);
         IERC20(usdcToken).safeApprove(treasury, usdcDeposited);
         ITreasury(treasury).depositFor(msg.sender, usdcDeposited, minSharesOut);

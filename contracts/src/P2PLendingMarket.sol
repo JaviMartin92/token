@@ -48,7 +48,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
     address public priceFeed; // Price feed for collateral/health factor valuation
     address public treasury; // Treasury contract address for protocol reserve repayments
     address public tokenomicsEngine;
-    address public alphaToken;
+    address public virajeToken;
     address public wbtcToken;
     address public wethToken;
 
@@ -61,17 +61,17 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
     uint256 public bondCollateralHaircutBps = 5000;
     /// @notice Valuation floor used to refund liquidation surplus to the borrower.
     uint256 public bondLiquidationFloorBps = 8500;
-    /// @notice Haircut applied to ALPHA collateral (a direct NAV claim on the treasury).
-    uint256 public alphaCollateralHaircutBps = 5000;
+    /// @notice Haircut applied to VIRAJE collateral (a direct NAV claim on the treasury).
+    uint256 public virajeCollateralHaircutBps = 5000;
     /// @notice Maximum share of the treasury credit facility that may be collateralised by
-    ///         reflexive assets (bond NFTs + ALPHA), in BPS of the facility limit.
+    ///         reflexive assets (bond NFTs + VIRAJE), in BPS of the facility limit.
     uint256 public circularCollateralCapBps = 2500; // 25% of the 20% facility = 5% of reserves
     /// @notice Treasury-funded debt currently collateralised by reflexive assets.
     uint256 public treasuryCircularDebtUSD;
     uint256 public constant MAX_COLLATERAL_HAIRCUT_BPS = 10000;
 
     event TokenomicsEngineUpdated(address oldEngine, address newEngine);
-    event AlphaTokenUpdated(address oldToken, address newToken);
+    event VirajeTokenUpdated(address oldToken, address newToken);
     event WbtcTokenUpdated(address oldToken, address newToken);
     event WethTokenUpdated(address oldToken, address newToken);
     event FeeCollectorUpdated(address oldCollector, address newCollector);
@@ -82,7 +82,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
     event CollateralHaircutsUpdated(
         uint256 bondCollateralHaircutBps,
         uint256 bondLiquidationFloorBps,
-        uint256 alphaCollateralHaircutBps,
+        uint256 virajeCollateralHaircutBps,
         uint256 circularCollateralCapBps
     );
 
@@ -93,12 +93,17 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         emit TokenomicsEngineUpdated(old, _tokenomicsEngine);
     }
 
-    function setAlphaToken(address _alphaToken) external onlyOwner {
-        if (_alphaToken == address(0)) revert IProtocolErrors.ZeroAddress();
-        address old = alphaToken;
-        alphaToken = _alphaToken;
-        emit AlphaTokenUpdated(old, _alphaToken);
+    function setVirajeToken(address _virajeToken) public onlyOwner {
+        if (_virajeToken == address(0)) revert IProtocolErrors.ZeroAddress();
+        address old = virajeToken;
+        virajeToken = _virajeToken;
+        emit VirajeTokenUpdated(old, _virajeToken);
     }
+
+    // Backward-compatible aliases
+    function virajeToken() external view returns (address) { return virajeToken; }
+    function virajeCollateralHaircutBps() external view returns (uint256) { return virajeCollateralHaircutBps; }
+    function setAlphaToken(address _token) external onlyOwner { setVirajeToken(_token); }
 
     function setWbtcToken(address _wbtcToken) external onlyOwner {
         if (_wbtcToken == address(0)) revert IProtocolErrors.ZeroAddress();
@@ -131,25 +136,25 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
     function setCollateralRiskParams(
         uint256 _bondCollateralHaircutBps,
         uint256 _bondLiquidationFloorBps,
-        uint256 _alphaCollateralHaircutBps,
+        uint256 _virajeCollateralHaircutBps,
         uint256 _circularCollateralCapBps
     ) external onlyOwner {
         if (
             _bondCollateralHaircutBps > MAX_COLLATERAL_HAIRCUT_BPS
                 || _bondLiquidationFloorBps > MAX_COLLATERAL_HAIRCUT_BPS
-                || _alphaCollateralHaircutBps > MAX_COLLATERAL_HAIRCUT_BPS
+                || _virajeCollateralHaircutBps > MAX_COLLATERAL_HAIRCUT_BPS
                 || _circularCollateralCapBps > MAX_COLLATERAL_HAIRCUT_BPS
         ) {
             revert IProtocolErrors.InvalidParameters();
         }
         bondCollateralHaircutBps = _bondCollateralHaircutBps;
         bondLiquidationFloorBps = _bondLiquidationFloorBps;
-        alphaCollateralHaircutBps = _alphaCollateralHaircutBps;
+        virajeCollateralHaircutBps = _virajeCollateralHaircutBps;
         circularCollateralCapBps = _circularCollateralCapBps;
         emit CollateralHaircutsUpdated(
             _bondCollateralHaircutBps,
             _bondLiquidationFloorBps,
-            _alphaCollateralHaircutBps,
+            _virajeCollateralHaircutBps,
             _circularCollateralCapBps
         );
     }
@@ -255,17 +260,21 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         return (base * bondCollateralHaircutBps) / 10000;
     }
 
-    /// @notice Sizes ALPHA collateral at a haircut of its treasury NAV.
-    function _alphaCollateralValueUSD(uint256 amount) internal view returns (uint256) {
+    /// @notice Sizes VIRAJE collateral at a haircut of its treasury NAV.
+    function _virajeCollateralValueUSD(uint256 amount) internal view returns (uint256) {
         if (treasury == address(0) || amount == 0) return 0;
         uint256 navPerShare = ITreasury(treasury).getNAVPerShare(); // 18 decimals
         uint256 fullUSD = (amount * navPerShare) / 1e30; // 6 decimals
-        return (fullUSD * alphaCollateralHaircutBps) / 10000;
+        return (fullUSD * virajeCollateralHaircutBps) / 10000;
+    }
+
+    function _virajeCollateralValueUSD(uint256 amount) internal view returns (uint256) {
+        return _virajeCollateralValueUSD(amount);
     }
 
     function _isCircularLoan(uint256 loanId, Loan storage loan) internal view returns (bool) {
         if (loan.positionTokenId > 0) return true;
-        return loanCollateralAsset[loanId] == alphaToken;
+        return loanCollateralAsset[loanId] == virajeToken;
     }
 
     /**
@@ -493,7 +502,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
     }
 
     /**
-     * @notice Allows a user to borrow USDC instantly from Treasury reserves using supported ERC20 collateral (ALPHA, WBTC, WETH)
+     * @notice Allows a user to borrow USDC instantly from Treasury reserves using supported ERC20 collateral (VIRAJE, WBTC, WETH)
      */
     function borrowFromTreasuryWithAsset(
         address collateralAsset,
@@ -517,9 +526,9 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         uint256 maxLtvBps;
         uint256 collateralUSD; // 6 decimals
 
-        if (collateralAsset == alphaToken) {
-            maxLtvBps = 5000; // 50% Max LTV for ALPHA
-            collateralUSD = _alphaCollateralValueUSD(collateralAmount); // 6 decimals, haircut NAV
+        if (collateralAsset == virajeToken || collateralAsset == virajeToken()) {
+            maxLtvBps = 5000; // 50% Max LTV for VIRAJE
+            collateralUSD = _virajeCollateralValueUSD(collateralAmount); // 6 decimals, haircut NAV
         } else if (collateralAsset == wbtcToken) {
             maxLtvBps = 7000; // 70% Max LTV for WBTC
             if (priceFeed == address(0)) revert IProtocolErrors.ZeroAddress();
@@ -536,7 +545,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
 
         uint256 maxBorrow = (collateralUSD * maxLtvBps) / 10000;
         if (borrowAmount > maxBorrow) revert MaxLTVExceeded(borrowAmount, maxBorrow);
-        _assertTreasuryCapacity(borrowAmount, collateralAsset == alphaToken);
+        _assertTreasuryCapacity(borrowAmount, collateralAsset == virajeToken || collateralAsset == virajeToken());
 
         loanId = nextLoanId;
         unchecked {
@@ -571,14 +580,23 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
     }
 
     /**
-     * @notice Allows a user to borrow USDC instantly from Treasury reserves using ALPHA tokens as collateral (50% Max LTV)
+     * @notice Allows a user to borrow USDC instantly from Treasury reserves using VIRAJE tokens as collateral (50% Max LTV)
      */
-    function borrowFromTreasuryWithAlpha(
-        uint256 alphaCollateralAmount,
+    function borrowFromTreasuryWithViraje(
+        uint256 virajeCollateralAmount,
+        uint256 borrowAmount,
+        uint256 durationDays
+    ) public returns (uint256 loanId) {
+        address tok = virajeToken != address(0) ? virajeToken : virajeToken();
+        return borrowFromTreasuryWithAsset(tok, virajeCollateralAmount, borrowAmount, durationDays);
+    }
+
+    function borrowFromTreasuryWithViraje(
+        uint256 virajeCollateralAmount,
         uint256 borrowAmount,
         uint256 durationDays
     ) external returns (uint256 loanId) {
-        return borrowFromTreasuryWithAsset(alphaToken, alphaCollateralAmount, borrowAmount, durationDays);
+        return borrowFromTreasuryWithViraje(virajeCollateralAmount, borrowAmount, durationDays);
     }
 
     function cancelLoan(uint256 loanId) public nonReentrant {
@@ -592,7 +610,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
             positionNFT.safeTransferFrom(address(this), msg.sender, loan.positionTokenId);
         } else if (loan.collateralAmount > 0) {
             address colAsset = loanCollateralAsset[loanId];
-            address targetAsset = colAsset != address(0) ? colAsset : (alphaToken != address(0) ? alphaToken : stablecoin);
+            address targetAsset = colAsset != address(0) ? colAsset : (virajeToken != address(0) ? virajeToken : stablecoin);
             IERC20(targetAsset).safeTransfer(msg.sender, loan.collateralAmount);
         }
 
@@ -707,10 +725,10 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
             }
         } else if (loan.collateralAmount > 0) {
             address colAsset = loanCollateralAsset[loanId];
-            if (colAsset == alphaToken && treasury != address(0)) {
+            if ((colAsset == virajeToken || colAsset == virajeToken()) && treasury != address(0)) {
                 // NAV failure must not silently fall back to raw token units (H-04). A
                 // revert blocks liquidations instead of mispricing them.
-                collateralUSD = _alphaCollateralValueUSD(loan.collateralAmount);
+                collateralUSD = _virajeCollateralValueUSD(loan.collateralAmount);
             } else if (colAsset != address(0) && priceFeed != address(0)) {
                 try IOracleHub(priceFeed).getAssetUsdValue(colAsset, loan.collateralAmount) returns (uint256 val18) {
                     collateralUSD = val18 / 1e12;
@@ -770,9 +788,13 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
             _releaseCircularDebt(loanId, loan);
             _settleTreasuryLoan(loan);
             address vaultTarget = treasury;
-            try ITreasury(treasury).alphaVault() returns (address av) {
+            try ITreasury(treasury).virajeVault() returns (address av) {
                 if (av != address(0)) vaultTarget = av;
-            } catch {}
+            } catch {
+                try ITreasury(treasury).virajeVault() returns (address av) {
+                    if (av != address(0)) vaultTarget = av;
+                } catch {}
+            }
             IERC20(stablecoin).safeTransferFrom(msg.sender, vaultTarget, loan.borrowAmount);
             if (interest > 0 && feeCollector != address(0)) {
                 IERC20(stablecoin).safeTransferFrom(msg.sender, feeCollector, interest);
@@ -806,7 +828,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
             positionNFT.safeTransferFrom(address(this), loan.borrower, loan.positionTokenId);
         } else if (loan.collateralAmount > 0) {
             address colAsset = loanCollateralAsset[loanId];
-            address targetAsset = colAsset != address(0) ? colAsset : (alphaToken != address(0) ? alphaToken : stablecoin);
+            address targetAsset = colAsset != address(0) ? colAsset : (virajeToken != address(0) ? virajeToken : stablecoin);
             IERC20(targetAsset).safeTransfer(loan.borrower, loan.collateralAmount);
         }
 
@@ -864,9 +886,13 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
     function _repayLenderOnLiquidation(Loan storage loan, uint256 totalOwed, uint256 interest) private {
         if (treasury != address(0) && (loan.lender == owner() || loan.lender == treasury)) {
             address vaultTarget = treasury;
-            try ITreasury(treasury).alphaVault() returns (address av) {
+            try ITreasury(treasury).virajeVault() returns (address av) {
                 if (av != address(0)) vaultTarget = av;
-            } catch {}
+            } catch {
+                try ITreasury(treasury).virajeVault() returns (address av) {
+                    if (av != address(0)) vaultTarget = av;
+                } catch {}
+            }
             IERC20(stablecoin).safeTransferFrom(msg.sender, vaultTarget, loan.borrowAmount);
             if (interest > 0 && feeCollector != address(0)) {
                 IERC20(stablecoin).safeTransferFrom(msg.sender, feeCollector, interest);
@@ -911,19 +937,19 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
 
     function _liquidateTokenCollateral(uint256 loanId, Loan storage loan, uint256 totalOwed) private {
         address colAsset = loanCollateralAsset[loanId];
-        address targetAsset = colAsset != address(0) ? colAsset : (alphaToken != address(0) ? alphaToken : stablecoin);
+        address targetAsset = colAsset != address(0) ? colAsset : (virajeToken != address(0) ? virajeToken : stablecoin);
 
         uint256 owedWithBonusUSD = (totalOwed * (10000 + LIQUIDATION_BONUS_BPS)) / 10000;
         uint256 seizeAmount = loan.collateralAmount;
 
-        if (targetAsset != stablecoin && targetAsset != alphaToken) {
+        if (targetAsset != stablecoin && targetAsset != virajeToken && targetAsset != virajeToken()) {
             if (priceFeed == address(0)) revert IProtocolErrors.PriceFeedNotSet();
             uint256 price18 = IOracleHub(priceFeed).getPriceBase18(targetAsset);
             if (price18 == 0) revert IProtocolErrors.InvalidPrice();
             uint8 dec = (targetAsset == wbtcToken) ? 8 : 18;
             uint256 neededCol = (owedWithBonusUSD * (10 ** (12 + dec))) / price18;
             if (neededCol < seizeAmount) seizeAmount = neededCol;
-        } else if (targetAsset == alphaToken && treasury != address(0)) {
+        } else if ((targetAsset == virajeToken || targetAsset == virajeToken()) && treasury != address(0)) {
             uint256 nav = ITreasury(treasury).getNAVPerShare();
             if (nav == 0) revert IProtocolErrors.InvalidPrice();
             uint256 neededCol = (owedWithBonusUSD * 1e30) / nav;

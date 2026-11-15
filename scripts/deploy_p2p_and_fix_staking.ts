@@ -84,7 +84,7 @@ async function main() {
   const positionNftAddr = contracts.POSITION_NFT as `0x${string}`;
   const oracleHubAddr = contracts.ORACLE_HUB as `0x${string}`;
   const circuitBreakerAddr = contracts.CIRCUIT_BREAKER as `0x${string}`;
-  const alphaTokenAddr = contracts.ALPHA_TOKEN as `0x${string}`;
+  const virajeTokenAddr = contracts.VIRAJE_TOKEN as `0x${string}`;
   const wbtcAddr = contracts.WBTC as `0x${string}`;
   const wethAddr = contracts.WETH as `0x${string}`;
   const tokenomicsEngineAddr = contracts.TOKENOMICS_ENGINE as `0x${string}`;
@@ -141,7 +141,7 @@ async function main() {
   await sendTx('Configurar Tesorería en P2PLendingMarket', p2pMarketAddr, p2pArtifact.abi, 'setTreasury', [treasuryAddr]);
   await sendTx('Configurar TokenomicsEngine en P2P', p2pMarketAddr, p2pArtifact.abi, 'setTokenomicsEngine', [tokenomicsEngineAddr]);
   await sendTx('Configurar CircuitBreaker en P2P', p2pMarketAddr, p2pArtifact.abi, 'setCircuitBreaker', [circuitBreakerAddr]);
-  await sendTx('Configurar AlphaToken en P2P', p2pMarketAddr, p2pArtifact.abi, 'setAlphaToken', [alphaTokenAddr]);
+  await sendTx('Configurar VirajeToken en P2P', p2pMarketAddr, p2pArtifact.abi, 'setVirajeToken', [virajeTokenAddr]);
   await sendTx('Configurar WBTC en P2P', p2pMarketAddr, p2pArtifact.abi, 'setWbtcToken', [wbtcAddr]);
   await sendTx('Configurar WETH en P2P', p2pMarketAddr, p2pArtifact.abi, 'setWethToken', [wethAddr]);
 
@@ -190,11 +190,11 @@ async function main() {
   }
 
   try {
-    process.stdout.write(`[*] Simulando P2PLendingMarket.borrowFromTreasuryWithAlpha ... `);
+    process.stdout.write(`[*] Simulando P2PLendingMarket.borrowFromTreasuryWithViraje ... `);
     await publicClient.simulateContract({
       address: p2pMarketAddr,
       abi: p2pArtifact.abi,
-      functionName: 'borrowFromTreasuryWithAlpha',
+      functionName: 'borrowFromTreasuryWithViraje',
       args: [parseUnits('200', 18), parseUnits('100', 6), 30n],
       account: account.address
     });

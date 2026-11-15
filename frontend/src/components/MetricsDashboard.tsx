@@ -10,7 +10,7 @@ interface MetricsDashboardProps {
   porRatio: string;
   vestedDebt?: string;
   netEquity?: string;
-  porBreakdown: { stables: number; wbtc: number; weth: number; alphaStaking: number };
+  porBreakdown: { stables: number; wbtc: number; weth: number; virajeStaking: number };
   usdcBalance: string;
   sharesBalance: string;
   stakedBalance: string;
@@ -58,7 +58,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   const numericLiabilities = parseFloat(porLiabilities.replace(/,/g, '')) || 0;
   const numericVestedDebt = parseFloat((vestedDebt || '0').replace(/,/g, '')) || 0;
   const numericNetEquity = parseFloat((netEquity || '0').replace(/,/g, '')) || (numericAssets > numericVestedDebt ? numericAssets - numericVestedDebt : 0);
-  const numericAlphaLiability = numericLiabilities > numericVestedDebt ? numericLiabilities - numericVestedDebt : 0;
+  const numericVirajeLiability = numericLiabilities > numericVestedDebt ? numericLiabilities - numericVestedDebt : 0;
 
   // Real Treasury Surplus calculation based on NAV growth above par ($1.00 USD baseline)
   const numericNav = parseFloat((navPerShareUSD || '1.0').replace('$', '').replace(' USDC', '')) || 1.0;
@@ -82,7 +82,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   const btcUSD = porBreakdown.wbtc;
   const ethUSD = porBreakdown.weth;
 
-  // Treasury Sub-Reserve (stALPHA in Governance Staking)
+  // Treasury Sub-Reserve (stVIRAJE in Governance Staking)
   const treasuryStakedNum = parseFloat((treasuryStakedSupply || '0').replace(/,/g, '')) || 0;
   const treasuryStakedUSD = treasuryStakedNum * numericNav;
 
@@ -93,7 +93,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   const stablesActualPct = (stablesUSD / safeTotalUSD) * 100;
   const btcActualPct = (btcUSD / safeTotalUSD) * 100;
   const ethActualPct = (ethUSD / safeTotalUSD) * 100;
-  const alphaActualPct = (treasuryStakedUSD / safeTotalUSD) * 100;
+  const virajeActualPct = (treasuryStakedUSD / safeTotalUSD) * 100;
 
   const tableHeaders = [
     UI_STRINGS.METRICS.TH_ASSET,
@@ -271,7 +271,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
                 El pasivo global auditado por el <strong>Proof of Reserves (PoR)</strong> se compone estrictamente de:
                 <ul className={styles.explainerList}>
                   <li>
-                    <strong>Respaldo Inmediato VIRAJE (~${numericAlphaLiability.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD):</strong> Cobertura al 100% a valor de liquidación para los tenedores de cuotas en circulación.
+                    <strong>Respaldo Inmediato VIRAJE (~${numericVirajeLiability.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD):</strong> Cobertura al 100% a valor de liquidación para los tenedores de cuotas en circulación.
                   </li>
                   <li>
                     <strong>Obligaciones de Bonos Vestados (${vestedDebt || '0.00'} USD):</strong> Fondos apartados para honrar la amortización de bonos sin tocar el capital de los stakers.
@@ -355,7 +355,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
         <div className={styles.tokenomicsGrid}>
           <StatCard
             title={UI_STRINGS.STAKING.METRIC_CIRCULATING}
-            value={`${circulatingSupply} ${UI_STRINGS.COMMON.SYMBOL_ALPHA}`}
+            value={`${circulatingSupply} ${UI_STRINGS.COMMON.SYMBOL_VIRAJE}`}
             testId="staking-circulating-supply"
             variant="blue"
             icon="🪙"
@@ -364,7 +364,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
 
           <StatCard
             title="Stake Comunidad"
-            value={`${communityStakedSupply} ${UI_STRINGS.COMMON.SYMBOL_STALPHA}`}
+            value={`${communityStakedSupply} ${UI_STRINGS.COMMON.SYMBOL_STVIRAJE}`}
             testId="staking-community-staked"
             variant="default"
             icon="👤"
@@ -375,7 +375,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
             title="Stake Bóveda Comunitaria"
             value={
               <>
-                <span data-testid="staking-vaults-staked">{communityVaultStakedSupply}</span> {UI_STRINGS.COMMON.SYMBOL_STALPHA}
+                <span data-testid="staking-vaults-staked">{communityVaultStakedSupply}</span> {UI_STRINGS.COMMON.SYMBOL_STVIRAJE}
               </>
             }
             testId="staking-community-vault-staked"
@@ -386,7 +386,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
 
           <StatCard
             title="Stake Reservas"
-            value={`${treasuryStakedSupply} ${UI_STRINGS.COMMON.SYMBOL_STALPHA}`}
+            value={`${treasuryStakedSupply} ${UI_STRINGS.COMMON.SYMBOL_STVIRAJE}`}
             testId="staking-reserves-staked"
             variant="emerald"
             icon="🏛️"
@@ -397,7 +397,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
             title={UI_STRINGS.STAKING.METRIC_TOTAL_STAKED}
             value={
               <>
-                <span data-testid="staking-global-staked">{totalStakedSupply}</span> {UI_STRINGS.COMMON.SYMBOL_ALPHA} ({stakingRatioPct.includes('%') ? stakingRatioPct : `${stakingRatioPct}%`})
+                <span data-testid="staking-global-staked">{totalStakedSupply}</span> {UI_STRINGS.COMMON.SYMBOL_VIRAJE} ({stakingRatioPct.includes('%') ? stakingRatioPct : `${stakingRatioPct}%`})
               </>
             }
             testId="staking-total-staked"
@@ -410,7 +410,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
             title={UI_STRINGS.STAKING.METRIC_TOTAL_BURNED}
             value={
               <>
-                <span data-testid="staking-deflation-destroyed">{totalBurnedTokens}</span> {UI_STRINGS.COMMON.SYMBOL_ALPHA}
+                <span data-testid="staking-deflation-destroyed">{totalBurnedTokens}</span> {UI_STRINGS.COMMON.SYMBOL_VIRAJE}
               </>
             }
             testId="staking-deflation-burned"
@@ -482,9 +482,9 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
                 <span>Sub-Reserva VIRAJE Staking (POL)</span>
               </div>
             </td>
-            <td data-label="Asignación Actual" className={styles.boldNum}>{alphaActualPct.toFixed(2)}%</td>
+            <td data-label="Asignación Actual" className={styles.boldNum}>{virajeActualPct.toFixed(2)}%</td>
             <td data-label="Ponderación Objetivo">{(targetWeights?.alts || 12.5).toFixed(2)}% Target</td>
-            <td data-label="Valoración en USD" data-testid="por-row-alpha-val" className={styles.boldNum}>
+            <td data-label="Valoración en USD" data-testid="por-row-viraje-val" className={styles.boldNum}>
               ${treasuryStakedUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
             </td>
             <td data-label="Fuente Rendimiento" className={styles.mutedText}>Auto-Staking Gobernanza DAO / Real Yield</td>

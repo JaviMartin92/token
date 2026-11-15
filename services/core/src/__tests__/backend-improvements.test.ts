@@ -9,7 +9,7 @@ import { ProofOfReservesReconciler } from '../reconciler/ProofOfReservesReconcil
 
 async function runBackendImprovementsTestSuite() {
   console.log('============================================================');
-  console.log('  ALPHA CENTAURI: 5 BACKEND ARCHITECTURAL IMPROVEMENTS TEST  ');
+  console.log('  VIRAJE CENTAURI: 5 BACKEND ARCHITECTURAL IMPROVEMENTS TEST  ');
   console.log('============================================================\n');
 
   let passed = 0;
@@ -108,7 +108,7 @@ async function runBackendImprovementsTestSuite() {
       state: 1
     };
 
-    const healthyEval = watchdog.evaluateLoan(healthyLoan, { wbtc: 60000, weth: 3000, alpha: 1.0, usdc: 1.0 }, nowSec);
+    const healthyEval = watchdog.evaluateLoan(healthyLoan, { wbtc: 60000, weth: 3000, viraje: 1.0, usdc: 1.0 }, nowSec);
     assert(!healthyEval.canLiquidate, 'Healthy loan with 200% collateral cannot be liquidated');
     assert(healthyEval.healthFactor > 1.5, `Health factor is strong (${healthyEval.healthFactor.toFixed(2)})`);
 
@@ -117,7 +117,7 @@ async function runBackendImprovementsTestSuite() {
       id: 2,
       startTimeSec: nowSec - (35 * 86400) // 35 days in (> 30 days duration)
     };
-    const expiredEval = watchdog.evaluateLoan(expiredLoan, { wbtc: 60000, weth: 3000, alpha: 1.0, usdc: 1.0 }, nowSec);
+    const expiredEval = watchdog.evaluateLoan(expiredLoan, { wbtc: 60000, weth: 3000, viraje: 1.0, usdc: 1.0 }, nowSec);
     assert(expiredEval.canLiquidate && expiredEval.isExpired, 'Expired loan triggers liquidation flag with expiration reason');
 
     const underCollateralizedLoan: LoanData = {
@@ -132,10 +132,10 @@ async function runBackendImprovementsTestSuite() {
       startTimeSec: nowSec - (5 * 86400),
       state: 1
     };
-    const underColEval = watchdog.evaluateLoan(underCollateralizedLoan, { wbtc: 40000, weth: 2000, alpha: 1.0, usdc: 1.0 }, nowSec);
+    const underColEval = watchdog.evaluateLoan(underCollateralizedLoan, { wbtc: 40000, weth: 2000, viraje: 1.0, usdc: 1.0 }, nowSec);
     assert(underColEval.canLiquidate && underColEval.isUnderCollateralized, 'Under-collateralized loan (HF < 1.0) triggers instant liquidation');
 
-    const report = watchdog.generateAuditReport([healthyLoan, expiredLoan, underCollateralizedLoan], { wbtc: 40000, weth: 2000, alpha: 1.0, usdc: 1.0 }, nowSec);
+    const report = watchdog.generateAuditReport([healthyLoan, expiredLoan, underCollateralizedLoan], { wbtc: 40000, weth: 2000, viraje: 1.0, usdc: 1.0 }, nowSec);
     assert(report.totalActiveLoans === 3, 'Watchdog report counted 3 active loans');
     assert(report.liquidatableCount === 2, 'Watchdog report detected exactly 2 liquidatable loans');
 

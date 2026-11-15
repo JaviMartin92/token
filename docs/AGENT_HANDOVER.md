@@ -1,5 +1,5 @@
 # 🤖 MANUAL INSTITUCIONAL DE TRASPASO TÉCNICO Y OPERACIONES (AGENT HANDOVER)
-> **ALPHA CENTAURI PROTOCOL — V6.2.0 (AUDIT-READY / PURE DEFI)**  
+> **Viraje Protocol — V6.2.0 (AUDIT-READY / PURE DEFI)**  
 > **Destinatario:** Agente de IA o Desarrollador que continúe el proyecto en un nuevo entorno o equipo.
 
 ---
@@ -15,9 +15,9 @@
   * **Campaña de Seguridad Red Team (1 Hora):** 73 rondas, 217 llamadas, 0 repetitivas, 186 reverts defendidos, 31 éxitos, invariantes 100% saludables. Diversidad de exploración: **85/100**.
   * **Campaña de Perfiles de Usuario (1 Hora):** 43 rondas, 214 flujos financieros, 176 exitosos (82.2%), 38 protecciones matemáticas (`NoDiscountVsNAV`), invariantes 100% saludables.
 * **Estado Génesis del Protocolo:**
-  * Suministro Circulante Inicial: **0.00 ALPHA** (Estado 0 Puro).
-  * Asignación del Fundador: **100,000.00 ALPHA** bloqueados en [`FounderReserveVestingVault.sol`](../contracts/src/FounderReserveVestingVault.sol) (excluidos del circulante libre).
-  * NAV Inicial: **$1.0000 USD / ALPHA**.
+  * Suministro Circulante Inicial: **0.00 VIRAJE** (Estado 0 Puro).
+  * Asignación del Fundador: **100,000.00 VIRAJE** bloqueados en [`FounderReserveVestingVault.sol`](../contracts/src/FounderReserveVestingVault.sol) (excluidos del circulante libre).
+  * NAV Inicial: **$1.0000 USD / VIRAJE**.
   * Solvencia Proof of Reserves (PoR): **100.00%**.
   * Prefondeo Inicial de Sandbox: **10,000.00 USDC** para el usuario y para el admin.
 
@@ -89,17 +89,17 @@ start_app.bat
 ```
 
 #### ¿Qué ejecuta `start_app.ps1` entre bastidores?
-1. **Reset Total de Anvil (Estado 0)**: Destruye el contenedor previo `alpha-anvil` y levanta una instancia limpia de Foundry Anvil en el puerto `8545` (`chain-id: 31337`).
+1. **Reset Total de Anvil (Estado 0)**: Destruye el contenedor previo `viraje-anvil` y levanta una instancia limpia de Foundry Anvil en el puerto `8545` (`chain-id: 31337`).
 2. **Compilación Solidity en Docker**: Compila todos los smart contracts con `forge build --extra-output-files abi`.
 3. **Despliegue Maestro (`services/core/src/deploy.ts`)**:
    - Despliega los 26 smart contracts (Tesorería, Oráculos, Bóvedas, P2P, Staking, Gobernanza, Bonos, Post-Quantum Guard).
-   - Despliega `FounderReserveVestingVault` y acuña los 100,000 ALPHA bloqueados.
+   - Despliega `FounderReserveVestingVault` y acuña los 100,000 VIRAJE bloqueados.
    - Despliega y registra `PostQuantumGuard` para firmas W-OTS+ y seguridad criptográfica cuántica.
-   - Transfiere la administración del Timelock (72h) a la DAO `GovernorAlphaCentauri`.
+   - Transfiere la administración del Timelock (72h) a la DAO `GovernorViraje`.
    - Exporta las direcciones actualizadas a `.env` y `frontend/src/contracts.json`.
 4. **Construcción y Servidor Frontend**:
    - Recompila el bundle de Vite con el modo sandbox.
-   - Levanta el contenedor `alpha-frontend` en el puerto `5173` con proxy RPC integrado `/rpc`.
+   - Levanta el contenedor `viraje-frontend` en el puerto `5173` con proxy RPC integrado `/rpc`.
 5. **Listo para navegar**: Accede en el navegador a **`http://localhost:5173`**.
 
 ---
@@ -164,26 +164,26 @@ Cuando se reinicia Anvil a Estado 0, la cadena vuelve a empezar desde el `nonce 
 Para que comprendas la evolución del código sin necesidad de explorar el historial completo de commits:
 
 ### A. Asignación del Fundador en Bóveda Dedicada (`FounderReserveVestingVault.sol`)
-* **Decisión:** El fundador recibe 100,000 ALPHA custodiados en una bóveda independiente en lugar de una inyección artificial en reservas.
+* **Decisión:** El fundador recibe 100,000 VIRAJE custodiados en una bóveda independiente en lugar de una inyección artificial en reservas.
 * **Mecanismo:** La liberación está condicionada matemáticamente a la salud de la Tesorería. Solo se puede reclamar hasta el **10% del superávit de reservas** ($\text{TotalAssetsUSD} - \text{TotalLiabilitiesUSD}$), con un cooldown estricto de **72 horas**.
-* **Inmunidad:** Ningún dólar o activo sale de la Tesorería. Solo se transfieren tokens ALPHA propios de la bóveda.
-* **Génesis Limpio:** Los 100,000 ALPHA bloqueados se descuentan del circulante en `TreasuryPoRLib.getNetCirculatingShares()`, logrando un Estado 0 con 0.00 ALPHA en circulación libre y $1.0000 de NAV.
+* **Inmunidad:** Ningún dólar o activo sale de la Tesorería. Solo se transfieren tokens VIRAJE propios de la bóveda.
+* **Génesis Limpio:** Los 100,000 VIRAJE bloqueados se descuentan del circulante en `TreasuryPoRLib.getNetCirculatingShares()`, logrando un Estado 0 con 0.00 VIRAJE en circulación libre y $1.0000 de NAV.
 
 ### B. Fórmula de NAV por Patrimonio Neto Libre (Net Equity)
 * **Decisión:** Los ingresos por compra de bonos vestados (`VestedDiscountVault.sol`) representan una obligación futura de pago (deuda), no patrimonio libre.
 * **Implementación:** `TreasuryManager.getNetEquityUSD()` descuenta la deuda exigible antes de calcular el NAV:
   $$\text{NetEquityUSD} = \max\left(0, \text{TotalAssetsUSD} - \text{DebtLiabilitiesUSD}\right)$$
   $$\text{NAVPerShare} = \frac{\text{NetEquityUSD}}{\text{NetCirculatingShares}}$$
-* **Beneficio:** Evita que la compra de bonos dispare artificialmente el NAV de ALPHA o desestabilice el mercado de préstamos P2P.
+* **Beneficio:** Evita que la compra de bonos dispare artificialmente el NAV de VIRAJE o desestabilice el mercado de préstamos P2P.
 
 ### C. Corrección del Rebalanceo Automático de Tesorería
-* En [`TreasuryRebalanceLib.sol`](../contracts/src/lib/TreasuryRebalanceLib.sol), la asignación del 12.5% a la sub-reserva de ALPHA ahora utiliza `navPerShare` on-chain en lugar de dividir erróneamente entre el `totalSupply` global.
+* En [`TreasuryRebalanceLib.sol`](../contracts/src/lib/TreasuryRebalanceLib.sol), la asignación del 12.5% a la sub-reserva de VIRAJE ahora utiliza `navPerShare` on-chain en lugar de dividir erróneamente entre el `totalSupply` global.
 
 ### D. Eliminación del Doble Conteo en Staking
 * En [`GovernanceStaking.sol`](../contracts/src/GovernanceStaking.sol), `getStakingBreakdown` reporta exactamente `totalStaked = treasuryStaked + communityStaked + communityVaultStaked`, eliminando la duplicidad que inflaba el ratio de staking por encima del 100%.
 
 ### E. Orquestación Autónoma con IA y Poda Negativa de Manifiesto (`TeamLeadOrchestrator.ts`)
-* **Problema:** Los LLM presentan sesgos cognitivos hacia métodos conocidos (`STAKING::stake`, `ALPHA_TOKEN::permit`), generando bucles de llamadas repetitivas.
+* **Problema:** Los LLM presentan sesgos cognitivos hacia métodos conocidos (`STAKING::stake`, `VIRAJE_TOKEN::permit`), generando bucles de llamadas repetitivas.
 * **Solución Implementada:**
   1. *Poda Dinámica Negativa*: Orion elimina del manifiesto ABI inyectado al agente cualquier función que supere el umbral de saturación.
   2. *Priorización de Funciones Vírgenes*: Detecta métodos con 0 ejecuciones y los inyecta proactivamente como directivas de ataque de alta prioridad.
@@ -210,7 +210,7 @@ Para que comprendas la evolución del código sin necesidad de explorar el histo
 
 ### I. Optimización de Lanzamiento en Windows y Sembrado Génesis (`start_app.ps1`)
 * **Optimización:** Se eliminó la lentitud extrema causada por `docker run npm install` sobre el volumen montado NTFS de Windows. La construcción del bundle de Vite se realiza nativamente en el host en ~400ms.
-* **Propuesta Génesis Activa:** Al iniciar la aplicación, el script `services/core/src/seed_governance_proposal.ts` acuña stALPHA y somete la primera propuesta on-chain para que la interfaz muestre el módulo de gobernanza completamente funcional desde el primer segundo.
+* **Propuesta Génesis Activa:** Al iniciar la aplicación, el script `services/core/src/seed_governance_proposal.ts` acuña stVIRAJE y somete la primera propuesta on-chain para que la interfaz muestre el módulo de gobernanza completamente funcional desde el primer segundo.
 
 ---
 

@@ -8,7 +8,7 @@ import "./interfaces/IProtocolErrors.sol";
 
 /**
  * @title VaultPositionNFT (vPOS)
- * @author Alpha Centauri Architecture Team
+ * @author Viraje Protocol Architecture Team
  * @notice Representa la propiedad transferible de una posición de bono vestado con descuento en el protocolo.
  * @dev Cumple con el estándar ERC-721 y AccessControl. Permite que las posiciones de inversión a plazo
  *      sean negociables en mercados secundarios o utilizadas como colateral en el mercado P2P (`P2PLendingMarket.sol`).

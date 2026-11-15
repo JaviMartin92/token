@@ -84,14 +84,12 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
 
   const MAX_LTV_MAP: Record<string, number> = {
     viraje: 0.25, // 50% Haircut institucional x 50% Max LTV = 25% LTV efectivo
-    alpha: 0.25,
     wbtc: 0.70,
     weth: 0.75
   };
 
   const ASSET_PRICE_MAP: Record<string, number> = {
     viraje: navPerShareNum && navPerShareNum > 0 ? navPerShareNum : 1.0,
-    alpha: navPerShareNum && navPerShareNum > 0 ? navPerShareNum : 1.0,
     wbtc: assetPrices?.wbtc && assetPrices.wbtc > 0 ? assetPrices.wbtc : 60000.0,
     weth: assetPrices?.weth && assetPrices.weth > 0 ? assetPrices.weth : 3000.0
   };
@@ -100,7 +98,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
   const currentLtv = MAX_LTV_MAP[treasuryColType] || 0.50;
   const currentPrice = ASSET_PRICE_MAP[treasuryColType] || 1.0;
   const requiredUsdBacking = borrowAmtNum > 0 ? borrowAmtNum / currentLtv : 0;
-  const rawColTokens = currentPrice > 0 ? requiredUsdBacking / currentPrice : 0;
+  const rawColTokens = currentPrice > 0 ? (requiredUsdBacking / currentPrice) * 1.01 : 0;
   const autoCalculatedColAmount = rawColTokens > 0 ? (Math.ceil(rawColTokens * 10000) / 10000).toString() : '0';
 
   const filteredLoans = loansList.filter((loan) => {
@@ -209,10 +207,10 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                     <option value="">{UI_STRINGS.COMMON.SELECT_OPTION_DEFAULT}</option>
                     {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).map((pos) => {
                       const paidVal = parseFloat((pos.paid || pos.principal || '0').replace(/,/g, ''));
-                      const maxBorrowUsd = Math.round(paidVal * 0.35);
+                      const maxBorrowUsd = Math.floor(paidVal * 0.25);
                       return (
                         <option key={pos.id} value={pos.id.toString()}>
-                          NFT #{pos.id} (Principal: ${pos.principal} USDC — Crédito Máx: ~${maxBorrowUsd.toLocaleString()} USDC)
+                          NFT #{pos.id} (Principal: ${pos.principal} USDC — Crédito Máx: ~${maxBorrowUsd.toLocaleString()} USDC @ 25% LTV)
                         </option>
                       );
                     })}
@@ -223,7 +221,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                 </>
               ) : (
                 <div className={styles.colCalcBox}>
-                  ⚡ {autoCalculatedColAmount} {(treasuryColType === 'viraje' || treasuryColType === 'alpha') ? 'VIRAJE' : treasuryColType.toUpperCase()} (${requiredUsdBacking.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD Respaldo @ {(currentLtv * 100).toFixed(0)}% LTV Efectivo [50% Haircut x 50% LTV])
+                  ⚡ {autoCalculatedColAmount} {treasuryColType === 'viraje' ? 'VIRAJE' : treasuryColType.toUpperCase()} (${requiredUsdBacking.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD Respaldo @ {(currentLtv * 100).toFixed(0)}% LTV Efectivo [50% Haircut x 50% LTV])
                 </div>
               )}
             </div>
@@ -267,7 +265,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                 p2pDays
               )}
             >
-              {UI_STRINGS.P2P_MARKETPLACE.BTN_BORROW_TREASURY} ({(treasuryColType === 'viraje' || treasuryColType === 'alpha') ? 'VIRAJE' : treasuryColType.toUpperCase()})
+              {UI_STRINGS.P2P_MARKETPLACE.BTN_BORROW_TREASURY} ({treasuryColType === 'viraje' ? 'VIRAJE' : treasuryColType.toUpperCase()})
             </Button>
           </div>
         </Card>

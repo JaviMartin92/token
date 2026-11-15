@@ -4,8 +4,8 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "../src/lib/token/ERC20/ERC20.sol";
 import "../src/ProtocolAddressProvider.sol";
-import "../src/AlphaToken.sol";
-import "../src/AlphaVault.sol";
+import "../src/VirajeToken.sol";
+import "../src/VirajeVault.sol";
 import "../src/TreasuryProxy.sol";
 import "../src/OracleHub.sol";
 import "../src/TreasuryManager.sol";
@@ -48,8 +48,8 @@ contract MockChainlinkFeedGateway {
 
 contract CompliantTreasuryGatewayTest is Test {
     ProtocolAddressProvider public provider;
-    AlphaToken public alphaToken;
-    AlphaVault public vault;
+    VirajeToken public virajeToken;
+    VirajeVault public vault;
     OracleHub public oracleHub;
     TreasuryManager public manager;
     CompliantTreasuryGateway public gateway;
@@ -69,11 +69,11 @@ contract CompliantTreasuryGatewayTest is Test {
 
         provider = new ProtocolAddressProvider(admin);
 
-        alphaToken = new AlphaToken(provider, admin);
-        provider.setAddress(keccak256("ALPHA_TOKEN"), address(alphaToken));
+        virajeToken = new VirajeToken(provider, admin);
+        provider.setAddress(keccak256("VIRAJE_TOKEN"), address(virajeToken));
 
-        vault = new AlphaVault(provider, admin);
-        provider.setAddress(keccak256("ALPHA_VAULT"), address(vault));
+        vault = new VirajeVault(provider, admin);
+        provider.setAddress(keccak256("VIRAJE_VAULT"), address(vault));
 
         oracleHub = new OracleHub(provider, admin);
         oracleHub.setTrackedAsset(address(usdc), address(usdcFeed), address(0), 6);
@@ -85,11 +85,11 @@ contract CompliantTreasuryGatewayTest is Test {
         manager.initialize(admin, address(usdc), 6);
         provider.setAddress(keccak256("TREASURY_MANAGER"), address(manager));
 
-        alphaToken.grantRole(ProtocolRoles.MINTER_ROLE, address(manager));
-        alphaToken.grantRole(ProtocolRoles.BURNER_ROLE, address(manager));
+        virajeToken.grantRole(ProtocolRoles.MINTER_ROLE, address(manager));
+        virajeToken.grantRole(ProtocolRoles.BURNER_ROLE, address(manager));
         vault.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(manager));
 
-        gateway = new CompliantTreasuryGateway(address(manager), address(alphaToken), admin);
+        gateway = new CompliantTreasuryGateway(address(manager), address(virajeToken), admin);
 
         // Authorize institution
         gateway.setKYCStatus(institution, true);
@@ -114,28 +114,28 @@ contract CompliantTreasuryGatewayTest is Test {
         usdc.approve(address(gateway), depositUsdc);
         uint256 mintedShares = gateway.depositCompliant(depositUsdc, 0);
 
-        // Verify institution received Alpha tokens directly
+        // Verify institution received VIRAJE tokens directly
         assertGt(mintedShares, 0);
-        assertEq(alphaToken.balanceOf(institution), mintedShares);
+        assertEq(virajeToken.balanceOf(institution), mintedShares);
 
         // Verify Gateway is 100% stateless (0 residual tokens)
         assertEq(usdc.balanceOf(address(gateway)), 0);
-        assertEq(alphaToken.balanceOf(address(gateway)), 0);
+        assertEq(virajeToken.balanceOf(address(gateway)), 0);
 
         // Warp block to bypass same-block cooldown
         vm.roll(block.number + 1);
 
         // Execute redemption of half shares via gateway
         uint256 redeemShares = mintedShares / 2;
-        alphaToken.approve(address(gateway), redeemShares);
+        virajeToken.approve(address(gateway), redeemShares);
         uint256 usdcReturned = gateway.redeemCompliant(redeemShares, 0);
 
         assertGt(usdcReturned, 0);
-        assertEq(alphaToken.balanceOf(institution), mintedShares - redeemShares);
+        assertEq(virajeToken.balanceOf(institution), mintedShares - redeemShares);
 
         // Verify Gateway remains 100% stateless (0 residual tokens)
         assertEq(usdc.balanceOf(address(gateway)), 0);
-        assertEq(alphaToken.balanceOf(address(gateway)), 0);
+        assertEq(virajeToken.balanceOf(address(gateway)), 0);
 
         vm.stopPrank();
     }

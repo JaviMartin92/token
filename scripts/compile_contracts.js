@@ -95,7 +95,7 @@ contract SepoliaVirajeToken is IERC20 {
 contract SepoliaTreasury {
     address public owner;
     address public usdcToken;
-    address public alphaToken;
+    address public virajeToken;
     uint256 public tvlCap = 1_000_000 * 1e18; // $1,000,000 USD
     uint256 public totalBurnedTokens = 0;
 
@@ -116,9 +116,9 @@ contract SepoliaTreasury {
         owner = _owner;
     }
 
-    function setAlphaToken(address _alpha) external {
+    function setVirajeToken(address _viraje) external {
         require(msg.sender == owner, "Only owner");
-        alphaToken = _alpha;
+        virajeToken = _viraje;
     }
 
     function setTvlCap(uint256 _cap) external {
@@ -128,7 +128,7 @@ contract SepoliaTreasury {
 
     function deposit(uint256 stableAmount, uint256 minSharesOut) external returns (uint256 sharesMinted) {
         require(stableAmount > 0, "Zero amount");
-        require(alphaToken != address(0), "Alpha token not set");
+        require(virajeToken != address(0), "VIRAJE token not set");
 
         bool success = IERC20(usdcToken).transferFrom(msg.sender, address(this), stableAmount);
         require(success, "USDC transfer failed");
@@ -139,7 +139,7 @@ contract SepoliaTreasury {
         uint256 currentTvlUSD = (IERC20(usdcToken).balanceOf(address(this)) * 1e12);
         require(currentTvlUSD <= tvlCap, "TVL Cap Exceeded");
 
-        SepoliaVirajeToken(alphaToken).mint(msg.sender, sharesMinted);
+        SepoliaVirajeToken(virajeToken).mint(msg.sender, sharesMinted);
 
         emit Deposited(msg.sender, stableAmount, sharesMinted);
         return sharesMinted;
@@ -147,13 +147,13 @@ contract SepoliaTreasury {
 
     function redeem(uint256 sharesAmount, uint256 minUsdcOut) external returns (uint256 assetsReceived) {
         require(sharesAmount > 0, "Zero shares");
-        require(alphaToken != address(0), "Alpha token not set");
+        require(virajeToken != address(0), "VIRAJE token not set");
 
         assetsReceived = sharesAmount / 1e12;
         require(assetsReceived >= minUsdcOut, "Slippage limit");
         require(IERC20(usdcToken).balanceOf(address(this)) >= assetsReceived, "Insufficient treasury USDC");
 
-        SepoliaVirajeToken(alphaToken).burnFrom(msg.sender, sharesAmount);
+        SepoliaVirajeToken(virajeToken).burnFrom(msg.sender, sharesAmount);
         totalBurnedTokens += sharesAmount;
 
         bool success = IERC20(usdcToken).transfer(msg.sender, assetsReceived);
@@ -173,14 +173,14 @@ contract SepoliaTreasury {
 
     function getProofOfReserves() external view returns (uint256, uint256, uint256) {
         uint256 assets = IERC20(usdcToken).balanceOf(address(this)) * 1e12;
-        uint256 liabilities = alphaToken != address(0) ? IERC20(alphaToken).totalSupply() : 0;
+        uint256 liabilities = virajeToken != address(0) ? IERC20(virajeToken).totalSupply() : 0;
         uint256 ratio = liabilities == 0 ? 10000 : (assets * 10000) / liabilities;
         return (assets, liabilities, ratio);
     }
 
     function getProtocolOverview() external view returns (ProtocolOverview memory overview) {
         uint256 assets = IERC20(usdcToken).balanceOf(address(this)) * 1e12;
-        uint256 liabilities = alphaToken != address(0) ? IERC20(alphaToken).totalSupply() : 0;
+        uint256 liabilities = virajeToken != address(0) ? IERC20(virajeToken).totalSupply() : 0;
         uint256 ratio = liabilities == 0 ? 10000 : (assets * 10000) / liabilities;
         return ProtocolOverview({
             totalAssetsUSD: assets,

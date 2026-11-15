@@ -1,5 +1,5 @@
 # 🌐 GUÍA MAESTRA DE DESPLIEGUE EN MAINNET (ARBITRUM / ETHEREUM L2)
-> **ALPHA CENTAURI PROTOCOL — V6.2.0 (PURE DEFI / MAINNET-READY)**  
+> **Viraje Protocol — V6.2.0 (PURE DEFI / MAINNET-READY)**  
 > **Arquitectura:** Cero Privilegios Centralizados · Cumplimiento MiCA Recital 22 · Guarded Launch Fase 1 · Gobernanza Timelocked 72h · Financiación On-Chain de Auditoría
 
 ---
@@ -20,9 +20,9 @@
 
 ## 1. Filosofía de Despliegue: Pure DeFi & Zero Backdoors
 
-El Protocolo Alpha Centauri está concebido bajo los principios más estrictos de **finanzas descentralizadas puras**:
+El Protocolo Viraje Protocol está concebido bajo los principios más estrictos de **finanzas descentralizadas puras**:
 * **Sin Llaves Maestras**: El deployer (EOA inicial) no retiene ningún rol de administración (`DEFAULT_ADMIN_ROLE`) tras el despliegue.
-* **Timelock de 72 Horas Inmutable**: Toda modificación de parámetros (pesos de reserva, tarifas, límites de compra, actualización de oráculos) debe originarse obligatoriamente mediante una propuesta aprobada en [`GovernorAlphaCentauri.sol`](../contracts/src/GovernorAlphaCentauri.sol) y someterse a un retraso de seguridad mínimo de **72 horas (259,200 segundos)** en [`TimelockController.sol`](../contracts/src/TimelockController.sol).
+* **Timelock de 72 Horas Inmutable**: Toda modificación de parámetros (pesos de reserva, tarifas, límites de compra, actualización de oráculos) debe originarse obligatoriamente mediante una propuesta aprobada en [`GovernorViraje.sol`](../contracts/src/GovernorViraje.sol) y someterse a un retraso de seguridad mínimo de **72 horas (259,200 segundos)** en [`TimelockController.sol`](../contracts/src/TimelockController.sol).
 * **Guarded Launch Fase 1 (Tope de TVL $100K)**: Para proteger los fondos de los usuarios ante posibles vulnerabilidades no detectadas antes de las auditorías públicas, el contrato de tesorería impone un límite programático (`tvlCap = 100_000 * 1e18`) en depósitos. Este tope solo puede incrementarse mediante votación democrática de la DAO.
 * **Financiación Comunitaria de Auditorías (DAO Grants)**: Los fondos para auditorías externas formales (Code4rena, Cantina, Sherlock) y bug bounties (Immunefi) se desembolsan directamente desde la tesorería hacia los contratos *escrow* previa propuesta aprobada por la comunidad, preservando la exención de descentralización de **MiCA (Considerando 22)**.
 
@@ -113,19 +113,19 @@ El despliegue debe seguir un orden topológico estricto para satisfacer las depe
 
 ### Fase 1: Registro Maestro e Infraestructura Base
 1. **`ProtocolAddressProvider`**: Desplegar el Service Locator central.
-2. **`AlphaToken (ALPHA)`**: Desplegar el token de gobernanza ERC-20 con soporte ERC-2612 Permit y puntos de control (checkpoints).
+2. **`VirajeToken (VIRAJE)`**: Desplegar el token de gobernanza ERC-20 con soporte ERC-2612 Permit y puntos de control (checkpoints).
 3. **`VaultPositionNFT`**: Desplegar el contrato ERC-721 para la titulización de bonos vestados.
 4. **`OracleHub`**: Configurar con los Feeds oficiales de Chainlink y el `SequencerUptimeFeed` con periodo de gracia de 3,600 segundos para proteger contra transacciones estancadas en reinicios de L2.
 
 ### Fase 2: Bóvedas de Custodia y Tesorería
-5. **`AlphaVault`**: Bóveda fría de colateral segregada para activos exógenos.
+5. **`VirajeVault`**: Bóveda fría de colateral segregada para activos exógenos.
 6. **`TreasuryManager`**:
    - Inicializar con los tokens USDC, USDT, WBTC, WETH.
-   - Configurar ponderaciones objetivo de reserva: 50% Stables, 25% WBTC, 12.5% WETH, 12.5% stALPHA Sub-Reserva.
+   - Configurar ponderaciones objetivo de reserva: 50% Stables, 25% WBTC, 12.5% WETH, 12.5% stVIRAJE Sub-Reserva.
    - **Activar Guarded Genesis Cap**: Ejecutar `setTvlCap(100_000 * 1e18)`.
 
 ### Fase 3: Ecosistema Real Yield y Mercados
-7. **`GovernanceStaking (stALPHA)`**: Bóveda de staking para emisión de votos y distribución de dividendos.
+7. **`GovernanceStaking (stVIRAJE)`**: Bóveda de staking para emisión de votos y distribución de dividendos.
 8. **`CommunityYieldVault`**: Contrato receptor del 50% de las comisiones en USDC para reparto pro-rata a stakers.
 9. **`RealYieldRouter`**: Enrutador inmutable con regla 50/50 (50% a reservas de tesorería, 50% a stakers).
 10. **`VestedDiscountVault`**: Motor de bonos vestados (1-5 años) con penalización de ragequit del 15%.
@@ -136,7 +136,7 @@ El despliegue debe seguir un orden topológico estricto para satisfacer las depe
 ### Fase 4: Bóveda del Creador & Seguridad Cuántica
 14. **`FounderReserveVestingVault`**:
    - Desplegar la bóveda autónoma de vesting.
-   - Acuñar los 100,000 ALPHA bloqueados del fundador directamente en este contrato.
+   - Acuñar los 100,000 VIRAJE bloqueados del fundador directamente en este contrato.
    - Los tokens quedan bloqueados sin circular y sujetos estrictamente a la regla: *Liberación máxima del 10% del superávit de reservas con solvencia > 100% y cooldown de 72h*.
 15. **`PostQuantumGuard`**:
    - Desplegar el validador criptográfico de firmas Winternitz OTS+ ($w=4$, Keccak-256) resistente al algoritmo de Shor.
@@ -147,10 +147,10 @@ El despliegue debe seguir un orden topológico estricto para satisfacer las depe
    - Proposers iniciales: `[]` (se asignará en la siguiente fase).
    - Executors iniciales: `[]`.
    - Admin temporal: Dirección del deployer.
-17. **`GovernorAlphaCentauri`**:
-   - Conectar al token `GovernanceStaking (stALPHA)`.
+17. **`GovernorViraje`**:
+   - Conectar al token `GovernanceStaking (stVIRAJE)`.
    - Conectar al `TimelockController`.
-   - Parámetros: Umbral de propuesta = 25,000 stALPHA, Quorum = 80,000 stALPHA, Periodo de votación = 21,600 bloques (~3 días).
+   - Parámetros: Umbral de propuesta = 25,000 stVIRAJE, Quorum = 80,000 stVIRAJE, Periodo de votación = 21,600 bloques (~3 días).
 
 ---
 
@@ -163,7 +163,7 @@ Esta es la fase más crítica. Debe ejecutarse inmediatamente después del despl
 # COMANDOS DE ASIGNACIÓN DE ROLES Y RENUNCIA IRREVOCABLE (FOUNDRY / CAST)
 # ==============================================================================
 
-# 1. Asignar rol PROPOSER_ROLE del Timelock exclusivamente al GovernorAlphaCentauri
+# 1. Asignar rol PROPOSER_ROLE del Timelock exclusivamente al GovernorViraje
 cast send $TIMELOCK_ADDRESS "grantRole(bytes32,address)" \
   $(cast keccak "PROPOSER_ROLE") $GOVERNOR_ADDRESS \
   --rpc-url $MAINNET_RPC_URL --ledger
@@ -173,7 +173,7 @@ cast send $TIMELOCK_ADDRESS "grantRole(bytes32,address)" \
   $(cast keccak "EXECUTOR_ROLE") 0x0000000000000000000000000000000000000000 \
   --rpc-url $MAINNET_RPC_URL --ledger
 
-# 3. Asignar rol CANCELLER_ROLE al GovernorAlphaCentauri
+# 3. Asignar rol CANCELLER_ROLE al GovernorViraje
 cast send $TIMELOCK_ADDRESS "grantRole(bytes32,address)" \
   $(cast keccak "CANCELLER_ROLE") $GOVERNOR_ADDRESS \
   --rpc-url $MAINNET_RPC_URL --ledger
@@ -231,14 +231,14 @@ Para evitar la censura o dependencia de proveedores de hosting web centralizados
    npx @fleek-platform/cli deploy dist/
    ```
 3. **Vincular el Hash IPFS al Dominio ENS**:
-   - En el registrador ENS de Ethereum, configurar el registro `contenthash` del dominio `alphacentauri.eth` con el CID de IPFS obtenido (`ipfs://Qm...` o `ipfs://bafy...`).
-   - Los usuarios podrán acceder directamente mediante navegadores con soporte ENS (Brave, Opera) o mediante pasarelas descentralizadas (`alphacentauri.eth.limo`).
+   - En el registrador ENS de Ethereum, configurar el registro `contenthash` del dominio `virajeprotocol.eth` con el CID de IPFS obtenido (`ipfs://Qm...` o `ipfs://bafy...`).
+   - Los usuarios podrán acceder directamente mediante navegadores con soporte ENS (Brave, Opera) o mediante pasarelas descentralizadas (`virajeprotocol.eth.limo`).
 
 ---
 
 ## 9. Primera Acción Génesis: Propuesta DAO para Escrow de Auditoría
 
-Una vez que el protocolo está desplegado y los primeros usuarios suscriben ALPHA y hacen staking de stALPHA, se procede a financiar la auditoría formal on-chain:
+Una vez que el protocolo está desplegado y los primeros usuarios suscriben VIRAJE y hacen staking de stVIRAJE, se procede a financiar la auditoría formal on-chain:
 
 1. En la pestaña **Gobernanza**, el delegado accede a la **Plantilla 5 (Asignación de Fondos de Tesorería / Subvención)**.
 2. Hace clic en:  
@@ -247,7 +247,7 @@ Una vez que el protocolo está desplegado y los primeros usuarios suscriben ALPH
    - **Beneficiario**: Dirección del contrato Escrow de Code4rena / Cantina.
    - **Monto**: `25,000 USDC` (provenientes de las comisiones acumuladas por suscripciones).
    - **Llamada On-Chain**: `TreasuryManager.withdrawUSDC(escrowAddress, 25_000 * 1e6)`.
-4. La propuesta se vota durante 3 días. Tras alcanzar el quorum de 80,000 stALPHA y ser aprobada, se encola en el `TimelockController` durante 72 horas y finalmente se ejecuta.
+4. La propuesta se vota durante 3 días. Tras alcanzar el quorum de 80,000 stVIRAJE y ser aprobada, se encola en el `TimelockController` durante 72 horas y finalmente se ejecuta.
 5. Los auditores reciben los fondos directamente del smart contract sin intermediarios legales corporativos.
 
 ---
@@ -259,7 +259,7 @@ Una vez que el protocolo está desplegado y los primeros usuarios suscriben ALPH
 | 1 | Todos los tests del monorepo (`npm test`) superados al 100% (150+ tests). | ✅ |
 | 2 | Parámetros de oráculos Chainlink con Sequencer Feed activos. | ⏳ |
 | 3 | Guarded Genesis Cap configurado en $100,000 USD en `TreasuryManager`. | ⏳ |
-| 4 | 100k ALPHA asignados al fundador bloqueados en `FounderReserveVestingVault`. | ⏳ |
+| 4 | 100k VIRAJE asignados al fundador bloqueados en `FounderReserveVestingVault`. | ⏳ |
 | 5 | Contratos verificados en Arbiscan / Etherscan con código fuente público. | ⏳ |
 | 6 | Roles de administración transferidos exclusivamente al `TimelockController` (72h). | ⏳ |
 | 7 | `DEFAULT_ADMIN_ROLE` del deployer revocado y confirmado en 0 direcciones EOA. | ⏳ |

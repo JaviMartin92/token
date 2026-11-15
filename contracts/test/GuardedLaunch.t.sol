@@ -5,8 +5,8 @@ import "forge-std/Test.sol";
 import "../src/TreasuryManager.sol";
 import "../src/TreasuryProxy.sol";
 import "../src/ProtocolAddressProvider.sol";
-import "../src/AlphaToken.sol";
-import "../src/AlphaVault.sol";
+import "../src/VirajeToken.sol";
+import "../src/VirajeVault.sol";
 import "../src/OracleHub.sol";
 import "../src/ProtocolRoles.sol";
 import "../src/interfaces/IProtocolErrors.sol";
@@ -14,8 +14,8 @@ import "./ModularProtocol.t.sol";
 
 contract GuardedLaunchTest is Test {
     ProtocolAddressProvider public provider;
-    AlphaToken public alphaToken;
-    AlphaVault public vault;
+    VirajeToken public virajeToken;
+    VirajeVault public vault;
     OracleHub public oracleHub;
     TreasuryManager public treasury;
 
@@ -34,11 +34,11 @@ contract GuardedLaunchTest is Test {
 
         provider = new ProtocolAddressProvider(admin);
 
-        alphaToken = new AlphaToken(provider, admin);
-        provider.setAddress(keccak256("ALPHA_TOKEN"), address(alphaToken));
+        virajeToken = new VirajeToken(provider, admin);
+        provider.setAddress(keccak256("VIRAJE_TOKEN"), address(virajeToken));
 
-        vault = new AlphaVault(provider, admin);
-        provider.setAddress(keccak256("ALPHA_VAULT"), address(vault));
+        vault = new VirajeVault(provider, admin);
+        provider.setAddress(keccak256("VIRAJE_VAULT"), address(vault));
 
         oracleHub = new OracleHub(provider, admin);
         provider.setAddress(keccak256("ORACLE_HUB"), address(oracleHub));
@@ -51,8 +51,8 @@ contract GuardedLaunchTest is Test {
         treasury.initialize(admin, address(usdc), 6);
         provider.setAddress(keccak256("TREASURY_MANAGER"), address(treasury));
 
-        alphaToken.grantRole(ProtocolRoles.MINTER_ROLE, address(treasury));
-        alphaToken.grantRole(ProtocolRoles.BURNER_ROLE, address(treasury));
+        virajeToken.grantRole(ProtocolRoles.MINTER_ROLE, address(treasury));
+        virajeToken.grantRole(ProtocolRoles.BURNER_ROLE, address(treasury));
         vault.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(treasury));
 
         // Fund user with USDC

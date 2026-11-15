@@ -222,17 +222,17 @@ export class IdempotentLedgerEngine {
   /**
    * Creates balanced entries for Staking with 1% Entry Fee (50% burn, 50% community vault)
    */
-  public static buildStakingEntries(user: string, grossAlpha: number): LedgerEntryData[] {
-    const feeAlpha = grossAlpha * 0.01;
-    const netStaked = grossAlpha * 0.99;
-    const burnAlpha = feeAlpha * 0.5;
-    const communityAlpha = feeAlpha * 0.5;
+  public static buildStakingEntries(user: string, grossViraje: number): LedgerEntryData[] {
+    const feeViraje = grossViraje * 0.01;
+    const netStaked = grossViraje * 0.99;
+    const burnViraje = feeViraje * 0.5;
+    const communityViraje = feeViraje * 0.5;
 
     return [
-      { accountCode: 'GOVERNANCE_STAKING_POOL', debit: netStaked.toFixed(6), credit: '0.0', assetAddress: 'ALPHA' },
-      { accountCode: 'DEAD_BURN_ADDRESS', debit: burnAlpha.toFixed(6), credit: '0.0', assetAddress: 'ALPHA' },
-      { accountCode: 'COMMUNITY_YIELD_VAULT', debit: communityAlpha.toFixed(6), credit: '0.0', assetAddress: 'ALPHA' },
-      { accountCode: `USER_WALLET_${user.slice(0, 8)}`, debit: '0.0', credit: grossAlpha.toFixed(6), assetAddress: 'ALPHA' }
+      { accountCode: 'GOVERNANCE_STAKING_POOL', debit: netStaked.toFixed(6), credit: '0.0', assetAddress: 'VIRAJE' },
+      { accountCode: 'DEAD_BURN_ADDRESS', debit: burnViraje.toFixed(6), credit: '0.0', assetAddress: 'VIRAJE' },
+      { accountCode: 'COMMUNITY_YIELD_VAULT', debit: communityViraje.toFixed(6), credit: '0.0', assetAddress: 'VIRAJE' },
+      { accountCode: `USER_WALLET_${user.slice(0, 8)}`, debit: '0.0', credit: grossViraje.toFixed(6), assetAddress: 'VIRAJE' }
     ];
   }
 

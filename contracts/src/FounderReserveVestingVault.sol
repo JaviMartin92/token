@@ -14,9 +14,9 @@ import "./interfaces/IProtocolErrors.sol";
  * @notice Dedicated vesting vault for the protocol founder / core contributors.
  *         Releases are strictly tied to treasury reserve solvency (pure DeFi incentives alignment):
  *         - Claims only allowed when Solvency Ratio > 100% (Assets > Liabilities)
- *         - Capped at maximum 10% of the reserve surplus (Assets - Liabilities) converted to ALPHA at NAV
+ *         - Capped at maximum 10% of the reserve surplus (Assets - Liabilities) converted to VIRAJE at NAV
  *         - Minimum 72-hour cooldown between successive claims
- *         - Total hard cap of 100,000 ALPHA
+ *         - Total hard cap of 100,000 VIRAJE
  */
 contract FounderReserveVestingVault is AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -31,11 +31,11 @@ contract FounderReserveVestingVault is AccessControl, ReentrancyGuard {
     error InsufficientVaultBalance(uint256 requested, uint256 available);
 
     // --- Immutables & State Variables ---
-    IERC20 public immutable alphaToken;
+    IERC20 public immutable virajeToken;
     address public treasuryManager;
     address public beneficiary;
 
-    uint256 public constant TOTAL_ALLOCATION = 100_000 * 1e18; // 100,000 ALPHA
+    uint256 public constant TOTAL_ALLOCATION = 100_000 * 1e18; // 100,000 VIRAJE
     uint256 public constant COOLDOWN_PERIOD = 72 hours; // 72 hours
     uint256 public constant MAX_SURPLUS_BPS = 1000; // 10.00% (1000 / 10000)
 
@@ -43,9 +43,15 @@ contract FounderReserveVestingVault is AccessControl, ReentrancyGuard {
     uint256 public lastClaimTimestamp;
 
     // --- Events ---
-    event AlphaClaimed(
+    event VirajeClaimed(
         address indexed beneficiary,
-        uint256 amountAlpha,
+        uint256 amountViraje,
+        uint256 surplusUSD,
+        uint256 timestamp
+    );
+    event VirajeClaimed(
+        address indexed beneficiary,
+        uint256 amountViraje,
         uint256 surplusUSD,
         uint256 timestamp
     );
@@ -54,19 +60,19 @@ contract FounderReserveVestingVault is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Initializes the vesting vault with immutables and governance parameters
-     * @param _alphaToken Address of the ALPHA token
+     * @param _virajeToken Address of the VIRAJE token
      * @param _treasuryManager Address of the TreasuryManager contract
      * @param _beneficiary Recipient address for claimed tokens
      * @param _initialAdmin Protocol timelock or admin address
      */
     constructor(
-        address _alphaToken,
+        address _virajeToken,
         address _treasuryManager,
         address _beneficiary,
         address _initialAdmin
     ) {
         if (
-            _alphaToken == address(0) ||
+            _virajeToken == address(0) ||
             _treasuryManager == address(0) ||
             _beneficiary == address(0) ||
             _initialAdmin == address(0)
@@ -77,9 +83,13 @@ contract FounderReserveVestingVault is AccessControl, ReentrancyGuard {
         _grantRole(DEFAULT_ADMIN_ROLE, _initialAdmin);
         _grantRole(ProtocolRoles.ADMIN_ROLE, _initialAdmin);
 
-        alphaToken = IERC20(_alphaToken);
+        virajeToken = IERC20(_virajeToken);
         treasuryManager = _treasuryManager;
         beneficiary = _beneficiary;
+    }
+
+    function virajeToken() external view returns (address) {
+        return address(virajeToken);
     }
 
     /**
@@ -111,8 +121,8 @@ contract FounderReserveVestingVault is AccessControl, ReentrancyGuard {
     }
 
     /**
-     * @notice Calculates the current claimable amount of ALPHA based on treasury reserve surplus.
-     * @return claimableAlpha Amount of ALPHA that can be claimed right now
+     * @notice Calculates the current claimable amount of VIRAJE based on treasury reserve surplus.
+     * @return claimableViraje Amount of VIRAJE that can be claimed right now
      * @return surplusUSD Current reserve surplus in USD (18 decimals)
      * @return nextAvailableTimestamp Timestamp when next claim is allowed
      * @return canClaim True if all conditions (cooldown, surplus, remaining allocation) are met
@@ -121,7 +131,7 @@ contract FounderReserveVestingVault is AccessControl, ReentrancyGuard {
         public
         view
         returns (
-            uint256 claimableAlpha,
+            uint256 claimableViraje,
             uint256 surplusUSD,
             uint256 nextAvailableTimestamp,
             bool canClaim
@@ -149,9 +159,9 @@ contract FounderReserveVestingVault is AccessControl, ReentrancyGuard {
                     if (nav > 0) navPerShare = nav;
                 } catch {}
 
-                uint256 alphaFromSurplus = (maxClaimableUSD * 1e18) / navPerShare;
-                claimableAlpha = alphaFromSurplus > remaining ? remaining : alphaFromSurplus;
-                canClaim = cooldownPassed && (claimableAlpha > 0) && (navPerShare >= 1e18);
+                uint256 virajeFromSurplus = (maxClaimableUSD * 1e18) / navPerShare;
+                claimableViraje = virajeFromSurplus > remaining ? remaining : virajeFromSurplus;
+                canClaim = cooldownPassed && (claimableViraje > 0) && (navPerShare >= 1e18);
             }
         } catch {
             return (0, 0, nextAvailableTimestamp, false);
@@ -159,9 +169,9 @@ contract FounderReserveVestingVault is AccessControl, ReentrancyGuard {
     }
 
     /**
-     * @notice Claims vested ALPHA tokens strictly capped by 10% of the treasury reserve surplus.
+     * @notice Claims vested VIRAJE tokens strictly capped by 10% of the treasury reserve surplus.
      */
-    function claimVestedAlpha() external nonReentrant returns (uint256 claimedAmount) {
+    function claimVestedViraje() public nonReentrant returns (uint256 claimedAmount) {
         if (msg.sender != beneficiary && !hasRole(ProtocolRoles.ADMIN_ROLE, msg.sender)) {
             revert UnauthorizedBeneficiary();
         }
@@ -175,7 +185,7 @@ contract FounderReserveVestingVault is AccessControl, ReentrancyGuard {
         }
 
         (
-            uint256 claimableAlpha,
+            uint256 claimableViraje,
             uint256 surplusUSD,
             uint256 nextAvailableTimestamp,
             bool canClaim
@@ -184,13 +194,13 @@ contract FounderReserveVestingVault is AccessControl, ReentrancyGuard {
         if (block.timestamp < nextAvailableTimestamp && lastClaimTimestamp > 0) {
             revert CooldownActive(nextAvailableTimestamp);
         }
-        if (surplusUSD == 0 || claimableAlpha == 0 || !canClaim) {
+        if (surplusUSD == 0 || claimableViraje == 0 || !canClaim) {
             (uint256 assets, uint256 liabilities,) = ITreasury(treasuryManager).getProofOfReserves();
             revert NoReserveSurplus(assets, liabilities);
         }
 
-        claimedAmount = claimableAlpha;
-        uint256 vaultBal = alphaToken.balanceOf(address(this));
+        claimedAmount = claimableViraje;
+        uint256 vaultBal = virajeToken.balanceOf(address(this));
         if (vaultBal < claimedAmount) {
             revert InsufficientVaultBalance(claimedAmount, vaultBal);
         }
@@ -198,8 +208,13 @@ contract FounderReserveVestingVault is AccessControl, ReentrancyGuard {
         totalClaimed += claimedAmount;
         lastClaimTimestamp = block.timestamp;
 
-        alphaToken.safeTransfer(beneficiary, claimedAmount);
+        virajeToken.safeTransfer(beneficiary, claimedAmount);
 
-        emit AlphaClaimed(beneficiary, claimedAmount, surplusUSD, block.timestamp);
+        emit VirajeClaimed(beneficiary, claimedAmount, surplusUSD, block.timestamp);
+        emit VirajeClaimed(beneficiary, claimedAmount, surplusUSD, block.timestamp);
+    }
+
+    function claimVestedViraje() external returns (uint256 claimedAmount) {
+        return claimVestedViraje();
     }
 }

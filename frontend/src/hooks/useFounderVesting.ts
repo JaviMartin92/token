@@ -11,8 +11,8 @@ export function useFounderVesting(userAddress?: string, addLog?: (msg: string) =
     totalClaimed: '0.00',
     remainingAllocation: '0.00',
     beneficiary: '',
-    claimableAlpha: '0.00',
-    claimableAlphaNum: 0,
+    claimableViraje: '0.00',
+    claimableVirajeNum: 0,
     surplusUSD: '0.00',
     surplusUSDNum: 0,
     canClaim: false,
@@ -28,8 +28,8 @@ export function useFounderVesting(userAddress?: string, addLog?: (msg: string) =
           totalClaimed: '0.00',
           remainingAllocation: '0.00',
           beneficiary: '',
-          claimableAlpha: '0.00',
-          claimableAlphaNum: 0,
+          claimableViraje: '0.00',
+          claimableVirajeNum: 0,
           surplusUSD: '0.00',
           surplusUSDNum: 0,
           canClaim: false,
@@ -63,8 +63,8 @@ export function useFounderVesting(userAddress?: string, addLog?: (msg: string) =
           })
         ]);
 
-        const [claimableAlphaRaw, surplusUSDRaw, nextTsRaw, canClaim] = infoRaw as [bigint, bigint, bigint, boolean];
-        const claimableNum = parseFloat(formatEther(claimableAlphaRaw));
+        const [claimableVirajeRaw, surplusUSDRaw, nextTsRaw, canClaim] = infoRaw as [bigint, bigint, bigint, boolean];
+        const claimableNum = parseFloat(formatEther(claimableVirajeRaw));
         const surplusNum = parseFloat(formatEther(surplusUSDRaw));
         const claimedNum = parseFloat(formatEther(claimedRaw as bigint));
         const remainingNum = parseFloat(formatEther(remainingRaw as bigint));
@@ -83,8 +83,8 @@ export function useFounderVesting(userAddress?: string, addLog?: (msg: string) =
           totalClaimed: claimedNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
           remainingAllocation: remainingNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
           beneficiary: beneficiaryRaw as string,
-          claimableAlpha: claimableNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-          claimableAlphaNum: claimableNum,
+          claimableViraje: claimableNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+          claimableVirajeNum: claimableNum,
           surplusUSD: surplusNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
           surplusUSDNum: surplusNum,
           canClaim,
@@ -98,8 +98,8 @@ export function useFounderVesting(userAddress?: string, addLog?: (msg: string) =
           totalClaimed: '0.00',
           remainingAllocation: '0.00',
           beneficiary: '',
-          claimableAlpha: '0.00',
-          claimableAlphaNum: 0,
+          claimableViraje: '0.00',
+          claimableVirajeNum: 0,
           surplusUSD: '0.00',
           surplusUSDNum: 0,
           canClaim: false,
@@ -123,13 +123,24 @@ export function useFounderVesting(userAddress?: string, addLog?: (msg: string) =
       const account = (userAddress && userAddress.startsWith('0x') ? userAddress as `0x${string}` : addresses[0]);
       const nonce = await getFreshNonce(account);
 
-      const tx = await client.writeContract({
-        address: vestingAddress,
-        abi: ABIS.FOUNDER_VESTING,
-        functionName: 'claimVestedAlpha',
-        account,
-        ...(nonce !== undefined ? { nonce } : {})
-      });
+      let tx: `0x${string}`;
+      try {
+        tx = await client.writeContract({
+          address: vestingAddress,
+          abi: ABIS.FOUNDER_VESTING,
+          functionName: 'claimVestedViraje',
+          account,
+          ...(nonce !== undefined ? { nonce } : {})
+        });
+      } catch (err: any) {
+        // Fallback para selector original en testnet si aún no se ha actualizado el contrato
+        tx = await client.sendTransaction({
+          to: vestingAddress,
+          data: '0x7323e656',
+          account,
+          ...(nonce !== undefined ? { nonce } : {})
+        });
+      }
 
       await publicClient.waitForTransactionReceipt({ hash: tx });
       if (addLog) addLog('Reclamo de VIRAJE completado con éxito.');

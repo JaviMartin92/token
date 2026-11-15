@@ -5,8 +5,8 @@ import "forge-std/Test.sol";
 import "../src/OracleHub.sol";
 import "../src/TreasuryManager.sol";
 import "../src/TreasuryProxy.sol";
-import {AlphaVault} from "../src/AlphaVault.sol";
-import {AlphaToken} from "../src/AlphaToken.sol";
+import {VirajeVault} from "../src/VirajeVault.sol";
+import {VirajeToken} from "../src/VirajeToken.sol";
 import {ProtocolAddressProvider} from "../src/ProtocolAddressProvider.sol";
 import {OracleHub} from "../src/OracleHub.sol";
 import {AaveV3Adapter} from "../src/adapters/AaveV3Adapter.sol";
@@ -46,8 +46,8 @@ contract MockFeedCoverage {
 
 contract UniversalYield_ERC4626_Rotation_Test is Test {
     TreasuryManager public manager;
-    AlphaVault public vault;
-    AlphaToken public alphaToken;
+    VirajeVault public vault;
+    VirajeToken public virajeToken;
     ProtocolAddressProvider public provider;
     OracleHub public oracle;
 
@@ -66,8 +66,8 @@ contract UniversalYield_ERC4626_Rotation_Test is Test {
         usdcFeed = new MockFeedCoverage(1_00000000, 8); // $1.00 USD
         provider = new ProtocolAddressProvider(admin);
 
-        vault = new AlphaVault(provider, admin);
-        alphaToken = new AlphaToken(provider, admin);
+        vault = new VirajeVault(provider, admin);
+        virajeToken = new VirajeToken(provider, admin);
         oracle = new OracleHub(provider, admin);
         TreasuryManager logic = new TreasuryManager(provider);
         TreasuryProxy proxy = new TreasuryProxy(address(logic));
@@ -75,14 +75,14 @@ contract UniversalYield_ERC4626_Rotation_Test is Test {
         manager.initialize(admin, address(usdc), 6);
 
         provider.setAddress(keccak256("TREASURY_MANAGER"), address(manager));
-        provider.setAddress(provider.ID_ALPHA_VAULT(), address(vault));
-        provider.setAddress(provider.ID_ALPHA_TOKEN(), address(alphaToken));
+        provider.setAddress(provider.ID_VIRAJE_VAULT(), address(vault));
+        provider.setAddress(provider.ID_VIRAJE_TOKEN(), address(virajeToken));
         provider.setAddress(provider.ID_ORACLE_HUB(), address(oracle));
         provider.setAddress(provider.ID_TREASURY_MANAGER(), address(manager));
 
         vault.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(manager));
-        alphaToken.grantRole(ProtocolRoles.MINTER_ROLE, address(manager));
-        alphaToken.grantRole(ProtocolRoles.BURNER_ROLE, address(manager));
+        virajeToken.grantRole(ProtocolRoles.MINTER_ROLE, address(manager));
+        virajeToken.grantRole(ProtocolRoles.BURNER_ROLE, address(manager));
         manager.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, admin);
 
         oracle.grantRole(ProtocolRoles.ORACLE_MANAGER_ROLE, admin);
@@ -136,7 +136,7 @@ contract UniversalYield_ERC4626_Rotation_Test is Test {
         uint256 redeemShares = (sharesMinted * 75) / 100;
 
         vm.startPrank(user);
-        alphaToken.approve(address(manager), redeemShares);
+        virajeToken.approve(address(manager), redeemShares);
         manager.redeem(redeemShares, 0);
         vm.stopPrank();
 
@@ -162,7 +162,7 @@ contract UniversalYield_ERC4626_Rotation_Test is Test {
         manager.deposit(depositAmount, 0);
         vm.stopPrank();
 
-        // 2. Deposit 100% of liquid USDC to Aave Yield Adapter (0 USDC left in AlphaVault)
+        // 2. Deposit 100% of liquid USDC to Aave Yield Adapter (0 USDC left in VirajeVault)
         vm.startPrank(admin);
         manager.depositToYieldAdapter(address(aaveAdapter), depositAmount);
         vm.stopPrank();

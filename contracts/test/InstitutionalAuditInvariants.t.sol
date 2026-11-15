@@ -4,8 +4,8 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "../src/lib/token/ERC20/ERC20.sol";
 import "../src/ProtocolAddressProvider.sol";
-import "../src/AlphaToken.sol";
-import "../src/AlphaVault.sol";
+import "../src/VirajeToken.sol";
+import "../src/VirajeVault.sol";
 import "../src/TreasuryProxy.sol";
 import "../src/OracleHub.sol";
 import "../src/TreasuryManager.sol";
@@ -67,8 +67,8 @@ contract StaleMockChainlinkFeedAudit {
 
 contract InstitutionalAuditInvariantsTest is Test {
     ProtocolAddressProvider public provider;
-    AlphaToken public alphaToken;
-    AlphaVault public vault;
+    VirajeToken public virajeToken;
+    VirajeVault public vault;
     OracleHub public oracleHub;
     TreasuryManager public manager;
 
@@ -98,13 +98,13 @@ contract InstitutionalAuditInvariantsTest is Test {
         // 1. Address Provider
         provider = new ProtocolAddressProvider(admin);
 
-        // 2. AlphaToken
-        alphaToken = new AlphaToken(provider, admin);
-        provider.setAddress(keccak256("ALPHA_TOKEN"), address(alphaToken));
+        // 2. VirajeToken
+        virajeToken = new VirajeToken(provider, admin);
+        provider.setAddress(keccak256("VIRAJE_TOKEN"), address(virajeToken));
 
-        // 3. AlphaVault
-        vault = new AlphaVault(provider, admin);
-        provider.setAddress(keccak256("ALPHA_VAULT"), address(vault));
+        // 3. VirajeVault
+        vault = new VirajeVault(provider, admin);
+        provider.setAddress(keccak256("VIRAJE_VAULT"), address(vault));
 
         // 4. OracleHub
         oracleHub = new OracleHub(provider, admin);
@@ -122,8 +122,8 @@ contract InstitutionalAuditInvariantsTest is Test {
         provider.setAddress(keccak256("TREASURY_MANAGER"), address(manager));
 
         // Roles
-        alphaToken.grantRole(ProtocolRoles.MINTER_ROLE, address(manager));
-        alphaToken.grantRole(ProtocolRoles.BURNER_ROLE, address(manager));
+        virajeToken.grantRole(ProtocolRoles.MINTER_ROLE, address(manager));
+        virajeToken.grantRole(ProtocolRoles.BURNER_ROLE, address(manager));
         vault.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(manager));
         manager.grantRole(ProtocolRoles.COMPLIANCE_ROLE, admin);
 
@@ -247,7 +247,7 @@ contract InstitutionalAuditInvariantsTest is Test {
 
         // 2. Intento de rescate total en el bloque posterior -> REVERTIDO por proteccion de colateralizacion
         vm.roll(block.number + 1);
-        alphaToken.approve(address(manager), sharesMinted);
+        virajeToken.approve(address(manager), sharesMinted);
         uint256 usdcReturned = manager.redeem(sharesMinted, 0);
         assertLt(usdcReturned, flashLoanAmount, "MEV arbitrage must result in net capital loss");
         vm.stopPrank();
@@ -280,7 +280,7 @@ contract InstitutionalAuditInvariantsTest is Test {
         vm.roll(block.number + 1);
 
         // 3. Atacante intenta rescatar sus shares en el siguiente bloque
-        alphaToken.approve(address(manager), sharesMinted);
+        virajeToken.approve(address(manager), sharesMinted);
         uint256 usdcReturned = manager.redeem(sharesMinted, 0);
         assertGt(usdcReturned, 0, "Redeem should return positive USDC");
         vm.stopPrank();
@@ -312,7 +312,7 @@ contract InstitutionalAuditInvariantsTest is Test {
         usdc.approve(address(manager), depositAmt);
         uint256 shares = manager.deposit(depositAmt, 0);
 
-        alphaToken.approve(address(manager), shares);
+        virajeToken.approve(address(manager), shares);
         vm.expectRevert();
         manager.redeem(shares, 0);
         vm.stopPrank();
@@ -334,7 +334,7 @@ contract InstitutionalAuditInvariantsTest is Test {
         vm.prank(admin);
         manager.setKYCStatus(user, true);
         vm.startPrank(user);
-        alphaToken.approve(address(manager), shares);
+        virajeToken.approve(address(manager), shares);
         vm.expectRevert();
         manager.emergencyRedeem(shares, 0);
         vm.stopPrank();

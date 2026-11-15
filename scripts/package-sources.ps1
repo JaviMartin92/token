@@ -1,6 +1,6 @@
 $projectRoot = "C:\Users\javil\Desktop\token"
-$zipPath = "C:\Users\javil\Desktop\token\alpha_centauri_audit_sources.zip"
-$artifactZipPath = "C:\Users\javil\.gemini\antigravity\brain\03022e08-efc5-40cb-9e90-72709dbd4c3d\alpha_centauri_audit_sources.zip"
+$zipPath = "C:\Users\javil\Desktop\token\viraje_audit_sources.zip"
+$artifactZipPath = "C:\Users\javil\.gemini\antigravity\brain\03022e08-efc5-40cb-9e90-72709dbd4c3d\viraje_audit_sources.zip"
 
 if (Test-Path $zipPath) { 
     Remove-Item $zipPath -Force 
@@ -17,7 +17,7 @@ $allFiles = Get-ChildItem -Path $projectRoot -Recurse -File | Where-Object {
     $relPath = $_.FullName.Substring($projectRoot.Length + 1)
     $_.FullName -notmatch $excludedRegex -and
     $_.Name -ne '.env' -and
-    $_.Name -ne 'alpha_centauri_audit_sources.zip'
+    $_.Name -ne 'viraje_audit_sources.zip'
 }
 
 Write-Host "Files to archive: $($allFiles.Count)"

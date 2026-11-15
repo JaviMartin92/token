@@ -9,7 +9,7 @@ import "./ProtocolRoles.sol";
 
 /**
  * @title CircuitBreaker
- * @author Alpha Centauri Architecture Team
+ * @author Viraje Protocol Architecture Team
  * @notice Protects treasury solvency by freezing purchase orders for collateral assets
  *         experiencing rapid price drops (>15% within a 6-hour sliding window by default).
  * @dev Employs a circular ring buffer (max 50 points) to achieve O(1) storage writes

@@ -23,8 +23,8 @@ $ROOT_DIR = (Get-Location).Path
 
 # 1. Reset instantaneo de Anvil Blockchain a Estado 0 (Purga completa de memoria)
 Write-Host "[1/3] Reiniciando memoria de Anvil Blockchain a Estado 0 (Fresh Genesis)..." -ForegroundColor Yellow
-docker rm -f alpha-anvil 2>$null | Out-Null
-docker run -d --name alpha-anvil -p 8545:8545 --entrypoint anvil ghcr.io/foundry-rs/foundry:latest --host 0.0.0.0 --port 8545 --chain-id 31337 --code-size-limit 120000 | Out-Null
+docker rm -f viraje-anvil 2>$null | Out-Null
+docker run -d --name viraje-anvil -p 8545:8545 --entrypoint anvil ghcr.io/foundry-rs/foundry:latest --host 0.0.0.0 --port 8545 --chain-id 31337 --code-size-limit 120000 | Out-Null
 Start-Sleep -Seconds 2
 
 # 2. Compilar y Desplegar Smart Contracts e Inicializar Tesorería Génesis
@@ -38,7 +38,7 @@ npx tsx services/core/src/seed_governance_proposal.ts
 
 # 3. Re-compilar Bundle Frontend con las nuevas direcciones y Servir
 Write-Host "[3/3] Compilando Bundle Frontend a Estado 0 de Alta Velocidad..." -ForegroundColor Yellow
-docker rm -f alpha-frontend 2>$null | Out-Null
+docker rm -f viraje-frontend 2>$null | Out-Null
 Remove-Item -Recurse -Force "${ROOT_DIR}\frontend\dist" 2>$null | Out-Null
 
 # Instalar dependencias solo si no existen previamente en disco
@@ -63,7 +63,7 @@ if (Get-Command npm -ErrorAction SilentlyContinue) {
 }
 
 # Iniciar contenedor de servicio frontend con proxy RPC
-docker run -d --name alpha-frontend -p 5173:5173 --add-host=host.docker.internal:host-gateway -v "${ROOT_DIR}:/app" -w /app/frontend node:22-alpine node server.cjs | Out-Null
+docker run -d --name viraje-frontend -p 5173:5173 --add-host=host.docker.internal:host-gateway -v "${ROOT_DIR}:/app" -w /app/frontend node:22-alpine node server.cjs | Out-Null
 
 Write-Host "=======================================================" -ForegroundColor Green
 Write-Host " APLICACION REINICIADA Y LISTA EN ESTADO 0!            " -ForegroundColor Green

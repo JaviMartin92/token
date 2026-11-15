@@ -4,8 +4,8 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "../src/lib/token/ERC20/ERC20.sol";
 import "../src/ProtocolAddressProvider.sol";
-import "../src/AlphaToken.sol";
-import "../src/AlphaVault.sol";
+import "../src/VirajeToken.sol";
+import "../src/VirajeVault.sol";
 import "../src/TreasuryProxy.sol";
 import "../src/OracleHub.sol";
 import "../src/TreasuryManager.sol";
@@ -47,8 +47,8 @@ contract MockChainlinkFeed {
 
 contract ModularProtocolTest is Test {
     ProtocolAddressProvider public provider;
-    AlphaToken public alphaToken;
-    AlphaVault public vault;
+    VirajeToken public virajeToken;
+    VirajeVault public vault;
     OracleHub public oracleHub;
     TreasuryManager public manager;
 
@@ -73,12 +73,12 @@ contract ModularProtocolTest is Test {
         provider = new ProtocolAddressProvider(admin);
 
         // 2. Token
-        alphaToken = new AlphaToken(provider, admin);
-        provider.setAddress(keccak256("ALPHA_TOKEN"), address(alphaToken));
+        virajeToken = new VirajeToken(provider, admin);
+        provider.setAddress(keccak256("VIRAJE_TOKEN"), address(virajeToken));
 
         // 3. Vault
-        vault = new AlphaVault(provider, admin);
-        provider.setAddress(keccak256("ALPHA_VAULT"), address(vault));
+        vault = new VirajeVault(provider, admin);
+        provider.setAddress(keccak256("VIRAJE_VAULT"), address(vault));
 
         // 4. Oracle Hub
         oracleHub = new OracleHub(provider, admin);
@@ -95,8 +95,8 @@ contract ModularProtocolTest is Test {
         provider.setAddress(keccak256("TREASURY_MANAGER"), address(manager));
 
         // Roles
-        alphaToken.grantRole(ProtocolRoles.MINTER_ROLE, address(manager));
-        alphaToken.grantRole(ProtocolRoles.BURNER_ROLE, address(manager));
+        virajeToken.grantRole(ProtocolRoles.MINTER_ROLE, address(manager));
+        virajeToken.grantRole(ProtocolRoles.BURNER_ROLE, address(manager));
         vault.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(manager));
         manager.grantRole(ProtocolRoles.COMPLIANCE_ROLE, admin);
 
@@ -112,11 +112,11 @@ contract ModularProtocolTest is Test {
         vm.startPrank(user);
         usdc.approve(address(manager), 1000 * 10 ** 6);
 
-        // Calculate expected: 1000 USDC -> 1000 ALPHA (minus 0.5% fee = 995 ALPHA)
+        // Calculate expected: 1000 USDC -> 1000 VIRAJE (minus 0.5% fee = 995 VIRAJE)
         uint256 expectedMint = manager.deposit(1000 * 10 ** 6, 0);
 
         assertEq(expectedMint, 995 * 10 ** 18);
-        assertEq(alphaToken.balanceOf(user), 995 * 10 ** 18);
+        assertEq(virajeToken.balanceOf(user), 995 * 10 ** 18);
         assertEq(usdc.balanceOf(address(vault)), 1000 * 10 ** 6); // All USDC sits in the vault
         vm.stopPrank();
     }
@@ -125,20 +125,20 @@ contract ModularProtocolTest is Test {
         usdc.mint(user, 1000 * 10 ** 6);
         vm.startPrank(user);
         usdc.approve(address(manager), 1000 * 10 ** 6);
-        uint256 minted = manager.deposit(1000 * 10 ** 6, 0); // 995 ALPHA
-        assertEq(minted, 995 * 10 ** 18, "Expected 995 ALPHA minted");
+        uint256 minted = manager.deposit(1000 * 10 ** 6, 0); // 995 VIRAJE
+        assertEq(minted, 995 * 10 ** 18, "Expected 995 VIRAJE minted");
 
         // Advance block height to pass Same-Block Deposit/Redeem Cooldown
         vm.roll(block.number + 1);
 
-        // Now Redeem half (497.5 ALPHA)
+        // Now Redeem half (497.5 VIRAJE)
         uint256 redeemAmount = 4975 * 10 ** 17;
-        alphaToken.approve(address(manager), redeemAmount);
+        virajeToken.approve(address(manager), redeemAmount);
 
-        // 497.5 ALPHA at $1 NAV -> 497.5 USDC (minus 0.5% exit fee -> 495.0125 USDC)
+        // 497.5 VIRAJE at $1 NAV -> 497.5 USDC (minus 0.5% exit fee -> 495.0125 USDC)
         manager.redeem(redeemAmount, 0);
 
-        assertEq(alphaToken.balanceOf(user), 4975 * 10 ** 17);
+        assertEq(virajeToken.balanceOf(user), 4975 * 10 ** 17);
         vm.stopPrank();
     }
 
@@ -146,11 +146,11 @@ contract ModularProtocolTest is Test {
         usdc.mint(user, 1000 * 10 ** 6);
         vm.startPrank(user);
         usdc.approve(address(manager), 1000 * 10 ** 6);
-        manager.deposit(1000 * 10 ** 6, 0); // 995 ALPHA minted
+        manager.deposit(1000 * 10 ** 6, 0); // 995 VIRAJE minted
 
         // Manually check PoR
         uint256 totalReservesUsd = manager.getTotalNavUSD();
-        uint256 totalSupply = alphaToken.totalSupply();
+        uint256 totalSupply = virajeToken.totalSupply();
         uint256 nav = (totalReservesUsd * 10 ** 18) / totalSupply;
 
         // 1000 USDC = 1000 USD (scaled to 1e18)
@@ -164,7 +164,7 @@ contract ModularProtocolTest is Test {
     function test_RevertIf_MintWithoutRole() public {
         vm.startPrank(user);
         vm.expectRevert("AccessControl: account is missing role");
-        alphaToken.mint(user, 1000);
+        virajeToken.mint(user, 1000);
         vm.stopPrank();
     }
 }

@@ -7,7 +7,7 @@ interface TreasuryDashboardProps {
   porAssets?: string;
   porLiabilities?: string;
   porRatio?: string;
-  porBreakdown?: { stables: number; wbtc: number; weth: number; alphaStaking: number };
+  porBreakdown?: { stables: number; wbtc: number; weth: number; virajeStaking: number };
 
   usdcBalance: string;
   sharesBalance: string;
@@ -29,7 +29,7 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
   porAssets: _porAssets = '0.00',
   porLiabilities: _porLiabilities = '0.00',
   porRatio: _porRatio = '100.00%',
-  porBreakdown = { stables: 0, wbtc: 0, weth: 0, alphaStaking: 0 },
+  porBreakdown = { stables: 0, wbtc: 0, weth: 0, virajeStaking: 0 },
   usdcBalance,
   sharesBalance,
   depositAmount,
@@ -95,8 +95,8 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
           />
 
           <StatCard
-            title={`Mis ${UI_STRINGS.COMMON.SYMBOL_ALPHA} Shares`}
-            value={`${sharesBalance} ${UI_STRINGS.COMMON.SYMBOL_ALPHA}`}
+            title={`Mis ${UI_STRINGS.COMMON.SYMBOL_VIRAJE} Shares`}
+            value={`${sharesBalance} ${UI_STRINGS.COMMON.SYMBOL_VIRAJE}`}
             testId="treasury-shares-balance"
             variant="blue"
             icon="💎"
@@ -156,7 +156,7 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
               placeholder={UI_STRINGS.TREASURY.INPUT_REDEEM_PLACEHOLDER}
               value={redeemAmount}
               onChange={setRedeemAmount}
-              tokenSymbol={UI_STRINGS.COMMON.SYMBOL_ALPHA}
+              tokenSymbol={UI_STRINGS.COMMON.SYMBOL_VIRAJE}
               tokenDecimals={18}
               maxBalance={sharesBalance}
             />
@@ -180,7 +180,7 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
         const morphoAllocationUsd = Math.max(0, porBreakdown.stables - p2pAllocationUsd);
         const btcAllocationUsd = porBreakdown.wbtc;
         const ethAllocationUsd = porBreakdown.weth;
-        const alphaAllocationUsd = porBreakdown.alphaStaking ?? 0;
+        const virajeAllocationUsd = porBreakdown.virajeStaking ?? 0;
 
         return (
           <Card
@@ -264,7 +264,7 @@ export const TreasuryDashboard: React.FC<TreasuryDashboardProps> = ({
                   <div className={styles.strategyRow}>
                     <span>Bóveda en Staking:</span>
                     <span className={styles.strategyVal}>
-                      ${alphaAllocationUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (VIRAJE)
+                      ${virajeAllocationUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (VIRAJE)
                     </span>
                   </div>
                   <div className={styles.strategyRow}>

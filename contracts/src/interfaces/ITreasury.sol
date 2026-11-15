@@ -6,7 +6,7 @@ interface ITreasury {
         uint64 stablecoins; // Target: 50% (Min 40%, Max 60%)
         uint64 wbtc; // Target: 25% (Min 20%, Max 30%)
         uint64 weth; // Target: 12.5% (Min 10%, Max 15%)
-        uint64 alphaProtocolStaking; // Target: 12.5% (Min 5%, Max 15%) - Auto-staked for Real Yield
+        uint64 virajeProtocolStaking; // Target: 12.5% (Min 5%, Max 15%) - Auto-staked for Real Yield
     }
 
     event WeightsAdjusted(AssetWeights newWeights);
@@ -24,14 +24,14 @@ interface ITreasury {
     function getNAVPerShare() external view returns (uint256);
 
     /**
-     * @notice Returns the net circulating shares excluding protocol-owned ALPHA.
+     * @notice Returns the net circulating shares excluding protocol-owned VIRAJE.
      */
     function getNetCirculatingShares() external view returns (uint256);
 
     /**
-     * @notice Allows an investor to deposit stablecoins to mint native ALPHA shares based on NAV.
+     * @notice Allows an investor to deposit stablecoins to mint native VIRAJE shares based on NAV.
      * @param stableAmount The amount of USDC/stablecoin to deposit.
-     * @return sharesMinted The net amount of ALPHA shares minted.
+     * @return sharesMinted The net amount of VIRAJE shares minted.
      */
     function deposit(uint256 stableAmount) external returns (uint256 sharesMinted);
     function deposit(uint256 stableAmount, uint256 minSharesOut) external returns (uint256 sharesMinted);
@@ -42,12 +42,12 @@ interface ITreasury {
     function depositFor(address beneficiary, uint256 stableAmount, uint256 minSharesOut) external returns (uint256 sharesMinted);
 
     /**
-     * @notice Allows RealYieldRouter to convert protocol fee shares into ALPHA tokens without triggering reentrancy locks.
+     * @notice Allows RealYieldRouter to convert protocol fee shares into VIRAJE tokens without triggering reentrancy locks.
      */
     function mintCorporateFeeShares(uint256 stableAmount) external returns (uint256 sharesMinted);
 
     /**
-     * @notice Processes reserve fee revenue by executing open market swaps for 25% WBTC, 12.5% WETH, and 12.5% ALPHA (buy pressure), auto-staking the purchased ALPHA into GovernanceStaking.
+     * @notice Processes reserve fee revenue by executing open market swaps for 25% WBTC, 12.5% WETH, and 12.5% VIRAJE (buy pressure), auto-staking the purchased VIRAJE into GovernanceStaking.
      */
     function notifyReserveFee(uint256 usdcFeeAmount) external;
 
@@ -75,9 +75,10 @@ interface ITreasury {
     function releaseVaultPayout(address to, uint256 amount) external;
 
     /**
-     * @notice Returns the canonical AlphaVault custody address.
+     * @notice Returns the canonical VirajeVault custody address.
      */
-    function alphaVault() external view returns (address);
+    function virajeVault() external view returns (address);
+    function virajeVault() external view returns (address);
 
     /**
      * @notice Records the amount of tokens burned by external contracts (e.g. GovernanceStaking) to track total burned.

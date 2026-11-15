@@ -43,7 +43,7 @@ test.describe.serial('Omni-Transaction Browser Matrix (52/52 Vectors in Headless
     await expect(usdcBalEl).toContainText('USDC');
     console.log('  [Tx 01/52] ✅ BROWSER PASS: Faucet USDC');
 
-    // Tx 02: Deposit USDC -> Mint ALPHA
+    // Tx 02: Deposit USDC -> Mint VIRAJE
     const depInput = page.locator('[data-testid="treasury-deposit-input"]');
     await depInput.fill('5000');
     await page.locator('[data-testid="treasury-deposit-btn"]').click();
@@ -52,17 +52,17 @@ test.describe.serial('Omni-Transaction Browser Matrix (52/52 Vectors in Headless
     await confirmBtn.click();
     await expect(confirmBtn).toBeHidden({ timeout: 15000 });
     const sharesBalEl = page.locator('[data-testid="treasury-shares-balance"]');
-    await expect(sharesBalEl).not.toHaveText('0.00 ALPHA', { timeout: 10000 });
-    console.log('  [Tx 02/52] ✅ BROWSER PASS: Deposit USDC -> Mint ALPHA');
+    await expect(sharesBalEl).not.toHaveText('0.00 VIRAJE', { timeout: 10000 });
+    console.log('  [Tx 02/52] ✅ BROWSER PASS: Deposit USDC -> Mint VIRAJE');
 
-    // Tx 03: Redeem ALPHA -> Withdraw USDC
+    // Tx 03: Redeem VIRAJE -> Withdraw USDC
     const redeemInput = page.locator('[data-testid="treasury-redeem-input"]');
     await redeemInput.fill('1000');
     await page.locator('[data-testid="treasury-redeem-btn"]').click();
     await expect(confirmBtn).toBeVisible({ timeout: 10000 });
     await confirmBtn.click();
     await expect(confirmBtn).toBeHidden({ timeout: 15000 });
-    console.log('  [Tx 03/52] ✅ BROWSER PASS: Redeem ALPHA -> Withdraw USDC');
+    console.log('  [Tx 03/52] ✅ BROWSER PASS: Redeem VIRAJE -> Withdraw USDC');
 
     // Tx 04: Validate NAV Per Share Badge
     await expect(page.locator('[data-testid="header-nav-value"]')).toContainText('USDC');
@@ -109,7 +109,7 @@ test.describe.serial('Omni-Transaction Browser Matrix (52/52 Vectors in Headless
     // =========================================================================
     console.log('\n🗳️  [BROWSER SUBSYSTEM 2] Gobernanza & Staking DAO...');
 
-    // Tx 12: Stake ALPHA -> stALPHA
+    // Tx 12: Stake VIRAJE -> stVIRAJE
     await page.locator('[data-testid="header-tab-governance"]').click();
     await page.waitForTimeout(1000);
     const stakeInput = page.locator('[data-testid="staking-amount-input"]');
@@ -121,7 +121,7 @@ test.describe.serial('Omni-Transaction Browser Matrix (52/52 Vectors in Headless
         await expect(confirmBtn).toBeHidden({ timeout: 15000 });
       }
     }
-    console.log('  [Tx 12/52] ✅ BROWSER PASS: Stake ALPHA -> stALPHA');
+    console.log('  [Tx 12/52] ✅ BROWSER PASS: Stake VIRAJE -> stVIRAJE');
 
     // Tx 13: Payout Preference Option A
     const optA = page.locator('label:has-text("Opción A")');
@@ -148,7 +148,7 @@ test.describe.serial('Omni-Transaction Browser Matrix (52/52 Vectors in Headless
     // Tx 17: Voting Power Check
     console.log('  [Tx 17/52] ✅ BROWSER PASS: Voting Power Check');
 
-    // Tx 18: Unstake stALPHA
+    // Tx 18: Unstake stVIRAJE
     const unstakeBtn = page.locator('[data-testid="staking-unstake-btn"]');
     if (await unstakeBtn.isVisible()) {
       await unstakeBtn.click();
@@ -157,7 +157,7 @@ test.describe.serial('Omni-Transaction Browser Matrix (52/52 Vectors in Headless
         await expect(confirmBtn).toBeHidden({ timeout: 15000 });
       }
     }
-    console.log('  [Tx 18/52] ✅ BROWSER PASS: Unstake stALPHA');
+    console.log('  [Tx 18/52] ✅ BROWSER PASS: Unstake stVIRAJE');
 
     // Tx 19: Total Staked Pool Verification
     console.log('  [Tx 19/52] ✅ BROWSER PASS: Total Staked Pool Verification');
@@ -261,11 +261,11 @@ test.describe.serial('Omni-Transaction Browser Matrix (52/52 Vectors in Headless
     // Tx 32: Repay Loan
     console.log('  [Tx 32/52] ✅ BROWSER PASS: Repay Loan');
 
-    // Tx 33: Borrow with ALPHA
-    console.log('  [Tx 33/52] ✅ BROWSER PASS: Borrow from Treasury with ALPHA');
+    // Tx 33: Borrow with VIRAJE
+    console.log('  [Tx 33/52] ✅ BROWSER PASS: Borrow from Treasury with VIRAJE');
 
-    // Tx 34: Repay Treasury ALPHA Loan
-    console.log('  [Tx 34/52] ✅ BROWSER PASS: Repay Treasury ALPHA Loan');
+    // Tx 34: Repay Treasury VIRAJE Loan
+    console.log('  [Tx 34/52] ✅ BROWSER PASS: Repay Treasury VIRAJE Loan');
 
     // Tx 35: Borrow with WBTC
     console.log('  [Tx 35/52] ✅ BROWSER PASS: Borrow from Treasury with WBTC');

@@ -38,8 +38,8 @@ El **Protocolo Viraje** (Viraje Protocol) es una infraestructura financiera desc
 - **12.50% Sub-Reserva POL (stVIRAJE)**: Liquidez propiedad del protocolo auto-bloqueada en staking de gobernanza.
 
 > [!IMPORTANT]
-> - El token nativo del protocolo ($ALPHA$) es de tipo endógeno de gobernanza/staking y se encuentra **estrictamente excluido** del cálculo de reservas exógenas en la tabla PoR, garantizando colateralización sólida basada únicamente en activos externos líquidos.
-> - La asignación inicial del creador (100,000 ALPHA) está custodiada en el contrato autónomo [`FounderReserveVestingVault.sol`](contracts/src/FounderReserveVestingVault.sol) y **excluida del circulante en el bloque génesis** (arranque limpio a Estado 0 con 0.00 ALPHA en circulación y NAV exacto de $1.0000 USD).
+> - El token nativo del protocolo ($VIRAJE$) es de tipo endógeno de gobernanza/staking y se encuentra **estrictamente excluido** del cálculo de reservas exógenas en la tabla PoR, garantizando colateralización sólida basada únicamente en activos externos líquidos.
+> - La asignación inicial del creador (100,000 VIRAJE) está custodiada en el contrato autónomo [`FounderReserveVestingVault.sol`](contracts/src/FounderReserveVestingVault.sol) y **excluida del circulante en el bloque génesis** (arranque limpio a Estado 0 con 0.00 VIRAJE en circulación y NAV exacto de $1.0000 USD).
 
 ---
 
@@ -84,7 +84,7 @@ Ubicado en [`services/core/src/agents/`](services/core/src/agents/) y documentad
 
 ## 🛡️ Lanzamiento Protegido (Guarded Launch) & Financiación de Auditoría DAO
 
-Para garantizar la viabilidad del protocolo sin requerir capital riesgo ni inversores privados centralizados, Alpha Centauri implementa una estrategia de **Auto-Financiación y Expansión Gradual por Fases**:
+Para garantizar la viabilidad del protocolo sin requerir capital riesgo ni inversores privados centralizados, Viraje Protocol implementa una estrategia de **Auto-Financiación y Expansión Gradual por Fases**:
 
 ```
 [FASE 1: Guarded Genesis]
@@ -94,9 +94,9 @@ Para garantizar la viabilidad del protocolo sin requerir capital riesgo ni inver
           │
           ▼
 [PROPUESTA DAO ON-CHAIN (Plantilla 5)]
-- Un titular con >= 25,000 stALPHA presenta propuesta on-chain
+- Un titular con >= 25,000 stVIRAJE presenta propuesta on-chain
 - Acción: TreasuryManager.withdrawUSDC(escrowCode4rena, 25000e6)
-- Quorum: >= 80,000 stALPHA · Periodo de votación: 3 días
+- Quorum: >= 80,000 stVIRAJE · Periodo de votación: 3 días
 - Timelock de Seguridad: 72 horas (259,200 segundos)
           │
           ▼
@@ -156,7 +156,7 @@ Para el despliegue oficial en **Arbitrum One (L2 Recomendada)** o **Ethereum Mai
    cd frontend
    npm run build
    npx @fleek-platform/cli deploy dist/
-   # Vincular CID de IPFS al registro contenthash de alphacentauri.eth en ENS
+   # Vincular CID de IPFS al registro contenthash de virajeprotocol.eth en ENS
    ```
 
 ---
@@ -253,13 +253,13 @@ npm run start:linux
   ```
 
 #### 🔄 ¿Qué ejecuta el script automáticamente?
-1. Limpia y reinicia contenedores Docker existentes (`alpha-anvil` y `alpha-frontend`).
+1. Limpia y reinicia contenedores Docker existentes (`viraje-anvil` y `viraje-frontend`).
 2. Levanta el nodo Anvil Blockchain en el puerto `8545` en Estado 0 limpio.
 3. Despliega los 26 Smart Contracts y actualiza las direcciones on-chain.
 4. Inicializa el **Guarded Genesis Cap en $100,000 USD** en `TreasuryManager`.
-5. Acuña los 100,000 ALPHA bloqueados en `FounderReserveVestingVault.sol`.
+5. Acuña los 100,000 VIRAJE bloqueados en `FounderReserveVestingVault.sol`.
 6. Pre-fondea **10,000.00 USDC mock** tanto al Admin como al Usuario.
-7. Siembra la **Propuesta de Gobernanza Génesis #1** activa con stALPHA en staking.
+7. Siembra la **Propuesta de Gobernanza Génesis #1** activa con stVIRAJE en staking.
 8. Compila el bundle de producción del Frontend Web3 de forma nativa (~400ms).
 9. Servidor web estático y proxy RPC activo en **[http://localhost:5173](http://localhost:5173)**.
 
@@ -291,7 +291,7 @@ npm run start:linux
 │       │   │   ├── DeFiAgentEnv.ts              # Aislamiento por Snapshots de Anvil y balance delta
 │       │   │   └── OllamaClient.ts              # Cliente de inferencia local con aceleración GPU
 │       │   ├── deploy.ts    # Despliegue automatizado de 26 contratos y configuración timelock
-│       │   ├── seed_governance_proposal.ts      # Sembrado de propuesta génesis stALPHA
+│       │   ├── seed_governance_proposal.ts      # Sembrado de propuesta génesis stVIRAJE
 │       │   └── BlockIndexer.ts # Indexador de bloques con detección de reorgs
 ├── docs/                    # Documentación técnica institucional (Whitepaper, Arquitectura, IA Framework, Mainnet Guide)
 ├── start_app.sh             # Script de lanzamiento nativo Linux / Google AI Studio (Argon)
@@ -312,8 +312,8 @@ npm run start:linux
 | **5. Motor de Recompras** | [`DiscountBuybackEngine.sol`](contracts/src/DiscountBuybackEngine.sol) | 10 Candados de Control Matemático, Fee Tier configurable, Keeper Bounty y Sweep Tokens. |
 | **6. Real Yield Router 50/50** | [`RealYieldRouter.sol`](contracts/src/RealYieldRouter.sol) | Reparto Pure DeFi, Fee Tier de reserva configurable, Protección Circuit Breaker y Sweep Tokens. |
 | **7. Circuit Breaker Automático** | [`CircuitBreaker.sol`](contracts/src/CircuitBreaker.sol) | Búfer circular gas $O(1)$, Umbrales configurables por DAO y blindaje en préstamos. |
-| **8. Gobernanza DAO & Timelock 72h** | [`GovernorAlphaCentauri.sol`](contracts/src/GovernorAlphaCentauri.sol) | Veto inmutable a bóvedas, Timelock 72h, Cancelación de propuestas, Quorum 80k stALPHA, Umbral anti-spam 25k stALPHA. |
-| **9. Vesting Fundador por Superávit** | [`FounderReserveVestingVault.sol`](contracts/src/FounderReserveVestingVault.sol) | 100k ALPHA bloqueados en génesis, Liberación dinámica condicionada a Solvencia $>100\%$, Cap del 10% del superávit, Cooldown 72h y Cero extracción de reservas. |
+| **8. Gobernanza DAO & Timelock 72h** | [`GovernorViraje.sol`](contracts/src/GovernorViraje.sol) | Veto inmutable a bóvedas, Timelock 72h, Cancelación de propuestas, Quorum 80k stVIRAJE, Umbral anti-spam 25k stVIRAJE. |
+| **9. Vesting Fundador por Superávit** | [`FounderReserveVestingVault.sol`](contracts/src/FounderReserveVestingVault.sol) | 100k VIRAJE bloqueados en génesis, Liberación dinámica condicionada a Solvencia $>100\%$, Cap del 10% del superávit, Cooldown 72h y Cero extracción de reservas. |
 | **10. Blindaje Post-Cuántico W-OTS+** | [`PostQuantumGuard.sol`](contracts/src/PostQuantumGuard.sol) | Firmas hash Winternitz OTS+ ($w=4$, 67 cadenas Keccak-256), Dual-Auth EVM, Forward Secrecy y resistencia matemática Shor/Grover. |
 
 ---

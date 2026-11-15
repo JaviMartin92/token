@@ -6,12 +6,12 @@ import "./TreasuryInvariantHandler.sol";
 
 /**
  * @title TreasuryInvariantsTest
- * @notice Formal Stateful Invariant Verification Suite for Alpha Centauri Treasury
+ * @notice Formal Stateful Invariant Verification Suite for Viraje Protocol Treasury
  */
 contract TreasuryInvariantsTest is Test {
     ProtocolAddressProvider public provider;
-    AlphaToken public alphaToken;
-    AlphaVault public vault;
+    VirajeToken public virajeToken;
+    VirajeVault public vault;
     OracleHub public oracleHub;
     TreasuryManager public manager;
 
@@ -29,11 +29,11 @@ contract TreasuryInvariantsTest is Test {
 
         provider = new ProtocolAddressProvider(admin);
 
-        alphaToken = new AlphaToken(provider, admin);
-        provider.setAddress(keccak256("ALPHA_TOKEN"), address(alphaToken));
+        virajeToken = new VirajeToken(provider, admin);
+        provider.setAddress(keccak256("VIRAJE_TOKEN"), address(virajeToken));
 
-        vault = new AlphaVault(provider, admin);
-        provider.setAddress(keccak256("ALPHA_VAULT"), address(vault));
+        vault = new VirajeVault(provider, admin);
+        provider.setAddress(keccak256("VIRAJE_VAULT"), address(vault));
 
         oracleHub = new OracleHub(provider, admin);
         provider.setAddress(keccak256("ORACLE_HUB"), address(oracleHub));
@@ -46,8 +46,8 @@ contract TreasuryInvariantsTest is Test {
         manager.initialize(admin, address(usdc), 6);
         provider.setAddress(keccak256("TREASURY_MANAGER"), address(manager));
 
-        alphaToken.grantRole(ProtocolRoles.MINTER_ROLE, address(manager));
-        alphaToken.grantRole(ProtocolRoles.BURNER_ROLE, address(manager));
+        virajeToken.grantRole(ProtocolRoles.MINTER_ROLE, address(manager));
+        virajeToken.grantRole(ProtocolRoles.BURNER_ROLE, address(manager));
         vault.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(manager));
         manager.grantRole(ProtocolRoles.COMPLIANCE_ROLE, admin);
 
@@ -55,7 +55,7 @@ contract TreasuryInvariantsTest is Test {
             manager.setKYCStatus(address(i), true);
         }
 
-        handler = new TreasuryInvariantHandler(manager, alphaToken, vault, usdc, usdcFeed);
+        handler = new TreasuryInvariantHandler(manager, virajeToken, vault, usdc, usdcFeed);
         manager.grantRole(ProtocolRoles.COMPLIANCE_ROLE, address(handler));
 
         // Seed initial genesis deposit so system has active baseline

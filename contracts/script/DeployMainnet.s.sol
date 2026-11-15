@@ -5,8 +5,8 @@ import "forge-std/Script.sol";
 
 import "../src/ProtocolAddressProvider.sol";
 import "../src/ProtocolRoles.sol";
-import "../src/AlphaVault.sol";
-import "../src/AlphaToken.sol";
+import "../src/VirajeVault.sol";
+import "../src/VirajeToken.sol";
 import "../src/OracleHub.sol";
 import "../src/CircuitBreaker.sol";
 import "../src/TreasuryManager.sol";
@@ -19,7 +19,7 @@ import "../src/VaultPositionNFT.sol";
 import "../src/VestedDiscountVault.sol";
 import "../src/P2PLendingMarket.sol";
 import "../src/TimelockController.sol";
-import "../src/GovernorAlphaCentauri.sol";
+import "../src/GovernorViraje.sol";
 import "../src/PostQuantumGuard.sol";
 import "../src/DiscountBuybackEngine.sol";
 import "../src/FounderReserveVestingVault.sol";
@@ -53,8 +53,8 @@ contract DeployMainnet is Script {
 
     // --- Deployed Protocol State Instances ---
     ProtocolAddressProvider public addressProvider;
-    AlphaVault public alphaVault;
-    AlphaToken public alphaToken;
+    VirajeVault public virajeVault;
+    VirajeToken public virajeToken;
     OracleHub public oracleHub;
     CircuitBreaker public circuitBreaker;
     TreasuryManager public treasury;
@@ -66,7 +66,7 @@ contract DeployMainnet is Script {
     VestedDiscountVault public vestedVault;
     P2PLendingMarket public p2pMarket;
     TimelockController public timelock;
-    GovernorAlphaCentauri public governor;
+    GovernorViraje public governor;
     PostQuantumGuard public pqcGuard;
     DiscountBuybackEngine public buybackEngine;
     FounderReserveVestingVault public founderVault;
@@ -103,13 +103,13 @@ contract DeployMainnet is Script {
         addressProvider = new ProtocolAddressProvider(deployer);
         console.log("[1] ProtocolAddressProvider deployed:", address(addressProvider));
 
-        alphaVault = new AlphaVault(addressProvider, deployer);
-        addressProvider.setAddress(addressProvider.ID_ALPHA_VAULT(), address(alphaVault));
-        console.log("[2] AlphaVault deployed:", address(alphaVault));
+        virajeVault = new VirajeVault(addressProvider, deployer);
+        addressProvider.setAddress(addressProvider.ID_VIRAJE_VAULT(), address(virajeVault));
+        console.log("[2] VirajeVault deployed:", address(virajeVault));
 
-        alphaToken = new AlphaToken(addressProvider, deployer);
-        addressProvider.setAddress(addressProvider.ID_ALPHA_TOKEN(), address(alphaToken));
-        console.log("[3] AlphaToken deployed:", address(alphaToken));
+        virajeToken = new VirajeToken(addressProvider, deployer);
+        addressProvider.setAddress(addressProvider.ID_VIRAJE_TOKEN(), address(virajeToken));
+        console.log("[3] VirajeToken deployed:", address(virajeToken));
 
         oracleHub = new OracleHub(addressProvider, deployer);
         addressProvider.setAddress(addressProvider.ID_ORACLE_HUB(), address(oracleHub));
@@ -141,7 +141,7 @@ contract DeployMainnet is Script {
         addressProvider.setAddress(addressProvider.ID_COMMUNITY_YIELD_VAULT(), address(communityVault));
         console.log("[8] CommunityYieldVault deployed:", address(communityVault));
 
-        staking = new GovernanceStaking(address(alphaToken), ARB_USDC, deployer);
+        staking = new GovernanceStaking(address(virajeToken), ARB_USDC, deployer);
         staking.setTreasury(address(treasury));
         staking.setProtocolVaults(address(communityVault));
         addressProvider.setAddress(addressProvider.ID_GOVERNANCE_STAKING(), address(staking));
@@ -156,7 +156,7 @@ contract DeployMainnet is Script {
         );
         realYieldRouter.setProtocolVaults(address(treasury), address(communityVault));
         realYieldRouter.setAuthorizedYieldCaller(address(treasury), true);
-        realYieldRouter.setBasketAssets(ARB_WBTC, ARB_WETH, address(alphaToken));
+        realYieldRouter.setBasketAssets(ARB_WBTC, ARB_WETH, address(virajeToken));
         realYieldRouter.setOracleConfig(address(oracleHub), 300);
         realYieldRouter.setCircuitBreaker(address(circuitBreaker));
         addressProvider.setAddress(addressProvider.ID_REAL_YIELD_ROUTER(), address(realYieldRouter));
@@ -172,7 +172,7 @@ contract DeployMainnet is Script {
             address(positionNFT),
             address(treasury),
             address(realYieldRouter),
-            address(alphaToken),
+            address(virajeToken),
             deployer
         );
         vestedVault.setTokenomicsEngine(address(tokenomicsEngine));
@@ -193,17 +193,17 @@ contract DeployMainnet is Script {
         p2pMarket.setTreasury(address(treasury));
         p2pMarket.setTokenomicsEngine(address(tokenomicsEngine));
         p2pMarket.setCircuitBreaker(address(circuitBreaker));
-        p2pMarket.setAlphaToken(address(alphaToken));
+        p2pMarket.setVirajeToken(address(virajeToken));
         p2pMarket.setWbtcToken(ARB_WBTC);
         p2pMarket.setWethToken(ARB_WETH);
         addressProvider.setAddress(keccak256("P2P_MARKET"), address(p2pMarket));
         console.log("[13] P2PLendingMarket deployed:", address(p2pMarket));
 
         timelock = new TimelockController(72 hours, deployer);
-        governor = new GovernorAlphaCentauri(
+        governor = new GovernorViraje(
             address(staking),
             address(timelock),
-            address(alphaVault),
+            address(virajeVault),
             address(communityVault),
             address(treasury),
             deployer
@@ -230,7 +230,7 @@ contract DeployMainnet is Script {
         // Founder beneficiary is configurable; administration is ALWAYS handed to the timelock.
         address founderBeneficiary = vm.envOr("FOUNDER_BENEFICIARY", deployer);
         founderVault = new FounderReserveVestingVault(
-            address(alphaToken),
+            address(virajeToken),
             address(treasury),
             founderBeneficiary,
             deployer
@@ -239,7 +239,7 @@ contract DeployMainnet is Script {
 
         gateway = new CompliantTreasuryGateway(
             address(treasury),
-            address(alphaToken),
+            address(virajeToken),
             deployer
         );
         console.log("[18] CompliantTreasuryGateway deployed:", address(gateway));
@@ -256,10 +256,10 @@ contract DeployMainnet is Script {
     }
 
     function _wirePermissions(address deployer) private {
-        alphaToken.grantRole(ProtocolRoles.MINTER_ROLE, address(treasury));
-        alphaToken.grantRole(ProtocolRoles.BURNER_ROLE, address(treasury));
-        alphaVault.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(treasury));
-        alphaVault.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(buybackEngine));
+        virajeToken.grantRole(ProtocolRoles.MINTER_ROLE, address(treasury));
+        virajeToken.grantRole(ProtocolRoles.BURNER_ROLE, address(treasury));
+        virajeVault.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(treasury));
+        virajeVault.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(buybackEngine));
         treasury.grantRole(ProtocolRoles.COMPLIANCE_ROLE, address(gateway));
 
         // Treasury configuration & Burner roles
@@ -293,11 +293,11 @@ contract DeployMainnet is Script {
         // Governance transfer to Timelock & revoke deployer master roles
         TreasuryProxy(payable(address(treasury))).changeAdmin(address(timelock));
 
-        alphaVault.grantRole(alphaVault.DEFAULT_ADMIN_ROLE(), address(timelock));
-        alphaVault.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
-        alphaVault.renounceRole(ProtocolRoles.VAULT_MANAGER_ROLE, deployer);
-        alphaVault.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
-        alphaVault.renounceRole(alphaVault.DEFAULT_ADMIN_ROLE(), deployer);
+        virajeVault.grantRole(virajeVault.DEFAULT_ADMIN_ROLE(), address(timelock));
+        virajeVault.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        virajeVault.renounceRole(ProtocolRoles.VAULT_MANAGER_ROLE, deployer);
+        virajeVault.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        virajeVault.renounceRole(virajeVault.DEFAULT_ADMIN_ROLE(), deployer);
 
         treasury.grantRole(treasury.DEFAULT_ADMIN_ROLE(), address(timelock));
         treasury.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
@@ -347,10 +347,10 @@ contract DeployMainnet is Script {
         addressProvider.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
         addressProvider.renounceRole(addressProvider.DEFAULT_ADMIN_ROLE(), deployer);
 
-        alphaToken.grantRole(alphaToken.DEFAULT_ADMIN_ROLE(), address(timelock));
-        alphaToken.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
-        alphaToken.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
-        alphaToken.renounceRole(alphaToken.DEFAULT_ADMIN_ROLE(), deployer);
+        virajeToken.grantRole(virajeToken.DEFAULT_ADMIN_ROLE(), address(timelock));
+        virajeToken.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));
+        virajeToken.renounceRole(ProtocolRoles.ADMIN_ROLE, deployer);
+        virajeToken.renounceRole(virajeToken.DEFAULT_ADMIN_ROLE(), deployer);
 
         oracleHub.grantRole(oracleHub.DEFAULT_ADMIN_ROLE(), address(timelock));
         oracleHub.grantRole(ProtocolRoles.ADMIN_ROLE, address(timelock));

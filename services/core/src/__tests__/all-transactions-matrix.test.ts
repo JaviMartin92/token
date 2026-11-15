@@ -88,7 +88,7 @@ async function runOmniTransactionMatrix() {
 
   // Ensure Treasury liquid buffer is fully funded
   try {
-    await adminClient.writeContract({ address: contracts.USDC, abi: ERC20_ABI, functionName: 'mint', args: [contracts.ALPHA_VAULT, parseUnits('100000', 6)] });
+    await adminClient.writeContract({ address: contracts.USDC, abi: ERC20_ABI, functionName: 'mint', args: [contracts.VIRAJE_VAULT, parseUnits('100000', 6)] });
   } catch {}
 
   try {
@@ -114,31 +114,31 @@ async function runOmniTransactionMatrix() {
     await adminClient.writeContract({ address: contracts.TREASURY, abi: treasuryArt.abi, functionName: 'setKYCStatus', args: [user2Acc.address, true] });
   } catch {}
 
-  // Tx 02: Deposit USDC -> Mint ALPHA
+  // Tx 02: Deposit USDC -> Mint VIRAJE
   try {
     const depAmt = parseUnits('5000', 6);
     await user1Client.writeContract({ address: contracts.USDC, abi: ERC20_ABI, functionName: 'approve', args: [contracts.TREASURY, depAmt] });
-    const alphaBalBefore = await publicClient.readContract({ address: contracts.ALPHA_TOKEN, abi: ERC20_ABI, functionName: 'balanceOf', args: [user1Acc.address] });
+    const virajeBalBefore = await publicClient.readContract({ address: contracts.VIRAJE_TOKEN, abi: ERC20_ABI, functionName: 'balanceOf', args: [user1Acc.address] });
     const tx = await user1Client.writeContract({ address: contracts.TREASURY, abi: treasuryArt.abi, functionName: 'deposit', args: [depAmt, 0n] });
     await publicClient.waitForTransactionReceipt({ hash: tx });
-    const alphaBalAfter = await publicClient.readContract({ address: contracts.ALPHA_TOKEN, abi: ERC20_ABI, functionName: 'balanceOf', args: [user1Acc.address] });
-    assert(alphaBalAfter > alphaBalBefore, 2, 'Deposit USDC -> Mint ALPHA: Tasa de emisión ajustada por NAV');
+    const virajeBalAfter = await publicClient.readContract({ address: contracts.VIRAJE_TOKEN, abi: ERC20_ABI, functionName: 'balanceOf', args: [user1Acc.address] });
+    assert(virajeBalAfter > virajeBalBefore, 2, 'Deposit USDC -> Mint VIRAJE: Tasa de emisión ajustada por NAV');
   } catch (e: any) {
     assert(false, 2, 'Deposit USDC', e.message);
   }
 
-  // Tx 03: Redeem ALPHA -> Withdraw USDC
+  // Tx 03: Redeem VIRAJE -> Withdraw USDC
   try {
     await publicClient.request({ method: 'evm_mine' as any });
     const redeemShares = parseUnits('100', 18);
-    await user1Client.writeContract({ address: contracts.ALPHA_TOKEN, abi: ERC20_ABI, functionName: 'approve', args: [contracts.TREASURY, redeemShares] });
+    await user1Client.writeContract({ address: contracts.VIRAJE_TOKEN, abi: ERC20_ABI, functionName: 'approve', args: [contracts.TREASURY, redeemShares] });
     const usdcBefore = await publicClient.readContract({ address: contracts.USDC, abi: ERC20_ABI, functionName: 'balanceOf', args: [user1Acc.address] });
     const tx = await user1Client.writeContract({ address: contracts.TREASURY, abi: treasuryArt.abi, functionName: 'redeem', args: [redeemShares, 0n] });
     await publicClient.waitForTransactionReceipt({ hash: tx });
     const usdcAfter = await publicClient.readContract({ address: contracts.USDC, abi: ERC20_ABI, functionName: 'balanceOf', args: [user1Acc.address] });
-    assert(usdcAfter > usdcBefore, 3, 'Redeem ALPHA -> Withdraw USDC: Liquidación conforme a NAV');
+    assert(usdcAfter > usdcBefore, 3, 'Redeem VIRAJE -> Withdraw USDC: Liquidación conforme a NAV');
   } catch (e: any) {
-    assert(false, 3, 'Redeem ALPHA', e.message);
+    assert(false, 3, 'Redeem VIRAJE', e.message);
   }
 
   // Tx 04: NAV Per Share & Sanity Valuation
@@ -151,11 +151,11 @@ async function runOmniTransactionMatrix() {
 
   // Tx 05: Emergency Redeem (Rescate prioritario para cuentas no KYC / deslistadas)
   try {
-    const alphaEmerg = parseUnits('50', 18);
-    // User1 transfers 50 ALPHA to Keeper (non-whitelisted)
-    await user1Client.writeContract({ address: contracts.ALPHA_TOKEN, abi: ERC20_ABI, functionName: 'transfer', args: [keeperAcc.address, alphaEmerg] });
-    await keeperClient.writeContract({ address: contracts.ALPHA_TOKEN, abi: ERC20_ABI, functionName: 'approve', args: [contracts.TREASURY, alphaEmerg] });
-    const tx = await keeperClient.writeContract({ address: contracts.TREASURY, abi: treasuryArt.abi, functionName: 'emergencyRedeem', args: [alphaEmerg, 0n] });
+    const virajeEmerg = parseUnits('50', 18);
+    // User1 transfers 50 VIRAJE to Keeper (non-whitelisted)
+    await user1Client.writeContract({ address: contracts.VIRAJE_TOKEN, abi: ERC20_ABI, functionName: 'transfer', args: [keeperAcc.address, virajeEmerg] });
+    await keeperClient.writeContract({ address: contracts.VIRAJE_TOKEN, abi: ERC20_ABI, functionName: 'approve', args: [contracts.TREASURY, virajeEmerg] });
+    const tx = await keeperClient.writeContract({ address: contracts.TREASURY, abi: treasuryArt.abi, functionName: 'emergencyRedeem', args: [virajeEmerg, 0n] });
     await publicClient.waitForTransactionReceipt({ hash: tx });
     assert(true, 5, 'Emergency Redeem: Rescate prioritario para cuentas no KYC');
   } catch (e: any) {
@@ -221,16 +221,16 @@ async function runOmniTransactionMatrix() {
   // =========================================================================
   console.log('\n🗳️  [SUBSYSTEM 2] Gobernanza & Staking DAO...');
 
-  // Tx 12: Stake ALPHA -> stALPHA
+  // Tx 12: Stake VIRAJE -> stVIRAJE
   try {
     const stakeAmt = parseUnits('500', 18);
-    await user1Client.writeContract({ address: contracts.ALPHA_TOKEN, abi: ERC20_ABI, functionName: 'approve', args: [contracts.STAKING, stakeAmt] });
+    await user1Client.writeContract({ address: contracts.VIRAJE_TOKEN, abi: ERC20_ABI, functionName: 'approve', args: [contracts.STAKING, stakeAmt] });
     const tx = await user1Client.writeContract({ address: contracts.STAKING, abi: stakingArt.abi, functionName: 'stake', args: [stakeAmt] });
     await publicClient.waitForTransactionReceipt({ hash: tx });
     const stBal = await publicClient.readContract({ address: contracts.STAKING, abi: stakingArt.abi, functionName: 'balanceOf', args: [user1Acc.address] }) as bigint;
-    assert(stBal > 0n, 12, 'Stake ALPHA -> stALPHA: Emisión y custodia ve-ALPHA');
+    assert(stBal > 0n, 12, 'Stake VIRAJE -> stVIRAJE: Emisión y custodia ve-VIRAJE');
   } catch (e: any) {
-    assert(false, 12, 'Stake ALPHA', e.message);
+    assert(false, 12, 'Stake VIRAJE', e.message);
   }
 
   // Tx 13: Query Community Yield Vault destination on RealYieldRouter (50% Pure DeFi split)
@@ -273,15 +273,15 @@ async function runOmniTransactionMatrix() {
     assert(false, 17, 'Votes check', e.message);
   }
 
-  // Tx 18: Unstake stALPHA tras Cooldown
+  // Tx 18: Unstake stVIRAJE tras Cooldown
   try {
     await timeWarp(8 * 86400); // 8 días para superar MIN_STAKE_DURATION (7 días)
     const unstakeAmt = parseUnits('50', 18);
     const tx = await user1Client.writeContract({ address: contracts.STAKING, abi: stakingArt.abi, functionName: 'unstake', args: [unstakeAmt] });
     await publicClient.waitForTransactionReceipt({ hash: tx });
-    assert(true, 18, 'Unstake stALPHA tras Cooldown: Principal liberado exitosamente');
+    assert(true, 18, 'Unstake stVIRAJE tras Cooldown: Principal liberado exitosamente');
   } catch (e: any) {
-    assert(false, 18, 'Unstake stALPHA', e.message);
+    assert(false, 18, 'Unstake stVIRAJE', e.message);
   }
 
   // Tx 19: Total Staked in Pool Verification
@@ -508,37 +508,37 @@ async function runOmniTransactionMatrix() {
     assert(false, 32, 'Repay Loan', e.message);
   }
 
-  // Tx 33: Borrow from Treasury with ALPHA Collateral
-  let alphaLoanId = 0n;
+  // Tx 33: Borrow from Treasury with VIRAJE collateral
+  let virajeLoanId = 0n;
   try {
-    const alphaCol = parseUnits('200', 18);
+    const virajeCol = parseUnits('200', 18);
     const borrowAmt = parseUnits('100', 6);
-    // User1 supplies ALPHA to User2
-    await user1Client.writeContract({ address: contracts.ALPHA_TOKEN, abi: ERC20_ABI, functionName: 'transfer', args: [user2Acc.address, alphaCol] });
-    await user2Client.writeContract({ address: contracts.ALPHA_TOKEN, abi: ERC20_ABI, functionName: 'approve', args: [contracts.P2P_MARKET, alphaCol] });
+    // User1 supplies VIRAJE to User2
+    await user1Client.writeContract({ address: contracts.VIRAJE_TOKEN, abi: ERC20_ABI, functionName: 'transfer', args: [user2Acc.address, virajeCol] });
+    await user2Client.writeContract({ address: contracts.VIRAJE_TOKEN, abi: ERC20_ABI, functionName: 'approve', args: [contracts.P2P_MARKET, virajeCol] });
     const tx = await user2Client.writeContract({
       address: contracts.P2P_MARKET,
-      abi: [{ name: 'borrowFromTreasuryWithAlpha', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'alphaCollateralAmount', type: 'uint256' }, { name: 'borrowAmount', type: 'uint256' }, { name: 'durationDays', type: 'uint256' }], outputs: [{ name: 'loanId', type: 'uint256' }] }],
-      functionName: 'borrowFromTreasuryWithAlpha',
-      args: [alphaCol, borrowAmt, 30n]
+      abi: [{ name: 'borrowFromTreasuryWithViraje', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'virajeCollateralAmount', type: 'uint256' }, { name: 'borrowAmount', type: 'uint256' }, { name: 'durationDays', type: 'uint256' }], outputs: [{ name: 'loanId', type: 'uint256' }] }],
+      functionName: 'borrowFromTreasuryWithViraje',
+      args: [virajeCol, borrowAmt, 30n]
     });
     await publicClient.waitForTransactionReceipt({ hash: tx });
-    alphaLoanId = (await publicClient.readContract({ address: contracts.P2P_MARKET, abi: p2pArt.abi, functionName: 'nextLoanId' }) as bigint) - 1n;
-    assert(alphaLoanId > 0n, 33, `Borrow from Treasury with ALPHA: Préstamo #${alphaLoanId} activo`);
+    virajeLoanId = (await publicClient.readContract({ address: contracts.P2P_MARKET, abi: p2pArt.abi, functionName: 'nextLoanId' }) as bigint) - 1n;
+    assert(virajeLoanId > 0n, 33, `Borrow from Treasury with VIRAJE: Préstamo #${virajeLoanId} activo`);
   } catch (e: any) {
-    assert(false, 33, 'Borrow ALPHA', e.message);
+    assert(false, 33, 'Borrow VIRAJE', e.message);
   }
 
-  // Tx 34: Repay Treasury ALPHA Loan
+  // Tx 34: Repay Treasury VIRAJE Loan
   try {
-    const [totalOwed] = await publicClient.readContract({ address: contracts.P2P_MARKET, abi: p2pArt.abi, functionName: 'calculateTotalOwed', args: [alphaLoanId] }) as [bigint, bigint];
+    const [totalOwed] = await publicClient.readContract({ address: contracts.P2P_MARKET, abi: p2pArt.abi, functionName: 'calculateTotalOwed', args: [virajeLoanId] }) as [bigint, bigint];
     const safeApproval = totalOwed * 105n / 100n + parseUnits('10', 6);
     await user2Client.writeContract({ address: contracts.USDC, abi: ERC20_ABI, functionName: 'approve', args: [contracts.P2P_MARKET, safeApproval] });
-    const tx = await user2Client.writeContract({ address: contracts.P2P_MARKET, abi: p2pArt.abi, functionName: 'repayLoan', args: [alphaLoanId] });
+    const tx = await user2Client.writeContract({ address: contracts.P2P_MARKET, abi: p2pArt.abi, functionName: 'repayLoan', args: [virajeLoanId] });
     await publicClient.waitForTransactionReceipt({ hash: tx });
-    assert(true, 34, `Repay Treasury ALPHA Loan #${alphaLoanId}: ALPHA restituido exactamente`);
+    assert(true, 34, `Repay Treasury VIRAJE Loan #${virajeLoanId}: VIRAJE restituido exactamente`);
   } catch (e: any) {
-    assert(false, 34, 'Repay ALPHA Loan', e.message);
+    assert(false, 34, 'Repay VIRAJE Loan', e.message);
   }
 
   // Tx 35: Borrow from Treasury with WBTC Collateral
@@ -665,7 +665,7 @@ async function runOmniTransactionMatrix() {
 
   // Tx 44: Execute Discount Buyback Engine Verification
   try {
-    const isFrozen = await publicClient.readContract({ address: contracts.CIRCUIT_BREAKER, abi: breakerArt.abi, functionName: 'isFrozen', args: [contracts.ALPHA_TOKEN] });
+    const isFrozen = await publicClient.readContract({ address: contracts.CIRCUIT_BREAKER, abi: breakerArt.abi, functionName: 'isFrozen', args: [contracts.VIRAJE_TOKEN] });
     assert(!isFrozen, 44, 'Discount Buyback Engine: Verificación de estado de liquidez');
   } catch (e: any) {
     assert(false, 44, 'Discount Buyback', e.message);
@@ -757,9 +757,9 @@ async function runOmniTransactionMatrix() {
 
   // Tx 51: Promotional Incentive Campaign & Distribute
   try {
-    // User1 deposits USDC in treasury to mint ALPHA, then supplies ALPHA to PromoVault
+    // User1 deposits USDC in treasury to mint VIRAJE, then supplies VIRAJE to PromoVault
     const promoFund = parseUnits('100', 18);
-    await user1Client.writeContract({ address: contracts.ALPHA_TOKEN, abi: ERC20_ABI, functionName: 'transfer', args: [contracts.PROMO_VAULT, promoFund] });
+    await user1Client.writeContract({ address: contracts.VIRAJE_TOKEN, abi: ERC20_ABI, functionName: 'transfer', args: [contracts.PROMO_VAULT, promoFund] });
     const txCampaign = await adminClient.writeContract({
       address: contracts.PROMO_VAULT,
       abi: promoArt.abi,

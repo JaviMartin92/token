@@ -39,7 +39,7 @@ docker-compose up -d
 
 # Wait for database to be healthy
 echo "Waiting for PostgreSQL database to be healthy..."
-while ! docker inspect --format "{{json .State.Health.Status }}" alpha_centauri_db | grep -q '"healthy"'; do
+while ! docker inspect --format "{{json .State.Health.Status }}" viraje_db | grep -q '"healthy"'; do
   echo -n "."
   sleep 2
 done
@@ -48,7 +48,7 @@ echo "[OK] PostgreSQL is healthy and accepting connections."
 
 # Optional: Wait for other essential services (Redis, Anvil)
 echo "Waiting for Redis to be healthy..."
-while ! docker inspect --format "{{json .State.Health.Status }}" alpha_centauri_redis | grep -q '"healthy"'; do
+while ! docker inspect --format "{{json .State.Health.Status }}" viraje_redis | grep -q '"healthy"'; do
   echo -n "."
   sleep 2
 done
@@ -56,7 +56,7 @@ echo ""
 echo "[OK] Redis is healthy."
 
 echo "Waiting for Anvil to be healthy..."
-while ! docker inspect --format "{{json .State.Health.Status }}" alpha_centauri_anvil | grep -q '"healthy"'; do
+while ! docker inspect --format "{{json .State.Health.Status }}" viraje_anvil | grep -q '"healthy"'; do
   echo -n "."
   sleep 2
 done

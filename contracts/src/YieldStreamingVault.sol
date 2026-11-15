@@ -12,7 +12,7 @@ import "./lib/security/ReentrancyGuard.sol";
 
 /**
  * @title YieldStreamingVault
- * @author Alpha Centauri Architecture Team
+ * @author Viraje Protocol Architecture Team
  * @notice Distribuye rendimientos reales acumulados con soporte para reclamos sin gas mediante firmas EIP-712.
  * @dev Los rendimientos no reclamados se componen continuamente en el tiempo según la tasa `compoundingApyBps`.
  *      Protege a los usuarios garantizando que ningún saldo de rendimiento sea deducido si la bóveda no dispone

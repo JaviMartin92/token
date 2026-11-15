@@ -9,7 +9,7 @@ interface ProtocolAnalyticsChartsProps {
   porAssets?: string;
   porLiabilities?: string;
   porRatio?: string;
-  porBreakdown?: { stables: number; wbtc: number; weth: number; alphaStaking: number };
+  porBreakdown?: { stables: number; wbtc: number; weth: number; virajeStaking: number };
   stakedBalance?: string;
   claimableYield?: string;
   userPositions?: UserPosition[];
@@ -35,7 +35,7 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
   porAssets = '0.00',
   porLiabilities = '0.00',
   porRatio = '100.00%',
-  porBreakdown = { stables: 0, wbtc: 0, weth: 0, alphaStaking: 0 },
+  porBreakdown = { stables: 0, wbtc: 0, weth: 0, virajeStaking: 0 },
   stakedBalance = '0',
   claimableYield = '0',
   userPositions = [],
@@ -52,7 +52,7 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
   const realReservesUsd = parseFloat(porAssets.replace(/,/g, '')) || 0;
   const realLiabilitiesUsd = parseFloat(porLiabilities.replace(/,/g, '')) || 0;
   const realPorRatioVal = parseFloat(porRatio.replace(/%/g, '').replace(/,/g, '')) || 100;
-  const realStakedAlpha = parseFloat(stakedBalance.replace(/,/g, '')) || 0;
+  const realStakedViraje = parseFloat(stakedBalance.replace(/,/g, '')) || 0;
   const realClaimableYield = parseFloat(claimableYield.replace(/,/g, '')) || 0;
 
   const targetStablesPct = (targetWeights?.stables || 50.0) / 100;
@@ -293,7 +293,7 @@ export const ProtocolAnalyticsCharts: React.FC<ProtocolAnalyticsChartsProps> = (
       collapsible
       defaultExpanded={false}
       headerTitle={`📊 ${UI_STRINGS.ANALYTICS_CHARTS.MAIN_TITLE}`}
-      headerSubtitle={`${UI_STRINGS.ANALYTICS_CHARTS.SUBTITLE_PREFIX} (${realStakedAlpha.toLocaleString('en-US', { maximumFractionDigits: 0 })} ${UI_STRINGS.ANALYTICS_CHARTS.SUBTITLE_SUFFIX})`}
+      headerSubtitle={`${UI_STRINGS.ANALYTICS_CHARTS.SUBTITLE_PREFIX} (${realStakedViraje.toLocaleString('en-US', { maximumFractionDigits: 0 })} ${UI_STRINGS.ANALYTICS_CHARTS.SUBTITLE_SUFFIX})`}
       headerAction={
         <div className={styles.headerControls}>
           <Badge variant="emerald" size="sm" data-testid="analytics-por-badge">

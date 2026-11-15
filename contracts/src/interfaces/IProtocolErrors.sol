@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 /**
  * @title IProtocolErrors
- * @notice Standardized custom errors for the Alpha Centauri Protocol (EIP-838)
+ * @notice Standardized custom errors for the Viraje Protocol (EIP-838)
  * @dev Replaces string-based reverts to optimize deployment and execution gas costs.
  */
 interface IProtocolErrors {

@@ -1,5 +1,5 @@
 # 🤖 Autonomous Multi-Agent AI Testing Framework (Qwen3:8B + Orion Team Lead)
-> **Alpha Centauri Protocol — Enterprise Verification Architecture**  
+> **Viraje Protocol — Enterprise Verification Architecture**  
 > **Classification:** Institutional Technical Whitepaper & Engineering Specification  
 > **Status:** Production / Audit-Ready  
 > **Hardware Target:** Local GPU Acceleration (NVIDIA Ada Lovelace / Tensor Cores / Flash Attention)
@@ -10,7 +10,7 @@
 
 Traditional smart contract testing architectures rely heavily on deterministic unit tests (e.g., Foundry, Hardhat) and constrained property-based fuzzers (e.g., Echidna, Medusa). While indispensable for mathematical invariants, these tools suffer from **semantic blindness**: they cannot evaluate holistic game-theoretic user journeys, complex multi-step market interactions, or emerging adversarial strategies that require context-aware decision making.
 
-The **Alpha Centauri Autonomous Multi-Agent AI Testing Framework** introduces a paradigm shift in decentralized protocol verification:
+The **Viraje Protocol Autonomous Multi-Agent AI Testing Framework** introduces a paradigm shift in decentralized protocol verification:
 1. **Autonomous Cognitive Agents:** Local Large Language Models ([`qwen3:8b`](https://ollama.com/library/qwen3)) act as active protocol participants and adversarial auditors, reading real-time on-chain telemetry and reasoning through financial actions.
 2. **Team Lead Supervisor (Orion):** An algorithmic and LLM-powered orchestrator ([`TeamLeadOrchestrator.ts`](file:///c:/Users/javil/Desktop/token/services/core/src/agents/TeamLeadOrchestrator.ts)) that monitors protocol coverage, calculates cognitive diversity scores, prunes saturated manifests, and guides agents toward untested attack surfaces.
 3. **Dual Verification Vectors:**
@@ -51,7 +51,7 @@ flowchart TD
 
     subgraph ENVIRONMENT ["EVM Test Environment (Anvil State 0)"]
         Snapshot["Genesis Snapshot Isolation (anvil_snapshot / anvil_revert)"]
-        Contracts["23+ Alpha Centauri Smart Contracts"]
+        Contracts["23+ Viraje Protocol Smart Contracts"]
         Invariants["Continuous Formal Invariant Verifier"]
         Snapshot --- Contracts
         Contracts --- Invariants
@@ -108,19 +108,19 @@ Implemented in [`run-autonomous-campaign.ts`](file:///c:/Users/javil/Desktop/tok
 Implemented in [`run-user-personas-campaign.ts`](file:///c:/Users/javil/Desktop/token/services/core/src/agents/run-user-personas-campaign.ts):
 1. **Elena (Retail Yield Staker):**
    - **Profile:** Conservative yield-seeker.
-   - **Operations:** Deposits USDC into [`TreasuryManager.sol`](file:///c:/Users/javil/Desktop/token/contracts/src/TreasuryManager.sol) at current NAV, stakes ALPHA for stALPHA in [`GovernanceStaking.sol`](file:///c:/Users/javil/Desktop/token/contracts/src/GovernanceStaking.sol), sets payout preferences (50/50 compound/payout), and claims real yield dividends.
+   - **Operations:** Deposits USDC into [`TreasuryManager.sol`](file:///c:/Users/javil/Desktop/token/contracts/src/TreasuryManager.sol) at current NAV, stakes VIRAJE for stVIRAJE in [`GovernanceStaking.sol`](file:///c:/Users/javil/Desktop/token/contracts/src/GovernanceStaking.sol), sets payout preferences (50/50 compound/payout), and claims real yield dividends.
 2. **Marcus (Institutional Whale & Bond Buyer):**
    - **Profile:** Sophisticated institutional capital allocator.
    - **Operations:** Conducts Proof of Reserves audits, purchases vested discount bonds (1 to 5-year locks) in [`VestedDiscountVault.sol`](file:///c:/Users/javil/Desktop/token/contracts/src/VestedDiscountVault.sol), manages position NFTs, and executes partial ragequits when capital reallocation is required.
 3. **Sofia (DeFi Entrepreneur & P2P Borrower):**
    - **Profile:** Capital-efficient builder seeking non-liquidating debt.
-   - **Operations:** Provides multi-collateral (ALPHA, WETH, WBTC) to borrow institutional USDC via [`P2PLendingMarket.sol`](file:///c:/Users/javil/Desktop/token/contracts/src/P2PLendingMarket.sol), monitors LTV thresholds, and repays debt orderly.
+   - **Operations:** Provides multi-collateral (VIRAJE, WETH, WBTC) to borrow institutional USDC via [`P2PLendingMarket.sol`](file:///c:/Users/javil/Desktop/token/contracts/src/P2PLendingMarket.sol), monitors LTV thresholds, and repays debt orderly.
 4. **Viktor (MEV Arbitrageur & Buyback Keeper):**
    - **Profile:** Latency-sensitive bot operator.
-   - **Operations:** Monitors spot price vs. NAV divergences, attempts discounted buybacks via [`DiscountBuybackEngine.sol`](file:///c:/Users/javil/Desktop/token/contracts/src/DiscountBuybackEngine.sol) to burn ALPHA and earn protocol keeper bounties.
+   - **Operations:** Monitors spot price vs. NAV divergences, attempts discounted buybacks via [`DiscountBuybackEngine.sol`](file:///c:/Users/javil/Desktop/token/contracts/src/DiscountBuybackEngine.sol) to burn VIRAJE and earn protocol keeper bounties.
 5. **Lucas (DAO Delegate & Governance Activist):**
    - **Profile:** Long-term protocol alignment advocate.
-   - **Operations:** Locks stALPHA for voting power checkpoints, votes on DAO proposals in [`GovernorAlphaCentauri.sol`](file:///c:/Users/javil/Desktop/token/contracts/src/GovernorAlphaCentauri.sol), and aligns treasury parameters.
+   - **Operations:** Locks stVIRAJE for voting power checkpoints, votes on DAO proposals in [`GovernorViraje.sol`](file:///c:/Users/javil/Desktop/token/contracts/src/GovernorViraje.sol), and aligns treasury parameters.
 
 ---
 
@@ -136,8 +136,8 @@ $$\forall \text{ Action } a_i \in \mathcal{A}: \quad \sigma_0 \xrightarrow{\text
 
 ### Implementation Workflow in [`DeFiAgentEnv.ts`](file:///c:/Users/javil/Desktop/token/services/core/src/agents/DeFiAgentEnv.ts)
 1. **Initial Genesis Snapshot:** At campaign launch, after contract deployment, token prefunding, and initial liquidity seeding, the harness calls `evm_snapshot` and records snapshot ID `0x1`.
-2. **Action Execution:** The assigned agent submits an operation (e.g., `buyVestedBond`, `borrowFromTreasuryWithAlpha`).
-3. **Telemetry & Balance Delta Inspection:** Pre- and post-balances are recorded ($\Delta\text{USDC}, \Delta\text{ALPHA}, \Delta\text{stALPHA}$).
+2. **Action Execution:** The assigned agent submits an operation (e.g., `buyVestedBond`, `borrowFromTreasuryWithViraje`).
+3. **Telemetry & Balance Delta Inspection:** Pre- and post-balances are recorded ($\Delta\text{USDC}, \Delta\text{VIRAJE}, \Delta\text{stVIRAJE}$).
 4. **Invariant Verification:** Formal mathematical invariants are evaluated on the post-action state.
 5. **Atomic Revert:** The harness calls `evm_revert(0x1)`, restoring the chain instantly to clean Genesis state, and takes a fresh snapshot for the next round.
 6. **Zero Drift:** Tests can run indefinitely (e.g., 100+ hours) with zero cumulative memory leaks or state contamination.
@@ -183,7 +183,7 @@ const isCountOrDuration = /id|year|day|tier|bps|deadline|fee|count|ratio/i.test(
 if (isCountOrDuration) {
     return BigInt(Math.floor(Number(rawVal))); // Unscaled scalar
 }
-// Scaled according to token denomination (USDC: 6, ALPHA/ETH: 18)
+// Scaled according to token denomination (USDC: 6, VIRAJE/ETH: 18)
 ```
 
 ### 5.4. Auxiliary Account Native Gas Solvency
@@ -199,7 +199,7 @@ During every round of autonomous execution, five formal economic invariants are 
 | :--- | :--- | :--- | :---: |
 | **1. Solvency Floor** | $\text{TotalAssetsUSD}_{\text{exogenous}} \ge \text{TotalLiabilitiesUSD}$ | [`TreasuryManager.sol`](file:///c:/Users/javil/Desktop/token/contracts/src/TreasuryManager.sol) | **100% PASS** |
 | **2. NAV Monotonicity** | $\Delta NAV_{\text{spot}} \ge 0 \quad (\text{after deposits})$ | [`ProtocolTokenomicsEngine.sol`](file:///c:/Users/javil/Desktop/token/contracts/src/ProtocolTokenomicsEngine.sol) | **100% PASS** |
-| **3. Staking Backing** | $\text{stALPHA.totalSupply}() \le \text{ALPHA.balanceOf}(\text{Staking})$ | [`GovernanceStaking.sol`](file:///c:/Users/javil/Desktop/token/contracts/src/GovernanceStaking.sol) | **100% PASS** |
+| **3. Staking Backing** | $\text{stVIRAJE.totalSupply}() \le \text{VIRAJE.balanceOf}(\text{Staking})$ | [`GovernanceStaking.sol`](file:///c:/Users/javil/Desktop/token/contracts/src/GovernanceStaking.sol) | **100% PASS** |
 | **4. Circuit Breaker** | $\frac{\lvert P_{\text{oracle}} - P_{\text{MA}} \rvert}{P_{\text{MA}}} \le \theta_{\text{threshold}}$ | [`CircuitBreaker.sol`](file:///c:/Users/javil/Desktop/token/contracts/src/CircuitBreaker.sol) | **100% PASS** |
 | **5. Buyback Guard** | $\text{revert NoDiscountVsNAV}() \text{ if } P_{\text{market}} \ge NAV$ | [`DiscountBuybackEngine.sol`](file:///c:/Users/javil/Desktop/token/contracts/src/DiscountBuybackEngine.sol) | **100% PASS** |
 
@@ -217,7 +217,7 @@ During every round of autonomous execution, five formal economic invariants are 
 * **Authorized / Mutating Actions:** 31 (14.29%)
 * **Zero-Repetition Index:** 100% (0 redundant calls after manifest pruning)
 * **Diversity & Exploration Score:** **85 / 100**
-* **Contract Coverage:** **23 Smart Contracts Audited** (including `ATOMIC_SWAP`, `DISCOUNT_BUYBACK_ENGINE`, `RESERVE_MANAGER`, `TREASURY`, `MORPHO_ADAPTER`, `POST_QUANTUM_GUARD`, `REAL_YIELD_ROUTER`, `VESTED_VAULT`, `TIMELOCK`, `POSITION_NFT`, `GOVERNOR`, `ALPHA_VAULT`, `ALPHA_TOKEN`, `ORACLE_HUB`, `CIRCUIT_BREAKER`, `DYNAMIC_YIELD_ORACLE`, `COMMUNITY_YIELD_VAULT`, `STAKING`, `P2P_MARKET`, `FOUNDER_VESTING_VAULT`, `TOKENOMICS_ENGINE`).
+* **Contract Coverage:** **23 Smart Contracts Audited** (including `ATOMIC_SWAP`, `DISCOUNT_BUYBACK_ENGINE`, `RESERVE_MANAGER`, `TREASURY`, `MORPHO_ADAPTER`, `POST_QUANTUM_GUARD`, `REAL_YIELD_ROUTER`, `VESTED_VAULT`, `TIMELOCK`, `POSITION_NFT`, `GOVERNOR`, `VIRAJE_VAULT`, `VIRAJE_TOKEN`, `ORACLE_HUB`, `CIRCUIT_BREAKER`, `DYNAMIC_YIELD_ORACLE`, `COMMUNITY_YIELD_VAULT`, `STAKING`, `P2P_MARKET`, `FOUNDER_VESTING_VAULT`, `TOKENOMICS_ENGINE`).
 * **Artifact Generated:** [`campaign_audit_report.md`](file:///c:/Users/javil/Desktop/token/services/core/src/agents/reports/campaign_audit_report.md)
 
 ### 7.2. 1-Hour User Personas Simulation Campaign
@@ -226,7 +226,7 @@ During every round of autonomous execution, five formal economic invariants are 
 * **Total Rounds:** 43
 * **Total User Flows Executed:** 214
 * **Successful User Journeys:** **176 (82.24%)**
-* **Economic Guard Reverts:** 38 (17.76%) — all attributable to formal mathematical protection (`NoDiscountVsNAV()`), preventing treasury drain when ALPHA does not trade at a discount to NAV.
+* **Economic Guard Reverts:** 38 (17.76%) — all attributable to formal mathematical protection (`NoDiscountVsNAV()`), preventing treasury drain when VIRAJE does not trade at a discount to NAV.
 * **Invariant Health:** **100% Healthy**
 * **Artifact Generated:** [`user_personas_audit_report.md`](file:///c:/Users/javil/Desktop/token/services/core/src/agents/reports/user_personas_audit_report.md)
 
@@ -255,4 +255,4 @@ npm run test:ai-fuzzer
 ```
 
 ---
-*Autonomous AI Testing Framework certified under Alpha Centauri Enterprise Institutional Standards.*
+*Autonomous AI Testing Framework certified under Viraje Protocol Enterprise Institutional Standards.*

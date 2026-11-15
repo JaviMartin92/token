@@ -1,4 +1,4 @@
-name: Alpha Centauri Institutional Quality Gate & DevSecOps Pipeline
+name: Viraje Protocol Institutional Quality Gate & DevSecOps Pipeline
 
 on:
   push:

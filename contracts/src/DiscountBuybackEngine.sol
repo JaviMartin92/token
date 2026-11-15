@@ -9,14 +9,16 @@ import "./ProtocolAddressProvider.sol";
 import "./lib/security/ReentrancyGuard.sol";
 import "./interfaces/IProtocolErrors.sol";
 
-interface IAlphaVaultBuyback {
+interface IVirajeVaultBuyback {
     function transferFunds(address token, address to, uint256 amount) external;
     function getBalance(address token) external view returns (uint256);
 }
+interface IAlphaVaultBuyback is IVirajeVaultBuyback {}
 
-interface IAlphaTokenBuyback {
+interface IVirajeTokenBuyback {
     function burn(uint256 amount) external;
 }
+interface IAlphaTokenBuyback is IVirajeTokenBuyback {}
 
 interface ITreasuryManagerBuyback {
     function getNAVPerShare() external view returns (uint256);
@@ -52,9 +54,9 @@ interface ISwapRouterBuyback {
 
 /**
  * @title DiscountBuybackEngine
- * @author Alpha Centauri Architecture Team
+ * @author Viraje Protocol Architecture Team
  * @notice Autonomous Algorithmic Market Stabilizer & Deflationary Buyback Engine.
- *         Executes discount buyback & burns when ALPHA trades on DEX at a discount >= 5% vs NAV.
+ *         Executes discount buyback & burns when VIRAJE trades on DEX at a discount >= 5% vs NAV.
  *         Enforces 10 institutional safety locks to eliminate liquidity bleed, flash-loan manipulation,
  *         MEV sandwich attacks, and black swan vulnerability.
  */
@@ -89,12 +91,16 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
 
     // --- Tracking Metrics ---
     uint256 public totalBuybackVolumeUSD;
-    uint256 public totalAlphaBurned;
+    uint256 public totalVirajeBurned;
+
+    function totalVirajeBurned() external view returns (uint256) {
+        return totalVirajeBurned;
+    }
 
     // --- Events ---
     event DiscountBuybackExecuted(
         uint256 usdcSpent,
-        uint256 alphaBurned,
+        uint256 virajeBurned,
         uint256 spotPriceUSD,
         uint256 navPerShareUSD,
         uint256 discountBps,
@@ -247,14 +253,14 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
         }
     }
 
-    function _validateDiscountAndPrice(address treasuryManager, address oracleHub, address alphaToken)
+    function _validateDiscountAndPrice(address treasuryManager, address oracleHub, address virajeToken)
         internal
         view
         returns (uint256 navPerShareUSD, uint256 spotPriceUSD, uint256 discountBps)
     {
         // --- LOCK 1 & LOCK 5: Minimum Discount Threshold (5%) via TWAP / Oracle ---
         navPerShareUSD = ITreasuryManagerBuyback(treasuryManager).getNAVPerShare();
-        spotPriceUSD = IOracleHubBuyback(oracleHub).getPriceBase18(alphaToken);
+        spotPriceUSD = IOracleHubBuyback(oracleHub).getPriceBase18(virajeToken);
         if (spotPriceUSD == 0) revert IProtocolErrors.InvalidPrice();
         if (spotPriceUSD >= navPerShareUSD) revert IProtocolErrors.NoDiscountVsNAV();
 
@@ -264,14 +270,14 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
         }
     }
 
-    function _validateBudgetAndLimits(address alphaVault, uint256 usdcToSpend) internal {
+    function _validateBudgetAndLimits(address virajeVault, uint256 usdcToSpend) internal {
         // --- LOCK 2 & LOCK 10: Daily Budget Cap & Max Trade Impact Size ---
         if (block.timestamp >= lastBudgetResetTimestamp + 1 days) {
             spentToday = 0;
             lastBudgetResetTimestamp = block.timestamp;
         }
 
-        uint256 liquidVaultBalance = IAlphaVaultBuyback(alphaVault).getBalance(redemptionToken);
+        uint256 liquidVaultBalance = IVirajeVaultBuyback(virajeVault).getBalance(redemptionToken);
         if (liquidVaultBalance == 0) revert IProtocolErrors.InvalidAmount();
 
         uint256 maxDailyBudget = (liquidVaultBalance * maxDailyBudgetBps) / 10000;
@@ -285,13 +291,13 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
         }
     }
 
-    function _executeSwap(address alphaVault, address alphaToken, uint256 usdcToSpend, uint256 minAlphaOut)
+    function _executeSwap(address virajeVault, address virajeToken, uint256 usdcToSpend, uint256 minVirajeOut)
         internal
-        returns (uint256 alphaReceived)
+        returns (uint256 virajeReceived)
     {
         if (swapRouter == address(0)) revert IProtocolErrors.ZeroAddress();
 
-        IAlphaVaultBuyback(alphaVault).transferFunds(redemptionToken, address(this), usdcToSpend);
+        IVirajeVaultBuyback(virajeVault).transferFunds(redemptionToken, address(this), usdcToSpend);
 
         IERC20(redemptionToken).safeApprove(swapRouter, 0);
         IERC20(redemptionToken).safeApprove(swapRouter, usdcToSpend);
@@ -299,49 +305,49 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
             .exactInputSingle(
                 ISwapRouterBuyback.ExactInputSingleParams({
                 tokenIn: redemptionToken,
-                tokenOut: alphaToken,
+                tokenOut: virajeToken,
                 fee: poolFee,
                 recipient: address(this),
                 deadline: block.timestamp + 15 minutes,
                 amountIn: usdcToSpend,
-                amountOutMinimum: minAlphaOut,
+                amountOutMinimum: minVirajeOut,
                 sqrtPriceLimitX96: 0
             })
             ) returns (
             uint256 amountOut
         ) {
-            alphaReceived = amountOut;
+            virajeReceived = amountOut;
         } catch {
             revert DEXSwapFailed();
         }
 
-        if (alphaReceived < minAlphaOut) {
-            revert IProtocolErrors.SlippageExceeded(minAlphaOut, alphaReceived);
+        if (virajeReceived < minVirajeOut) {
+            revert IProtocolErrors.SlippageExceeded(minVirajeOut, virajeReceived);
         }
     }
 
     /**
      * @notice Executes algorithmic discount buyback & immediate cryptographic burn.
      *         Enforces all 10 institutional safety locks.
-     * @param usdcToSpend Amount of USDC to withdraw from AlphaVault for buyback.
-     * @param minAlphaOut Minimum ALPHA tokens expected from the DEX.
+     * @param usdcToSpend Amount of USDC to withdraw from VirajeVault for buyback.
+     * @param minVirajeOut Minimum VIRAJE tokens expected from the DEX.
      */
-    function executeDiscountBuyback(uint256 usdcToSpend, uint256 minAlphaOut)
+    function executeDiscountBuyback(uint256 usdcToSpend, uint256 minVirajeOut)
         external
         nonReentrant
         onlyRole(ProtocolRoles.KEEPER_ROLE)
-        returns (uint256 alphaBurned)
+        returns (uint256 virajeBurned)
     {
         if (isPaused) revert IProtocolErrors.ProtocolPaused();
         if (usdcToSpend == 0) revert IProtocolErrors.ZeroAmount();
 
         address treasuryManager = addressProvider.getTreasuryManager();
-        address alphaVault = addressProvider.getAlphaVault();
-        address alphaToken = addressProvider.getAlphaToken();
+        address virajeVault = addressProvider.getVirajeVault();
+        address virajeToken = addressProvider.getVirajeToken();
         address oracleHub = addressProvider.getOracleHub();
 
         if (
-            treasuryManager == address(0) || alphaVault == address(0) || alphaToken == address(0)
+            treasuryManager == address(0) || virajeVault == address(0) || virajeToken == address(0)
                 || oracleHub == address(0)
         ) {
             revert UninitializedProvider();
@@ -350,50 +356,50 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
         _validateSystemHealth(treasuryManager);
 
         (uint256 navPerShareUSD, uint256 spotPriceUSD, uint256 discountBps) =
-            _validateDiscountAndPrice(treasuryManager, oracleHub, alphaToken);
+            _validateDiscountAndPrice(treasuryManager, oracleHub, virajeToken);
 
-        _validateBudgetAndLimits(alphaVault, usdcToSpend);
+        _validateBudgetAndLimits(virajeVault, usdcToSpend);
 
-        minAlphaOut = _calculateMinAlpha(usdcToSpend, spotPriceUSD, minAlphaOut);
+        minVirajeOut = _calculateMinViraje(usdcToSpend, spotPriceUSD, minVirajeOut);
 
         // --- EXECUTION: Pull Funds from Vault, Swap & Burn ---
-        uint256 alphaReceived = _executeSwap(alphaVault, alphaToken, usdcToSpend, minAlphaOut);
+        uint256 virajeReceived = _executeSwap(virajeVault, virajeToken, usdcToSpend, minVirajeOut);
 
         // --- LOCK 3: Immediate Cryptographic Burn ---
-        IAlphaTokenBuyback(alphaToken).burn(alphaReceived);
-        try ITreasuryManagerBuyback(treasuryManager).recordBurn(alphaReceived) {
+        IVirajeTokenBuyback(virajeToken).burn(virajeReceived);
+        try ITreasuryManagerBuyback(treasuryManager).recordBurn(virajeReceived) {
             // Burn recorded successfully in treasury
         } catch {
             // Ignore notification revert if treasury does not track manual recordBurn
         }
 
         // --- KEEPER BOUNTY INCENTIVE ---
-        uint256 totalOutflow = _payKeeperBounty(alphaVault, usdcToSpend);
+        uint256 totalOutflow = _payKeeperBounty(virajeVault, usdcToSpend);
 
         // --- State Updates ---
         spentToday += totalOutflow;
         lastExecutionTimestamp = block.timestamp;
         totalBuybackVolumeUSD += usdcToSpend;
-        totalAlphaBurned += alphaReceived;
+        totalVirajeBurned += virajeReceived;
 
         emit DiscountBuybackExecuted(
-            usdcToSpend, alphaReceived, spotPriceUSD, navPerShareUSD, discountBps, block.timestamp
+            usdcToSpend, virajeReceived, spotPriceUSD, navPerShareUSD, discountBps, block.timestamp
         );
-        return alphaReceived;
+        return virajeReceived;
     }
 
-    function _calculateMinAlpha(uint256 usdcToSpend, uint256 spotPriceUSD, uint256 minAlphaOut) private view returns (uint256) {
-        uint256 expectedAlphaFromOracle = (usdcToSpend * (10 ** (18 - redemptionTokenDecimals)) * 1e18) / spotPriceUSD;
-        uint256 minAllowedAlpha = (expectedAlphaFromOracle * (10000 - maxSlippageBps)) / 10000;
-        return (minAlphaOut < minAllowedAlpha) ? minAllowedAlpha : minAlphaOut;
+    function _calculateMinViraje(uint256 usdcToSpend, uint256 spotPriceUSD, uint256 minVirajeOut) private view returns (uint256) {
+        uint256 expectedVirajeFromOracle = (usdcToSpend * (10 ** (18 - redemptionTokenDecimals)) * 1e18) / spotPriceUSD;
+        uint256 minAllowedViraje = (expectedVirajeFromOracle * (10000 - maxSlippageBps)) / 10000;
+        return (minVirajeOut < minAllowedViraje) ? minAllowedViraje : minVirajeOut;
     }
 
-    function _payKeeperBounty(address alphaVault, uint256 usdcToSpend) private returns (uint256 totalOutflow) {
+    function _payKeeperBounty(address virajeVault, uint256 usdcToSpend) private returns (uint256 totalOutflow) {
         totalOutflow = usdcToSpend;
         if (keeperBountyBps > 0) {
             uint256 bounty = (usdcToSpend * keeperBountyBps) / 10000;
             if (bounty > 0) {
-                try IAlphaVaultBuyback(alphaVault).transferFunds(redemptionToken, msg.sender, bounty) {
+                try IVirajeVaultBuyback(virajeVault).transferFunds(redemptionToken, msg.sender, bounty) {
                     totalOutflow += bounty;
                 } catch {}
             }

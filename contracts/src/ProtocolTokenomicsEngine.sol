@@ -7,8 +7,8 @@ import "./interfaces/IProtocolErrors.sol";
 
 /**
  * @title ProtocolTokenomicsEngine
- * @author Alpha Centauri Architecture Team
- * @notice Centralized Master Math & Tokenomics Engine for Alpha Centauri Protocol.
+ * @author Viraje Protocol Architecture Team
+ * @notice Centralized Master Math & Tokenomics Engine for Viraje Protocol.
  * @dev Enforces 100% mathematical consistency, decimal conversions, fee splits,
  *      bond discounts, LTV capacity, interest calculations, and Proof-of-Reserves solvency.
  */
@@ -115,7 +115,7 @@ contract ProtocolTokenomicsEngine is AccessControl {
     }
 
     /**
-     * @notice Calculates exact ALPHA Shares to mint for a deposit given current NAV and shares supply.
+     * @notice Calculates exact VIRAJE Shares to mint for a deposit given current NAV and shares supply.
      */
     function calculateSharesToMint(uint256 depositValueUSD18, uint256 currentSharesSupply, uint256 navBefore18)
         external
@@ -178,7 +178,7 @@ contract ProtocolTokenomicsEngine is AccessControl {
     /**
      * @notice Calculates progressive lockup discount, tiered staking bonus, and fee splits for bond purchase.
      */
-    function calculateBondDiscount(uint256 principalAmountUsdc, uint256 lockYears, uint256 userStakedBalanceAlpha)
+    function calculateBondDiscount(uint256 principalAmountUsdc, uint256 lockYears, uint256 userStakedBalanceViraje)
         external
         view
         returns (BondDiscountCalculation memory calc)
@@ -191,11 +191,11 @@ contract ProtocolTokenomicsEngine is AccessControl {
 
         // Governance Staking Bonus Tier
         uint256 tierBonus = 0;
-        if (userStakedBalanceAlpha >= 20000 * 1e18) {
+        if (userStakedBalanceViraje >= 20000 * 1e18) {
             tierBonus = 300; // +3%
-        } else if (userStakedBalanceAlpha >= 10000 * 1e18) {
+        } else if (userStakedBalanceViraje >= 10000 * 1e18) {
             tierBonus = 200; // +2%
-        } else if (userStakedBalanceAlpha >= 5000 * 1e18) {
+        } else if (userStakedBalanceViraje >= 5000 * 1e18) {
             tierBonus = 100; // +1%
         }
 

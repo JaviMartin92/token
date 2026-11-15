@@ -19,8 +19,8 @@ export const FounderVestingCard: React.FC<FounderVestingCardProps> = ({
     totalClaimed,
     remainingAllocation,
     beneficiary,
-    claimableAlpha,
-    claimableAlphaNum,
+    claimableViraje,
+    claimableVirajeNum,
     surplusUSD,
     surplusUSDNum,
     canClaim,
@@ -72,7 +72,7 @@ export const FounderVestingCard: React.FC<FounderVestingCardProps> = ({
 
           <StatCard
             title="Reclamable Actual (10% Máx)"
-            value={`${claimableAlpha} VIRAJE`}
+            value={`${claimableViraje} VIRAJE`}
             variant="blue"
             icon="📥"
             subtext={cooldownRemainingSec > 0 ? `Próximo: ${nextAvailableDate}` : 'Cooldown Completado'}
@@ -99,14 +99,14 @@ export const FounderVestingCard: React.FC<FounderVestingCardProps> = ({
           </div>
 
           <Button
-            variant={canClaim && claimableAlphaNum > 0 ? 'emerald' : 'secondary'}
+            variant={canClaim && claimableVirajeNum > 0 ? 'emerald' : 'secondary'}
             size="md"
             onClick={executeClaim}
-            disabled={!canClaim || claimableAlphaNum <= 0}
+            disabled={!canClaim || claimableVirajeNum <= 0}
             className={styles.claimBtn}
           >
-            {canClaim && claimableAlphaNum > 0
-              ? `📥 Reclamar ${claimableAlpha} VIRAJE`
+            {canClaim && claimableVirajeNum > 0
+              ? `📥 Reclamar ${claimableViraje} VIRAJE`
               : surplusUSDNum <= 0
               ? '🔒 Sin Excedente de Reservas'
               : cooldownRemainingSec > 0

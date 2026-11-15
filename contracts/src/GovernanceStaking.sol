@@ -155,7 +155,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
     event AddressExclusionSet(address indexed account, bool excluded);
     event TreasuryUpdated(address indexed newTreasury);
     event ProtocolVaultsUpdated(address indexed newCommunityYieldVault);
-    event ReserveVaultsUpdated(address indexed alphaVault, address indexed promoVault);
+    event ReserveVaultsUpdated(address indexed virajeVault, address indexed promoVault);
     event AuthorizedCallerUpdated(address indexed caller, bool authorized);
 
     constructor(address _govToken, address _rewardToken, address _initialOwner) ERC20("Staked Viraje", "stVIRAJE") {
@@ -395,20 +395,24 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
         uint256 totalBurned;
     }
 
-    address public alphaVault;
+    address public virajeVault;
     address public promoVault;
 
-    function setReserveVaults(address _alphaVault, address _promoVault) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
-        if (_alphaVault == address(0) || _promoVault == address(0)) revert IProtocolErrors.ZeroAddress();
-        alphaVault = _alphaVault;
+    function virajeVault() external view returns (address) {
+        return virajeVault;
+    }
+
+    function setReserveVaults(address _virajeVault, address _promoVault) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (_virajeVault == address(0) || _promoVault == address(0)) revert IProtocolErrors.ZeroAddress();
+        virajeVault = _virajeVault;
         promoVault = _promoVault;
-        emit ReserveVaultsUpdated(_alphaVault, _promoVault);
+        emit ReserveVaultsUpdated(_virajeVault, _promoVault);
     }
 
     function getStakingBreakdown() external view returns (StakingBreakdown memory breakdown) {
         uint256 communityVaultStaked = communityYieldVault != address(0) ? balanceOf(communityYieldVault) : 0;
         uint256 tmStaked = treasury != address(0) ? balanceOf(treasury) : 0;
-        uint256 avStaked = alphaVault != address(0) ? balanceOf(alphaVault) : 0;
+        uint256 avStaked = virajeVault != address(0) ? balanceOf(virajeVault) : 0;
         uint256 pvStaked = promoVault != address(0) ? balanceOf(promoVault) : 0;
 
         breakdown.communityVaultStaked = communityVaultStaked;

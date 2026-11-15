@@ -6,7 +6,7 @@ import "../../src/TreasuryManager.sol";
 
 /**
  * @title TestnetFaucet
- * @notice A public faucet for testnet and sandbox testing of the Alpha Centauri protocol.
+ * @notice A public faucet for testnet and sandbox testing of the Viraje Protocol protocol.
  * @dev Mints mock USDC and automatically grants KYC whitelist status on the TreasuryManager.
  *      WARNING: TESTNET FIXTURE ONLY - MUST NEVER BE DEPLOYED TO MAINNET.
  */

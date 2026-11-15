@@ -58,9 +58,9 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
       >
         <div className={styles.kpiRow}>
           <StatCard
-            title={`Tu Staking (${UI_STRINGS.COMMON.SYMBOL_STALPHA})`}
-            value={`${stakedBalance} ${UI_STRINGS.COMMON.SYMBOL_STALPHA}`}
-            testId="staking-stalpha-balance"
+            title={`Tu Staking (${UI_STRINGS.COMMON.SYMBOL_STVIRAJE})`}
+            value={`${stakedBalance} ${UI_STRINGS.COMMON.SYMBOL_STVIRAJE}`}
+            testId="staking-stviraje-balance"
             variant="blue"
             icon="🥩"
             subtext="Participaciones en gobernanza activa"
@@ -77,7 +77,7 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
 
           <StatCard
             title={UI_STRINGS.STAKING.METRIC_TOTAL_BURNED}
-            value={`${totalBurnedTokens} ${UI_STRINGS.COMMON.SYMBOL_ALPHA}`}
+            value={`${totalBurnedTokens} ${UI_STRINGS.COMMON.SYMBOL_VIRAJE}`}
             testId="staking-total-burned"
             variant="crimson"
             icon="🔥"
@@ -92,7 +92,7 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
             placeholder={UI_STRINGS.STAKING.INPUT_STAKE_PLACEHOLDER}
             value={stakeAmount}
             onChange={setStakeAmount}
-            tokenSymbol={UI_STRINGS.COMMON.SYMBOL_ALPHA}
+            tokenSymbol={UI_STRINGS.COMMON.SYMBOL_VIRAJE}
             tokenDecimals={18}
             maxBalance={sharesBalance}
           />
@@ -151,7 +151,7 @@ export const GovernanceStakingUI: React.FC<GovernanceStakingUIProps> = ({
           </div>
           <div className={styles.radioOption} style={{ cursor: 'default' }}>
             <span className={styles.radioText}>
-              <strong>🏛️ 12.50% VIRAJE:</strong> {UI_STRINGS.STAKING.BASKET_ALPHA}
+              <strong>🏛️ 12.50% VIRAJE:</strong> {UI_STRINGS.STAKING.BASKET_VIRAJE}
             </span>
           </div>
         </div>

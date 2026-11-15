@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 import "../src/FounderReserveVestingVault.sol";
-import "../src/AlphaToken.sol";
+import "../src/VirajeToken.sol";
 import "../src/ProtocolAddressProvider.sol";
 import "../src/TreasuryManager.sol";
 import "../src/TreasuryProxy.sol";
@@ -42,7 +42,7 @@ contract MockTreasuryForVesting is ITreasury {
     function redeemFor(address, address, uint256, uint256) external pure returns (uint256) { return 0; }
     function releaseVaultPayout(address, uint256) external {}
     function recordBurn(uint256) external {}
-    function alphaVault() external pure returns (address) { return address(0); }
+    function virajeVault() external pure returns (address) { return address(0); }
     function disburseTreasuryLoan(address, uint256) external {}
     function treasuryLoanLimits() external pure returns (uint256, uint256, uint256) { return (0, 0, 0); }
     function recordTreasuryLoanRepayment(uint256) external {}
@@ -51,7 +51,7 @@ contract MockTreasuryForVesting is ITreasury {
 
 contract FounderReserveVestingVaultTest is Test {
     FounderReserveVestingVault public vault;
-    AlphaToken public alphaToken;
+    VirajeToken public virajeToken;
     MockTreasuryForVesting public mockTreasury;
     ProtocolAddressProvider public ap;
 
@@ -62,19 +62,19 @@ contract FounderReserveVestingVaultTest is Test {
     function setUp() public {
         vm.startPrank(admin);
         ap = new ProtocolAddressProvider(admin);
-        alphaToken = new AlphaToken(ap, admin);
+        virajeToken = new VirajeToken(ap, admin);
         mockTreasury = new MockTreasuryForVesting();
 
         vault = new FounderReserveVestingVault(
-            address(alphaToken),
+            address(virajeToken),
             address(mockTreasury),
             founder,
             admin
         );
 
-        // Grant MINTER_ROLE to admin and mint 100,000 ALPHA into vault
-        alphaToken.grantRole(ProtocolRoles.MINTER_ROLE, admin);
-        alphaToken.mint(address(vault), 100_000 * 1e18);
+        // Grant MINTER_ROLE to admin and mint 100,000 VIRAJE into vault
+        virajeToken.grantRole(ProtocolRoles.MINTER_ROLE, admin);
+        virajeToken.mint(address(vault), 100_000 * 1e18);
         vm.stopPrank();
     }
 
@@ -95,24 +95,24 @@ contract FounderReserveVestingVaultTest is Test {
 
         vm.prank(founder);
         vm.expectRevert();
-        vault.claimVestedAlpha();
+        vault.claimVestedViraje();
     }
 
     function test_ClaimAllowedOnSurplus() public {
         // Assets = 150,000 USD, Liabilities = 100,000 USD -> Surplus = 50,000 USD
         mockTreasury.setMockState(150_000 * 1e18, 100_000 * 1e18, 1e18);
 
-        // 10% of 50,000 USD = 5,000 USD -> 5,000 ALPHA at $1.00 NAV
+        // 10% of 50,000 USD = 5,000 USD -> 5,000 VIRAJE at $1.00 NAV
         (uint256 claimable, uint256 surplus,, bool canClaim) = vault.getClaimableInfo();
         assertEq(surplus, 50_000 * 1e18);
         assertEq(claimable, 5_000 * 1e18);
         assertTrue(canClaim);
 
         vm.prank(founder);
-        uint256 claimed = vault.claimVestedAlpha();
+        uint256 claimed = vault.claimVestedViraje();
 
         assertEq(claimed, 5_000 * 1e18);
-        assertEq(alphaToken.balanceOf(founder), 5_000 * 1e18);
+        assertEq(virajeToken.balanceOf(founder), 5_000 * 1e18);
         assertEq(vault.totalClaimed(), 5_000 * 1e18);
         assertEq(vault.remainingAllocation(), 95_000 * 1e18);
     }
@@ -121,25 +121,25 @@ contract FounderReserveVestingVaultTest is Test {
         mockTreasury.setMockState(150_000 * 1e18, 100_000 * 1e18, 1e18);
 
         vm.prank(founder);
-        vault.claimVestedAlpha();
+        vault.claimVestedViraje();
 
         // Immediate second claim must revert due to 72h cooldown
         vm.prank(founder);
         vm.expectRevert();
-        vault.claimVestedAlpha();
+        vault.claimVestedViraje();
 
         // Warp 71 hours (still active)
         vm.warp(block.timestamp + 71 hours);
         vm.prank(founder);
         vm.expectRevert();
-        vault.claimVestedAlpha();
+        vault.claimVestedViraje();
 
         // Warp to 72 hours + 1s -> Allowed
         vm.warp(block.timestamp + 1 hours + 1);
         vm.prank(founder);
-        uint256 secondClaim = vault.claimVestedAlpha();
+        uint256 secondClaim = vault.claimVestedViraje();
         assertEq(secondClaim, 5_000 * 1e18);
-        assertEq(alphaToken.balanceOf(founder), 10_000 * 1e18);
+        assertEq(virajeToken.balanceOf(founder), 10_000 * 1e18);
     }
 
     function test_NonBeneficiaryCannotClaim() public {
@@ -147,6 +147,6 @@ contract FounderReserveVestingVaultTest is Test {
 
         vm.prank(attacker);
         vm.expectRevert(FounderReserveVestingVault.UnauthorizedBeneficiary.selector);
-        vault.claimVestedAlpha();
+        vault.claimVestedViraje();
     }
 }

@@ -10,8 +10,8 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./lib/security/ReentrancyGuard.sol";
 import "./ProtocolAddressProvider.sol";
 import "./ProtocolRoles.sol";
-import "./AlphaVault.sol";
-import "./AlphaToken.sol";
+import "./VirajeVault.sol";
+import "./VirajeToken.sol";
 import "./OracleHub.sol";
 
 import "./lib/TreasuryFeeLib.sol";
@@ -27,9 +27,9 @@ import "./interfaces/IVestedDiscountVault.sol";
 
 /**
  * @title TreasuryManager
- * @author Alpha Centauri Architecture Team
+ * @author Viraje Protocol Architecture Team
  * @notice Central orchestrator for deposits, redemptions, NAV accounting, and Proof of Reserves.
- *         Delegates custody to AlphaVault, token minting to AlphaToken, pricing to OracleHub,
+ *         Delegates custody to VirajeVault, token minting to VirajeToken, pricing to OracleHub,
  *         and specialized accounting/rebalancing logic to internal Solidity libraries.
  * @dev Enforces mathematical invariants:
  *      1. Monotonicity of NAV per share: ΔNAV >= 0 on all deposits and redemptions.
@@ -94,7 +94,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     event WhitelistUpdated(address indexed account, bool isWhitelisted);
     event Deposited(address indexed user, uint256 usdcAmount, uint256 sharesMinted);
     event SwapRebalanceFailed(address indexed tokenOut, uint256 amountIn);
-    event AssetWeightsUpdated(uint256 stablecoins, uint256 wbtc, uint256 weth, uint256 alpha);
+    event AssetWeightsUpdated(uint256 stablecoins, uint256 wbtc, uint256 weth, uint256 viraje);
     event ProofOfReservesAudited(
         uint256 totalAssetsUSD, uint256 totalLiabilitiesUSD, uint256 collateralRatioBps, uint256 timestamp
     );
@@ -161,7 +161,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
         lastSettledNAVPerShare = 1e18;
         treasuryLoanCapBps = 2000; // 20% of stablecoin reserves, timelock-governed
 
-        currentWeights = AssetWeights({stablecoins: 5000, wbtc: 2500, weth: 1250, alphaProtocolStaking: 1250});
+        currentWeights = AssetWeights({stablecoins: 5000, wbtc: 2500, weth: 1250, virajeProtocolStaking: 1250});
     }
 
     /**
@@ -233,20 +233,20 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     /**
      * @notice Sets strategic portfolio weights for rebalancing (must sum to 10,000 BPS)
      */
-    function setAssetWeights(uint256 _stables, uint256 _wbtc, uint256 _weth, uint256 _alpha)
+    function setAssetWeights(uint256 _stables, uint256 _wbtc, uint256 _weth, uint256 _viraje)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        if (_stables + _wbtc + _weth + _alpha != 10000) {
-            revert InvalidWeightsSum(_stables + _wbtc + _weth + _alpha);
+        if (_stables + _wbtc + _weth + _viraje != 10000) {
+            revert InvalidWeightsSum(_stables + _wbtc + _weth + _viraje);
         }
         currentWeights = AssetWeights({
             stablecoins: uint64(_stables),
             wbtc: uint64(_wbtc),
             weth: uint64(_weth),
-            alphaProtocolStaking: uint64(_alpha)
+            virajeProtocolStaking: uint64(_viraje)
         });
-        emit AssetWeightsUpdated(_stables, _wbtc, _weth, _alpha);
+        emit AssetWeightsUpdated(_stables, _wbtc, _weth, _viraje);
     }
 
     /**
@@ -267,14 +267,14 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     }
 
     /**
-     * @notice Routes incoming reserve fees to AlphaVault
+     * @notice Routes incoming reserve fees to VirajeVault
      */
     function notifyReserveFee(uint256 usdcFeeAmount) external {
         address routerAddr = addressProvider.getAddress(addressProvider.ID_REAL_YIELD_ROUTER());
         if (msg.sender != routerAddr && !hasRole(ProtocolRoles.VAULT_MANAGER_ROLE, msg.sender)) {
             revert Unauthorized();
         }
-        address vault = addressProvider.getAlphaVault();
+        address vault = addressProvider.getVirajeVault();
         uint256 swept = 0;
         if (vault != address(0)) {
             uint256 bal = IERC20(redemptionToken).balanceOf(address(this));
@@ -398,7 +398,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
         uint256 totalAssetsExogenous,
         uint256 preNavUSD,
         address routerAddr,
-        AlphaVault vault
+        VirajeVault vault
     ) internal returns (DepositResult memory res) {
         uint256 balanceBefore = vault.getBalance(redemptionToken);
         IERC20(redemptionToken).safeTransferFrom(msg.sender, address(vault), stableAmount);
@@ -421,9 +421,9 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     }
 
     /**
-     * @notice Mints Alpha Shares in exchange for deposited USDC. Routes funds to Yield Adapters and P2P Buffers.
+     * @notice Mints VIRAJE Shares in exchange for deposited USDC. Routes funds to Yield Adapters and P2P Buffers.
      * @param stableAmount The amount of stablecoin (USDC) to deposit.
-     * @return sharesMinted The amount of Alpha shares minted to the user.
+     * @return sharesMinted The amount of VIRAJE shares minted to the user.
      */
     function deposit(uint256 stableAmount) external override returns (uint256 sharesMinted) {
         return depositFor(msg.sender, stableAmount, 0);
@@ -434,11 +434,11 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     }
 
     /**
-     * @notice Mints Alpha Shares on behalf of a beneficiary. Routes funds to Yield Adapters and P2P Buffers.
+     * @notice Mints VIRAJE Shares on behalf of a beneficiary. Routes funds to Yield Adapters and P2P Buffers.
      * @param beneficiary The account receiving the minted shares and tracked for cooldowns.
      * @param stableAmount The amount of stablecoin (USDC) to deposit.
      * @param minSharesOut Minimum shares expected to receive (slippage protection).
-     * @return sharesMinted The amount of Alpha shares minted to the beneficiary.
+     * @return sharesMinted The amount of VIRAJE shares minted to the beneficiary.
      */
     function depositFor(address beneficiary, uint256 stableAmount, uint256 minSharesOut)
         public
@@ -460,13 +460,13 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
         (uint256 preAssetsUSD,, uint256 preRatioBps) = getProofOfReserves();
         uint256 preNavUSD = getNAVPerShare();
 
-        AlphaVault vault = AlphaVault(addressProvider.getAddress(addressProvider.ID_ALPHA_VAULT()));
+        VirajeVault vault = VirajeVault(addressProvider.getVirajeVault());
         address routerAddr = addressProvider.getAddress(addressProvider.ID_REAL_YIELD_ROUTER());
 
         DepositResult memory res = _processDeposit(stableAmount, preAssetsUSD, preNavUSD, routerAddr, vault);
         sharesMinted = res.sharesMinted;
 
-        AlphaToken token = AlphaToken(addressProvider.getAddress(addressProvider.ID_ALPHA_TOKEN()));
+        VirajeToken token = VirajeToken(addressProvider.getVirajeToken());
         token.mint(beneficiary, sharesMinted);
 
         if (res.feeAmount > 0 && routerAddr != address(0)) {
@@ -489,7 +489,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
                     stableWeight: currentWeights.stablecoins,
                     wbtcWeight: currentWeights.wbtc,
                     wethWeight: currentWeights.weth,
-                    alphaWeight: currentWeights.alphaProtocolStaking,
+                    virajeWeight: currentWeights.virajeProtocolStaking,
                     netDeposited: res.netDeposited,
                     totalNavUSD: preAssetsUSD + (res.netDeposited * (10 ** (18 - redemptionTokenDecimals))),
                     treasuryContract: address(this)
@@ -529,7 +529,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     }
 
     /**
-     * @notice Moves idle USDC from the AlphaVault into a registered Yield Adapter.
+     * @notice Moves idle USDC from the VirajeVault into a registered Yield Adapter.
      */
     function depositToYieldAdapter(address adapter, uint256 amount)
         external
@@ -551,7 +551,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
         }
         if (!isActive) revert AdapterNotActive();
 
-        AlphaVault vault = AlphaVault(addressProvider.getAlphaVault());
+        VirajeVault vault = VirajeVault(addressProvider.getVirajeVault());
         if (vault.getBalance(redemptionToken) < amount) revert InsufficientLiquidBuffer();
 
         vault.transferFunds(redemptionToken, address(this), amount);
@@ -561,8 +561,8 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     }
 
     /**
-     * @notice Burns Alpha Shares in exchange for USDC from the Treasury.
-     * @param sharesAmount The amount of Alpha shares to burn.
+     * @notice Burns VIRAJE Shares in exchange for USDC from the Treasury.
+     * @param sharesAmount The amount of VIRAJE shares to burn.
      * @return assetsReceived The amount of USDC transferred to the user, net of fees.
      */
     function redeem(uint256 sharesAmount) external override returns (uint256 assetsReceived) {
@@ -574,10 +574,10 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     }
 
     /**
-     * @notice Burns Alpha Shares on behalf of a beneficiary in exchange for USDC from the Treasury.
+     * @notice Burns VIRAJE Shares on behalf of a beneficiary in exchange for USDC from the Treasury.
      * @param beneficiary The account whose cooldown and whitelist status are verified.
      * @param recipient The destination account receiving the redeemed stablecoins.
-     * @param sharesAmount The amount of Alpha shares to burn.
+     * @param sharesAmount The amount of VIRAJE shares to burn.
      * @param minUsdcOut Minimum USDC expected to receive (slippage protection).
      * @return assetsReceived The amount of USDC transferred to recipient, net of fees.
      */
@@ -614,12 +614,12 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
         assetsReceived = calc.assetsReceived;
         if (assetsReceived == 0) revert ZeroAmount();
 
-        AlphaVault vault = AlphaVault(addressProvider.getAddress(addressProvider.ID_ALPHA_VAULT()));
+        VirajeVault vault = VirajeVault(addressProvider.getVirajeVault());
         TreasuryLiquidityLib.ensureLiquidBuffer(
             vault, redemptionToken, activeYieldAdapters, assetsReceived + calc.feeTokenAmount, address(this)
         );
 
-        AlphaToken(addressProvider.getAddress(addressProvider.ID_ALPHA_TOKEN())).burnFrom(msg.sender, sharesAmount);
+        VirajeToken(addressProvider.getVirajeToken()).burnFrom(msg.sender, sharesAmount);
         totalBurnedTokens += sharesAmount;
         vault.transferFunds(redemptionToken, recipient, assetsReceived);
 
@@ -667,7 +667,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     /**
      * @notice Emergency redemption for accounts whose KYC whitelist status was revoked.
      *         Applies a 5.0% retention fee synchronously routed to RealYieldRouter to prevent arbitrage.
-     * @param sharesAmount The amount of Alpha shares to redeem.
+     * @param sharesAmount The amount of VIRAJE shares to redeem.
      * @param minUsdcOut Minimum USDC to receive, guarding against NAV slippage.
      * @return assetsReceived Net USDC returned to the user.
      */
@@ -680,7 +680,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
         if (sharesAmount == 0) revert ZeroAmount();
         if (lastDepositBlock[msg.sender] >= block.number) revert SameBlockCooldown(msg.sender, block.number);
 
-        AlphaToken token = AlphaToken(addressProvider.getAlphaToken());
+        VirajeToken token = VirajeToken(addressProvider.getVirajeToken());
         if (token.balanceOf(msg.sender) < sharesAmount) revert InsufficientShareBalance();
 
         // C-02: settle matured bonds before pricing shares.
@@ -699,7 +699,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
 
         if (assetsReceived == 0) revert ZeroAmount();
 
-        AlphaVault vault = AlphaVault(addressProvider.getAlphaVault());
+        VirajeVault vault = VirajeVault(addressProvider.getVirajeVault());
         TreasuryLiquidityLib.ensureLiquidBuffer(
             vault, redemptionToken, activeYieldAdapters, assetsReceived + calc.feeTokenAmount, address(this)
         );
@@ -742,7 +742,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
         // C-02: settle matured bonds before pricing shares.
         _accrueVestedVault();
 
-        AlphaVault vault = AlphaVault(addressProvider.getAddress(addressProvider.ID_ALPHA_VAULT()));
+        VirajeVault vault = VirajeVault(addressProvider.getVirajeVault());
         uint256 localBal = IERC20(redemptionToken).balanceOf(address(this));
         if (localBal >= stableAmount) {
             IERC20(redemptionToken).safeTransfer(address(vault), localBal);
@@ -757,7 +757,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
         }
         sharesMinted = Math.mulDiv(depositValueUSD, 1e18, navPerShare, Math.Rounding.Floor);
 
-        AlphaToken token = AlphaToken(addressProvider.getAddress(addressProvider.ID_ALPHA_TOKEN()));
+        VirajeToken token = VirajeToken(addressProvider.getVirajeToken());
         token.mint(msg.sender, sharesMinted);
         lastSettledNAVPerShare = getNAVPerShare();
         return sharesMinted;
@@ -769,7 +769,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
      */
     function treasuryStableReserves() public view returns (uint256 total) {
         return TreasuryLiquidityLib.calculateStableReserves(
-            addressProvider.getAlphaVault(),
+            addressProvider.getVirajeVault(),
             redemptionToken,
             activeYieldAdapters,
             address(this)
@@ -818,7 +818,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     }
 
     /**
-     * @notice Disburses loans from AlphaVault for the P2PLendingMarket.
+     * @notice Disburses loans from VirajeVault for the P2PLendingMarket.
      * @dev Enforces a hard aggregate cap against stablecoin reserves so that a single
      *      borrower cannot drain the liquidity backing redemptions (C-03).
      */
@@ -838,7 +838,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
             revert TreasuryLoanCapExceeded(amount, limit > outstanding ? limit - outstanding : 0);
         }
 
-        AlphaVault vault = AlphaVault(addressProvider.getAddress(addressProvider.ID_ALPHA_VAULT()));
+        VirajeVault vault = VirajeVault(addressProvider.getVirajeVault());
 
         uint256 available = vault.getBalance(redemptionToken);
         if (available < amount) {
@@ -867,15 +867,22 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
         }
         if (amount == 0) revert ZeroAmount();
 
-        AlphaVault vault = AlphaVault(addressProvider.getAlphaVault());
+        VirajeVault vault = VirajeVault(addressProvider.getVirajeVault());
         _transferWithLiquidity(vault, recipient, amount);
     }
 
     /**
-     * @notice Returns the canonical AlphaVault custody address.
+     * @notice Returns the canonical VirajeVault custody address.
      */
-    function alphaVault() external view returns (address) {
-        return addressProvider.getAlphaVault();
+    function virajeVault() external view returns (address) {
+        return addressProvider.getVirajeVault();
+    }
+
+    /**
+     * @notice Returns the canonical VirajeVault custody address (backward-compatible alias).
+     */
+    function virajeVault() external view returns (address) {
+        return addressProvider.getVirajeVault();
     }
 
     /**
@@ -886,12 +893,12 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
         if (recipient == address(0)) revert IProtocolErrors.ZeroAddress();
         if (amount == 0) revert ZeroAmount();
 
-        AlphaVault vault = AlphaVault(addressProvider.getAlphaVault());
+        VirajeVault vault = VirajeVault(addressProvider.getVirajeVault());
         _transferWithLiquidity(vault, recipient, amount);
         emit TreasuryGrantDisbursed(recipient, amount, "DAO Proposal Grant / Audit Escrow");
     }
 
-    function _transferWithLiquidity(AlphaVault vault, address recipient, uint256 amount) internal {
+    function _transferWithLiquidity(VirajeVault vault, address recipient, uint256 amount) internal {
         uint256 available = vault.getBalance(redemptionToken);
         if (available < amount) {
             TreasuryLiquidityLib.ensureLiquidBuffer(

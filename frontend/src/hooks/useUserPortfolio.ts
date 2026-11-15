@@ -30,7 +30,7 @@ export function useUserPortfolio(userAddress: string | undefined, refetchInterva
 
       try {
         const shares = await publicClient.readContract({
-          address: CONTRACT_ADDRESSES.ALPHA_TOKEN,
+          address: CONTRACT_ADDRESSES.VIRAJE_TOKEN,
           abi: ABIS.ERC20,
           functionName: 'balanceOf',
           args: [targetAddr]

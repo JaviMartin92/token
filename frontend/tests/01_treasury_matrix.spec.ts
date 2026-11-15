@@ -31,7 +31,7 @@ test.describe('Suite 1: Tesorería & Mercado Primario (Tx 01 - 11)', () => {
     const usdcBalEl = page.locator('[data-testid="treasury-usdc-balance"]');
     await expect(usdcBalEl).toContainText('USDC');
 
-    // [Tx 02] Deposit USDC -> Mint ALPHA
+    // [Tx 02] Deposit USDC -> Mint VIRAJE
     const depInput = page.locator('[data-testid="treasury-deposit-input"]');
     await depInput.fill('5000');
     await page.locator('[data-testid="treasury-deposit-btn"]').click();
@@ -42,11 +42,11 @@ test.describe('Suite 1: Tesorería & Mercado Primario (Tx 01 - 11)', () => {
     await confirmBtn.click();
     await expect(confirmBtn).toBeHidden({ timeout: 15000 });
 
-    // Verify ALPHA Shares minted
+    // Verify VIRAJE Shares minted
     const sharesBalEl = page.locator('[data-testid="treasury-shares-balance"]');
-    await expect(sharesBalEl).not.toHaveText('0.00 ALPHA', { timeout: 10000 });
+    await expect(sharesBalEl).not.toHaveText('0.00 VIRAJE', { timeout: 10000 });
 
-    // [Tx 03] Redeem ALPHA -> Withdraw USDC
+    // [Tx 03] Redeem VIRAJE -> Withdraw USDC
     const redeemInput = page.locator('[data-testid="treasury-redeem-input"]');
     await redeemInput.fill('1000');
     await page.locator('[data-testid="treasury-redeem-btn"]').click();

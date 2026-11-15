@@ -25,17 +25,17 @@ async function runAutonomousAgentSuite() {
       name: 'Alice',
       key: ALICE_KEY,
       role: 'Retail Staker & Rendimiento Pasivo',
-      objective: 'Maximizar el rendimiento acumulando stALPHA en gobernanza, configurar el router de recompensas a USDC o ALPHA según convenga.',
+      objective: 'Maximizar el rendimiento acumulando stVIRAJE en gobernanza, configurar el router de recompensas a USDC o VIRAJE según convenga.',
       actions: [
         {
-          name: 'stake_alpha',
-          description: 'Hacer staking de ALPHA para recibir stALPHA con derecho a voto y yield real',
-          parameters: { amount: 'cantidad en tokens ALPHA a stakear (ej: 250)' }
+          name: 'stake_viraje',
+          description: 'Hacer staking de VIRAJE para recibir stVIRAJE con derecho a voto y yield real',
+          parameters: { amount: 'cantidad en tokens VIRAJE a stakear (ej: 250)' }
         },
         {
           name: 'set_payout_preference',
-          description: 'Elegir si los dividendos se pagan en USDC o se autocompoundean en ALPHA',
-          parameters: { preference: "'USDC' o 'ALPHA'" }
+          description: 'Elegir si los dividendos se pagan en USDC o se autocompoundean en VIRAJE',
+          parameters: { preference: "'USDC' o 'VIRAJE'" }
         },
         {
           name: 'claim_rewards',
@@ -52,7 +52,7 @@ async function runAutonomousAgentSuite() {
       actions: [
         {
           name: 'deposit_treasury_usdc',
-          description: 'Depositar USDC en la Tesorería para emitir nuevos tokens ALPHA según el NAV',
+          description: 'Depositar USDC en la Tesorería para emitir nuevos tokens VIRAJE según el NAV',
           parameters: { amount: 'cantidad en USDC (ej: 5000)' }
         },
         {
@@ -65,9 +65,9 @@ async function runAutonomousAgentSuite() {
           }
         },
         {
-          name: 'redeem_alpha_usdc',
-          description: 'Redimir tokens ALPHA en la tesorería para retirar USDC líquido',
-          parameters: { amount: 'cantidad de ALPHA a redimir (ej: 100)' }
+          name: 'redeem_viraje_usdc',
+          description: 'Redimir tokens VIRAJE en la tesorería para retirar USDC líquido',
+          parameters: { amount: 'cantidad de VIRAJE a redimir (ej: 100)' }
         }
       ]
     },
@@ -88,9 +88,9 @@ async function runAutonomousAgentSuite() {
           parameters: {}
         },
         {
-          name: 'stake_alpha',
-          description: 'Stakear ALPHA para probar la consistencia tras saltos temporales',
-          parameters: { amount: 'cantidad de ALPHA (ej: 50)' }
+          name: 'stake_viraje',
+          description: 'Stakear VIRAJE para probar la consistencia tras saltos temporales',
+          parameters: { amount: 'cantidad de VIRAJE (ej: 50)' }
         }
       ]
     }
@@ -116,7 +116,7 @@ async function runAutonomousAgentSuite() {
       const state = await env.getAgentState(client.account!.address);
 
       console.log(`\n👤 Agente: [${persona.name}] (${persona.role})`);
-      console.log(`   [ESTADO LIMPIO] NAV: $${state.protocol.navPerShareUSD.toFixed(4)} | Saldo: ${state.balances.USDC.toFixed(2)} USDC | ${state.balances.ALPHA.toFixed(2)} ALPHA`);
+      console.log(`   [ESTADO LIMPIO] NAV: $${state.protocol.navPerShareUSD.toFixed(4)} | Saldo: ${state.balances.USDC.toFixed(2)} USDC | ${state.balances.VIRAJE.toFixed(2)} VIRAJE`);
       console.log(`   Consultando razonamiento a Qwen3:8B...`);
 
       try {

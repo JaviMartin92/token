@@ -163,11 +163,11 @@ async function main() {
   const apArtifact = loadArtifact('ProtocolAddressProvider');
   const addressProviderAddr = await deploy('ProtocolAddressProvider', apArtifact.abi, apArtifact.bytecode.object, [account.address]);
 
-  const avArtifact = loadArtifact('AlphaVault');
-  const alphaVaultAddr = await deploy('AlphaVault (Custodia)', avArtifact.abi, avArtifact.bytecode.object, [addressProviderAddr, account.address]);
+  const avArtifact = loadArtifact('VirajeVault');
+  const virajeVaultAddr = await deploy('VirajeVault (Custodia)', avArtifact.abi, avArtifact.bytecode.object, [addressProviderAddr, account.address]);
 
-  const atArtifact = loadArtifact('AlphaToken');
-  const alphaTokenAddr = await deploy('AlphaToken (VIRAJE Shares)', atArtifact.abi, atArtifact.bytecode.object, [addressProviderAddr, account.address]);
+  const atArtifact = loadArtifact('VirajeToken');
+  const virajeTokenAddr = await deploy('VirajeToken (VIRAJE Shares)', atArtifact.abi, atArtifact.bytecode.object, [addressProviderAddr, account.address]);
 
   const ohArtifact = loadArtifact('OracleHub');
   const oracleHubAddr = await deploy('OracleHub (Router Precios)', ohArtifact.abi, ohArtifact.bytecode.object, [addressProviderAddr, account.address]);
@@ -228,7 +228,7 @@ async function main() {
   const communityVaultAddr = await deploy('CommunityYieldVault', cvArtifact.abi, cvArtifact.bytecode.object, [usdcAddr, account.address]);
 
   const stArtifact = loadArtifact('GovernanceStaking');
-  const stakingAddr = await deploy('GovernanceStaking (stVIRAJE)', stArtifact.abi, stArtifact.bytecode.object, [alphaTokenAddr, usdcAddr, account.address]);
+  const stakingAddr = await deploy('GovernanceStaking (stVIRAJE)', stArtifact.abi, stArtifact.bytecode.object, [virajeTokenAddr, usdcAddr, account.address]);
 
   await sendTx('Vincular Staking en CommunityVault', communityVaultAddr, cvArtifact.abi, 'setStakingPool', [stakingAddr]);
   await sendTx('Vincular Tesorería en Staking', stakingAddr, stArtifact.abi, 'setTreasury', [treasuryProxyAddr]);
@@ -254,7 +254,7 @@ async function main() {
     positionNftAddr,
     treasuryProxyAddr,
     realYieldRouterAddr,
-    alphaTokenAddr,
+    virajeTokenAddr,
     account.address
   ]);
 
@@ -278,7 +278,7 @@ async function main() {
   await sendTx('Configurar PriceFeed en P2PLendingMarket', p2pMarketAddr, p2pArtifact.abi, 'setPriceFeed', [oracleHubAddr]);
   await sendTx('Configurar Tesorería en P2PLendingMarket', p2pMarketAddr, p2pArtifact.abi, 'setTreasury', [treasuryProxyAddr]);
   await sendTx('Configurar CircuitBreaker en P2PLendingMarket', p2pMarketAddr, p2pArtifact.abi, 'setCircuitBreaker', [circuitBreakerAddr]);
-  await sendTx('Configurar AlphaToken en P2PLendingMarket', p2pMarketAddr, p2pArtifact.abi, 'setAlphaToken', [alphaTokenAddr]);
+  await sendTx('Configurar VirajeToken en P2PLendingMarket', p2pMarketAddr, p2pArtifact.abi, 'setVirajeToken', [virajeTokenAddr]);
   await sendTx('Configurar WBTC en P2PLendingMarket', p2pMarketAddr, p2pArtifact.abi, 'setWbtcToken', [wbtcAddr]);
   await sendTx('Configurar WETH en P2PLendingMarket', p2pMarketAddr, p2pArtifact.abi, 'setWethToken', [wethAddr]);
 
@@ -301,7 +301,7 @@ async function main() {
 
   const fvArtifact = loadArtifact('FounderReserveVestingVault');
   const founderVaultAddr = await deploy('FounderReserveVestingVault', fvArtifact.abi, fvArtifact.bytecode.object, [
-    alphaTokenAddr,
+    virajeTokenAddr,
     treasuryProxyAddr,
     account.address,
     account.address
@@ -310,8 +310,8 @@ async function main() {
   // 10. Registrar Todas las Direcciones en ProtocolAddressProvider
   console.log('\n--- PASO 7: REGISTRO CENTRAL DE SERVICIOS (ADDRESS PROVIDER) ---');
   const ap = apArtifact.abi;
-  await sendTx('Registrar ALPHA_VAULT', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('ALPHA_VAULT')), alphaVaultAddr]);
-  await sendTx('Registrar ALPHA_TOKEN', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('ALPHA_TOKEN')), alphaTokenAddr]);
+  await sendTx('Registrar VIRAJE_VAULT', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('VIRAJE_VAULT')), virajeVaultAddr]);
+  await sendTx('Registrar VIRAJE_TOKEN', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('VIRAJE_TOKEN')), virajeTokenAddr]);
   await sendTx('Registrar ORACLE_HUB', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('ORACLE_HUB')), oracleHubAddr]);
   await sendTx('Registrar CIRCUIT_BREAKER', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('CIRCUIT_BREAKER')), circuitBreakerAddr]);
   await sendTx('Registrar TREASURY_MANAGER', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('TREASURY_MANAGER')), treasuryProxyAddr]);
@@ -327,9 +327,9 @@ async function main() {
 
   // 11. Concesión de Permisos Cruzados de Seguridad RBAC
   console.log('\n--- PASO 8: ASIGNACIÓN DE ROLES RBAC Y WHITELISTS ---');
-  await sendTx('Conceder MINTER_ROLE en AlphaToken a Tesorería', alphaTokenAddr, atArtifact.abi, 'grantRole', [MINTER_ROLE, treasuryProxyAddr]);
-  await sendTx('Conceder BURNER_ROLE en AlphaToken a Tesorería', alphaTokenAddr, atArtifact.abi, 'grantRole', [BURNER_ROLE, treasuryProxyAddr]);
-  await sendTx('Conceder VAULT_MANAGER en AlphaVault a Tesorería', alphaVaultAddr, avArtifact.abi, 'grantRole', [VAULT_MANAGER_ROLE, treasuryProxyAddr]);
+  await sendTx('Conceder MINTER_ROLE en VirajeToken a Tesorería', virajeTokenAddr, atArtifact.abi, 'grantRole', [MINTER_ROLE, treasuryProxyAddr]);
+  await sendTx('Conceder BURNER_ROLE en VirajeToken a Tesorería', virajeTokenAddr, atArtifact.abi, 'grantRole', [BURNER_ROLE, treasuryProxyAddr]);
+  await sendTx('Conceder VAULT_MANAGER en VirajeVault a Tesorería', virajeVaultAddr, avArtifact.abi, 'grantRole', [VAULT_MANAGER_ROLE, treasuryProxyAddr]);
   await sendTx('Conceder COMPLIANCE_ROLE en Tesorería al Desplegador', treasuryProxyAddr, tmCompiled.abi, 'grantRole', [COMPLIANCE_ROLE, account.address]);
   await sendTx('Conceder BURNER_ROLE en Tesorería a GovernanceStaking', treasuryProxyAddr, tmCompiled.abi, 'grantRole', [BURNER_ROLE, stakingAddr]);
   await sendTx('Conceder BURNER_ROLE en Tesorería a DiscountBuybackEngine', treasuryProxyAddr, tmCompiled.abi, 'grantRole', [BURNER_ROLE, buybackEngineAddr]);
@@ -359,10 +359,10 @@ async function main() {
   contractsConfig['WBTC'] = wbtcAddr;
   contractsConfig['WETH'] = wethAddr;
   contractsConfig['PROTOCOL_ADDRESS_PROVIDER'] = addressProviderAddr;
-  contractsConfig['ALPHA_VAULT'] = alphaVaultAddr;
-  contractsConfig['VIRAJE_VAULT'] = alphaVaultAddr;
-  contractsConfig['ALPHA_TOKEN'] = alphaTokenAddr;
-  contractsConfig['VIRAJE_TOKEN'] = alphaTokenAddr;
+  contractsConfig['VIRAJE_VAULT'] = virajeVaultAddr;
+  contractsConfig['VIRAJE_VAULT'] = virajeVaultAddr;
+  contractsConfig['VIRAJE_TOKEN'] = virajeTokenAddr;
+  contractsConfig['VIRAJE_TOKEN'] = virajeTokenAddr;
   contractsConfig['ORACLE_HUB'] = oracleHubAddr;
   contractsConfig['ORACLE_ROUTER'] = oracleHubAddr;
   contractsConfig['PRICE_FEED'] = oracleHubAddr;
@@ -398,7 +398,7 @@ async function main() {
     updateEnv('VITE_USDC_ADDRESS', usdcAddr);
     updateEnv('VITE_USDT_ADDRESS', usdtAddr);
     updateEnv('VITE_WBTC_ADDRESS', wbtcAddr);
-    updateEnv('VITE_ALPHA_TOKEN_ADDRESS', alphaTokenAddr);
+    updateEnv('VITE_VIRAJE_TOKEN_ADDRESS', virajeTokenAddr);
     updateEnv('VITE_TREASURY_ADDRESS', treasuryProxyAddr);
     updateEnv('TREASURY_ADDRESS', treasuryProxyAddr);
     updateEnv('CIRCUIT_BREAKER_ADDRESS', circuitBreakerAddr);
@@ -410,8 +410,8 @@ async function main() {
   console.log('  🎉 ¡DESPLIEGUE INSTITUCIONAL COMPLETADO CON ÉXITO!            ');
   console.log('================================================================');
   console.log(`Tesorería Proxy:        ${treasuryProxyAddr}`);
-  console.log(`VIRAJE Shares (Token):  ${alphaTokenAddr}`);
-  console.log(`AlphaVault (Custodia):  ${alphaVaultAddr}`);
+  console.log(`VIRAJE Shares (Token):  ${virajeTokenAddr}`);
+  console.log(`VirajeVault (Custodia):  ${virajeVaultAddr}`);
   console.log(`OracleHub:              ${oracleHubAddr}`);
   console.log(`CircuitBreaker:         ${circuitBreakerAddr}`);
   console.log(`Staking (stVIRAJE):     ${stakingAddr}`);

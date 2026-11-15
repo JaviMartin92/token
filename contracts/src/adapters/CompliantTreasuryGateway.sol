@@ -29,8 +29,12 @@ contract CompliantTreasuryGateway is AccessControl, ReentrancyGuard {
     error GatewayZeroAddress();
 
     ITreasuryManagerGateway public immutable treasuryManager;
-    address public immutable alphaToken;
+    address public immutable virajeToken;
     address public immutable stablecoin;
+
+    function virajeToken() external view returns (address) {
+        return virajeToken;
+    }
 
     mapping(address => bool) public isKYCVerified;
     mapping(address => uint256) public userLastDepositBlock;
@@ -39,10 +43,10 @@ contract CompliantTreasuryGateway is AccessControl, ReentrancyGuard {
     event InstitutionalDepositForwarded(address indexed institution, uint256 usdcIn, uint256 sharesOut);
     event InstitutionalRedeemForwarded(address indexed institution, uint256 sharesIn, uint256 usdcOut);
 
-    constructor(address _treasuryManager, address _alphaToken, address _admin) {
-        if (_treasuryManager == address(0) || _alphaToken == address(0)) revert GatewayZeroAddress();
+    constructor(address _treasuryManager, address _virajeToken, address _admin) {
+        if (_treasuryManager == address(0) || _virajeToken == address(0)) revert GatewayZeroAddress();
         treasuryManager = ITreasuryManagerGateway(_treasuryManager);
-        alphaToken = _alphaToken;
+        virajeToken = _virajeToken;
         stablecoin = ITreasuryManagerGateway(_treasuryManager).redemptionToken();
 
         address admin = (_admin != address(0)) ? _admin : msg.sender;
@@ -80,7 +84,7 @@ contract CompliantTreasuryGateway is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Forwards institutional deposit directly to TreasuryManager.
-     *         Stateless: Tokens pass through instantaneously from user to core vault, minting Alpha directly to the user.
+     *         Stateless: Tokens pass through instantaneously from user to core vault, minting VIRAJE directly to the user.
      */
     function depositCompliant(uint256 stableAmount, uint256 minSharesOut)
         external
@@ -104,7 +108,7 @@ contract CompliantTreasuryGateway is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Forwards institutional redemption directly to TreasuryManager.
-     *         Stateless: Alpha tokens pass through to Core for burning, transferring USDC directly to the user.
+     *         Stateless: VIRAJE tokens pass through to Core for burning, transferring USDC directly to the user.
      */
     function redeemCompliant(uint256 sharesAmount, uint256 minUsdcOut)
         external
@@ -117,10 +121,10 @@ contract CompliantTreasuryGateway is AccessControl, ReentrancyGuard {
             revert IProtocolErrors.SameBlockCooldown(msg.sender, block.number);
         }
 
-        // Pull Alpha tokens from institution
-        IERC20(alphaToken).safeTransferFrom(msg.sender, address(this), sharesAmount);
-        IERC20(alphaToken).safeApprove(address(treasuryManager), 0);
-        IERC20(alphaToken).safeApprove(address(treasuryManager), sharesAmount);
+        // Pull VIRAJE tokens from institution
+        IERC20(virajeToken).safeTransferFrom(msg.sender, address(this), sharesAmount);
+        IERC20(virajeToken).safeApprove(address(treasuryManager), 0);
+        IERC20(virajeToken).safeApprove(address(treasuryManager), sharesAmount);
 
         // Execute core redemption: TreasuryManager burns from address(this) and transfers USDC directly to msg.sender
         assetsReceived = treasuryManager.redeemFor(address(this), msg.sender, sharesAmount, minUsdcOut);

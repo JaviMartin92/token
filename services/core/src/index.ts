@@ -17,7 +17,7 @@ async function main() {
 
   // 2. Redis Subscription Setup
   const redis = new Redis(REDIS_URL);
-  const channel = 'alpha_centauri_events';
+  const channel = 'viraje_events';
 
   redis.subscribe(channel, (err) => {
     if (err) {

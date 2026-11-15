@@ -206,13 +206,13 @@ export const ABIS = {
       { name: '_stables', type: 'uint256' },
       { name: '_wbtc', type: 'uint256' },
       { name: '_weth', type: 'uint256' },
-      { name: '_alpha', type: 'uint256' }
+      { name: '_viraje', type: 'uint256' }
     ], outputs: [] },
     { name: 'currentWeights', type: 'function', stateMutability: 'view', inputs: [], outputs: [
       { name: 'stablecoins', type: 'uint256' },
       { name: 'wbtc', type: 'uint256' },
       { name: 'weth', type: 'uint256' },
-      { name: 'alphaProtocolStaking', type: 'uint256' }
+      { name: 'virajeProtocolStaking', type: 'uint256' }
     ]},
     { name: 'getProofOfReserves', type: 'function', stateMutability: 'view', inputs: [], outputs: [
       { name: 'totalAssetsUSD', type: 'uint256' },
@@ -252,7 +252,7 @@ export const ABIS = {
         { name: 'baseDiscount3YearsBps', type: 'uint256' },
         { name: 'baseDiscount5YearsBps', type: 'uint256' },
         { name: 'vipBonusBps', type: 'uint256' },
-        { name: 'userStalphaBalance', type: 'uint256' }
+        { name: 'userStvirajeBalance', type: 'uint256' }
       ]}
     ]},
     { name: 'totalInvested', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
@@ -302,8 +302,8 @@ export const ABIS = {
       { name: 'borrowAmount', type: 'uint256' },
       { name: 'durationDays', type: 'uint256' }
     ], outputs: [{ name: 'loanId', type: 'uint256' }] },
-    { name: 'borrowFromTreasuryWithAlpha', type: 'function', stateMutability: 'nonpayable', inputs: [
-      { name: 'alphaCollateralAmount', type: 'uint256' },
+    { name: 'borrowFromTreasuryWithViraje', type: 'function', stateMutability: 'nonpayable', inputs: [
+      { name: 'virajeCollateralAmount', type: 'uint256' },
       { name: 'borrowAmount', type: 'uint256' },
       { name: 'durationDays', type: 'uint256' }
     ], outputs: [{ name: 'loanId', type: 'uint256' }] },
@@ -339,11 +339,11 @@ export const ABIS = {
   ] as const,
   REAL_YIELD_ROUTER: [
     { name: 'setUserPayoutPreference', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'preference', type: 'uint8' }], outputs: [] },
-    { name: 'setBasketAssets', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: '_wbtc', type: 'address' }, { name: '_weth', type: 'address' }, { name: '_alphaToken', type: 'address' }], outputs: [] },
+    { name: 'setBasketAssets', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: '_wbtc', type: 'address' }, { name: '_weth', type: 'address' }, { name: '_virajeToken', type: 'address' }], outputs: [] },
     { name: 'claimRealYield', type: 'function', stateMutability: 'nonpayable', inputs: [], outputs: [{ name: 'payoutAmount', type: 'uint256' }] },
     { name: 'wbtc', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'address' }] },
     { name: 'weth', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'address' }] },
-    { name: 'alphaToken', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'address' }] }
+    { name: 'virajeToken', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'address' }] }
   ] as const,
   DYNAMIC_YIELD_ORACLE: [
     { name: 'calculateWeightedYieldBps', type: 'function', stateMutability: 'view', inputs: [
@@ -412,12 +412,12 @@ export const ABIS = {
     { name: 'lastClaimTimestamp', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
     { name: 'COOLDOWN_PERIOD', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
     { name: 'getClaimableInfo', type: 'function', stateMutability: 'view', inputs: [], outputs: [
-      { name: 'claimableAlpha', type: 'uint256' },
+      { name: 'claimableViraje', type: 'uint256' },
       { name: 'surplusUSD', type: 'uint256' },
       { name: 'nextAvailableTimestamp', type: 'uint256' },
       { name: 'canClaim', type: 'bool' }
     ]},
-    { name: 'claimVestedAlpha', type: 'function', stateMutability: 'nonpayable', inputs: [], outputs: [{ name: 'claimedAmount', type: 'uint256' }] }
+    { name: 'claimVestedViraje', type: 'function', stateMutability: 'nonpayable', inputs: [], outputs: [{ name: 'claimedAmount', type: 'uint256' }] }
   ],
   GOVERNOR: [
     { name: 'propose', type: 'function', stateMutability: 'nonpayable', inputs: [

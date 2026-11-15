@@ -7,7 +7,7 @@ import "./interfaces/IProtocolErrors.sol";
 
 /**
  * @title ProtocolAddressProvider
- * @author Alpha Centauri Architecture Team
+ * @author Viraje Protocol Architecture Team
  * @notice Registro central y Service Locator inmutable para la resolución dinámica de contratos del protocolo.
  * @dev Permite la actualización modular y desacoplada de subsistemas (oráculos, enrutadores de rendimiento,
  *      motores de buyback) sin requerir migraciones complejas de almacenamiento.
@@ -18,8 +18,10 @@ contract ProtocolAddressProvider is AccessControl {
     // 🏷️ IDENTIFICADORES DE MÓDULOS DEL PROTOCOLO
     // =========================================================================
     bytes32 public constant ID_TREASURY_MANAGER = keccak256("TREASURY_MANAGER");
-    bytes32 public constant ID_ALPHA_VAULT = keccak256("ALPHA_VAULT");
-    bytes32 public constant ID_ALPHA_TOKEN = keccak256("ALPHA_TOKEN");
+    bytes32 public constant ID_VIRAJE_VAULT = keccak256("VIRAJE_VAULT");
+    bytes32 public constant ID_VIRAJE_TOKEN = keccak256("VIRAJE_TOKEN");
+    bytes32 public constant ID_VIRAJE_VAULT = keccak256("VIRAJE_VAULT");
+    bytes32 public constant ID_VIRAJE_TOKEN = keccak256("VIRAJE_TOKEN");
     bytes32 public constant ID_ORACLE_HUB = keccak256("ORACLE_HUB");
     bytes32 public constant ID_TOKENOMICS_ENGINE = keccak256("TOKENOMICS_ENGINE");
     bytes32 public constant ID_GOVERNANCE_STAKING = keccak256("GOVERNANCE_STAKING");
@@ -104,12 +106,22 @@ contract ProtocolAddressProvider is AccessControl {
         return getAddress(ID_TREASURY_MANAGER);
     }
 
+    function getVirajeVault() public view returns (address) {
+        address v = getAddress(ID_VIRAJE_VAULT);
+        return v != address(0) ? v : getAddress(ID_VIRAJE_VAULT);
+    }
+
+    function getVirajeToken() public view returns (address) {
+        address t = getAddress(ID_VIRAJE_TOKEN);
+        return t != address(0) ? t : getAddress(ID_VIRAJE_TOKEN);
+    }
+
     function getAlphaVault() external view returns (address) {
-        return getAddress(ID_ALPHA_VAULT);
+        return getVirajeVault();
     }
 
     function getAlphaToken() external view returns (address) {
-        return getAddress(ID_ALPHA_TOKEN);
+        return getVirajeToken();
     }
 
     function getOracleHub() external view returns (address) {

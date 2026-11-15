@@ -2,11 +2,11 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../src/GovernorAlphaCentauri.sol";
+import "../src/GovernorViraje.sol";
 import "../src/TimelockController.sol";
 import "../src/GovernanceStaking.sol";
-import "../src/AlphaToken.sol";
-import "../src/AlphaVault.sol";
+import "../src/VirajeToken.sol";
+import "../src/VirajeVault.sol";
 import "../src/ProtocolAddressProvider.sol";
 import "../src/ProtocolRoles.sol";
 
@@ -20,37 +20,37 @@ contract MockTargetContract {
     }
 }
 
-contract GovernorAlphaCentauriTest is Test {
-    GovernorAlphaCentauri public governor;
+contract GovernorVirajeTest is Test {
+    GovernorViraje public governor;
     TimelockController public timelock;
     GovernanceStaking public staking;
-    AlphaToken public alphaToken;
-    AlphaVault public vault;
+    VirajeToken public virajeToken;
+    VirajeVault public vault;
     ProtocolAddressProvider public provider;
     MockTargetContract public targetContract;
 
     address public admin = address(0xAA);
-    address public whale = address(0x11); // 100,000 stALPHA
-    address public minProposer = address(0x22); // 25,000 stALPHA
-    address public smallUser = address(0x33); // 1,000 stALPHA (below threshold)
+    address public whale = address(0x11); // 100,000 stVIRAJE
+    address public minProposer = address(0x22); // 25,000 stVIRAJE
+    address public smallUser = address(0x33); // 1,000 stVIRAJE (below threshold)
 
     function setUp() public {
         vm.startPrank(admin);
 
         provider = new ProtocolAddressProvider(admin);
-        alphaToken = new AlphaToken(provider, admin);
-        provider.setAddress(keccak256("ALPHA_TOKEN"), address(alphaToken));
+        virajeToken = new VirajeToken(provider, admin);
+        provider.setAddress(keccak256("VIRAJE_TOKEN"), address(virajeToken));
 
-        vault = new AlphaVault(provider, admin);
-        provider.setAddress(keccak256("ALPHA_VAULT"), address(vault));
+        vault = new VirajeVault(provider, admin);
+        provider.setAddress(keccak256("VIRAJE_VAULT"), address(vault));
 
         address mockUsdc = address(0x55);
-        staking = new GovernanceStaking(address(alphaToken), mockUsdc, admin);
+        staking = new GovernanceStaking(address(virajeToken), mockUsdc, admin);
         provider.setAddress(keccak256("GOVERNANCE_STAKING"), address(staking));
 
         timelock = new TimelockController(3 days, admin);
 
-        governor = new GovernorAlphaCentauri(
+        governor = new GovernorViraje(
             address(staking),
             address(timelock),
             address(vault),
@@ -64,29 +64,29 @@ contract GovernorAlphaCentauriTest is Test {
 
         targetContract = new MockTargetContract();
 
-        // Mint ALPHA tokens and stake
-        alphaToken.grantRole(ProtocolRoles.MINTER_ROLE, admin);
-        alphaToken.mint(whale, 105000e18);
-        alphaToken.mint(minProposer, 26000e18);
-        alphaToken.mint(smallUser, 1500e18);
+        // Mint VIRAJE tokens and stake
+        virajeToken.grantRole(ProtocolRoles.MINTER_ROLE, admin);
+        virajeToken.mint(whale, 105000e18);
+        virajeToken.mint(minProposer, 26000e18);
+        virajeToken.mint(smallUser, 1500e18);
 
         vm.stopPrank();
 
-        // Users stake their ALPHA (delegates to themselves)
+        // Users stake their VIRAJE (delegates to themselves)
         vm.startPrank(whale);
-        alphaToken.approve(address(staking), type(uint256).max);
+        virajeToken.approve(address(staking), type(uint256).max);
         staking.stake(101011e18); // leaves ~100k net after 1% fee
         staking.delegate(whale);
         vm.stopPrank();
 
         vm.startPrank(minProposer);
-        alphaToken.approve(address(staking), type(uint256).max);
+        virajeToken.approve(address(staking), type(uint256).max);
         staking.stake(25500e18); // leaves ~25,245 net after 1% fee
         staking.delegate(minProposer);
         vm.stopPrank();
 
         vm.startPrank(smallUser);
-        alphaToken.approve(address(staking), type(uint256).max);
+        virajeToken.approve(address(staking), type(uint256).max);
         staking.stake(1011e18); // leaves ~1,000 net after 1% fee
         staking.delegate(smallUser);
         vm.stopPrank();
@@ -119,7 +119,7 @@ contract GovernorAlphaCentauriTest is Test {
         assertEq(proposer, minProposer);
         assertEq(target, address(targetContract));
         assertEq(desc, "Actualizar Parametro a 42");
-        assertTrue(governor.state(1) == GovernorAlphaCentauri.ProposalState.Pending);
+        assertTrue(governor.state(1) == GovernorViraje.ProposalState.Pending);
     }
 
     function test_Voting_Quorum_And_TimelockExecution() public {
@@ -131,7 +131,7 @@ contract GovernorAlphaCentauriTest is Test {
 
         // Advance past voting delay (1 block)
         vm.roll(block.number + 2);
-        assertTrue(governor.state(proposalId) == GovernorAlphaCentauri.ProposalState.Active);
+        assertTrue(governor.state(proposalId) == GovernorViraje.ProposalState.Active);
 
         // Whale votes FOR (100k votes, exceeds 80k quorum)
         vm.prank(whale);
@@ -143,11 +143,11 @@ contract GovernorAlphaCentauriTest is Test {
 
         // Advance past voting period (50,400 blocks)
         vm.roll(block.number + 50401);
-        assertTrue(governor.state(proposalId) == GovernorAlphaCentauri.ProposalState.Succeeded);
+        assertTrue(governor.state(proposalId) == GovernorViraje.ProposalState.Succeeded);
 
         // Queue in Timelock
         governor.queue(proposalId);
-        assertTrue(governor.state(proposalId) == GovernorAlphaCentauri.ProposalState.Queued);
+        assertTrue(governor.state(proposalId) == GovernorViraje.ProposalState.Queued);
 
         // Attempt execution before delay reverts
         vm.expectRevert();
@@ -158,7 +158,7 @@ contract GovernorAlphaCentauriTest is Test {
 
         // Execute proposal via Timelock
         governor.execute(proposalId);
-        assertTrue(governor.state(proposalId) == GovernorAlphaCentauri.ProposalState.Executed);
+        assertTrue(governor.state(proposalId) == GovernorViraje.ProposalState.Executed);
         assertEq(targetContract.value(), 999);
     }
 
@@ -179,6 +179,6 @@ contract GovernorAlphaCentauriTest is Test {
         vm.roll(block.number + 50401);
 
         // Defeated due to not reaching quorum
-        assertTrue(governor.state(proposalId) == GovernorAlphaCentauri.ProposalState.Defeated);
+        assertTrue(governor.state(proposalId) == GovernorViraje.ProposalState.Defeated);
     }
 }

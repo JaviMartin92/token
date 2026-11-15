@@ -6,7 +6,7 @@ interface ApyBreakdownModalProps {
   isOpen: boolean;
   onClose: () => void;
   porAssets?: string;
-  porBreakdown?: { stables: number; wbtc: number; weth: number; alphaStaking: number };
+  porBreakdown?: { stables: number; wbtc: number; weth: number; virajeStaking: number };
   stakedBalance?: string;
   grossCashflowUsd?: number;
   activeLoansUsd?: number;
@@ -18,7 +18,7 @@ interface ApyBreakdownModalProps {
 
 export function calculateProtocolApyMath(
   porAssets: string = '0.00',
-  porBreakdown = { stables: 0, wbtc: 0, weth: 0, alphaStaking: 0 },
+  porBreakdown = { stables: 0, wbtc: 0, weth: 0, virajeStaking: 0 },
   stakedBalance: string = '0',
   grossCashflowUsd: number = 0,
   activeLoansUsd: number = 0,
@@ -28,7 +28,7 @@ export function calculateProtocolApyMath(
   _navPerShareNum: number = 1.0
 ) {
   const numericAssetsUSD = parseFloat(porAssets.replace(/,/g, '')) || 0;
-  const numericStakedAlpha = parseFloat(stakedBalance.replace(/,/g, '')) || 0;
+  const numericStakedViraje = parseFloat(stakedBalance.replace(/,/g, '')) || 0;
 
   let stablesUSD = porBreakdown.stables;
   let wbtcUSD = porBreakdown.wbtc;
@@ -75,7 +75,7 @@ export function calculateProtocolApyMath(
   const totalFlywheelFeesUSD = actualBondFeesUSD + actualP2pFeesUSD + actualInterestSpreadUSD;
   const totalCommunityFlywheelFeesUSD = totalFlywheelFeesUSD * 0.50;
   const effectiveNav = _navPerShareNum > 0 ? _navPerShareNum : 1.0;
-  const stakedValueUSD = numericStakedAlpha * effectiveNav;
+  const stakedValueUSD = numericStakedViraje * effectiveNav;
 
   const flywheelApyPct = stakedValueUSD > 0 
     ? (totalCommunityFlywheelFeesUSD / stakedValueUSD) * 100 
@@ -86,7 +86,7 @@ export function calculateProtocolApyMath(
 
   return {
     numericAssetsUSD,
-    numericStakedAlpha,
+    numericStakedViraje,
     stablesUSD,
     morphoUSDPool,
     liquidBufferUSDPool,
@@ -125,7 +125,7 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
   isOpen,
   onClose,
   porAssets = '0.00',
-  porBreakdown = { stables: 0, wbtc: 0, weth: 0, alphaStaking: 0 },
+  porBreakdown = { stables: 0, wbtc: 0, weth: 0, virajeStaking: 0 },
   stakedBalance = '0',
   grossCashflowUsd = 0,
   activeLoansUsd = 0,
@@ -138,7 +138,7 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
 
   const {
     numericAssetsUSD,
-    numericStakedAlpha,
+    numericStakedViraje,
     stablesUSD: _stablesUSD,
     morphoUSDPool,
     liquidBufferUSDPool,
@@ -200,7 +200,7 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
             <div>
               <h3 className={styles.modalTitleH3}>{UI_STRINGS.MODALS.APY_BREAKDOWN.TITLE}</h3>
               <div className={styles.modalSubtitle}>
-                {UI_STRINGS.MODALS.APY_BREAKDOWN.SUBTITLE_PREFIX} ${numericAssetsUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })} {UI_STRINGS.COMMON.SYMBOL_USDC} • {UI_STRINGS.MODALS.APY_BREAKDOWN.SUBTITLE_STAKING_PREFIX} {numericStakedAlpha.toLocaleString()} {UI_STRINGS.COMMON.SYMBOL_ALPHA}
+                {UI_STRINGS.MODALS.APY_BREAKDOWN.SUBTITLE_PREFIX} ${numericAssetsUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })} {UI_STRINGS.COMMON.SYMBOL_USDC} • {UI_STRINGS.MODALS.APY_BREAKDOWN.SUBTITLE_STAKING_PREFIX} {numericStakedViraje.toLocaleString()} {UI_STRINGS.COMMON.SYMBOL_VIRAJE}
               </div>
             </div>
           </div>
@@ -322,9 +322,9 @@ export const ApyBreakdownModal: React.FC<ApyBreakdownModalProps> = ({
             {/* VIRAJE Token Staking & Treasury Backing */}
             <div className={styles.rowCardPurple}>
               <div>
-                <div className="font-semibold text-base text-purple-light">{UI_STRINGS.MODALS.APY_BREAKDOWN.ALPHA_STAKING_TITLE}</div>
+                <div className="font-semibold text-base text-purple-light">{UI_STRINGS.MODALS.APY_BREAKDOWN.VIRAJE_STAKING_TITLE}</div>
                 <div className="text-sm margin-top-xs">
-                  {UI_STRINGS.MODALS.APY_BREAKDOWN.ALPHA_STAKING_ACTIVE} <strong>{numericStakedAlpha.toLocaleString()} {UI_STRINGS.COMMON.SYMBOL_ALPHA}</strong> • {UI_STRINGS.MODALS.APY_BREAKDOWN.ALPHA_STAKING_BACKING} <strong>${(numericStakedAlpha * (navPerShareNum || 1.0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong>
+                  {UI_STRINGS.MODALS.APY_BREAKDOWN.VIRAJE_STAKING_ACTIVE} <strong>{numericStakedViraje.toLocaleString()} {UI_STRINGS.COMMON.SYMBOL_VIRAJE}</strong> • {UI_STRINGS.MODALS.APY_BREAKDOWN.VIRAJE_STAKING_BACKING} <strong>${(numericStakedViraje * (navPerShareNum || 1.0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</strong>
                 </div>
               </div>
               <div className="text-align-right">

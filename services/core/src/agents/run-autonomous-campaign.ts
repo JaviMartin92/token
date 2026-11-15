@@ -44,8 +44,8 @@ async function runAutonomousSecurityCampaign() {
       name: 'Apex',
       key: BOB_KEY,
       role: 'MEV Arbitrageur & Liquidity Sniper',
-      objective: 'Atacar Buyback Engine, Mercado P2P, Alpha Vault y Router de rendimientos buscando discrepancias de precios o liquidaciones.',
-      assignedContracts: ['DISCOUNT_BUYBACK_ENGINE', 'P2P_MARKET', 'REAL_YIELD_ROUTER', 'ALPHA_VAULT', 'MORPHO_ADAPTER', 'TOKENOMICS_ENGINE', 'ORACLE_HUB', 'DYNAMIC_YIELD_ORACLE'],
+      objective: 'Atacar Buyback Engine, Mercado P2P, Viraje vault y Router de rendimientos buscando discrepancias de precios o liquidaciones.',
+      assignedContracts: ['DISCOUNT_BUYBACK_ENGINE', 'P2P_MARKET', 'REAL_YIELD_ROUTER', 'VIRAJE_VAULT', 'MORPHO_ADAPTER', 'TOKENOMICS_ENGINE', 'ORACLE_HUB', 'DYNAMIC_YIELD_ORACLE'],
       history: [] as Array<{ action: string; result: string }>
     },
     {
@@ -53,7 +53,7 @@ async function runAutonomousSecurityCampaign() {
       key: ALICE_KEY,
       role: 'State Machine & Temporal Fuzzer',
       objective: 'Estresar bóvedas de vesting, incentivos promocionales, posiciones NFT y avanzar el tiempo temporal de la cadena.',
-      assignedContracts: ['VESTED_VAULT', 'COMMUNITY_YIELD_VAULT', 'PROMO_VAULT', 'POSITION_NFT', 'RESERVE_MANAGER', 'ALPHA_TOKEN', 'USDC', 'BLOCKCHAIN'],
+      assignedContracts: ['VESTED_VAULT', 'COMMUNITY_YIELD_VAULT', 'PROMO_VAULT', 'POSITION_NFT', 'RESERVE_MANAGER', 'VIRAJE_TOKEN', 'USDC', 'BLOCKCHAIN'],
       history: [] as Array<{ action: string; result: string }>
     }
   ];

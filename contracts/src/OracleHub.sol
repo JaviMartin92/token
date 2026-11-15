@@ -16,7 +16,7 @@ interface ISequencerUptimeFeed {
 
 /**
  * @title OracleHub
- * @author Alpha Centauri Architecture Team
+ * @author Viraje Protocol Architecture Team
  * @notice Centralized institutional oracle hub for collateral valuation and treasury NAV pricing.
  *         Supports primary Chainlink feeds, secondary fallback feeds with divergence guards,
  *         and Arbitrum L2 Sequencer Uptime verification with automated post-restart grace period.

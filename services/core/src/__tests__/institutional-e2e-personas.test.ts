@@ -112,7 +112,7 @@ async function runInstitutionalPersonasE2E() {
 
   // Ensure Treasury liquid buffer is fully funded
   try {
-    await adminClient.writeContract({ address: contracts.USDC, abi: ERC20_ABI, functionName: 'mint', args: [contracts.ALPHA_VAULT, parseUnits('100000', 6)] });
+    await adminClient.writeContract({ address: contracts.USDC, abi: ERC20_ABI, functionName: 'mint', args: [contracts.VIRAJE_VAULT, parseUnits('100000', 6)] });
   } catch {}
 
   try {
@@ -164,7 +164,7 @@ async function runInstitutionalPersonasE2E() {
   }
 
   // --- PERSONA 2: PRESTATARIO INSTITUCIONAL MULTI-COLATERAL ---
-  console.log('\n[PERSONA 2] Prestatario Multi-Colateral (WBTC, WETH, ALPHA)...');
+  console.log('\n[PERSONA 2] Prestatario Multi-Colateral (WBTC, WETH, VIRAJE)...');
   try {
     // 1. WBTC Loan (8 decimals, 70% Max LTV)
     const wbtcCol = parseUnits('0.2', 8); // 0.2 WBTC = $12,000 USD

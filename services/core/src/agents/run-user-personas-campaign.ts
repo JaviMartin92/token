@@ -67,23 +67,23 @@ async function runUserPersonasCampaign() {
       key: ALICE_KEY,
       role: 'Inversora Retail & Yield Seeker',
       initialUSDC: 10000,
-      initialALPHA: 1000,
-      objective: 'Aportar capital moderado en la Tesorería para obtener ALPHA al NAV justo, hacer Staking para obtener stALPHA, configurar cobro de dividendos y reclamar rendimientos.',
+      initialVIRAJE: 1000,
+      objective: 'Aportar capital moderado en la Tesorería para obtener VIRAJE al NAV justo, hacer Staking para obtener stVIRAJE, configurar cobro de dividendos y reclamar rendimientos.',
       actions: [
         {
           name: 'deposit_treasury_usdc',
-          description: 'Depositar USDC en la Tesorería para emitir nuevos tokens ALPHA respaldados al 100% por el NAV',
+          description: 'Depositar USDC en la Tesorería para emitir nuevos tokens VIRAJE respaldados al 100% por el NAV',
           parameters: { amount: 'cantidad en USDC (ej: 2000)' }
         },
         {
-          name: 'stake_alpha',
-          description: 'Hacer staking de tokens ALPHA para obtener stALPHA con derecho a voto y reparto de dividendos',
-          parameters: { amount: 'cantidad de ALPHA a stakear (ej: 300)' }
+          name: 'stake_viraje',
+          description: 'Hacer staking de tokens VIRAJE para obtener stVIRAJE con derecho a voto y reparto de dividendos',
+          parameters: { amount: 'cantidad de VIRAJE a stakear (ej: 300)' }
         },
         {
           name: 'set_payout_preference',
-          description: 'Elegir si los dividendos de Real Yield se reciben en USDC o autocompound en ALPHA',
-          parameters: { preference: "'USDC' o 'ALPHA'" }
+          description: 'Elegir si los dividendos de Real Yield se reciben en USDC o autocompound en VIRAJE',
+          parameters: { preference: "'USDC' o 'VIRAJE'" }
         },
         {
           name: 'claim_rewards',
@@ -91,9 +91,9 @@ async function runUserPersonasCampaign() {
           parameters: {}
         },
         {
-          name: 'unstake_alpha',
-          description: 'Retirar parte del staking para recuperar ALPHA líquido',
-          parameters: { amount: 'cantidad en stALPHA (ej: 50)' }
+          name: 'unstake_viraje',
+          description: 'Retirar parte del staking para recuperar VIRAJE líquido',
+          parameters: { amount: 'cantidad en stVIRAJE (ej: 50)' }
         }
       ]
     },
@@ -102,7 +102,7 @@ async function runUserPersonasCampaign() {
       key: BOB_KEY,
       role: 'Institutional Whale & Comprador de Bonos',
       initialUSDC: 50000,
-      initialALPHA: 3000,
+      initialVIRAJE: 3000,
       objective: 'Adquirir Bonos Descontados a plazo en VestedDiscountVault recibiendo VaultPositionNFTs, aportar gran liquidez a Tesorería y verificar solvencia.',
       actions: [
         {
@@ -135,14 +135,14 @@ async function runUserPersonasCampaign() {
       key: EVE_KEY,
       role: 'Emprendedora DeFi & Prestataria P2P',
       initialUSDC: 20000,
-      initialALPHA: 2000,
-      objective: 'Pedir liquidez en USDC en el mercado P2P aportando tokens ALPHA como colateral para financiar operaciones sin liquidar su patrimonio, y luego repagar.',
+      initialVIRAJE: 2000,
+      objective: 'Pedir liquidez en USDC en el mercado P2P aportando tokens VIRAJE como colateral para financiar operaciones sin liquidar su patrimonio, y luego repagar.',
       actions: [
         {
           name: 'borrow_from_treasury',
-          description: 'Solicitar un préstamo institucional en USDC depositando colateral en ALPHA en el mercado P2P (LTV máx 50%)',
+          description: 'Solicitar un préstamo institucional en USDC depositando colateral en VIRAJE en el mercado P2P (LTV máx 50%)',
           parameters: {
-            collateralAmount: 'monto colateral en ALPHA (ej: 1000)',
+            collateralAmount: 'monto colateral en VIRAJE (ej: 1000)',
             borrowAmount: 'monto solicitado en USDC hasta 500 (ej: 400)',
             durationDays: 'plazo del préstamo en días (ej: 30)'
           }
@@ -154,7 +154,7 @@ async function runUserPersonasCampaign() {
         },
         {
           name: 'deposit_treasury_usdc',
-          description: 'Depositar USDC excedente en tesorería para generar ALPHA',
+          description: 'Depositar USDC excedente en tesorería para generar VIRAJE',
           parameters: { amount: 'cantidad en USDC (ej: 1000)' }
         }
       ]
@@ -164,8 +164,8 @@ async function runUserPersonasCampaign() {
       key: ACCOUNT_4_KEY,
       role: 'Arbitrajista MEV & Buyback Keeper',
       initialUSDC: 30000,
-      initialALPHA: 5000,
-      objective: 'Monitorear el motor de recompras para arbitrar precios cuando exista descuento, depositar en tesorería al NAV o stakear ALPHA para maximizar rendimiento.',
+      initialVIRAJE: 5000,
+      objective: 'Monitorear el motor de recompras para arbitrar precios cuando exista descuento, depositar en tesorería al NAV o stakear VIRAJE para maximizar rendimiento.',
       actions: [
         {
           name: 'deposit_treasury_usdc',
@@ -173,9 +173,9 @@ async function runUserPersonasCampaign() {
           parameters: { amount: 'cantidad en USDC (ej: 3000)' }
         },
         {
-          name: 'stake_alpha',
-          description: 'Stakear las ganancias en ALPHA para multiplicar su yield pasivo en stALPHA',
-          parameters: { amount: 'cantidad de ALPHA (ej: 500)' }
+          name: 'stake_viraje',
+          description: 'Stakear las ganancias en VIRAJE para multiplicar su yield pasivo en stVIRAJE',
+          parameters: { amount: 'cantidad de VIRAJE (ej: 500)' }
         },
         {
           name: 'execute_discount_buyback',
@@ -189,13 +189,13 @@ async function runUserPersonasCampaign() {
       key: ACCOUNT_5_KEY,
       role: 'Delegado DAO & Activista de Gobernanza',
       initialUSDC: 12000,
-      initialALPHA: 2500,
-      objective: 'Maximizar el poder de voto de gobernanza, stakear ALPHA, delegar votos y fiscalizar la gobernanza del protocolo.',
+      initialVIRAJE: 2500,
+      objective: 'Maximizar el poder de voto de gobernanza, stakear VIRAJE, delegar votos y fiscalizar la gobernanza del protocolo.',
       actions: [
         {
-          name: 'stake_alpha',
-          description: 'Stakear ALPHA para maximizar su poder de voto stALPHA',
-          parameters: { amount: 'cantidad en ALPHA (ej: 1000)' }
+          name: 'stake_viraje',
+          description: 'Stakear VIRAJE para maximizar su poder de voto stVIRAJE',
+          parameters: { amount: 'cantidad en VIRAJE (ej: 1000)' }
         },
         {
           name: 'delegate_votes',
@@ -204,15 +204,15 @@ async function runUserPersonasCampaign() {
         },
         {
           name: 'set_payout_preference',
-          description: 'Alinear recompensas de yield hacia crecimiento del ecosistema en ALPHA',
-          parameters: { preference: "'ALPHA'" }
+          description: 'Alinear recompensas de yield hacia crecimiento del ecosistema en VIRAJE',
+          parameters: { preference: "'VIRAJE'" }
         }
       ]
     }
   ];
 
   console.log(`📋 [2/4] Perfiles de Usuario Configurados (${personas.length} personas):`);
-  personas.forEach(p => console.log(`   • ${p.name} (${p.role}) - Fondo: ${p.initialUSDC} USDC, ${p.initialALPHA} ALPHA`));
+  personas.forEach(p => console.log(`   • ${p.name} (${p.role}) - Fondo: ${p.initialUSDC} USDC, ${p.initialVIRAJE} VIRAJE`));
 
   const historyLogs: PersonaLog[] = [];
   const startTime = Date.now();
@@ -237,12 +237,12 @@ async function runUserPersonasCampaign() {
       baseSnapshot = await env.createSnapshot();
 
       const client = env.getWalletClient(persona.key as `0x${string}`);
-      await env.setupInitialLiquidity(client.account!.address, persona.initialUSDC, persona.initialALPHA);
+      await env.setupInitialLiquidity(client.account!.address, persona.initialUSDC, persona.initialVIRAJE);
 
       const stateBefore = await env.getAgentState(client.account!.address);
 
       console.log(`\n👤 Perfil: [${persona.name}] (${persona.role})`);
-      console.log(`   [PORTAFOLIO INICIAL] NAV: $${stateBefore.protocol.navPerShareUSD.toFixed(4)} | USDC: ${stateBefore.balances.USDC.toFixed(2)} | ALPHA: ${stateBefore.balances.ALPHA.toFixed(2)} | stALPHA: ${stateBefore.balances.stALPHA.toFixed(2)} | NFTs: ${stateBefore.balances.positionBondsCount || 0}`);
+      console.log(`   [PORTAFOLIO INICIAL] NAV: $${stateBefore.protocol.navPerShareUSD.toFixed(4)} | USDC: ${stateBefore.balances.USDC.toFixed(2)} | VIRAJE: ${stateBefore.balances.VIRAJE.toFixed(2)} | stVIRAJE: ${stateBefore.balances.stVIRAJE.toFixed(2)} | NFTs: ${stateBefore.balances.positionBondsCount || 0}`);
       console.log(`   Consultando estrategia a Qwen3:8B...`);
 
       const t0 = Date.now();
@@ -278,9 +278,9 @@ async function runUserPersonasCampaign() {
       const stateAfter = await env.getAgentState(client.account!.address);
 
       const usdcDiff = (stateAfter.balances.USDC - stateBefore.balances.USDC).toFixed(2);
-      const alphaDiff = (stateAfter.balances.ALPHA - stateBefore.balances.ALPHA).toFixed(2);
-      const stAlphaDiff = (stateAfter.balances.stALPHA - stateBefore.balances.stALPHA).toFixed(2);
-      const balanceChangeSummary = `Δ USDC: ${usdcDiff} | Δ ALPHA: ${alphaDiff} | Δ stALPHA: ${stAlphaDiff}`;
+      const virajeDiff = (stateAfter.balances.VIRAJE - stateBefore.balances.VIRAJE).toFixed(2);
+      const stVirajeDiff = (stateAfter.balances.stVIRAJE - stateBefore.balances.stVIRAJE).toFixed(2);
+      const balanceChangeSummary = `Δ USDC: ${usdcDiff} | Δ VIRAJE: ${virajeDiff} | Δ stVIRAJE: ${stVirajeDiff}`;
 
       if (actionResult.success) {
         totalSuccessfulUserJourneys++;
@@ -359,11 +359,11 @@ function saveUserPersonasReport(
 ---
 
 ## 🎭 Perfiles de Usuario Evaluados
-1. **Elena (Inversora Retail & Yield Seeker):** Depósitos en tesorería al NAV, staking de ALPHA, configuración de dividendos y cobro de rendimientos reales.
+1. **Elena (Inversora Retail & Yield Seeker):** Depósitos en tesorería al NAV, staking de VIRAJE, configuración de dividendos y cobro de rendimientos reales.
 2. **Marcus (Institutional Whale & Bond Buyer):** Auditoría de reservas, adquisición de bonos descontados con vesting, emisión de NFTs de posición y redención.
 3. **Sofia (Emprendedora DeFi & Prestataria P2P):** Aporte de colateral multi-activo, préstamos institucionales y repago ordenado.
 4. **Viktor (Arbitrajista MEV & Buyback Keeper):** Monitorización de descuentos, recompras ventajosas y cobro de incentivos de keeper.
-5. **Lucas (Delegado DAO & Activista de Gobernanza):** Consolidación de poder de voto stALPHA, delegación y participación comunitaria.
+5. **Lucas (Delegado DAO & Activista de Gobernanza):** Consolidación de poder de voto stVIRAJE, delegación y participación comunitaria.
 
 ---
 

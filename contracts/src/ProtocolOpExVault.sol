@@ -10,7 +10,7 @@ import "./interfaces/IProtocolErrors.sol";
 
 /**
  * @title ProtocolOpExVault
- * @author Alpha Centauri Architecture Team
+ * @author Viraje Protocol Architecture Team
  * @notice Bóveda fiduciaria para gastos operacionales, auditorías externas, nodos RPC y subvenciones de desarrollo.
  * @dev Custodia el porcentaje de comisiones protocolarias reservadas para sostenibilidad técnica.
  *      Los retiros están estrictamente restringidos al rol `ADMIN_ROLE` (gestionado por el `TimelockController.sol` con 72h de retraso).

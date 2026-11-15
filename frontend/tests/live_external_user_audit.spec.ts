@@ -30,7 +30,7 @@ test.describe.serial('Live External User Audit Suite (Persistent Blockchain Exec
 
   test('Live Multi-Transaction Execution by External User Wallet with Real-Time State Persistence', async ({ page }) => {
     // Cuenta de Usuario Externo Independiente (Anvil Account #4)
-    // Inicialmente con 0 USDC, 0 ALPHA, 0 stALPHA, 0 Bonos
+    // Inicialmente con 0 USDC, 0 VIRAJE, 0 stVIRAJE, 0 Bonos
     const externalUserWallet = '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65';
 
     // Auto-aceptar diálogos nativos del navegador
@@ -179,14 +179,14 @@ function generateMarkdownReport(records: AuditRecord[], summary: any): string {
    *Resultado:* **100% CUMPLIDO**.
 
 3. **Invariante de Reconocimiento Honesto de Pasivos:**  
-   $$\\text{Pasivos Totales} = (\\text{ALPHA en Circulación} \\times \\text{NAV}) + \\text{Obligaciones Devengadas de Bonos}$$  
+   $$\\text{Pasivos Totales} = (\\text{VIRAJE en Circulación} \\times \\text{NAV}) + \\text{Obligaciones Devengadas de Bonos}$$  
    *Resultado:* **100% CUMPLIDO**.
 
 4. **Invariante de Ausencia de Fugas de Capital:**  
    Todas las comisiones cobradas ingresaron a reservas o al \`RealYieldRouter\`.
 
 5. **Invariante de Integridad Deflacionaria:**  
-   Las recompras quemaron cuotas de ALPHA de forma irreversible.
+   Las recompras quemaron cuotas de VIRAJE de forma irreversible.
 
 ---
 

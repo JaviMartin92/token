@@ -129,10 +129,10 @@ export class PlatformEndUserAgent {
         }
       },
 
-      // 2. Suscripción / Depósito Primario (Mint ALPHA)
+      // 2. Suscripción / Depósito Primario (Mint VIRAJE)
       {
         id: 'TX02_DEPOSIT',
-        name: 'Suscripción de ALPHA (Depósito USDC a NAV)',
+        name: 'Suscripción de VIRAJE (Depósito USDC a NAV)',
         subsystem: 'Tesorería & Mercado Primario',
         description: 'Deposita USDC a valor liquidativo cobrando fee protocolario que acrecienta el NAV.',
         run: async (page, iter) => {
@@ -151,12 +151,12 @@ export class PlatformEndUserAgent {
         }
       },
 
-      // 3. Reembolso / Retiro Primario (Redeem ALPHA)
+      // 3. Reembolso / Retiro Primario (Redeem VIRAJE)
       {
         id: 'TX03_REDEEM',
-        name: 'Reembolso de ALPHA (Retiro USDC a NAV)',
+        name: 'Reembolso de VIRAJE (Retiro USDC a NAV)',
         subsystem: 'Tesorería & Mercado Primario',
-        description: 'Quema cuotas de ALPHA para retirar USDC a NAV descontando comisión de salida.',
+        description: 'Quema cuotas de VIRAJE para retirar USDC a NAV descontando comisión de salida.',
         run: async (page, iter) => {
           await ensureWalletConnected(page);
           const amounts = ['20', '35', '50', '65', '80', '100', '120', '150', '180', '200'];
@@ -173,12 +173,12 @@ export class PlatformEndUserAgent {
         }
       },
 
-      // 4. Staking de ALPHA -> stALPHA
+      // 4. Staking de VIRAJE -> stVIRAJE
       {
         id: 'TX04_STAKE',
-        name: 'Staking de Gobernanza (ALPHA -> stALPHA)',
+        name: 'Staking de Gobernanza (VIRAJE -> stVIRAJE)',
         subsystem: 'Gobernanza & Real Yield',
-        description: 'Bloquea ALPHA en el contrato GovernanceStaking para devengar Real Yield y derecho de voto.',
+        description: 'Bloquea VIRAJE en el contrato GovernanceStaking para devengar Real Yield y derecho de voto.',
         run: async (page, iter) => {
           await ensureWalletConnected(page);
           const amounts = ['50', '80', '120', '150', '200', '250', '300', '350', '400', '500'];
@@ -192,12 +192,12 @@ export class PlatformEndUserAgent {
         }
       },
 
-      // 5. Retiro de Staking (Unstake stALPHA -> ALPHA)
+      // 5. Retiro de Staking (Unstake stVIRAJE -> VIRAJE)
       {
         id: 'TX05_UNSTAKE',
-        name: 'Desbloqueo de Staking (stALPHA -> ALPHA)',
+        name: 'Desbloqueo de Staking (stVIRAJE -> VIRAJE)',
         subsystem: 'Gobernanza & Real Yield',
-        description: 'Libera participaciones de stALPHA recibiendo tokens ALPHA líquidos.',
+        description: 'Libera participaciones de stVIRAJE recibiendo tokens VIRAJE líquidos.',
         run: async (page, iter) => {
           await ensureWalletConnected(page);
           const amounts = ['10', '15', '20', '25', '30', '35', '40', '45', '50', '60'];
@@ -217,9 +217,9 @@ export class PlatformEndUserAgent {
       // 6. Configuración de Pago de Rendimientos (Opción A vs Opción B)
       {
         id: 'TX06_YIELD_PREFERENCE',
-        name: 'Preferencia de Pago de Rendimiento (USDC vs Compounding ALPHA)',
+        name: 'Preferencia de Pago de Rendimiento (USDC vs Compounding VIRAJE)',
         subsystem: 'Gobernanza & Real Yield',
-        description: 'Alterna entre cobro en USDC directo y reinversión automática compuesta en ALPHA.',
+        description: 'Alterna entre cobro en USDC directo y reinversión automática compuesta en VIRAJE.',
         run: async (page, iter) => {
           await ensureWalletConnected(page);
           const isOptionA = iter % 2 === 1;
@@ -311,7 +311,7 @@ export class PlatformEndUserAgent {
         id: 'TX10_MATURED_BOND_CLAIM',
         name: 'Reclamo de Bono Mínimo Vencido al 100%',
         subsystem: 'Bonos Vestados & Vencimiento',
-        description: 'Simula el avance del tiempo y liquida las cuotas de ALPHA devengadas sin penalizaciones.',
+        description: 'Simula el avance del tiempo y liquida las cuotas de VIRAJE devengadas sin penalizaciones.',
         run: async (page, iter) => {
           await ensureWalletConnected(page);
           if (iter === 1) {

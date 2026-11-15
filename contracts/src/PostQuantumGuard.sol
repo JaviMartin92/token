@@ -9,8 +9,8 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
  * @title PostQuantumGuard
- * @author Alpha Centauri Architecture Team
- * @notice Hybrid Post-Quantum Cryptography (PQC) security module for the Alpha Centauri Protocol.
+ * @author Viraje Protocol Architecture Team
+ * @notice Hybrid Post-Quantum Cryptography (PQC) security module for the Viraje Protocol.
  * @dev Implements on-chain verification of Winternitz One-Time Signatures (W-OTS+, w=4, 67 hash chains),
  *      completely immune to quantum factorization and discrete log algorithms (Shor).
  *      Natively executable on EVM using Keccak-256 operations (Grover-resistant at 128-bit security level).

@@ -14,10 +14,10 @@ interface IGovernanceStakingYield {
 
 /**
  * @title CommunityYieldVault
- * @author Alpha Centauri Architecture Team
+ * @author Viraje Protocol Architecture Team
  * @notice Bóveda descentralizada Pure DeFi para la captación y distribución del 50% de comisiones protocolarias (Real Yield).
  * @dev Recibe USDC líquido del `RealYieldRouter.sol` y lo canaliza de forma atómica hacia `GovernanceStaking.sol`
- *      para dividendos continuos a los tenedores de stALPHA.
+ *      para dividendos continuos a los tenedores de stVIRAJE.
  *      Cumple con el Considerando 22 del Reglamento MiCA de la UE: 100% del rendimiento real fluye a la comunidad sin intermediarios.
  */
 contract CommunityYieldVault is AccessControl, ReentrancyGuard {

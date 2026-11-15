@@ -4,7 +4,7 @@ import Redis from 'ioredis';
 import { CONFIG } from './config.js';
 
 const redis = new Redis(CONFIG.REDIS_URL);
-const channel = 'alpha_centauri_events';
+const channel = 'viraje_events';
 
 const client = createPublicClient({
   chain: arbitrum,

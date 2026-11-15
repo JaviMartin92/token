@@ -3,8 +3,8 @@ pragma solidity ^0.8.20;
 
 /**
  * @title ProtocolRoles
- * @author Alpha Centauri Architecture Team
- * @notice Registro central canónico e inmutable de todos los roles de AccessControl utilizados en el protocolo Alpha Centauri.
+ * @author Viraje Protocol Architecture Team
+ * @notice Registro central canónico e inmutable de todos los roles de AccessControl utilizados en el protocolo Viraje Protocol.
  * @dev Todas las constantes se declaran como `internal constant` para garantizar que el compilador de Solidity (0.8.20+)
  *      inserte los hashes calculados directamente en el bytecode de los contratos consumidores en tiempo de compilación,
  *      eliminando llamadas externas, costes de despliegue y enlaces de librerías en tiempo de ejecución.
@@ -50,17 +50,17 @@ library ProtocolRoles {
     bytes32 internal constant YIELD_ROUTER_ROLE = keccak256("YIELD_ROUTER_ROLE");
 
     // =========================================================================
-    // 🪙 ROLES DE EMISIÓN & QUEMA DE PARTICIPACIONES (ALPHA TOKEN)
+    // 🪙 ROLES DE EMISIÓN & QUEMA DE PARTICIPACIONES (VIRAJE token)
     // =========================================================================
 
     /**
-     * @notice Rol con potestad para acuñar cuotas de ALPHA respaldadas en reservas (NAV).
+     * @notice Rol con potestad para acuñar cuotas de VIRAJE respaldadas en reservas (NAV).
      * @dev Asignado exclusivamente a `TreasuryManager.sol` contra depósito verificado de colateral exógeno.
      */
     bytes32 internal constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     /**
-     * @notice Rol con potestad para quemar tokens ALPHA durante reembolsos o buybacks deflacionarios.
+     * @notice Rol con potestad para quemar tokens VIRAJE durante reembolsos o buybacks deflacionarios.
      * @dev Asignado a `TreasuryManager.sol` y `DiscountBuybackEngine.sol`.
      */
     bytes32 internal constant BURNER_ROLE = keccak256("BURNER_ROLE");

@@ -88,7 +88,7 @@ async function runAutonomousExploratoryFuzzer() {
       const state = await env.getAgentState(client.account!.address);
 
       console.log(`\n🕵️  Agente: [${agent.name}] (${agent.role})`);
-      console.log(`   [ESTADO LIMPIO] NAV: $${state.protocol.navPerShareUSD.toFixed(4)} | Saldo: ${state.balances.USDC.toFixed(2)} USDC | ${state.balances.ALPHA.toFixed(2)} ALPHA`);
+      console.log(`   [ESTADO LIMPIO] NAV: $${state.protocol.navPerShareUSD.toFixed(4)} | Saldo: ${state.balances.USDC.toFixed(2)} USDC | ${state.balances.VIRAJE.toFixed(2)} VIRAJE`);
       console.log(`   Pensando hipótesis con Qwen3:8B...`);
 
       try {

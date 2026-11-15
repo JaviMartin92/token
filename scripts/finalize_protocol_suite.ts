@@ -78,8 +78,8 @@ async function main() {
   const contracts = JSON.parse(fs.readFileSync(contractsPath, 'utf8'));
 
   const treasuryAddr = contracts.TREASURY as `0x${string}`;
-  const alphaVaultAddr = contracts.ALPHA_VAULT as `0x${string}`;
-  const alphaTokenAddr = contracts.ALPHA_TOKEN as `0x${string}`;
+  const virajeVaultAddr = contracts.VIRAJE_VAULT as `0x${string}`;
+  const virajeTokenAddr = contracts.VIRAJE_TOKEN as `0x${string}`;
   const stakingAddr = contracts.STAKING as `0x${string}`;
   const communityVaultAddr = contracts.COMMUNITY_YIELD_VAULT as `0x${string}`;
   const buybackAddr = contracts.DISCOUNT_BUYBACK_ENGINE as `0x${string}`;
@@ -190,7 +190,7 @@ async function main() {
   await sendTx('Configurar Tesorería en P2PLendingMarket', p2pMarketAddr, p2pArtifact.abi, 'setTreasury', [treasuryAddr]);
   await sendTx('Configurar TokenomicsEngine en P2P', p2pMarketAddr, p2pArtifact.abi, 'setTokenomicsEngine', [tokenomicsEngineAddr]);
   await sendTx('Configurar CircuitBreaker en P2P', p2pMarketAddr, p2pArtifact.abi, 'setCircuitBreaker', [circuitBreakerAddr]);
-  await sendTx('Configurar AlphaToken en P2P', p2pMarketAddr, p2pArtifact.abi, 'setAlphaToken', [alphaTokenAddr]);
+  await sendTx('Configurar VirajeToken en P2P', p2pMarketAddr, p2pArtifact.abi, 'setVirajeToken', [virajeTokenAddr]);
   await sendTx('Configurar WBTC en P2P', p2pMarketAddr, p2pArtifact.abi, 'setWbtcToken', [wbtcAddr]);
   await sendTx('Configurar WETH en P2P', p2pMarketAddr, p2pArtifact.abi, 'setWethToken', [wethAddr]);
 
@@ -213,7 +213,7 @@ async function main() {
   );
 
   // ============================================================================
-  // PASO 5: DESPLIEGUE TIMELOCK Y GOBERNANZA DAO (GOVERNOR ALPHA CENTAURI)
+  // PASO 5: DESPLIEGUE TIMELOCK Y GOBERNANZA DAO (GOVERNOR VIRAJE CENTAURI)
   // ============================================================================
   console.log('\n--- PASO 5: DESPLIEGUE GOBERNANZA DAO ON-CHAIN ---');
   const timelockArtifact = loadArtifact('TimelockController');
@@ -224,12 +224,12 @@ async function main() {
     [259200n, account.address] // 72 hours
   );
 
-  const governorArtifact = loadArtifact('GovernorAlphaCentauri');
+  const governorArtifact = loadArtifact('GovernorViraje');
   const governorAddr = await deploy(
-    'GovernorAlphaCentauri',
+    'GovernorViraje',
     governorArtifact.abi,
     governorArtifact.bytecode.object as `0x${string}`,
-    [stakingAddr, timelockAddr, alphaVaultAddr, communityVaultAddr, treasuryAddr, account.address]
+    [stakingAddr, timelockAddr, virajeVaultAddr, communityVaultAddr, treasuryAddr, account.address]
   );
 
   await sendTx('Conceder ADMIN_ROLE en Timelock al Governor', timelockAddr, timelockArtifact.abi, 'grantRole', [ADMIN_ROLE, governorAddr]);
@@ -339,11 +339,11 @@ async function main() {
 
   // Simulación 4: Préstamo con Colateral VIRAJE en P2PLendingMarket
   try {
-    process.stdout.write(`[*] 4/7 Simulando P2PLendingMarket.borrowFromTreasuryWithAlpha ... `);
+    process.stdout.write(`[*] 4/7 Simulando P2PLendingMarket.borrowFromTreasuryWithViraje ... `);
     await publicClient.simulateContract({
       address: p2pMarketAddr,
       abi: p2pArtifact.abi,
-      functionName: 'borrowFromTreasuryWithAlpha',
+      functionName: 'borrowFromTreasuryWithViraje',
       args: [parseUnits('200', 18), parseUnits('100', 6), 30n],
       account: account.address
     });
@@ -382,7 +382,7 @@ async function main() {
     console.log(`❌ Revert: ${e.shortMessage || e.message}`);
   }
 
-  // Simulación 7: Consulta de Propuestas en GovernorAlphaCentauri
+  // Simulación 7: Consulta de Propuestas en GovernorViraje
   try {
     process.stdout.write(`[*] 7/7 Simulando lectura de propuestas en DAO Governor ... `);
     const count = await publicClient.readContract({

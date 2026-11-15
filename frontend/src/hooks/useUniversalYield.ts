@@ -46,7 +46,7 @@ export function useUniversalYield(refetchInterval = 3000) {
     refetchInterval
   });
 
-  const { data: porBreakdown = { stables: 0, wbtc: 0, weth: 0, alphaStaking: 0 } } = useQuery({
+  const { data: porBreakdown = { stables: 0, wbtc: 0, weth: 0, virajeStaking: 0 } } = useQuery({
     queryKey: ['porBreakdown'],
     queryFn: async () => {
       try {
@@ -78,16 +78,16 @@ export function useUniversalYield(refetchInterval = 3000) {
           : (rawTuple?.treasuryStaked ?? stakingBreakdown?.treasuryStaked ?? 0n);
 
         const navPerShare = parseFloat(formatEther(navPerShareWei)) || 1.0;
-        const alphaStakingUSD = parseFloat(formatEther(treasuryStakedWei)) * navPerShare;
+        const virajeStakingUSD = parseFloat(formatEther(treasuryStakedWei)) * navPerShare;
 
         return {
           stables: parseFloat(formatEther(stablesWei)),
           wbtc: parseFloat(formatEther(wbtcWei)),
           weth: parseFloat(formatEther(wethWei)),
-          alphaStaking: alphaStakingUSD
+          virajeStaking: virajeStakingUSD
         };
       } catch (e) {
-        return { stables: 0, wbtc: 0, weth: 0, alphaStaking: 0 };
+        return { stables: 0, wbtc: 0, weth: 0, virajeStaking: 0 };
       }
     },
     refetchInterval

@@ -1,7 +1,7 @@
 /**
  * @file ipfs-package.mjs
  * @notice Computes cryptographic integrity hashes and IPFS/ENS publication manifest
- *         for the production build of Alpha Centauri Web Interface.
+ *         for the production build of Viraje Protocol Web Interface.
  */
 import fs from 'fs';
 import path from 'path';
@@ -54,7 +54,7 @@ const rootBundleSha256 = overallHash.digest('hex');
 const cidv1 = `bafybeic${rootBundleSha256.slice(0, 50).toLowerCase()}`;
 
 const manifest = {
-  protocol: 'Alpha Centauri Pure DeFi Gateway',
+  protocol: 'Viraje Protocol Pure DeFi Gateway',
   version: '2.5.0-mainnet',
   publishedAt: new Date().toISOString(),
   standards: ['MiCA Recital 22 Compliant', 'IPFS Content-Addressed', 'ERC-4626', 'ENS Compatible'],
@@ -70,7 +70,7 @@ const manifestPath = path.join(distDir, 'ipfs-manifest.json');
 fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), 'utf-8');
 
 console.log('============================================================');
-console.log('       ALPHA CENTAURI - IPFS / ENS DEPLOYMENT MANIFEST      ');
+console.log('       VIRAJE CENTAURI - IPFS / ENS DEPLOYMENT MANIFEST      ');
 console.log('============================================================');
 console.log(`[+] Total Files Processed:     ${manifest.totalFiles}`);
 console.log(`[+] Total Bundle Size:        ${(manifest.totalSizeBytes / 1024).toFixed(2)} KB`);

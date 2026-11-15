@@ -239,37 +239,37 @@ async function main() {
   });
   await publicClient.waitForTransactionReceipt({ hash: hCb });
 
-  // 6. Deploy AlphaToken
-  const alphaArtifact = loadArtifact('AlphaToken', 'AlphaToken.sol');
-  const alphaTx = await walletClient.deployContract({
-    abi: alphaArtifact.abi,
-    bytecode: alphaArtifact.bytecode.object,
+  // 6. Deploy VirajeToken
+  const virajeArtifact = loadArtifact('VirajeToken', 'VirajeToken.sol');
+  const virajeTx = await walletClient.deployContract({
+    abi: virajeArtifact.abi,
+    bytecode: virajeArtifact.bytecode.object,
     args: [apAddr, account.address]
   });
-  const alphaTokenAddr = (await publicClient.waitForTransactionReceipt({ hash: alphaTx })).contractAddress!;
-  console.log(`[+] AlphaToken Contract deployed at: ${alphaTokenAddr}`);
+  const virajeTokenAddr = (await publicClient.waitForTransactionReceipt({ hash: virajeTx })).contractAddress!;
+  console.log(`[+] VirajeToken Contract deployed at: ${virajeTokenAddr}`);
 
-  const idAlpha = keccak256(toHex('ALPHA_TOKEN'));
-  const hAlpha = await walletClient.writeContract({
+  const idViraje = keccak256(toHex('VIRAJE_TOKEN'));
+  const hViraje = await walletClient.writeContract({
     address: apAddr,
     abi: apArtifact.abi,
     functionName: 'setAddress',
-    args: [idAlpha, alphaTokenAddr],
+    args: [idViraje, virajeTokenAddr],
     account
   });
-  await publicClient.waitForTransactionReceipt({ hash: hAlpha });
+  await publicClient.waitForTransactionReceipt({ hash: hViraje });
 
-  // 7. Deploy AlphaVault
-  const alphaVaultArtifact = loadArtifact('AlphaVault', 'AlphaVault.sol');
-  const alphaVaultTx = await walletClient.deployContract({
-    abi: alphaVaultArtifact.abi,
-    bytecode: alphaVaultArtifact.bytecode.object,
+  // 7. Deploy VirajeVault
+  const virajeVaultArtifact = loadArtifact('VirajeVault', 'VirajeVault.sol');
+  const virajeVaultTx = await walletClient.deployContract({
+    abi: virajeVaultArtifact.abi,
+    bytecode: virajeVaultArtifact.bytecode.object,
     args: [apAddr, account.address]
   });
-  const vaultAddr = (await publicClient.waitForTransactionReceipt({ hash: alphaVaultTx })).contractAddress!;
-  console.log(`[+] AlphaVault Contract deployed at: ${vaultAddr}`);
+  const vaultAddr = (await publicClient.waitForTransactionReceipt({ hash: virajeVaultTx })).contractAddress!;
+  console.log(`[+] VirajeVault Contract deployed at: ${vaultAddr}`);
 
-  const idVault = keccak256(toHex('ALPHA_VAULT'));
+  const idVault = keccak256(toHex('VIRAJE_VAULT'));
   const hVault = await walletClient.writeContract({
     address: apAddr,
     abi: apArtifact.abi,
@@ -329,7 +329,7 @@ async function main() {
   });
   await publicClient.waitForTransactionReceipt({ hash: hTreasury });
 
-  // Grant VAULT_MANAGER_ROLE to TreasuryManager in AlphaVault
+  // Grant VAULT_MANAGER_ROLE to TreasuryManager in VirajeVault
   const acAbi = [
     { name: 'grantRole', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'role', type: 'bytes32' }, { name: 'account', type: 'address' }], outputs: [] }
   ] as const;
@@ -347,11 +347,11 @@ async function main() {
   });
   await publicClient.waitForTransactionReceipt({ hash: setAuthVault });
 
-  // Grant MINTER_ROLE and BURNER_ROLE to TreasuryManager on AlphaToken
-  const hashMint = await walletClient.writeContract({ address: alphaTokenAddr, abi: acAbi, functionName: 'grantRole', args: [MINTER_ROLE, treasuryAddr], account });
+  // Grant MINTER_ROLE and BURNER_ROLE to TreasuryManager on VirajeToken
+  const hashMint = await walletClient.writeContract({ address: virajeTokenAddr, abi: acAbi, functionName: 'grantRole', args: [MINTER_ROLE, treasuryAddr], account });
   await publicClient.waitForTransactionReceipt({ hash: hashMint });
 
-  const hashBurn = await walletClient.writeContract({ address: alphaTokenAddr, abi: acAbi, functionName: 'grantRole', args: [BURNER_ROLE, treasuryAddr], account });
+  const hashBurn = await walletClient.writeContract({ address: virajeTokenAddr, abi: acAbi, functionName: 'grantRole', args: [BURNER_ROLE, treasuryAddr], account });
   await publicClient.waitForTransactionReceipt({ hash: hashBurn });
 
   // Grant COMPLIANCE_ROLE to deployer and KYC whitelist deployer account
@@ -370,7 +370,7 @@ async function main() {
   const hashKycUser = await walletClient.writeContract({ address: treasuryAddr, abi: kycAbi, functionName: 'setKYCStatus', args: [defaultUser, true], account });
   await publicClient.waitForTransactionReceipt({ hash: hashKycUser });
 
-  console.log(`[+] Granted MINTER_ROLE and BURNER_ROLE to TreasuryManager on AlphaToken.`);
+  console.log(`[+] Granted MINTER_ROLE and BURNER_ROLE to TreasuryManager on VirajeToken.`);
 
   // Deploy Mock Uniswap V3 Router
   const mockRouter = loadArtifact('MockSwapRouter', 'MockSwapRouter.sol');
@@ -424,7 +424,7 @@ async function main() {
   const stakingTx = await walletClient.deployContract({
     abi: stakingArtifact.abi,
     bytecode: stakingArtifact.bytecode.object,
-    args: [alphaTokenAddr, usdcAddr, account.address]
+    args: [virajeTokenAddr, usdcAddr, account.address]
   });
   const stakingAddr = (await publicClient.waitForTransactionReceipt({ hash: stakingTx })).contractAddress!;
   console.log(`[+] GovernanceStaking Contract deployed at: ${stakingAddr}`);
@@ -434,9 +434,9 @@ async function main() {
   await publicClient.waitForTransactionReceipt({ hash: hGovStaking });
   console.log(`[+] Registered GOVERNANCE_STAKING in ProtocolAddressProvider.`);
 
-  const hashStakingBurn = await walletClient.writeContract({ address: alphaTokenAddr, abi: acAbi, functionName: 'grantRole', args: [BURNER_ROLE, stakingAddr], account });
+  const hashStakingBurn = await walletClient.writeContract({ address: virajeTokenAddr, abi: acAbi, functionName: 'grantRole', args: [BURNER_ROLE, stakingAddr], account });
   await publicClient.waitForTransactionReceipt({ hash: hashStakingBurn });
-  console.log(`[+] Granted BURNER_ROLE to GovernanceStaking on AlphaToken.`);
+  console.log(`[+] Granted BURNER_ROLE to GovernanceStaking on VirajeToken.`);
 
   const hashTreasuryStakingBurn = await walletClient.writeContract({ address: treasuryAddr, abi: acAbi, functionName: 'grantRole', args: [BURNER_ROLE, stakingAddr], account });
   await publicClient.waitForTransactionReceipt({ hash: hashTreasuryStakingBurn });
@@ -484,7 +484,7 @@ async function main() {
   await publicClient.waitForTransactionReceipt({ hash: authTreasuryYieldTx });
   console.log(`[+] Authorized TreasuryManager on RealYieldRouter.`);
 
-  // 11. Deploy Community Yield Vault (50% Real Yield for stALPHA stakers)
+  // 11. Deploy Community Yield Vault (50% Real Yield for stVIRAJE stakers)
   const communityYieldArtifact = loadArtifactSafe('CommunityYieldVault', 'CommunityYieldVault.sol') || YieldStreamingVault;
   const communityYieldTx = await walletClient.deployContract({
     abi: communityYieldArtifact.abi,
@@ -527,16 +527,16 @@ async function main() {
   await publicClient.waitForTransactionReceipt({ hash: hRyRouter });
   console.log(`[+] Registered REAL_YIELD_ROUTER in ProtocolAddressProvider.`);
 
-  // Configure Multi-Asset Basket (WBTC, WETH, ALPHA) and OracleHub on RealYieldRouter
+  // Configure Multi-Asset Basket (WBTC, WETH, VIRAJE) and OracleHub on RealYieldRouter
   const setBasketTx = await walletClient.writeContract({
     address: ryRouterAddr,
     abi: routerYieldArtifact.abi,
     functionName: 'setBasketAssets',
-    args: [wbtcAddr, wethAddr, alphaTokenAddr],
+    args: [wbtcAddr, wethAddr, virajeTokenAddr],
     account
   });
   await publicClient.waitForTransactionReceipt({ hash: setBasketTx });
-  console.log(`[+] Configured Universal Multi-Asset Basket (WBTC, WETH, ALPHA) on RealYieldRouter.`);
+  console.log(`[+] Configured Universal Multi-Asset Basket (WBTC, WETH, VIRAJE) on RealYieldRouter.`);
 
   const setOracleTx = await walletClient.writeContract({
     address: ryRouterAddr,
@@ -573,7 +573,7 @@ async function main() {
   const vestedVaultTx = await walletClient.deployContract({
     abi: vaultArtifact.abi,
     bytecode: vaultArtifact.bytecode.object,
-    args: [usdcAddr, nftAddr, treasuryAddr, ryRouterAddr, alphaTokenAddr, account.address],
+    args: [usdcAddr, nftAddr, treasuryAddr, ryRouterAddr, virajeTokenAddr, account.address],
     account
   });
   const vestedVaultAddr = (await publicClient.waitForTransactionReceipt({ hash: vestedVaultTx })).contractAddress!;
@@ -582,7 +582,7 @@ async function main() {
   const hashVestedBurner = await walletClient.writeContract({ address: treasuryAddr, abi: acAbi, functionName: 'grantRole', args: [BURNER_ROLE, vestedVaultAddr], account });
   await publicClient.waitForTransactionReceipt({ hash: hashVestedBurner });
 
-  const hashVestedMint = await walletClient.writeContract({ address: alphaTokenAddr, abi: acAbi, functionName: 'grantRole', args: [MINTER_ROLE, vestedVaultAddr], account });
+  const hashVestedMint = await walletClient.writeContract({ address: virajeTokenAddr, abi: acAbi, functionName: 'grantRole', args: [MINTER_ROLE, vestedVaultAddr], account });
   await publicClient.waitForTransactionReceipt({ hash: hashVestedMint });
 
   const hashNftMinter = await walletClient.writeContract({ address: nftAddr, abi: acAbi, functionName: 'grantRole', args: [MINTER_ROLE, vestedVaultAddr], account });
@@ -644,14 +644,14 @@ async function main() {
   });
   await publicClient.waitForTransactionReceipt({ hash: setP2pFeeCollector });
 
-  const setP2pAlpha = await walletClient.writeContract({
+  const setP2pViraje = await walletClient.writeContract({
     address: p2pAddr,
     abi: p2pArtifact.abi,
-    functionName: 'setAlphaToken',
-    args: [alphaTokenAddr],
+    functionName: 'setVirajeToken',
+    args: [virajeTokenAddr],
     account
   });
-  await publicClient.waitForTransactionReceipt({ hash: setP2pAlpha });
+  await publicClient.waitForTransactionReceipt({ hash: setP2pViraje });
 
   const setP2pWbtc = await walletClient.writeContract({
     address: p2pAddr,
@@ -679,7 +679,7 @@ async function main() {
     account
   });
   await publicClient.waitForTransactionReceipt({ hash: setP2pBreaker });
-  console.log(`[+] Configured AlphaToken, WBTC, WETH and OracleHub in P2PLendingMarket.`);
+  console.log(`[+] Configured VirajeToken, WBTC, WETH and OracleHub in P2PLendingMarket.`);
 
   // Authorize P2PLendingMarket and VestedDiscountVault on RealYieldRouter
   const authP2pYield = await walletClient.writeContract({
@@ -716,7 +716,7 @@ async function main() {
   const promoTx = await walletClient.deployContract({
     abi: promoArtifact.abi,
     bytecode: promoArtifact.bytecode.object,
-    args: [alphaTokenAddr, account.address],
+    args: [virajeTokenAddr, account.address],
     account
   });
   const promoAddr = (await publicClient.waitForTransactionReceipt({ hash: promoTx })).contractAddress!;
@@ -731,7 +731,7 @@ async function main() {
     account
   });
   await publicClient.waitForTransactionReceipt({ hash: hashSetReserveVaults });
-  console.log(`[+] Linked Reserve Vaults (AlphaVault, PromotionalVault) into GovernanceStaking.`);
+  console.log(`[+] Linked Reserve Vaults (VirajeVault, PromotionalVault) into GovernanceStaking.`);
 
   // 16. Deploy DynamicYieldOracleRouter
   const yieldOracleArtifact = loadArtifact('DynamicYieldOracleRouter', 'DynamicYieldOracleRouter.sol');
@@ -800,17 +800,17 @@ async function main() {
   const timelockAddr = (await publicClient.waitForTransactionReceipt({ hash: timelockTx })).contractAddress!;
   console.log(`[+] TimelockController Contract (72h Delay) deployed at: ${timelockAddr}`);
 
-  // 20. Deploy GovernorAlphaCentauri
-  const governorArtifact = loadArtifact('GovernorAlphaCentauri', 'GovernorAlphaCentauri.sol');
+  // 20. Deploy GovernorViraje
+  const governorArtifact = loadArtifact('GovernorViraje', 'GovernorViraje.sol');
   const governorTx = await walletClient.deployContract({
     abi: governorArtifact.abi,
     bytecode: governorArtifact.bytecode.object,
     args: [stakingAddr, timelockAddr, vaultAddr, communityYieldVaultAddr, treasuryAddr, account.address]
   });
   const governorAddr = (await publicClient.waitForTransactionReceipt({ hash: governorTx })).contractAddress!;
-  console.log(`[+] GovernorAlphaCentauri Contract deployed at: ${governorAddr}`);
+  console.log(`[+] GovernorViraje Contract deployed at: ${governorAddr}`);
 
-  // Wire Timelock ownership to GovernorAlphaCentauri
+  // Wire Timelock ownership to GovernorViraje
   const adminRoleHash = keccak256(toHex('PROTOCOL_ADMIN_ROLE'));
   const setTimeOwnerHash = await walletClient.writeContract({
     address: timelockAddr,
@@ -819,7 +819,7 @@ async function main() {
     args: [adminRoleHash, governorAddr]
   });
   await publicClient.waitForTransactionReceipt({ hash: setTimeOwnerHash });
-  console.log('[+] Transferred Timelock administration to GovernorAlphaCentauri DAO.');
+  console.log('[+] Transferred Timelock administration to GovernorViraje DAO.');
 
   // Register in AddressProvider
   const idGov = keccak256(toHex('GOVERNOR'));
@@ -845,12 +845,12 @@ async function main() {
   const hBuyback = await walletClient.writeContract({ address: apAddr, abi: apArtifact.abi, functionName: 'setAddress', args: [idBuyback, buybackAddr], account });
   await publicClient.waitForTransactionReceipt({ hash: hBuyback });
 
-  // Grant VAULT_MANAGER_ROLE on AlphaVault to DiscountBuybackEngine
+  // Grant VAULT_MANAGER_ROLE on VirajeVault to DiscountBuybackEngine
   const hBuybackVault = await walletClient.writeContract({ address: vaultAddr, abi: acAbi, functionName: 'grantRole', args: [VAULT_MANAGER_ROLE, buybackAddr], account });
   await publicClient.waitForTransactionReceipt({ hash: hBuybackVault });
 
-  // Grant BURNER_ROLE on AlphaToken and TreasuryManager to DiscountBuybackEngine
-  const hBuybackBurn = await walletClient.writeContract({ address: alphaTokenAddr, abi: acAbi, functionName: 'grantRole', args: [BURNER_ROLE, buybackAddr], account });
+  // Grant BURNER_ROLE on VirajeToken and TreasuryManager to DiscountBuybackEngine
+  const hBuybackBurn = await walletClient.writeContract({ address: virajeTokenAddr, abi: acAbi, functionName: 'grantRole', args: [BURNER_ROLE, buybackAddr], account });
   await publicClient.waitForTransactionReceipt({ hash: hBuybackBurn });
   const hBuybackTreasuryBurn = await walletClient.writeContract({ address: treasuryAddr, abi: acAbi, functionName: 'grantRole', args: [BURNER_ROLE, buybackAddr], account });
   await publicClient.waitForTransactionReceipt({ hash: hBuybackTreasuryBurn });
@@ -867,15 +867,15 @@ async function main() {
   console.log('[+] Linked TreasuryManager into GovernanceStaking.');
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Founder Reserve Vesting Vault (100,000 ALPHA Surplus-Backed Allocation)
+  // Founder Reserve Vesting Vault (100,000 VIRAJE Surplus-Backed Allocation)
   // ─────────────────────────────────────────────────────────────────────────────
-  console.log('[*] Desplegando FounderReserveVestingVault (100k ALPHA con Vesting de Reservas)...');
+  console.log('[*] Desplegando FounderReserveVestingVault (100k VIRAJE con Vesting de Reservas)...');
   const founderVestingArtifactPath = path.resolve(process.cwd(), 'contracts/out/FounderReserveVestingVault.sol/FounderReserveVestingVault.json');
   const founderVestingArtifact = JSON.parse(fs.readFileSync(founderVestingArtifactPath, 'utf8'));
   const hashFounderVesting = await walletClient.deployContract({
     abi: founderVestingArtifact.abi,
     bytecode: founderVestingArtifact.bytecode.object as `0x${string}`,
-    args: [alphaTokenAddr, treasuryAddr, account.address, account.address],
+    args: [virajeTokenAddr, treasuryAddr, account.address, account.address],
     account
   });
   const receiptFounderVesting = await publicClient.waitForTransactionReceipt({ hash: hashFounderVesting });
@@ -893,9 +893,9 @@ async function main() {
   });
   await publicClient.waitForTransactionReceipt({ hash: hRegFounderVesting });
 
-  // Grant MINTER_ROLE to deployer to mint 100,000 ALPHA locked into FounderReserveVestingVault
+  // Grant MINTER_ROLE to deployer to mint 100,000 VIRAJE locked into FounderReserveVestingVault
   const hGrantAdminMinter = await walletClient.writeContract({
-    address: alphaTokenAddr,
+    address: virajeTokenAddr,
     abi: acAbi,
     functionName: 'grantRole',
     args: [MINTER_ROLE, account.address],
@@ -904,14 +904,14 @@ async function main() {
   await publicClient.waitForTransactionReceipt({ hash: hGrantAdminMinter });
 
   const hMintFounder = await walletClient.writeContract({
-    address: alphaTokenAddr,
-    abi: alphaArtifact.abi,
+    address: virajeTokenAddr,
+    abi: virajeArtifact.abi,
     functionName: 'mint',
     args: [founderVestingAddr, parseEther('100000')],
     account
   });
   await publicClient.waitForTransactionReceipt({ hash: hMintFounder });
-  console.log('[+] Acuñados 100,000 ALPHA bloqueados en FounderReserveVestingVault (Estado Génesis Limpio).');
+  console.log('[+] Acuñados 100,000 VIRAJE bloqueados en FounderReserveVestingVault (Estado Génesis Limpio).');
 
   // ─────────────────────────────────────────────────────────────────────────────
   // PostQuantumGuard (Winternitz OTS+ Hybrid Quantum-Resistant Guard)
@@ -994,8 +994,8 @@ async function main() {
     TREASURY: treasuryAddr, // Legacy name for TREASURY_MANAGER
     TREASURY_MANAGER: treasuryAddr,
     PROTOCOL_ADDRESS_PROVIDER: apAddr,
-    ALPHA_TOKEN: alphaTokenAddr,
-    ALPHA_VAULT: vaultAddr,
+    VIRAJE_TOKEN: virajeTokenAddr,
+    VIRAJE_VAULT: vaultAddr,
     ORACLE_HUB: oracleAddr,
     ATOMIC_SWAP: swapAddr,
     YIELD_VAULT: yieldAddr,

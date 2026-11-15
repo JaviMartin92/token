@@ -23,7 +23,7 @@ interface IERC20MetadataLike {
 
 /**
  * @title VestedDiscountVault
- * @author Alpha Centauri Architecture Team
+ * @author Viraje Protocol Architecture Team
  * @notice Time-vested discount vault that allows purchasing bond positions with dynamic
  *         discounts based on lock duration (1 to 5 years).
  * @dev Positions are minted as ERC-721 NFTs. Early exits (ragequit) incur a 15% penalty.
@@ -215,21 +215,21 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         discountBps = (lockYears * effectiveBaseRate) + subsidyBps;
 
         // Tiered Governance Staking Extra Discount:
-        // < 5,000 ALPHA staked: +0%
-        // >= 5,000 ALPHA staked: +1.0% (+100 Bps)
-        // >= 10,000 ALPHA staked: +2.0% (+200 Bps)
-        // >= 20,000 ALPHA staked: +3.0% (+300 Bps)
+        // < 5,000 VIRAJE staked: +0%
+        // >= 5,000 VIRAJE staked: +1.0% (+100 Bps)
+        // >= 10,000 VIRAJE staked: +2.0% (+200 Bps)
+        // >= 20,000 VIRAJE staked: +3.0% (+300 Bps)
         uint256 stakedAmount = 0;
         if (governanceStaking != address(0)) {
             stakedAmount = IGovStakingForVault(governanceStaking).stakedBalances(user);
         }
 
         if (stakedAmount >= 20_000 * 10 ** 18) {
-            discountBps += 300; // +3.0% Extra Bonus for 20,000+ ALPHA staked
+            discountBps += 300; // +3.0% Extra Bonus for 20,000+ VIRAJE staked
         } else if (stakedAmount >= 10_000 * 10 ** 18) {
-            discountBps += 200; // +2.0% Extra Bonus for 10,000+ ALPHA staked
+            discountBps += 200; // +2.0% Extra Bonus for 10,000+ VIRAJE staked
         } else if (stakedAmount >= 5_000 * 10 ** 18) {
-            discountBps += 100; // +1.0% Extra Bonus for 5,000+ ALPHA staked
+            discountBps += 100; // +1.0% Extra Bonus for 5,000+ VIRAJE staked
         }
 
         if (discountBps > 5000) {
@@ -369,9 +369,13 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         } else if (penaltyTotal > 0 && treasuryBunker != address(0)) {
             address targetVault = treasuryBunker;
             if (treasuryBunker.code.length > 0) {
-                try ITreasury(treasuryBunker).alphaVault() returns (address av) {
+                try ITreasury(treasuryBunker).virajeVault() returns (address av) {
                     if (av != address(0)) targetVault = av;
-                } catch {}
+                } catch {
+                    try ITreasury(treasuryBunker).virajeVault() returns (address av) {
+                        if (av != address(0)) targetVault = av;
+                    } catch {}
+                }
             }
             IERC20(stablecoin).safeTransfer(targetVault, penaltyTotal);
         }
@@ -581,7 +585,7 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         uint256 baseDiscount3YearsBps;
         uint256 baseDiscount5YearsBps;
         uint256 vipBonusBps;
-        uint256 userStalphaBalance;
+        uint256 userStvirajeBalance;
     }
 
     /**
@@ -594,13 +598,13 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
 
         if (governanceStaking != address(0)) {
             try IGovStakingForVault(governanceStaking).stakedBalances(account) returns (uint256 stBal) {
-                overview.userStalphaBalance = stBal;
+                overview.userStvirajeBalance = stBal;
                 if (stBal >= 20_000 * 1e18) {
-                    overview.vipBonusBps = 300; // Tier 3: +3.00% (20,000+ stALPHA)
+                    overview.vipBonusBps = 300; // Tier 3: +3.00% (20,000+ stVIRAJE)
                 } else if (stBal >= 10_000 * 1e18) {
-                    overview.vipBonusBps = 200; // Tier 2: +2.00% (10,000+ stALPHA)
+                    overview.vipBonusBps = 200; // Tier 2: +2.00% (10,000+ stVIRAJE)
                 } else if (stBal >= 5_000 * 1e18) {
-                    overview.vipBonusBps = 100; // Tier 1: +1.00% (5,000+ stALPHA)
+                    overview.vipBonusBps = 100; // Tier 1: +1.00% (5,000+ stVIRAJE)
                 }
             } catch {
                 // Default to 0 staked balance on query revert
@@ -655,9 +659,13 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
     function _getTargetVault() private view returns (address targetVault) {
         targetVault = treasuryBunker;
         if (treasuryBunker != address(0) && treasuryBunker.code.length > 0) {
-            try ITreasury(treasuryBunker).alphaVault() returns (address av) {
-                if (av != address(0)) targetVault = av;
-            } catch {}
+            try ITreasury(treasuryBunker).virajeVault() returns (address av) {
+                if (av != address(0)) return av;
+            } catch {
+                try ITreasury(treasuryBunker).virajeVault() returns (address av) {
+                    if (av != address(0)) return av;
+                } catch {}
+            }
         }
     }
 }

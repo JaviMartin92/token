@@ -7,7 +7,7 @@ import "./interfaces/IProtocolErrors.sol";
 
 /**
  * @title DynamicYieldOracleRouter
- * @author Alpha Centauri Architecture Team
+ * @author Viraje Protocol Architecture Team
  * @notice Dynamic Discovery Engine that monitors, compares, and routes Treasury assets
  *         to the highest-yielding verified protocols in real time (e.g. Morpho Blue, Aave V3,
  *         Lido, Lombard, Babylon).

@@ -21,8 +21,8 @@ interface OperationRecord {
   postPoR: number;
   preUsdc: number;
   postUsdc: number;
-  preAlpha: number;
-  postAlpha: number;
+  preViraje: number;
+  postViraje: number;
   durationMs: number;
   status: 'PASS' | 'FAIL';
   notes: string;
@@ -165,7 +165,7 @@ test.describe.serial('Autonomous Real-User Testing Agent Suite (100% App Operati
       }
     });
 
-    // Op 03: Deposit USDC -> Mint ALPHA (Primary Market)
+    // Op 03: Deposit USDC -> Mint VIRAJE (Primary Market)
     await recordOperation(page, {
       opId: 'R1-OP03',
       round: 1,
@@ -173,7 +173,7 @@ test.describe.serial('Autonomous Real-User Testing Agent Suite (100% App Operati
       deviceViewport: '1920x1080 (Desktop Chrome)',
       userAddress: user1,
       subsystem: 'Tesorería & Mercado Primario',
-      opName: 'Suscripción de ALPHA (Depósito USDC)',
+      opName: 'Suscripción de VIRAJE (Depósito USDC)',
       description: 'Deposita 2,500 USDC con cálculo de comisión dinámica y confirmación modal de 2 firmas (Approve + Deposit).',
       action: async () => {
         const depInput = page.locator('[data-testid="treasury-deposit-input"]');
@@ -181,11 +181,11 @@ test.describe.serial('Autonomous Real-User Testing Agent Suite (100% App Operati
         await page.locator('[data-testid="treasury-deposit-btn"]').click();
         await confirmModalIfPresent(page, 8000);
         await page.waitForTimeout(1500);
-        await expect(page.locator('[data-testid="treasury-shares-balance"]')).not.toHaveText('0.00 ALPHA', { timeout: 10000 });
+        await expect(page.locator('[data-testid="treasury-shares-balance"]')).not.toHaveText('0.00 VIRAJE', { timeout: 10000 });
       }
     });
 
-    // Op 04: Redeem ALPHA -> Withdraw USDC (Primary Market)
+    // Op 04: Redeem VIRAJE -> Withdraw USDC (Primary Market)
     await recordOperation(page, {
       opId: 'R1-OP04',
       round: 1,
@@ -193,8 +193,8 @@ test.describe.serial('Autonomous Real-User Testing Agent Suite (100% App Operati
       deviceViewport: '1920x1080 (Desktop Chrome)',
       userAddress: user1,
       subsystem: 'Tesorería & Mercado Primario',
-      opName: 'Reembolso de ALPHA (Retiro USDC)',
-      description: 'Reembolsa 500 ALPHA quemando participaciones y cobrando comisión de salida que incrementa el NAV.',
+      opName: 'Reembolso de VIRAJE (Retiro USDC)',
+      description: 'Reembolsa 500 VIRAJE quemando participaciones y cobrando comisión de salida que incrementa el NAV.',
       action: async () => {
         const redeemInput = page.locator('[data-testid="treasury-redeem-input"]');
         await redeemInput.fill('500');
@@ -204,7 +204,7 @@ test.describe.serial('Autonomous Real-User Testing Agent Suite (100% App Operati
       }
     });
 
-    // Op 05: Stake ALPHA -> stALPHA (Governance & Real Yield)
+    // Op 05: Stake VIRAJE -> stVIRAJE (Governance & Real Yield)
     await recordOperation(page, {
       opId: 'R1-OP05',
       round: 1,
@@ -212,8 +212,8 @@ test.describe.serial('Autonomous Real-User Testing Agent Suite (100% App Operati
       deviceViewport: '1920x1080 (Desktop Chrome)',
       userAddress: user1,
       subsystem: 'Gobernanza & Staking DAO',
-      opName: 'Staking de ALPHA a stALPHA',
-      description: 'Deposita 600 ALPHA en el contrato GovernanceStaking, recibiendo stALPHA para participar en el Real Yield y votación DAO.',
+      opName: 'Staking de VIRAJE a stVIRAJE',
+      description: 'Deposita 600 VIRAJE en el contrato GovernanceStaking, recibiendo stVIRAJE para participar en el Real Yield y votación DAO.',
       action: async () => {
         const stakeInput = page.locator('[data-testid="staking-amount-input"]');
         await stakeInput.fill('600');
@@ -242,7 +242,7 @@ test.describe.serial('Autonomous Real-User Testing Agent Suite (100% App Operati
       }
     });
 
-    // Op 07: Yield Preference Option B (Auto-compound ALPHA)
+    // Op 07: Yield Preference Option B (Auto-compound VIRAJE)
     await recordOperation(page, {
       opId: 'R1-OP07',
       round: 1,
@@ -250,8 +250,8 @@ test.describe.serial('Autonomous Real-User Testing Agent Suite (100% App Operati
       deviceViewport: '1920x1080 (Desktop Chrome)',
       userAddress: user1,
       subsystem: 'Gobernanza & Staking DAO',
-      opName: 'Configuración Payout Opción B (Compounding ALPHA)',
-      description: 'Cambia la preferencia para auto-reinvertir recompensas en ALPHA tokens en el DEX.',
+      opName: 'Configuración Payout Opción B (Compounding VIRAJE)',
+      description: 'Cambia la preferencia para auto-reinvertir recompensas en VIRAJE tokens en el DEX.',
       action: async () => {
         const optB = page.locator('label:has-text("Opción B")');
         if (await isElementVisible(optB, 1500)) {
@@ -328,7 +328,7 @@ test.describe.serial('Autonomous Real-User Testing Agent Suite (100% App Operati
       }
     });
 
-    // Op 11: Unstake Partial stALPHA
+    // Op 11: Unstake Partial stVIRAJE
     await recordOperation(page, {
       opId: 'R1-OP11',
       round: 1,
@@ -337,7 +337,7 @@ test.describe.serial('Autonomous Real-User Testing Agent Suite (100% App Operati
       userAddress: user1,
       subsystem: 'Gobernanza & Staking DAO',
       opName: 'Retiro Parcial de Staking (Unstake)',
-      description: 'Retira 100 stALPHA del contrato de Staking devolviendo los tokens ALPHA al saldo disponible.',
+      description: 'Retira 100 stVIRAJE del contrato de Staking devolviendo los tokens VIRAJE al saldo disponible.',
       action: async () => {
         const stakeInput = page.locator('[data-testid="staking-amount-input"]');
         await stakeInput.fill('100');
@@ -415,7 +415,7 @@ test.describe.serial('Autonomous Real-User Testing Agent Suite (100% App Operati
       deviceViewport: '1440x900 (High-Res Desktop)',
       userAddress: user2,
       subsystem: 'Tesorería & Mercado Primario',
-      opName: 'Suscripción Institucional de ALPHA (5,000 USDC)',
+      opName: 'Suscripción Institucional de VIRAJE (5,000 USDC)',
       description: 'Inyección de 5,000 USDC en tesorería. Se evalúa el impacto en comisiones y crecimiento de NAV.',
       action: async () => {
         const depInput = page.locator('[data-testid="treasury-deposit-input"]');
@@ -426,7 +426,7 @@ test.describe.serial('Autonomous Real-User Testing Agent Suite (100% App Operati
       }
     });
 
-    // Op 15: Stake Institutional Volume -> stALPHA
+    // Op 15: Stake Institutional Volume -> stVIRAJE
     await recordOperation(page, {
       opId: 'R2-OP15',
       round: 2,
@@ -434,8 +434,8 @@ test.describe.serial('Autonomous Real-User Testing Agent Suite (100% App Operati
       deviceViewport: '1440x900 (High-Res Desktop)',
       userAddress: user2,
       subsystem: 'Gobernanza & Staking DAO',
-      opName: 'Staking Institucional a stALPHA (2,000 ALPHA)',
-      description: 'Bloquea 2,000 ALPHA en Staking obteniendo peso de voto para propuestas de gobernanza y rango VIP.',
+      opName: 'Staking Institucional a stVIRAJE (2,000 VIRAJE)',
+      description: 'Bloquea 2,000 VIRAJE en Staking obteniendo peso de voto para propuestas de gobernanza y rango VIP.',
       action: async () => {
         const stakeInput = page.locator('[data-testid="staking-amount-input"]');
         await stakeInput.fill('2000');
@@ -558,7 +558,7 @@ test.describe.serial('Autonomous Real-User Testing Agent Suite (100% App Operati
       userAddress: user2,
       subsystem: 'Mecanismos Antidilución & Quema DEX',
       opName: 'Ejecución del Discount Buyback Engine',
-      description: 'Verifica y ejecuta la recompra de tokens ALPHA en el mercado DEX para quemarlos y sostener el NAV.',
+      description: 'Verifica y ejecuta la recompra de tokens VIRAJE en el mercado DEX para quemarlos y sostener el NAV.',
       action: async () => {
         await page.locator('[data-testid="header-tab-governance"]').click();
         await page.waitForTimeout(1000);
@@ -579,7 +579,7 @@ test.describe.serial('Autonomous Real-User Testing Agent Suite (100% App Operati
       userAddress: user2,
       subsystem: 'Gobernanza DAO Institucional',
       opName: 'Creación de Propuesta On-Chain en Governor DAO',
-      description: 'Envía propuesta de ajuste de parámetros a través de GovernorAlphaCentauri.',
+      description: 'Envía propuesta de ajuste de parámetros a través de GovernorViraje.',
       action: async () => {
         const feeSubtab = page.locator('[data-testid="admin-subtab-fees"]');
         if (await isElementVisible(feeSubtab, 1500)) {
@@ -604,7 +604,7 @@ test.describe.serial('Autonomous Real-User Testing Agent Suite (100% App Operati
       userAddress: user2,
       subsystem: 'Administración & Gestión de Reservas',
       opName: 'Rebalanceo de Ponderaciones de Cartera',
-      description: 'Ajusta los pesos de asignación estratégica de reservas (50% USDC, 25% WBTC, 12.5% WETH, 12.5% stALPHA).',
+      description: 'Ajusta los pesos de asignación estratégica de reservas (50% USDC, 25% WBTC, 12.5% WETH, 12.5% stVIRAJE).',
       action: async () => {
         const rebalBtn = page.locator('[data-testid="admin-rebalance-btn"]');
         if (await isElementVisible(rebalBtn, 2500)) {
@@ -674,7 +674,7 @@ test.describe.serial('Autonomous Real-User Testing Agent Suite (100% App Operati
       deviceViewport: '390x844 (iPhone 14 / Mobile Safari)',
       userAddress: user3,
       subsystem: 'Tesorería & Mercado Primario',
-      opName: 'Suscripción Mobile de ALPHA',
+      opName: 'Suscripción Mobile de VIRAJE',
       description: 'Introduce 1,500 USDC en teclado virtual móvil y aprueba transacción en modal adaptado a pantalla táctil.',
       action: async () => {
         const depInput = page.locator('[data-testid="treasury-deposit-input"]');
@@ -685,7 +685,7 @@ test.describe.serial('Autonomous Real-User Testing Agent Suite (100% App Operati
       }
     });
 
-    // Op 27: Mobile Staking (400 ALPHA)
+    // Op 27: Mobile Staking (400 VIRAJE)
     await recordOperation(page, {
       opId: 'R3-OP27',
       round: 3,
@@ -693,7 +693,7 @@ test.describe.serial('Autonomous Real-User Testing Agent Suite (100% App Operati
       deviceViewport: '390x844 (iPhone 14 / Mobile Safari)',
       userAddress: user3,
       subsystem: 'Gobernanza & Staking DAO',
-      opName: 'Staking Mobile de ALPHA a stALPHA',
+      opName: 'Staking Mobile de VIRAJE a stVIRAJE',
       description: 'Staking desde la interfaz móvil activando participación en el Real Yield.',
       action: async () => {
         const stakeInput = page.locator('[data-testid="staking-amount-input"]');
@@ -873,8 +873,8 @@ async function recordOperation(
     postPoR: post.por,
     preUsdc: pre.usdc,
     postUsdc: post.usdc,
-    preAlpha: pre.shares,
-    postAlpha: post.shares,
+    preViraje: pre.shares,
+    postViraje: post.shares,
     durationMs,
     status,
     notes,
@@ -903,7 +903,7 @@ function generateComprehensiveReport(records: OperationRecord[]) {
   let md = `# 🛡️ Informe Exhaustivo de Auditoría E2E: Agente Autónomo de Usuario Real
 **Fecha:** ${new Date().toISOString()}  
 **Entorno de Ejecución:** Anvil Blockchain (EVM 31337) & Playwright Chromium Engine  
-**Plataforma Auditada:** Alpha Centauri DeFi Platform (BotPremium Token Ecosystem)  
+**Plataforma Auditada:** Viraje Protocol DeFi Platform (BotPremium Token Ecosystem)  
 **Cobertura Funcional:** 100% de Operativas & Vistas de Usuario  
 
 ---
@@ -954,17 +954,17 @@ $$\\text{PoR} = \\frac{\\text{Total Reservas Exógenas (USDC + WBTC + WETH) + Re
 
 ### 🏛️ Ronda 1: Usuario Minorista (Desktop 1920x1080)
 * **Perfil:** Inversionista particular operando en pantalla panorámica.
-* **Flujo Probado:** Faucet ➔ Depósito 2,500 USDC ➔ Rescate parcial 500 ALPHA ➔ Staking 600 ALPHA ➔ Conmutación de Preferencias de Real Yield (Opción A vs B) ➔ Compra de Bono Vestado 1 Año ➔ Inspección de Modal APY ➔ Enlaces de Referidos ➔ Retiro de Staking ➔ Auditoría de Solvencia.
+* **Flujo Probado:** Faucet ➔ Depósito 2,500 USDC ➔ Rescate parcial 500 VIRAJE ➔ Staking 600 VIRAJE ➔ Conmutación de Preferencias de Real Yield (Opción A vs B) ➔ Compra de Bono Vestado 1 Año ➔ Inspección de Modal APY ➔ Enlaces de Referidos ➔ Retiro de Staking ➔ Auditoría de Solvencia.
 * **Observaciones UX:** Las ventanas modales de confirmación de 2 pasos mostraron con precisión los montos brutos, comisiones dinámicas estimadas y los contratos receptores. Toasts informativos notificaron cada hito on-chain.
 
 ### 🐋 Ronda 2: Inversor Institucional / Whale (Desktop 1440x900)
 * **Perfil:** Entidad de alto patrimonio operando con volúmenes institucionales y rango VIP.
-* **Flujo Probado:** Faucet ➔ Depósito institucional 5,000 USDC ➔ Staking de 2,000 ALPHA ➔ Compra de Bono a 3 Años (2,000 USDC con descuento VIP de fidelidad) ➔ Creación de Oferta P2P en Escrow ➔ Cancelación de Oferta P2P ➔ Solicitud de Crédito a Tesorería ➔ Reembolso con Intereses ➔ Activación de Discount Buyback Engine ➔ Envío de Propuesta DAO en GovernorAlphaCentauri ➔ Rebalanceo de Cartera.
+* **Flujo Probado:** Faucet ➔ Depósito institucional 5,000 USDC ➔ Staking de 2,000 VIRAJE ➔ Compra de Bono a 3 Años (2,000 USDC con descuento VIP de fidelidad) ➔ Creación de Oferta P2P en Escrow ➔ Cancelación de Oferta P2P ➔ Solicitud de Crédito a Tesorería ➔ Reembolso con Intereses ➔ Activación de Discount Buyback Engine ➔ Envío de Propuesta DAO en GovernorViraje ➔ Rebalanceo de Cartera.
 * **Observaciones UX:** La emisión de bonos calculó de forma transparente los pasivos presentes devengados, preservando el NAV sin generar fluctuaciones no justificadas. El Buyback Engine ejecutó la quema on-chain de forma adecuada.
 
 ### 📱 Ronda 3: Usuario Móvil Smartphone (Viewport 390x844 - iPhone 14)
 * **Perfil:** Usuario en movilidad interactuando con interfaz táctil y espacio vertical restringido.
-* **Flujo Probado:** Conexión Mobile ➔ Faucet ➔ Depósito 1,500 USDC ➔ Staking 400 ALPHA ➔ Compra de Bono 1 Año ➔ Salida de Emergencia (Ragequit con penalización del 15%) ➔ Avance Temporal de 366 Días en Blockchain ➔ Reclamo de Bono Vencido ➔ Simulación y Reactivación de Circuit Breaker ➔ Verificación Final de Solvencia.
+* **Flujo Probado:** Conexión Mobile ➔ Faucet ➔ Depósito 1,500 USDC ➔ Staking 400 VIRAJE ➔ Compra de Bono 1 Año ➔ Salida de Emergencia (Ragequit con penalización del 15%) ➔ Avance Temporal de 366 Días en Blockchain ➔ Reclamo de Bono Vencido ➔ Simulación y Reactivación de Circuit Breaker ➔ Verificación Final de Solvencia.
 * **Observaciones UX:** Todos los formularios y tarjetas colapsables se adaptaron fluidamente sin scroll horizontal ni colisión de botones táctiles. El Ragequit aplicó exactamente el 15% de penalización y amortizó la obligación sin impactar negativamente en el NAV.
 
 ---

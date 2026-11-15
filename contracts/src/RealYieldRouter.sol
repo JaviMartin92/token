@@ -19,10 +19,10 @@ interface ICircuitBreakerRouter {
 
 /**
  * @title RealYieldRouter
- * @author Alpha Centauri Architecture Team
+ * @author Viraje Protocol Architecture Team
  * @notice Universal Fee Router enforcing Pure DeFi MiCA Compliance & Universal Multi-Asset Real Yield Basket:
  *         - Fee Routing: 50% Strategic Reserve, 50% Community Real Yield (Liquid USDC).
- *         - Universal Payout Basket: 50% USDC + 25% WBTC + 12.5% WETH + 12.5% ALPHA (at current NAV).
+ *         - Universal Payout Basket: 50% USDC + 25% WBTC + 12.5% WETH + 12.5% VIRAJE (at current NAV).
  * @dev Employs SafeERC20 zero-reset approvals to ensure full compatibility with USDT and non-standard tokens.
  */
 contract RealYieldRouter is AccessControl, ReentrancyGuard {
@@ -43,7 +43,11 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
 
     address public wbtc;
     address public weth;
-    address public alphaToken;
+    address public virajeToken;
+
+    function virajeToken() external view returns (address) {
+        return virajeToken;
+    }
 
     enum PayoutPreference { BASKET, ALL_USDC }
     mapping(address => PayoutPreference) public userPayoutPreference;
@@ -51,14 +55,14 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
 
     // --- Events ---
     event UserPayoutPreferenceSet(address indexed user, PayoutPreference preference);
-    event BasketAssetsUpdated(address indexed wbtc, address indexed weth, address indexed alphaToken);
+    event BasketAssetsUpdated(address indexed wbtc, address indexed weth, address indexed virajeToken);
     event RealYieldBasketClaimed(
         address indexed user,
         uint256 totalYieldUSD,
         uint256 usdcPaid,
         uint256 wbtcPaid,
         uint256 wethPaid,
-        uint256 alphaPaid
+        uint256 virajePaid
     );
     event UniversalFeeRouted(
         address indexed feeToken, uint256 totalAmount, uint256 toTreasury, uint256 toCommunityYieldUsdc
@@ -118,14 +122,14 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
     /**
      * @notice Sets addresses of the multi-asset real yield payout basket
      */
-    function setBasketAssets(address _wbtc, address _weth, address _alphaToken)
+    function setBasketAssets(address _wbtc, address _weth, address _virajeToken)
         external
         onlyRole(ProtocolRoles.ADMIN_ROLE)
     {
         wbtc = _wbtc;
         weth = _weth;
-        alphaToken = _alphaToken;
-        emit BasketAssetsUpdated(_wbtc, _weth, _alphaToken);
+        virajeToken = _virajeToken;
+        emit BasketAssetsUpdated(_wbtc, _weth, _virajeToken);
     }
 
     /**
@@ -246,12 +250,12 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
      *         - 50.00% in Liquid USDC
      *         - 25.00% in WBTC (swapped via Chainlink oracle pricing)
      *         - 12.50% in WETH (swapped via Chainlink oracle pricing)
-     *         - 12.50% in ALPHA (minted at current NAV directly into protocol reserves)
+     *         - 12.50% in VIRAJE (minted at current NAV directly into protocol reserves)
      */
     function claimRealYield()
         external
         nonReentrant
-        returns (uint256 payoutAmount, uint256 wbtcPaid, uint256 wethPaid, uint256 alphaPaid)
+        returns (uint256 payoutAmount, uint256 wbtcPaid, uint256 wethPaid, uint256 virajePaid)
     {
         uint256 yieldAmount = stakingPool.claimRewardFor(msg.sender);
         if (yieldAmount == 0) revert IProtocolErrors.ZeroAmount();
@@ -265,7 +269,7 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
         uint256 usdcShare = (yieldAmount * 5000) / 10000;
         uint256 wbtcShare = (yieldAmount * 2500) / 10000;
         uint256 wethShare = (yieldAmount * 1250) / 10000;
-        uint256 alphaShare = yieldAmount - usdcShare - wbtcShare - wethShare;
+        uint256 virajeShare = yieldAmount - usdcShare - wbtcShare - wethShare;
 
         uint256 usdcPayout = usdcShare;
 
@@ -343,18 +347,18 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
             usdcPayout += wethShare;
         }
 
-        // 3. ALPHA Allocation (12.50% at current NAV)
-        if (treasuryBunker != address(0) && alphaToken != address(0)) {
+        // 3. VIRAJE Allocation (12.50% at current NAV)
+        if (treasuryBunker != address(0) && virajeToken != address(0)) {
             IERC20(stablecoin).safeApprove(treasuryBunker, 0);
-            IERC20(stablecoin).safeApprove(treasuryBunker, alphaShare);
-            try ITreasury(treasuryBunker).mintCorporateFeeShares(alphaShare) returns (uint256 mintedShares) {
-                alphaPaid = mintedShares;
-                IERC20(alphaToken).safeTransfer(msg.sender, mintedShares);
+            IERC20(stablecoin).safeApprove(treasuryBunker, virajeShare);
+            try ITreasury(treasuryBunker).mintCorporateFeeShares(virajeShare) returns (uint256 mintedShares) {
+                virajePaid = mintedShares;
+                IERC20(virajeToken).safeTransfer(msg.sender, mintedShares);
             } catch {
-                usdcPayout += alphaShare; // Fallback to USDC
+                usdcPayout += virajeShare; // Fallback to USDC
             }
         } else {
-            usdcPayout += alphaShare;
+            usdcPayout += virajeShare;
         }
 
         // 4. Transfer USDC (50% Base + any fallback)
@@ -364,6 +368,6 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
 
         payoutAmount = usdcPayout;
 
-        emit RealYieldBasketClaimed(msg.sender, yieldAmount, usdcPayout, wbtcPaid, wethPaid, alphaPaid);
+        emit RealYieldBasketClaimed(msg.sender, yieldAmount, usdcPayout, wbtcPaid, wethPaid, virajePaid);
     }
 }

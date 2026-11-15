@@ -24,7 +24,7 @@ test.describe('Suite 2: Gobernanza & Staking DAO (Tx 12 - 21)', () => {
     }
     await page.locator('[data-testid="header-tab-governance"]').click();
 
-    // [Tx 12] Stake ALPHA
+    // [Tx 12] Stake VIRAJE
     const stakeInput = page.locator('[data-testid="staking-amount-input"]');
     if (await stakeInput.isVisible()) {
       await stakeInput.fill('500');

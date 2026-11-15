@@ -190,9 +190,9 @@ async function main() {
     });
     await publicClient.waitForTransactionReceipt({ hash: txKyc });
 
-    const alphaTokenAddr = addresses.ALPHA_TOKEN;
+    const virajeTokenAddr = addresses.VIRAJE_TOKEN;
     const userSharesBefore = await publicClient.readContract({
-      address: alphaTokenAddr as `0x${string}`,
+      address: virajeTokenAddr as `0x${string}`,
       abi: [{ name: 'balanceOf', type: 'function', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [{ type: 'uint256' }] }],
       functionName: 'balanceOf',
       args: [userAccount.address]
@@ -208,7 +208,7 @@ async function main() {
     await publicClient.waitForTransactionReceipt({ hash: txDep });
 
     const userSharesAfter = await publicClient.readContract({
-      address: alphaTokenAddr as `0x${string}`,
+      address: virajeTokenAddr as `0x${string}`,
       abi: [{ name: 'balanceOf', type: 'function', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [{ type: 'uint256' }] }],
       functionName: 'balanceOf',
       args: [userAccount.address]
@@ -221,11 +221,11 @@ async function main() {
     }) as bigint;
 
     const deltaShares = userSharesAfter - userSharesBefore;
-    const deltaFormatted = parseFloat(formatUnits(deltaShares, 18)); // ALPHA shares = 18 decimals
+    const deltaFormatted = parseFloat(formatUnits(deltaShares, 18)); // VIRAJE shares = 18 decimals
     const navFormatted = parseFloat(formatUnits(nav, 18)); // NAV = 18 decimals
 
-    // The user receives ALPHA shares proportional to the deposit amount / navPerShare
-    assert(deltaFormatted >= 100 && deltaFormatted <= 1100, `User received realistic ALPHA shares (${deltaFormatted.toFixed(2)})`, `Got ${deltaFormatted}`);
+    // The user receives VIRAJE shares proportional to the deposit amount / navPerShare
+    assert(deltaFormatted >= 100 && deltaFormatted <= 1100, `User received realistic VIRAJE shares (${deltaFormatted.toFixed(2)})`, `Got ${deltaFormatted}`);
     assert(navFormatted >= 0.90 && navFormatted <= 50_000_000, `NAV value is in realistic USD range ($${navFormatted.toFixed(2)})`, `Got $${navFormatted}`);
 
   } catch (e: any) {

@@ -4,8 +4,8 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "../src/lib/token/ERC20/ERC20.sol";
 import "../src/ProtocolAddressProvider.sol";
-import "../src/AlphaToken.sol";
-import "../src/AlphaVault.sol";
+import "../src/VirajeToken.sol";
+import "../src/VirajeVault.sol";
 import "../src/TreasuryProxy.sol";
 import "../src/OracleHub.sol";
 import "../src/TreasuryManager.sol";
@@ -55,16 +55,16 @@ contract MockBuybackChainlinkFeed {
 
 contract MockBuybackSwapRouter is ISwapRouterBuyback {
     address public usdc;
-    address public alpha;
-    uint256 public alphaPriceUSD18 = 90 * 10 ** 16; // $0.90 (18 decimals)
+    address public viraje;
+    uint256 public virajePriceUSD18 = 90 * 10 ** 16; // $0.90 (18 decimals)
 
-    constructor(address _usdc, address _alpha) {
+    constructor(address _usdc, address _viraje) {
         usdc = _usdc;
-        alpha = _alpha;
+        viraje = _viraje;
     }
 
-    function setAlphaPriceUSD(uint256 newPrice18) external {
-        alphaPriceUSD18 = newPrice18;
+    function setVirajePriceUSD(uint256 newPrice18) external {
+        virajePriceUSD18 = newPrice18;
     }
 
     function exactInputSingle(ExactInputSingleParams calldata params) external override returns (uint256 amountOut) {
@@ -72,19 +72,19 @@ contract MockBuybackSwapRouter is ISwapRouterBuyback {
         IERC20(params.tokenIn).transferFrom(msg.sender, address(this), params.amountIn);
 
         // amountIn is in USDC (6 dec). Convert to USD 18 dec: amountIn * 1e12
-        // amountOut = (USD 18 dec * 1e18) / alphaPriceUSD18
+        // amountOut = (USD 18 dec * 1e18) / virajePriceUSD18
         uint256 usdValue18 = params.amountIn * 10 ** 12;
-        amountOut = (usdValue18 * 10 ** 18) / alphaPriceUSD18;
+        amountOut = (usdValue18 * 10 ** 18) / virajePriceUSD18;
 
-        // Transfer pre-existing ALPHA from DEX liquidity pool
-        IERC20(alpha).transfer(params.recipient, amountOut);
+        // Transfer pre-existing VIRAJE from DEX liquidity pool
+        IERC20(viraje).transfer(params.recipient, amountOut);
     }
 }
 
 contract DiscountBuybackEngineTest is Test {
     ProtocolAddressProvider public provider;
-    AlphaToken public alphaToken;
-    AlphaVault public vault;
+    VirajeToken public virajeToken;
+    VirajeVault public vault;
     OracleHub public oracleHub;
     TreasuryManager public manager;
     CircuitBreaker public circuitBreaker;
@@ -94,7 +94,7 @@ contract DiscountBuybackEngineTest is Test {
 
     MockBuybackERC20 public usdc;
     MockBuybackChainlinkFeed public usdcFeed;
-    MockBuybackChainlinkFeed public alphaFeed;
+    MockBuybackChainlinkFeed public virajeFeed;
 
     address public admin = address(0x1);
     address public user = address(0x2);
@@ -105,25 +105,25 @@ contract DiscountBuybackEngineTest is Test {
         // 1. Tokens & Feeds
         usdc = new MockBuybackERC20("USDC", "USDC", 6);
         usdcFeed = new MockBuybackChainlinkFeed(1_00000000, 8); // $1.00
-        alphaFeed = new MockBuybackChainlinkFeed(90000000, 8); // $0.90 (10% discount vs $1.00 NAV)
+        virajeFeed = new MockBuybackChainlinkFeed(90000000, 8); // $0.90 (10% discount vs $1.00 NAV)
 
         // 2. Provider
         provider = new ProtocolAddressProvider(admin);
 
-        // 3. AlphaToken
-        alphaToken = new AlphaToken(provider, admin);
-        provider.setAddress(keccak256("ALPHA_TOKEN"), address(alphaToken));
+        // 3. VirajeToken
+        virajeToken = new VirajeToken(provider, admin);
+        provider.setAddress(keccak256("VIRAJE_TOKEN"), address(virajeToken));
 
-        // 4. AlphaVault
-        vault = new AlphaVault(provider, admin);
-        provider.setAddress(keccak256("ALPHA_VAULT"), address(vault));
+        // 4. VirajeVault
+        vault = new VirajeVault(provider, admin);
+        provider.setAddress(keccak256("VIRAJE_VAULT"), address(vault));
 
         // 5. OracleHub
         oracleHub = new OracleHub(provider, admin);
         provider.setAddress(keccak256("ORACLE_HUB"), address(oracleHub));
         oracleHub.grantRole(ProtocolRoles.ORACLE_MANAGER_ROLE, admin);
         oracleHub.setTrackedAsset(address(usdc), address(usdcFeed), address(0), 6);
-        oracleHub.setTrackedAsset(address(alphaToken), address(alphaFeed), address(0), 18);
+        oracleHub.setTrackedAsset(address(virajeToken), address(virajeFeed), address(0), 18);
 
         // 6. CircuitBreaker
         circuitBreaker = new CircuitBreaker(admin);
@@ -141,17 +141,17 @@ contract DiscountBuybackEngineTest is Test {
         provider.setAddress(keccak256("TREASURY_MANAGER"), address(manager));
 
         // 9. SwapRouter Mock
-        mockRouter = new MockBuybackSwapRouter(address(usdc), address(alphaToken));
+        mockRouter = new MockBuybackSwapRouter(address(usdc), address(virajeToken));
 
         // 10. DiscountBuybackEngine
         buybackEngine = new DiscountBuybackEngine(provider, address(usdc), 6, address(mockRouter), admin);
         provider.setAddress(keccak256("DISCOUNT_BUYBACK_ENGINE"), address(buybackEngine));
 
         // Roles & Permissions
-        alphaToken.grantRole(ProtocolRoles.MINTER_ROLE, admin);
-        alphaToken.grantRole(ProtocolRoles.MINTER_ROLE, address(manager));
-        alphaToken.grantRole(ProtocolRoles.BURNER_ROLE, address(manager));
-        alphaToken.grantRole(ProtocolRoles.BURNER_ROLE, address(buybackEngine));
+        virajeToken.grantRole(ProtocolRoles.MINTER_ROLE, admin);
+        virajeToken.grantRole(ProtocolRoles.MINTER_ROLE, address(manager));
+        virajeToken.grantRole(ProtocolRoles.BURNER_ROLE, address(manager));
+        virajeToken.grantRole(ProtocolRoles.BURNER_ROLE, address(buybackEngine));
         manager.grantRole(ProtocolRoles.BURNER_ROLE, address(buybackEngine));
         vault.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(manager));
         vault.grantRole(ProtocolRoles.VAULT_MANAGER_ROLE, address(buybackEngine));
@@ -160,22 +160,22 @@ contract DiscountBuybackEngineTest is Test {
         manager.setKYCStatus(user, true);
 
         // Bootstrap Initial Liquidity in Protocol
-        // User deposits 100,000 USDC into Treasury -> receives ~99,000 ALPHA
+        // User deposits 100,000 USDC into Treasury -> receives ~99,000 VIRAJE
         usdc.mint(user, 100_000 * 10 ** 6);
         vm.stopPrank();
 
         vm.startPrank(user);
         usdc.approve(address(manager), 100_000 * 10 ** 6);
         manager.deposit(100_000 * 10 ** 6, 0);
-        // Transfer 10,000 ALPHA to mockRouter to simulate DEX liquidity pool
-        alphaToken.transfer(address(mockRouter), 10_000 * 10 ** 18);
+        // Transfer 10,000 VIRAJE to mockRouter to simulate DEX liquidity pool
+        virajeToken.transfer(address(mockRouter), 10_000 * 10 ** 18);
         vm.stopPrank();
     }
 
     function test_Lock1_RevertIf_DiscountTooLow() public {
         vm.startPrank(admin);
-        // Set ALPHA market price = $1.00 (NAV is $1.005 -> ~0.50% discount < 5% min)
-        alphaFeed.setPrice(100000000); // $1.00
+        // Set VIRAJE market price = $1.00 (NAV is $1.005 -> ~0.50% discount < 5% min)
+        virajeFeed.setPrice(100000000); // $1.00
 
         // Attempt buyback of 100 USDC
         vm.expectRevert(abi.encodeWithSelector(IProtocolErrors.DiscountTooLow.selector, 49, 500));
@@ -185,7 +185,7 @@ contract DiscountBuybackEngineTest is Test {
 
     function test_Lock2_RevertIf_DailyBudgetExceeded() public {
         vm.startPrank(admin);
-        alphaFeed.setPrice(90000000); // $0.90 (10% discount)
+        virajeFeed.setPrice(90000000); // $0.90 (10% discount)
 
         // Liquid USDC in vault is approx 100,000 USDC. Max daily budget is 2.50% = 2,500 USDC.
         // Trying to spend 3,000 USDC must revert
@@ -198,56 +198,56 @@ contract DiscountBuybackEngineTest is Test {
 
     function test_Lock6_RevertIf_CooldownActive() public {
         vm.startPrank(admin);
-        alphaFeed.setPrice(90000000); // $0.90 (10% discount)
+        virajeFeed.setPrice(90000000); // $0.90 (10% discount)
 
         // 1st buyback of 500 USDC succeeds
-        uint256 expectedAlpha = (uint256(500 * 10 ** 12) * 10 ** 18) / uint256(90 * 10 ** 16);
-        uint256 minAlphaOut = (expectedAlpha * 9900) / 10000;
-        buybackEngine.executeDiscountBuyback(500 * 10 ** 6, minAlphaOut);
+        uint256 expectedViraje = (uint256(500 * 10 ** 12) * 10 ** 18) / uint256(90 * 10 ** 16);
+        uint256 minVirajeOut = (expectedViraje * 9900) / 10000;
+        buybackEngine.executeDiscountBuyback(500 * 10 ** 6, minVirajeOut);
 
         // Immediate 2nd buyback must revert with cooldown active
         vm.expectRevert(abi.encodeWithSelector(IProtocolErrors.CooldownActive.selector, block.timestamp + 14400));
-        buybackEngine.executeDiscountBuyback(500 * 10 ** 6, minAlphaOut);
+        buybackEngine.executeDiscountBuyback(500 * 10 ** 6, minVirajeOut);
 
         // Warp time forward by 4 hours (14400s) -> now it succeeds!
         vm.warp(block.timestamp + 14401);
-        buybackEngine.executeDiscountBuyback(500 * 10 ** 6, minAlphaOut);
+        buybackEngine.executeDiscountBuyback(500 * 10 ** 6, minVirajeOut);
         vm.stopPrank();
     }
 
     function test_Lock8_RevertIf_CircuitBreakerFrozen() public {
         vm.startPrank(admin);
-        alphaFeed.setPrice(90000000);
+        virajeFeed.setPrice(90000000);
 
         // Manually freeze USDC in CircuitBreaker
         circuitBreaker.triggerFreeze(address(usdc));
 
-        uint256 expectedAlpha = (uint256(500 * 10 ** 12) * 10 ** 18) / uint256(90 * 10 ** 16);
-        uint256 minAlphaOut = (expectedAlpha * 9900) / 10000;
+        uint256 expectedViraje = (uint256(500 * 10 ** 12) * 10 ** 18) / uint256(90 * 10 ** 16);
+        uint256 minVirajeOut = (expectedViraje * 9900) / 10000;
 
         vm.expectRevert(abi.encodeWithSelector(IProtocolErrors.CircuitBreakerActive.selector, address(usdc)));
-        buybackEngine.executeDiscountBuyback(500 * 10 ** 6, minAlphaOut);
+        buybackEngine.executeDiscountBuyback(500 * 10 ** 6, minVirajeOut);
         vm.stopPrank();
     }
 
     function test_Lock9_RevertIf_PoRBelowThreshold() public {
         vm.startPrank(admin);
-        alphaFeed.setPrice(90000000);
+        virajeFeed.setPrice(90000000);
 
         // Raise minPoRRatioBps to 11000 (110%) while actual PoR is ~100%
         buybackEngine.setParameters(500, 250, 14400, 11000, 100);
 
-        uint256 expectedAlpha = (uint256(500 * 10 ** 12) * 10 ** 18) / uint256(90 * 10 ** 16);
-        uint256 minAlphaOut = (expectedAlpha * 9900) / 10000;
+        uint256 expectedViraje = (uint256(500 * 10 ** 12) * 10 ** 18) / uint256(90 * 10 ** 16);
+        uint256 minVirajeOut = (expectedViraje * 9900) / 10000;
 
         vm.expectRevert(abi.encodeWithSelector(IProtocolErrors.Undercollateralized.selector, 10000, 11000));
-        buybackEngine.executeDiscountBuyback(500 * 10 ** 6, minAlphaOut);
+        buybackEngine.executeDiscountBuyback(500 * 10 ** 6, minVirajeOut);
         vm.stopPrank();
     }
 
     function test_Lock10_RevertIf_TradeSizeTooLarge() public {
         vm.startPrank(admin);
-        alphaFeed.setPrice(90000000);
+        virajeFeed.setPrice(90000000);
 
         // Max single trade is 1.00% of liquid balance (~1,000 USDC).
         // Trying to spend 1,500 USDC in 1 trade must revert
@@ -258,28 +258,28 @@ contract DiscountBuybackEngineTest is Test {
         vm.stopPrank();
     }
 
-    function test_SuccessfulBuyback_BurnsAlpha_And_IncreasesNAV() public {
+    function test_SuccessfulBuyback_BurnsViraje_And_IncreasesNAV() public {
         vm.startPrank(admin);
-        alphaFeed.setPrice(90000000); // 10% discount ($0.90)
+        virajeFeed.setPrice(90000000); // 10% discount ($0.90)
 
         uint256 navBefore = manager.getNAVPerShare();
-        uint256 supplyBefore = alphaToken.totalSupply();
+        uint256 supplyBefore = virajeToken.totalSupply();
         uint256 burnedBefore = manager.totalBurnedTokens();
 
         uint256 usdcToSpend = 500 * 10 ** 6; // 500 USDC
-        uint256 expectedAlpha = (uint256(usdcToSpend * 10 ** 12) * 10 ** 18) / uint256(90 * 10 ** 16);
-        uint256 minAlphaOut = (expectedAlpha * 9900) / 10000;
+        uint256 expectedViraje = (uint256(usdcToSpend * 10 ** 12) * 10 ** 18) / uint256(90 * 10 ** 16);
+        uint256 minVirajeOut = (expectedViraje * 9900) / 10000;
 
-        uint256 alphaBurned = buybackEngine.executeDiscountBuyback(usdcToSpend, minAlphaOut);
+        uint256 virajeBurned = buybackEngine.executeDiscountBuyback(usdcToSpend, minVirajeOut);
 
         uint256 navAfter = manager.getNAVPerShare();
-        uint256 supplyAfter = alphaToken.totalSupply();
+        uint256 supplyAfter = virajeToken.totalSupply();
         uint256 burnedAfter = manager.totalBurnedTokens();
 
         // Verifications
-        assertGt(alphaBurned, 0, "Alpha burned should be > 0");
-        assertEq(supplyBefore - supplyAfter, alphaBurned, "Total supply should be reduced by alphaBurned");
-        assertEq(burnedAfter - burnedBefore, alphaBurned, "Total burned counter in treasury should increase");
+        assertGt(virajeBurned, 0, "Viraje burned should be > 0");
+        assertEq(supplyBefore - supplyAfter, virajeBurned, "Total supply should be reduced by virajeBurned");
+        assertEq(burnedAfter - burnedBefore, virajeBurned, "Total burned counter in treasury should increase");
         assertGe(navAfter, navBefore, "NAV per share must strictly increase or stay equal");
         assertEq(buybackEngine.spentToday(), usdcToSpend, "Spent today must equal usdcToSpend");
         assertEq(buybackEngine.totalBuybackVolumeUSD(), usdcToSpend, "Total volume tracked");

@@ -58,7 +58,7 @@ export class DeFiAgentEnv {
     return createWalletClient({ account, chain: foundry, transport: http('http://127.0.0.1:8545') });
   }
 
-  async setupInitialLiquidity(agentAddress: Address, initialUsdc: number = 20000, initialAlpha: number = 2000) {
+  async setupInitialLiquidity(agentAddress: Address, initialUsdc: number = 20000, initialViraje: number = 2000) {
     try {
       // Ensure agent has native ETH for gas
       const ethBal = await this.publicClient.getBalance({ address: agentAddress });
@@ -87,20 +87,20 @@ export class DeFiAgentEnv {
         args: [agentAddress, usdcAmt]
       });
 
-      // Mint ALPHA and simultaneously back it with USDC in Treasury reserve to maintain NAV integrity
-      const alphaAmt = parseUnits(initialAlpha.toString(), 18);
-      const usdcBacking = parseUnits((initialAlpha * 1.05).toFixed(0), 6);
+      // Mint VIRAJE and simultaneously back it with USDC in Treasury reserve to maintain NAV integrity
+      const virajeAmt = parseUnits(initialViraje.toString(), 18);
+      const usdcBacking = parseUnits((initialViraje * 1.05).toFixed(0), 6);
       await this.adminClient.writeContract({
         address: this.contracts.USDC,
         abi: ERC20_ABI,
         functionName: 'mint',
-        args: [this.contracts.ALPHA_VAULT, usdcBacking]
+        args: [this.contracts.VIRAJE_VAULT, usdcBacking]
       });
       await this.adminClient.writeContract({
-        address: this.contracts.ALPHA_TOKEN,
+        address: this.contracts.VIRAJE_TOKEN,
         abi: ERC20_ABI,
         functionName: 'mint',
-        args: [agentAddress, alphaAmt]
+        args: [agentAddress, virajeAmt]
       });
     } catch (err: any) {
       console.warn(`[Env Setup Warning] ${err.message}`);
@@ -121,9 +121,9 @@ export class DeFiAgentEnv {
     const breakerAbi = this.registry.getContractAbi('CIRCUIT_BREAKER');
     const p2pAbi = this.registry.getContractAbi('P2P_MARKET');
 
-    const [usdcBal, alphaBal, ethBal, stBal, earnedYield, navPerShare, circuitFrozen, blockNumber] = await Promise.all([
+    const [usdcBal, virajeBal, ethBal, stBal, earnedYield, navPerShare, circuitFrozen, blockNumber] = await Promise.all([
       this.publicClient.readContract({ address: this.contracts.USDC, abi: ERC20_ABI, functionName: 'balanceOf', args: [agentAddress] }) as Promise<bigint>,
-      this.publicClient.readContract({ address: this.contracts.ALPHA_TOKEN, abi: ERC20_ABI, functionName: 'balanceOf', args: [agentAddress] }) as Promise<bigint>,
+      this.publicClient.readContract({ address: this.contracts.VIRAJE_TOKEN, abi: ERC20_ABI, functionName: 'balanceOf', args: [agentAddress] }) as Promise<bigint>,
       this.publicClient.getBalance({ address: agentAddress }),
       this.publicClient.readContract({ address: this.contracts.STAKING, abi: stakingAbi, functionName: 'balanceOf', args: [agentAddress] }) as Promise<bigint>,
       this.publicClient.readContract({ address: this.contracts.STAKING, abi: stakingAbi, functionName: 'earned', args: [agentAddress] }) as Promise<bigint>,
@@ -152,9 +152,9 @@ export class DeFiAgentEnv {
       blockNumber: Number(blockNumber),
       balances: {
         USDC: parseFloat(formatUnits(usdcBal, 6)),
-        ALPHA: parseFloat(formatUnits(alphaBal, 18)),
+        VIRAJE: parseFloat(formatUnits(virajeBal, 18)),
         ETH: parseFloat(formatUnits(ethBal, 18)),
-        stALPHA: parseFloat(formatUnits(stBal, 18)),
+        stVIRAJE: parseFloat(formatUnits(stBal, 18)),
         earnedYieldUSDC: parseFloat(formatUnits(earnedYield, 6)),
         positionBondsCount: Number(nftBonds)
       },
@@ -216,7 +216,7 @@ export class DeFiAgentEnv {
 
           if (!isCountOrDuration && !isNaN(num) && num > 0 && num < 1000000000) {
             // Apply token scale if function is token-denominated
-            if (lowerFunc.includes('stake') || lowerFunc.includes('unstake') || lowerFunc.includes('redeem') || inpName.includes('alpha')) {
+            if (lowerFunc.includes('stake') || lowerFunc.includes('unstake') || lowerFunc.includes('redeem') || inpName.includes('viraje')) {
               return BigInt(num) * 10n ** 18n;
             }
             if (lowerFunc.includes('deposit') || lowerFunc.includes('borrow') || lowerFunc.includes('buyback') || lowerFunc.includes('bond') || inpName.includes('usdc') || inpName.includes('stable')) {
@@ -266,7 +266,7 @@ export class DeFiAgentEnv {
 
       // Pre-approval check for standard tokens if calling a spend/deposit function
       if (func.stateMutability !== 'view' && func.stateMutability !== 'pure') {
-        if (['deposit', 'stake', 'borrowFromTreasuryWithAsset', 'borrowFromTreasuryWithAlpha', 'buyVestedBond', 'executeDiscountBuyback', 'repayLoan', 'createLoanOfferWithCollateral'].includes(func.name)) {
+        if (['deposit', 'stake', 'borrowFromTreasuryWithAsset', 'borrowFromTreasuryWithViraje', 'buyVestedBond', 'executeDiscountBuyback', 'repayLoan', 'createLoanOfferWithCollateral'].includes(func.name)) {
           try {
             await client.writeContract({
               address: this.contracts.USDC,
@@ -275,7 +275,7 @@ export class DeFiAgentEnv {
               args: [address, parseUnits('1000000', 6)]
             });
             await client.writeContract({
-              address: this.contracts.ALPHA_TOKEN,
+              address: this.contracts.VIRAJE_TOKEN,
               abi: ERC20_ABI,
               functionName: 'approve',
               args: [address, parseUnits('1000000', 18)]
@@ -314,30 +314,30 @@ export class DeFiAgentEnv {
   async executeAction(client: any, action: string, params: Record<string, any>): Promise<{ success: boolean; txHash?: string; message: string }> {
     try {
       switch (action) {
-        case 'stake_alpha': {
+        case 'stake_viraje': {
           const res = await this.executeArbitraryCall(client, 'STAKING', 'stake', [params.amount]);
-          return { success: res.success, txHash: res.txHash, message: res.success ? `Staked ${params.amount} ALPHA -> stALPHA emitido` : (res.error || 'Revert') };
+          return { success: res.success, txHash: res.txHash, message: res.success ? `Staked ${params.amount} VIRAJE -> stVIRAJE emitido` : (res.error || 'Revert') };
         }
-        case 'unstake_alpha': {
+        case 'unstake_viraje': {
           const res = await this.executeArbitraryCall(client, 'STAKING', 'unstake', [params.amount]);
-          return { success: res.success, txHash: res.txHash, message: res.success ? `Unstaked ${params.amount} stALPHA -> ALPHA devuelto` : (res.error || 'Revert') };
+          return { success: res.success, txHash: res.txHash, message: res.success ? `Unstaked ${params.amount} stVIRAJE -> VIRAJE devuelto` : (res.error || 'Revert') };
         }
         case 'claim_rewards': {
           const res = await this.executeArbitraryCall(client, 'REAL_YIELD_ROUTER', 'claimRealYield', []);
           return { success: res.success, txHash: res.txHash, message: res.success ? `Recompensas reclamadas con éxito` : (res.error || 'Revert') };
         }
         case 'set_payout_preference': {
-          const pref = params.preference === 'ALPHA' ? 1 : 0;
+          const pref = params.preference === 'VIRAJE' ? 1 : 0;
           const res = await this.executeArbitraryCall(client, 'REAL_YIELD_ROUTER', 'setPayoutPreference', [pref]);
           return { success: res.success, txHash: res.txHash, message: res.success ? `Preferencia configurada a ${params.preference}` : (res.error || 'Revert') };
         }
         case 'deposit_treasury_usdc': {
           const res = await this.executeArbitraryCall(client, 'TREASURY', 'deposit', [params.amount, 0n]);
-          return { success: res.success, txHash: res.txHash, message: res.success ? `Depositados ${params.amount} USDC en Tesorería -> ALPHA emitido` : (res.error || 'Revert') };
+          return { success: res.success, txHash: res.txHash, message: res.success ? `Depositados ${params.amount} USDC en Tesorería -> VIRAJE emitido` : (res.error || 'Revert') };
         }
-        case 'redeem_alpha_usdc': {
+        case 'redeem_viraje_usdc': {
           const res = await this.executeArbitraryCall(client, 'TREASURY', 'emergencyRedeem', [params.amount, 0n]);
-          return { success: res.success, txHash: res.txHash, message: res.success ? `Redimidos ${params.amount} ALPHA -> USDC recibido` : (res.error || 'Revert') };
+          return { success: res.success, txHash: res.txHash, message: res.success ? `Redimidos ${params.amount} VIRAJE -> USDC recibido` : (res.error || 'Revert') };
         }
         case 'buy_vested_bond': {
           const res = await this.executeArbitraryCall(client, 'VESTED_VAULT', 'buyVestedBond', [params.principalAmount || params.amount, params.lockYears || 1, '0x0000000000000000000000000000000000000000']);
@@ -348,8 +348,8 @@ export class DeFiAgentEnv {
           return { success: res.success, txHash: res.txHash, message: res.success ? `Bono maduro #${params.tokenId || 1} reclamado con éxito` : (res.error || 'Revert') };
         }
         case 'borrow_from_treasury': {
-          const res = await this.executeArbitraryCall(client, 'P2P_MARKET', 'borrowFromTreasuryWithAlpha', [params.collateralAmount || 1000, params.borrowAmount || 400, params.durationDays || 30]);
-          return { success: res.success, txHash: res.txHash, message: res.success ? `Préstamo solicitado: ${params.borrowAmount || 400} USDC contra ${params.collateralAmount || 1000} ALPHA` : (res.error || 'Revert') };
+          const res = await this.executeArbitraryCall(client, 'P2P_MARKET', 'borrowFromTreasuryWithViraje', [params.collateralAmount || 1000, params.borrowAmount || 400, params.durationDays || 30]);
+          return { success: res.success, txHash: res.txHash, message: res.success ? `Préstamo solicitado: ${params.borrowAmount || 400} USDC contra ${params.collateralAmount || 1000} VIRAJE` : (res.error || 'Revert') };
         }
         case 'repay_loan': {
           const res = await this.executeArbitraryCall(client, 'P2P_MARKET', 'repayLoan', [params.loanId || 1]);
@@ -412,16 +412,16 @@ export class DeFiAgentEnv {
         functionName: 'totalStaked'
       }) as bigint;
       const stakingTokenBal = await this.publicClient.readContract({
-        address: this.contracts.ALPHA_TOKEN,
+        address: this.contracts.VIRAJE_TOKEN,
         abi: ERC20_ABI,
         functionName: 'balanceOf',
         args: [this.contracts.STAKING]
       }) as bigint;
       const passed = stakingTokenBal >= totalStaked;
       results.push({
-        name: 'Respaldo del Pool de Staking (1:1 stALPHA)',
+        name: 'Respaldo del Pool de Staking (1:1 stVIRAJE)',
         passed,
-        metric: `Staked en contrato: ${formatUnits(totalStaked, 18)} ALPHA | Custodia real: ${formatUnits(stakingTokenBal, 18)} ALPHA`
+        metric: `Staked en contrato: ${formatUnits(totalStaked, 18)} VIRAJE | Custodia real: ${formatUnits(stakingTokenBal, 18)} VIRAJE`
       });
     } catch (e: any) {
       results.push({ name: 'Respaldo de Staking', passed: false, metric: 'Error de consulta', error: e.message });

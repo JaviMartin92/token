@@ -3,12 +3,12 @@ version: '3.8'
 services:
   db:
     image: postgres:15-alpine
-    container_name: alpha_centauri_db
+    container_name: viraje_db
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: alpha_centauri
+      POSTGRES_DB: viraje
     ports:
       - "5432:5432"
     volumes:
@@ -21,7 +21,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: alpha_centauri_redis
+    container_name: viraje_redis
     ports:
       - "6379:6379"
     healthcheck:
@@ -32,7 +32,7 @@ services:
 
   anvil:
     image: ghcr.io/foundry-rs/foundry:latest
-    container_name: alpha_centauri_anvil
+    container_name: viraje_anvil
     ports:
       - "8545:8545"
     # chain-id 31337 matches the viem 'localhost' chain default used in web3.ts
@@ -53,7 +53,7 @@ services:
 
   frontend:
     image: node:20-alpine
-    container_name: alpha_centauri_frontend
+    container_name: viraje_frontend
     working_dir: /app
     volumes:
       - ./frontend:/app

@@ -174,14 +174,14 @@ function generateMarkdownReport(records: AuditRecord[], summary: any): string {
    *Resultado:* **100% CUMPLIDO**. El protocolo se mantuvo permanentemente sobrecolateralizado en todos los escenarios.
 
 3. **Invariante de Reconocimiento Honesto de Pasivos:**  
-   $$\\text{Pasivos Totales} = (\\text{ALPHA en Circulación} \\times \\text{NAV}) + \\text{Obligaciones Devengadas de Bonos}$$  
+   $$\\text{Pasivos Totales} = (\\text{VIRAJE en Circulación} \\times \\text{NAV}) + \\text{Obligaciones Devengadas de Bonos}$$  
    *Resultado:* **100% CUMPLIDO**. Cada bono vendido aumentó instantáneamente los pasivos registrados sin descalces.
 
 4. **Invariante de Ausencia de Fugas de Capital:**  
    Todas las comisiones cobradas en depósitos, reembolsos, préstamos y penalizaciones de salida se dirigieron íntegramente a acrecentar las reservas de tesorería o a la distribución directa en el \`RealYieldRouter\`.
 
 5. **Invariante de Integridad Deflacionaria:**  
-   Los tokens recomprados en el DEX o liquidados por comisiones fueron destruidos irreversiblemente en el contrato \`AlphaToken\`, incrementando permanentemente el contador \`totalBurnedTokens\`.
+   Los tokens recomprados en el DEX o liquidados por comisiones fueron destruidos irreversiblemente en el contrato \`VirajeToken\`, incrementando permanentemente el contador \`totalBurnedTokens\`.
 
 ---
 
@@ -205,7 +205,7 @@ El Agente Supervisor comparó los valores mostrados en pantalla en los elementos
 
 - **Concordancia de NAV:** La desviación máxima observada entre la etiqueta del Header y la función \`getNAVPerShare()\` fue inferior a **$0.0001 USDC** (debido al redondeo institucional a 4 decimales en pantalla).
 - **Concordancia de PoR:** La discrepancia entre la etiqueta del PoR y \`getProofOfReserves()\` fue inferior al **0.01%**, reflejando la solvencia en tiempo real sin latencias perjudiciales.
-- **Concordancia de Pasivos:** Los pasivos mostrados en el desglose de métricas reflejan fielmente la suma de las cuotas de ALPHA y los bonos vestados.
+- **Concordancia de Pasivos:** Los pasivos mostrados en el desglose de métricas reflejan fielmente la suma de las cuotas de VIRAJE y los bonos vestados.
 
 ---
 
