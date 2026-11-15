@@ -29,7 +29,8 @@ const contractsConfigSchema = z.object({
   TIMELOCK: ethAddressSchema.optional().default('0x0000000000000000000000000000000000000000' as `0x${string}`),
   DISCOUNT_BUYBACK_ENGINE: ethAddressSchema.optional().default('0x0000000000000000000000000000000000000000' as `0x${string}`),
   TOKENOMICS_ENGINE: ethAddressSchema.optional().default('0x0000000000000000000000000000000000000000' as `0x${string}`),
-  POST_QUANTUM_GUARD: ethAddressSchema.optional().default('0x0000000000000000000000000000000000000000' as `0x${string}`)
+  POST_QUANTUM_GUARD: ethAddressSchema.optional().default('0x0000000000000000000000000000000000000000' as `0x${string}`),
+  HYPERVISOR: ethAddressSchema.optional().default('0x0000000000000000000000000000000000000000' as `0x${string}`)
 });
 
 export type ValidatedContractsConfig = z.infer<typeof contractsConfigSchema>;
@@ -58,7 +59,8 @@ function loadAndValidateContracts(): ValidatedContractsConfig {
     TIMELOCK: (contractsJson as any).TIMELOCK || '0x0000000000000000000000000000000000000000',
     DISCOUNT_BUYBACK_ENGINE: (contractsJson as any).DISCOUNT_BUYBACK_ENGINE || import.meta.env.VITE_DISCOUNT_BUYBACK_ENGINE_ADDRESS || '0x0000000000000000000000000000000000000000',
     TOKENOMICS_ENGINE: (contractsJson as any).TOKENOMICS_ENGINE || import.meta.env.VITE_TOKENOMICS_ENGINE_ADDRESS || '0x0000000000000000000000000000000000000000',
-    POST_QUANTUM_GUARD: (contractsJson as any).POST_QUANTUM_GUARD || import.meta.env.VITE_POST_QUANTUM_GUARD_ADDRESS || '0x0000000000000000000000000000000000000000'
+    POST_QUANTUM_GUARD: (contractsJson as any).POST_QUANTUM_GUARD || import.meta.env.VITE_POST_QUANTUM_GUARD_ADDRESS || '0x0000000000000000000000000000000000000000',
+    HYPERVISOR: (contractsJson as any).HYPERVISOR || import.meta.env.VITE_HYPERVISOR_ADDRESS || '0x0000000000000000000000000000000000000000'
   };
 
   const parsed = contractsConfigSchema.safeParse(rawAddresses);

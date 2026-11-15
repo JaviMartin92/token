@@ -20,8 +20,8 @@ contract ProtocolAddressProvider is AccessControl {
     bytes32 public constant ID_TREASURY_MANAGER = keccak256("TREASURY_MANAGER");
     bytes32 public constant ID_VIRAJE_VAULT = keccak256("VIRAJE_VAULT");
     bytes32 public constant ID_VIRAJE_TOKEN = keccak256("VIRAJE_TOKEN");
-    bytes32 public constant ID_VIRAJE_VAULT = keccak256("VIRAJE_VAULT");
-    bytes32 public constant ID_VIRAJE_TOKEN = keccak256("VIRAJE_TOKEN");
+    bytes32 public constant ID_ALPHA_VAULT = keccak256("VIRAJE_VAULT");
+    bytes32 public constant ID_ALPHA_TOKEN = keccak256("VIRAJE_TOKEN");
     bytes32 public constant ID_ORACLE_HUB = keccak256("ORACLE_HUB");
     bytes32 public constant ID_TOKENOMICS_ENGINE = keccak256("TOKENOMICS_ENGINE");
     bytes32 public constant ID_GOVERNANCE_STAKING = keccak256("GOVERNANCE_STAKING");
@@ -36,6 +36,7 @@ contract ProtocolAddressProvider is AccessControl {
     bytes32 public constant ID_CIRCUIT_BREAKER = keccak256("CIRCUIT_BREAKER");
     bytes32 public constant ID_GOVERNOR = keccak256("GOVERNOR");
     bytes32 public constant ID_TIMELOCK = keccak256("TIMELOCK");
+    bytes32 public constant ID_HYPERVISOR = keccak256("HYPERVISOR");
 
     // =========================================================================
     // 📦 ALMACENAMIENTO & EVENTOS
@@ -178,5 +179,9 @@ contract ProtocolAddressProvider is AccessControl {
 
     function getTimelock() external view returns (address) {
         return getAddress(ID_TIMELOCK);
+    }
+
+    function getHypervisor() external view returns (address) {
+        return getAddress(ID_HYPERVISOR);
     }
 }

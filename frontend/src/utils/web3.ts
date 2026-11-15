@@ -470,5 +470,57 @@ export const ABIS = {
   ] as const,
   TIMELOCK: [
     { name: 'delay', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] }
+  ] as const,
+  HYPERVISOR: [
+    {
+      name: 'inspectPreFlight',
+      type: 'function',
+      stateMutability: 'view',
+      inputs: [
+        { name: 'target', type: 'address' },
+        { name: 'data', type: 'bytes' },
+        { name: 'user', type: 'address' }
+      ],
+      outputs: [
+        {
+          name: 'report',
+          type: 'tuple',
+          components: [
+            { name: 'isSafe', type: 'bool' },
+            { name: 'severity', type: 'uint8' },
+            { name: 'riskScore', type: 'uint8' },
+            { name: 'currentNAVPerShare', type: 'uint256' },
+            { name: 'projectedNAVPerShare', type: 'uint256' },
+            { name: 'currentCollateralRatioBps', type: 'uint256' },
+            { name: 'projectedCollateralRatioBps', type: 'uint256' },
+            { name: 'totalTreasuryDebtUSD', type: 'uint256' },
+            { name: 'maxTreasuryDebtCapUSD', type: 'uint256' },
+            { name: 'anomalyCode', type: 'bytes32' },
+            { name: 'summary', type: 'string' }
+          ]
+        }
+      ]
+    },
+    {
+      name: 'assessTreasuryHealth',
+      type: 'function',
+      stateMutability: 'view',
+      inputs: [],
+      outputs: [
+        {
+          name: 'health',
+          type: 'tuple',
+          components: [
+            { name: 'isHealthy', type: 'bool' },
+            { name: 'navPerShare', type: 'uint256' },
+            { name: 'collateralRatioBps', type: 'uint256' },
+            { name: 'totalAssetsUSD', type: 'uint256' },
+            { name: 'totalLiabilitiesUSD', type: 'uint256' },
+            { name: 'totalDebtUSD', type: 'uint256' },
+            { name: 'maxDebtCapUSD', type: 'uint256' }
+          ]
+        }
+      ]
+    }
   ] as const
 };
