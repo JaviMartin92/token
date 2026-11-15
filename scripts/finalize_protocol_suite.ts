@@ -101,15 +101,27 @@ async function main() {
   const feedWbtc = '0x70f24873bc1dd09efc8b0d8c7c48773d7b181f02' as `0x${string}`;
   const feedWeth = '0xb442ce5542687395fbcddfb4d471dcaf684fc743' as `0x${string}`;
 
+  async function getGasFees() {
+    try {
+      const fees = await publicClient.estimateFeesPerGas();
+      const maxFee = fees.maxFeePerGas ? (fees.maxFeePerGas * 150n) / 100n : 50000000n;
+      const maxPriority = fees.maxPriorityFeePerGas ? fees.maxPriorityFeePerGas : 1000000n;
+      return { maxFeePerGas: maxFee > 36000000n ? maxFee : 36000000n, maxPriorityFeePerGas: maxPriority };
+    } catch (_) {
+      return { maxFeePerGas: 45000000n, maxPriorityFeePerGas: 1000000n };
+    }
+  }
+
   async function deploy(contractName: string, abi: any[], bytecode: `0x${string}`, args: any[] = []): Promise<`0x${string}`> {
     process.stdout.write(`[*] Desplegando ${contractName.padEnd(35)} ... `);
+    const gas = await getGasFees();
     const hash = await walletClient.deployContract({
       abi,
       bytecode,
       args,
       account,
-      maxFeePerGas: 36000000n,
-      maxPriorityFeePerGas: 1000000n
+      maxFeePerGas: gas.maxFeePerGas,
+      maxPriorityFeePerGas: gas.maxPriorityFeePerGas
     });
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
     if (!receipt.contractAddress) {
@@ -121,14 +133,15 @@ async function main() {
 
   async function sendTx(desc: string, to: `0x${string}`, abi: any[], functionName: string, args: any[] = []) {
     process.stdout.write(`[*] ${desc.padEnd(52)} ... `);
+    const gas = await getGasFees();
     const hash = await walletClient.writeContract({
       address: to,
       abi,
       functionName,
       args,
       account,
-      maxFeePerGas: 36000000n,
-      maxPriorityFeePerGas: 1000000n
+      maxFeePerGas: gas.maxFeePerGas,
+      maxPriorityFeePerGas: gas.maxPriorityFeePerGas
     });
     await publicClient.waitForTransactionReceipt({ hash });
     console.log(`✅ OK`);
@@ -149,8 +162,8 @@ async function main() {
 
   const oracleHubArtifact = loadArtifact('OracleHub');
   const circuitBreakerArtifact = loadArtifact('CircuitBreaker');
-  await sendTx('Ampliar tolerancia caducidad OracleHub (7 días)', oracleHubAddr, oracleHubArtifact.abi, 'setOracleStalenessLimit', [7n * 86400n]);
-  await sendTx('Ampliar tolerancia caducidad Breaker (7 días)', circuitBreakerAddr, circuitBreakerArtifact.abi, 'setOracleStalenessLimit', [7n * 86400n]);
+  await sendTx('Ampliar tolerancia caducidad OracleHub (24h max)', oracleHubAddr, oracleHubArtifact.abi, 'setOracleStalenessLimit', [86400n]);
+  await sendTx('Ampliar tolerancia caducidad Breaker (24h max)', circuitBreakerAddr, circuitBreakerArtifact.abi, 'setOracleStalenessLimit', [86400n]);
   await sendTx('Configurar Feed USDT en CircuitBreaker', circuitBreakerAddr, circuitBreakerArtifact.abi, 'setPriceFeed', [usdtAddr, feedUsdt]);
 
   // ============================================================================
