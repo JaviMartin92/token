@@ -49,12 +49,6 @@ contract FounderReserveVestingVault is AccessControl, ReentrancyGuard {
         uint256 surplusUSD,
         uint256 timestamp
     );
-    event VirajeClaimed(
-        address indexed beneficiary,
-        uint256 amountViraje,
-        uint256 surplusUSD,
-        uint256 timestamp
-    );
     event BeneficiaryUpdated(address indexed oldBeneficiary, address indexed newBeneficiary);
     event TreasuryManagerUpdated(address indexed oldTreasury, address indexed newTreasury);
 
@@ -86,10 +80,6 @@ contract FounderReserveVestingVault is AccessControl, ReentrancyGuard {
         virajeToken = IERC20(_virajeToken);
         treasuryManager = _treasuryManager;
         beneficiary = _beneficiary;
-    }
-
-    function virajeToken() external view returns (address) {
-        return address(virajeToken);
     }
 
     /**
@@ -211,10 +201,5 @@ contract FounderReserveVestingVault is AccessControl, ReentrancyGuard {
         virajeToken.safeTransfer(beneficiary, claimedAmount);
 
         emit VirajeClaimed(beneficiary, claimedAmount, surplusUSD, block.timestamp);
-        emit VirajeClaimed(beneficiary, claimedAmount, surplusUSD, block.timestamp);
-    }
-
-    function claimVestedViraje() external returns (uint256 claimedAmount) {
-        return claimVestedViraje();
     }
 }

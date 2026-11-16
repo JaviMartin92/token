@@ -13,7 +13,7 @@ import { arbitrumSepolia } from 'viem/chains';
 import fs from 'fs';
 import path from 'path';
 import readline from 'readline';
-const { compileLibrary, compileTreasuryManager } = require('./modular_compiler.js');
+const { compileContract, compileLibrary, compileTreasuryManager } = require('./modular_compiler.js');
 
 const rootDir = path.resolve(__dirname, '..');
 const RPC_URL =
@@ -43,10 +43,19 @@ function loadArtifact(name: string, file?: string) {
     path.resolve(rootDir, `contracts/out/mocks/${file || ''}/${name}.json`)
   ];
   const found = paths.find((p) => fs.existsSync(p));
-  if (!found) {
-    throw new Error(`[Artifact Error] No se encontró el artifact para ${name}.`);
+  if (found) {
+    return JSON.parse(fs.readFileSync(found, 'utf8'));
   }
-  return JSON.parse(fs.readFileSync(found, 'utf8'));
+  // Compilar on-the-fly con solc si no existe en contracts/out
+  process.stdout.write(`[*] Compilando artifact para ${name} en tiempo real con solc... `);
+  try {
+    const compiled = compileContract(name, file);
+    console.log('✅ Compilado');
+    return compiled;
+  } catch (err: any) {
+    console.log('❌ Error');
+    throw new Error(`[Artifact Error] No se encontró ni se pudo compilar el artifact para ${name}: ${err.message || err}`);
+  }
 }
 
 async function main() {

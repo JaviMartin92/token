@@ -881,7 +881,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     /**
      * @notice Returns the canonical VirajeVault custody address (backward-compatible alias).
      */
-    function virajeVault() external view returns (address) {
+    function alphaVault() external view returns (address) {
         return addressProvider.getVirajeVault();
     }
 

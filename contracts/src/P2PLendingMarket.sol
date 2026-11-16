@@ -100,8 +100,6 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
     }
 
     // Backward-compatible aliases
-    function virajeToken() external view returns (address) { return virajeToken; }
-    function virajeCollateralHaircutBps() external view returns (uint256) { return virajeCollateralHaircutBps; }
     function setAlphaToken(address _token) external onlyOwner { setVirajeToken(_token); }
 
     function setWbtcToken(address _wbtcToken) external onlyOwner {
@@ -265,10 +263,6 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         uint256 navPerShare = ITreasury(treasury).getNAVPerShare(); // 18 decimals
         uint256 fullUSD = (amount * navPerShare) / 1e30; // 6 decimals
         return (fullUSD * virajeCollateralHaircutBps) / 10000;
-    }
-
-    function _virajeCollateralValueUSD(uint256 amount) internal view returns (uint256) {
-        return _virajeCollateralValueUSD(amount);
     }
 
     function _isCircularLoan(uint256 loanId, Loan storage loan) internal view returns (bool) {
@@ -525,7 +519,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         uint256 maxLtvBps;
         uint256 collateralUSD; // 6 decimals
 
-        if (collateralAsset == virajeToken || collateralAsset == virajeToken()) {
+        if (collateralAsset == virajeToken) {
             maxLtvBps = 5000; // 50% Max LTV for VIRAJE
             collateralUSD = _virajeCollateralValueUSD(collateralAmount); // 6 decimals, haircut NAV
         } else if (collateralAsset == wbtcToken) {
@@ -544,7 +538,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
 
         uint256 maxBorrow = (collateralUSD * maxLtvBps) / 10000;
         if (borrowAmount > maxBorrow) revert MaxLTVExceeded(borrowAmount, maxBorrow);
-        _assertTreasuryCapacity(borrowAmount, collateralAsset == virajeToken || collateralAsset == virajeToken());
+        _assertTreasuryCapacity(borrowAmount, collateralAsset == virajeToken);
 
         loanId = nextLoanId;
         unchecked {
@@ -586,16 +580,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         uint256 borrowAmount,
         uint256 durationDays
     ) public returns (uint256 loanId) {
-        address tok = virajeToken != address(0) ? virajeToken : virajeToken();
-        return borrowFromTreasuryWithAsset(tok, virajeCollateralAmount, borrowAmount, durationDays);
-    }
-
-    function borrowFromTreasuryWithViraje(
-        uint256 virajeCollateralAmount,
-        uint256 borrowAmount,
-        uint256 durationDays
-    ) external returns (uint256 loanId) {
-        return borrowFromTreasuryWithViraje(virajeCollateralAmount, borrowAmount, durationDays);
+        return borrowFromTreasuryWithAsset(virajeToken, virajeCollateralAmount, borrowAmount, durationDays);
     }
 
     function cancelLoan(uint256 loanId) public nonReentrant {
@@ -724,7 +709,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
             }
         } else if (loan.collateralAmount > 0) {
             address colAsset = loanCollateralAsset[loanId];
-            if ((colAsset == virajeToken || colAsset == virajeToken()) && treasury != address(0)) {
+            if (colAsset == virajeToken && treasury != address(0)) {
                 // NAV failure must not silently fall back to raw token units (H-04). A
                 // revert blocks liquidations instead of mispricing them.
                 collateralUSD = _virajeCollateralValueUSD(loan.collateralAmount);
@@ -941,14 +926,14 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         uint256 owedWithBonusUSD = (totalOwed * (10000 + LIQUIDATION_BONUS_BPS)) / 10000;
         uint256 seizeAmount = loan.collateralAmount;
 
-        if (targetAsset != stablecoin && targetAsset != virajeToken && targetAsset != virajeToken()) {
+        if (targetAsset != stablecoin && targetAsset != virajeToken) {
             if (priceFeed == address(0)) revert IProtocolErrors.PriceFeedNotSet();
             uint256 price18 = IOracleHub(priceFeed).getPriceBase18(targetAsset);
             if (price18 == 0) revert IProtocolErrors.InvalidPrice();
             uint8 dec = (targetAsset == wbtcToken) ? 8 : 18;
             uint256 neededCol = (owedWithBonusUSD * (10 ** (12 + dec))) / price18;
             if (neededCol < seizeAmount) seizeAmount = neededCol;
-        } else if ((targetAsset == virajeToken || targetAsset == virajeToken()) && treasury != address(0)) {
+        } else if (targetAsset == virajeToken && treasury != address(0)) {
             uint256 nav = ITreasury(treasury).getNAVPerShare();
             if (nav == 0) revert IProtocolErrors.InvalidPrice();
             uint256 neededCol = (owedWithBonusUSD * 1e30) / nav;

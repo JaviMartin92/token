@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./ProtocolRoles.sol";
-import "./lib/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./lib/security/ReentrancyGuard.sol";
 import "./interfaces/ITreasury.sol";
 import "./interfaces/IProtocolErrors.sol";
@@ -424,10 +424,6 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
 
     address public virajeVault;
     address public promoVault;
-
-    function virajeVault() external view returns (address) {
-        return virajeVault;
-    }
 
     function setReserveVaults(address _virajeVault, address _promoVault) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         if (_virajeVault == address(0) || _promoVault == address(0)) revert IProtocolErrors.ZeroAddress();

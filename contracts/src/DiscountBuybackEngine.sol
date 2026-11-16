@@ -93,10 +93,6 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
     uint256 public totalBuybackVolumeUSD;
     uint256 public totalVirajeBurned;
 
-    function totalVirajeBurned() external view returns (uint256) {
-        return totalVirajeBurned;
-    }
-
     // --- Events ---
     event DiscountBuybackExecuted(
         uint256 usdcSpent,

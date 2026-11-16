@@ -30,10 +30,6 @@ contract PromotionalIncentiveVault is AccessControl, ReentrancyGuard {
     // --- Immutables & State Variables ---
     IERC20 public immutable virajeToken;
 
-    function virajeToken() external view returns (address) {
-        return address(virajeToken);
-    }
-
     uint256 public totalAllocatedPool;
     uint256 public totalDistributed;
     uint256 public campaignCount;

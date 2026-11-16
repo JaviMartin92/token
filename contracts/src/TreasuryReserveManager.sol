@@ -44,10 +44,6 @@ contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
     uint256 public totalRebalancedVolume;
     uint256 public lastProductionRebalanceTimestamp;
 
-    function virajeVault() external view returns (address) {
-        return virajeVault;
-    }
-
     // --- Events ---
     event VirajeVaultUpdated(address indexed oldVault, address indexed newVault);
     event AlphaVaultUpdated(address indexed oldVault, address indexed newVault);

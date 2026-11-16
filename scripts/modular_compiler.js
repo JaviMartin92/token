@@ -5,16 +5,85 @@ const path = require('path');
 const rootDir = path.resolve(__dirname, '..');
 
 function findImports(importPath) {
+  let resolvedPath = '';
   if (importPath.startsWith('@openzeppelin/contracts/')) {
-    const p = path.resolve(rootDir, 'contracts/src/lib', importPath.replace('@openzeppelin/contracts/', ''));
-    const f = p.endsWith('.sol') ? p : p + '.sol';
-    if (fs.existsSync(f)) return { contents: fs.readFileSync(f, 'utf8') };
+    resolvedPath = path.resolve(rootDir, 'contracts/src/lib', importPath.replace('@openzeppelin/contracts/', ''));
+  } else if (importPath.startsWith('./lib/')) {
+    resolvedPath = path.resolve(rootDir, 'contracts/src/lib', importPath.replace('./lib/', ''));
+  } else if (importPath.startsWith('../lib/')) {
+    resolvedPath = path.resolve(rootDir, 'contracts/src/lib', importPath.replace('../lib/', ''));
+  } else if (importPath.startsWith('lib/')) {
+    resolvedPath = path.resolve(rootDir, 'contracts/src/lib', importPath.replace('lib/', ''));
+  } else if (path.isAbsolute(importPath)) {
+    resolvedPath = importPath;
+  } else {
+    const p1 = path.resolve(rootDir, 'contracts/src', importPath);
+    if (fs.existsSync(p1) || fs.existsSync(p1 + '.sol')) {
+      resolvedPath = p1;
+    } else {
+      resolvedPath = path.resolve(rootDir, 'contracts/src/lib', importPath);
+    }
   }
-  const p1 = path.resolve(rootDir, 'contracts/src', importPath);
-  if (fs.existsSync(p1)) return { contents: fs.readFileSync(p1, 'utf8') };
-  const p2 = path.resolve(rootDir, 'contracts/src/lib', importPath);
-  if (fs.existsSync(p2)) return { contents: fs.readFileSync(p2, 'utf8') };
+  if (!resolvedPath.endsWith('.sol') && fs.existsSync(resolvedPath + '.sol')) {
+    resolvedPath += '.sol';
+  }
+  if (fs.existsSync(resolvedPath)) {
+    return { contents: fs.readFileSync(resolvedPath, 'utf8') };
+  }
   return { error: 'Not found: ' + importPath };
+}
+
+function compileContract(contractName, fileName) {
+  const file = fileName || (contractName + '.sol');
+  const possiblePaths = [
+    path.resolve(rootDir, 'contracts/src', file),
+    path.resolve(rootDir, 'contracts/src/lib', file),
+    path.resolve(rootDir, 'contracts/test/mocks', file),
+    path.resolve(rootDir, 'contracts/test', file),
+    path.resolve(rootDir, 'contracts/src/adapters', file)
+  ];
+  const foundFile = possiblePaths.find((p) => fs.existsSync(p));
+  if (!foundFile) {
+    throw new Error(`[Compiler Error] Source file for ${contractName} not found in search paths.`);
+  }
+
+  const content = fs.readFileSync(foundFile, 'utf8');
+  const baseName = path.basename(foundFile);
+  const input = {
+    language: 'Solidity',
+    sources: { [baseName]: { content } },
+    settings: {
+      optimizer: { enabled: true, runs: 200 },
+      outputSelection: {
+        '*': {
+          '*': ['abi', 'evm.bytecode.object', 'evm.deployedBytecode.object']
+        }
+      }
+    }
+  };
+
+  const output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
+  if (output.errors && output.errors.some((e) => e.severity === 'error')) {
+    throw new Error(`Failed to compile ${contractName}: ${JSON.stringify(output.errors)}`);
+  }
+
+  const contract = output.contracts[baseName][contractName] || Object.values(output.contracts[baseName])[0];
+  const bytecodeObj = contract.evm.bytecode.object;
+  const deployedBytecodeObj = contract.evm.deployedBytecode.object;
+
+  const artifact = {
+    abi: contract.abi,
+    bytecode: { object: `0x${bytecodeObj.replace(/^0x/, '')}` },
+    deployedBytecode: { object: `0x${deployedBytecodeObj.replace(/^0x/, '')}` }
+  };
+
+  const outDir = path.resolve(rootDir, `contracts/out/${baseName}`);
+  if (!fs.existsSync(outDir)) {
+    fs.mkdirSync(outDir, { recursive: true });
+  }
+  fs.writeFileSync(path.join(outDir, `${contractName}.json`), JSON.stringify(artifact, null, 2));
+
+  return artifact;
 }
 
 function compileLibrary(libName) {
@@ -78,6 +147,7 @@ function compileTreasuryManager(libraries) {
 }
 
 module.exports = {
+  compileContract,
   compileLibrary,
   compileTreasuryManager
 };

@@ -37,10 +37,6 @@ contract GovernorViraje is AccessControl {
     address public promoVault;
     address public founderVault;
 
-    function virajeVault() external view returns (address) {
-        return virajeVault;
-    }
-
     event PromoVaultUpdated(address indexed oldVault, address indexed newVault);
     event FounderVaultUpdated(address indexed oldVault, address indexed newVault);
 

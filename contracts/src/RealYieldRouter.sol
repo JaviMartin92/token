@@ -45,10 +45,6 @@ contract RealYieldRouter is AccessControl, ReentrancyGuard {
     address public weth;
     address public virajeToken;
 
-    function virajeToken() external view returns (address) {
-        return virajeToken;
-    }
-
     enum PayoutPreference { BASKET, ALL_USDC }
     mapping(address => PayoutPreference) public userPayoutPreference;
     mapping(address => bool) public authorizedYieldCallers;
