@@ -143,6 +143,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
 
     // Timelock state (Anti Flash-Loan Voting)
     uint256 public constant MIN_STAKE_DURATION = 7 days;
+    uint256 public constant STAKING_ENTRY_FEE_BPS = 0; // 0.00% Frictionless Staking Entry
     mapping(address => uint256) public lastStakeTime;
 
     event Staked(address indexed user, uint256 amount);
@@ -298,8 +299,8 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
             lastStakeTime[msg.sender] = block.timestamp;
         }
 
-        // 1% Staking Entry Fee — 100% burned for deflationary reserve accretion
-        uint256 fee = (amount * 100) / 10000;
+        // 0% Staking Entry Fee — 100% net stake (Zero friction)
+        uint256 fee = (amount * STAKING_ENTRY_FEE_BPS) / 10000;
         uint256 netStake = amount - fee;
 
         totalStaked += netStake;

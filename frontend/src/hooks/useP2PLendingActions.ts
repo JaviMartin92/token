@@ -116,8 +116,8 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
     const apr = (parseFloat(p2pInterestBps) / 100).toFixed(2);
 
     if (requestConfirmation) {
-      const origFee = (parseFloat(p2pBorrowAmount) * 0.005).toFixed(2);
-      const netBorrow = (parseFloat(p2pBorrowAmount) * 0.995).toFixed(2);
+      const origFee = (parseFloat(p2pBorrowAmount) * 0.0025).toFixed(2);
+      const netBorrow = (parseFloat(p2pBorrowAmount) * 0.9975).toFixed(2);
 
       requestConfirmation({
         title: `Publicar Oferta P2P con NFT #${p2pTokenId}`,
@@ -128,10 +128,10 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         inputAmount: `NFT #${p2pTokenId}`,
         inputSymbol: 'Garantía Colateral Custodiada',
         expectedOutput: `$${netBorrow}`,
-        expectedOutputSymbol: 'USDC Prestado Neto (Tras Fee 0.5%)',
+        expectedOutputSymbol: 'USDC Prestado Neto (Tras Fee 0.25%)',
         details: [
           { label: 'Monto Solicitado Bruto', value: `$${p2pBorrowAmount} USDC` },
-          { label: 'Comisión de Originación (0.50%)', value: `$${origFee} USDC`, badge: '100% a Stakers Real Yield' },
+          { label: 'Comisión de Originación (0.25%)', value: `$${origFee} USDC`, badge: '100% a Stakers Real Yield' },
           { label: 'Monto Neto Recibido por Prestamista', value: `$${netBorrow} USDC` },
           { label: 'Tasa de Interés Propuesta', value: `${apr}% APR (${p2pInterestBps} BPS)` },
           { label: 'Plazo del Préstamo', value: `${p2pDays} Días` },
@@ -181,8 +181,8 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
     const colVal = customCollateralStr ? parseFloat(customCollateralStr) : numBorrow * 1.4;
     const borrowWei = parseUnits(numBorrow.toFixed(6), 6);  // USDC = 6 decimals
     const ratioPct = numBorrow > 0 ? ((colVal / numBorrow) * 100).toFixed(2) : '140.00';
-    const origFee = (numBorrow * 0.005).toFixed(2);
-    const netBorrow = (numBorrow * 0.995).toFixed(2);
+    const origFee = (numBorrow * 0.0025).toFixed(2);
+    const netBorrow = (numBorrow * 0.9975).toFixed(2);
 
     if (requestConfirmation) {
       requestConfirmation({
@@ -198,7 +198,7 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         details: [
           { label: 'ID Préstamo', value: `#${loanId}` },
           { label: 'Ratio de Colateralización Calculado', value: `${ratioPct}%`, badge: `LTV: ${(100 / parseFloat(ratioPct) * 100).toFixed(1)}%` },
-          { label: 'Comisión de Originación (0.5%)', value: `$${origFee} USDC (Destino: Real Yield Flywheel)` },
+          { label: 'Comisión de Originación (0.25%)', value: `$${origFee} USDC (Destino: Real Yield Flywheel)` },
           { label: 'Desembolso Neto al Prestatario', value: `$${netBorrow} USDC` }
         ],
         warningNote: 'Obtendrás derechos de cobro de intereses más principal. Si el prestatario entra en impago, podrás ejecutar auto-liquidación.',
@@ -704,10 +704,10 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
             return;
           }
           const basePrice = (pos.discountedPricePaid && pos.discountedPricePaid > 0n) ? pos.discountedPricePaid : pos.principalAmount;
-          const maxBorrowAllowed = (basePrice * 2500n) / 10000n; // 25% LTV efectivo
+          const maxBorrowAllowed = (basePrice * 4550n) / 10000n; // 45.5% LTV efectivo (65% haircut x 70% max LTV)
           if (amountWei > maxBorrowAllowed) {
             const maxUsdStr = formatUnits(maxBorrowAllowed, 6);
-            addToast('warning', 'Límite LTV Excedido', `El crédito máximo permitido para el NFT #${tokenIdBig} es de $${maxUsdStr} USDC (25% LTV efectivo con haircut).`);
+            addToast('warning', 'Límite LTV Excedido', `El crédito máximo permitido para el NFT #${tokenIdBig} es de $${maxUsdStr} USDC (45.5% LTV efectivo con haircut).`);
             return;
           }
         } catch (e: any) {
@@ -1015,10 +1015,10 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         expectedOutput: `$${numAmt.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
         expectedOutputSymbol: 'USDC Desembolsado a tu Billetera',
         details: [
-          { label: 'Tipo de Colateral', value: collateralType === 'nft' ? 'NFT Posición (25% LTV Efectivo [50% Haircut x 50% LTV])' : `${colSymbol} (${collateralType === 'viraje' ? '25% LTV Efectivo' : collateralType === 'weth' ? '75%' : '70%'} Max LTV)` },
-          { label: 'Tasa Fija Tesorería', value: '8.00% APR (800 BPS)', badge: 'Garantía Institucional' },
-          { label: 'Comisión de Originación (0.50%)', value: `$${(numAmt * 0.005).toFixed(2)} USDC`, badge: '100% Inyectado a Flywheel Real Yield' },
-          { label: 'Interés Devengado Est. (' + (daysStr || '30') + ' Días)', value: `+$${(numAmt * 0.08 * (parseFloat(daysStr || '30') / 365)).toFixed(2)} USDC`, badge: '90% Tesorería / 10% Stakers' },
+          { label: 'Tipo de Colateral', value: collateralType === 'nft' ? 'NFT Posición (45.5% LTV Efectivo [65% Haircut x 70% LTV])' : `${colSymbol} (${collateralType === 'viraje' ? '25% LTV Efectivo' : collateralType === 'weth' ? '80%' : '75%'} Max LTV)` },
+          { label: 'Tasa Fija Tesorería', value: '6.00% APR (600 BPS)', badge: 'Garantía Institucional' },
+          { label: 'Comisión de Originación (0.25%)', value: `$${(numAmt * 0.0025).toFixed(2)} USDC`, badge: '100% Inyectado a Flywheel Real Yield' },
+          { label: 'Interés Devengado Est. (' + (daysStr || '30') + ' Días)', value: `+$${(numAmt * 0.06 * (parseFloat(daysStr || '30') / 365)).toFixed(2)} USDC`, badge: '90% Tesorería / 10% Stakers' },
           { label: 'Origen de Fondos', value: '20% Pool de Reservas Líquidas' }
         ],
         warningNote: 'La Tesorería financiará tu préstamo de forma inmediata. La garantía quedará en custodia del contrato de Escrow hasta el reembolso total.',

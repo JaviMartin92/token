@@ -84,9 +84,9 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
     maxTotalDebtUSD: 7634.25,
     currentTotalDebtUSD: 0,
     availableCapacityUSD: 7634.25,
-    circularCapBps: 2500,
+    circularCapBps: 4500,
     circularDebtUSD: 0,
-    circularCapacityUSD: 1908.56
+    circularCapacityUSD: 3435.41
   }
 }) => {
   const [filterTab, setFilterTab] = useState<'all' | 'created' | 'active' | 'my' | 'history'>('all');
@@ -94,8 +94,8 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
 
   const MAX_LTV_MAP: Record<string, number> = {
     viraje: 0.25, // 50% Haircut institucional x 50% Max LTV = 25% LTV efectivo
-    wbtc: 0.70,
-    weth: 0.75
+    wbtc: 0.75,
+    weth: 0.80
   };
 
   const ASSET_PRICE_MAP: Record<string, number> = {
@@ -106,12 +106,12 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
 
   const isCircularCol = treasuryColType === 'nft' || treasuryColType === 'viraje';
   const effectiveFacilityCap = isCircularCol
-    ? (treasuryCreditStats?.circularCapacityUSD ?? 1908.56)
+    ? (treasuryCreditStats?.circularCapacityUSD ?? 3435.41)
     : (treasuryCreditStats?.availableCapacityUSD ?? 7634.25);
 
   const selectedPos = userPositions.find(p => p.id.toString() === p2pTokenId);
   const nftPaidVal = selectedPos ? parseFloat((selectedPos.paid || selectedPos.principal || '0').replace(/,/g, '')) : 0;
-  const nftMaxBorrowLtv = Math.floor(nftPaidVal * 0.25);
+  const nftMaxBorrowLtv = Math.floor(nftPaidVal * 0.455);
   const maxSafeBorrow = treasuryColType === 'nft'
     ? (selectedPos ? Math.min(nftMaxBorrowLtv, effectiveFacilityCap) : effectiveFacilityCap)
     : effectiveFacilityCap;
@@ -246,7 +246,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                 </>
               ) : (
                 <div className={styles.colCalcBox}>
-                  ⚡ {autoCalculatedColAmount} {treasuryColType === 'viraje' ? 'VIRAJE' : treasuryColType.toUpperCase()} (${requiredUsdBacking.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD Respaldo @ {(currentLtv * 100).toFixed(0)}% LTV Efectivo [50% Haircut x 50% LTV])
+                  ⚡ {autoCalculatedColAmount} {treasuryColType === 'viraje' ? 'VIRAJE' : treasuryColType.toUpperCase()} (${requiredUsdBacking.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD Respaldo @ {(currentLtv * 100).toFixed(0)}% {treasuryColType === 'viraje' ? 'LTV Efectivo [50% Haircut x 50% LTV]' : 'Max LTV'})
                 </div>
               )}
             </div>

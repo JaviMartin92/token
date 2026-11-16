@@ -131,7 +131,7 @@ export function useTreasuryActions({ activeKey, userAddress, addLog, addToast, f
     if (isNaN(num) || num <= 0) return;
 
     if (requestConfirmation) {
-      let dynamicFeeBps = 50;
+      let dynamicFeeBps = 0;
       let spotNavNum = navPerShareNum || 1.0;
       try {
         const totalAssetsExo = await publicClient.readContract({

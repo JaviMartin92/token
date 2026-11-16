@@ -17,22 +17,22 @@ contract ProtocolTokenomicsEngine is AccessControl {
     uint256 public constant BPS_DENOMINATOR = 10000;
 
     // Default Fees (in BPS)
-    uint256 public depositFeeBps = 50; // 0.50%
+    uint256 public depositFeeBps = 0; // 0.00% Frictionless Deposit
     uint256 public redeemFeeBps = 100; // 1.00%
-    uint256 public originationFeeBps = 50; // 0.50%
+    uint256 public originationFeeBps = 25; // 0.25%
     uint256 public interestSpreadBps = 1000; // 10.00% to Staking Flywheel
     uint256 public ragequitPenaltyBps = 1500; // 15.00%
-    uint256 public mintFeeBps = 150; // 1.50%
+    uint256 public mintFeeBps = 0; // 0.00% Zero-Friction Mint Fee
     uint256 public referralFeeBps = 150; // 1.50%
-    uint256 public stakingEntryFeeBps = 100; // 1.00%
+    uint256 public stakingEntryFeeBps = 0; // 0.00% Frictionless Staking Entry
 
     // Bounds & Caps
-    uint256 public baseYieldRateBps = 500; // 5.00% per year lockup
+    uint256 public baseYieldRateBps = 1000; // 10.00% per year lockup (Competitive Discount Scale)
     uint256 public maxBondDiscountBps = 5000; // 50.00% Max Discount Cap
     uint256 public maxLtvBps = 7000; // 70.00% Max LTV
     uint256 public minHealthFactorBps = 11500; // 115% Liquidation Threshold
     uint256 public maxAprBps = 5000; // 50.00% Max APR
-    uint256 public treasuryBorrowAprBps = 800; // 8.00% Fixed Treasury Borrow APR default
+    uint256 public treasuryBorrowAprBps = 600; // 6.00% Fixed Treasury Borrow APR default
 
     // Events
     event ParametersUpdated(string parameterGroup);

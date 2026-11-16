@@ -17,9 +17,9 @@ export function useP2PMarketplace(refetchInterval = 3000) {
     maxTotalDebtUSD: 7634.25,
     currentTotalDebtUSD: 0,
     availableCapacityUSD: 7634.25,
-    circularCapBps: 2500,
+    circularCapBps: 4500,
     circularDebtUSD: 0,
-    circularCapacityUSD: 1908.56
+    circularCapacityUSD: 3435.41
   } } = useQuery<TreasuryCreditStats>({
     queryKey: ['treasuryCreditStats'],
     queryFn: async () => {
@@ -45,7 +45,7 @@ export function useP2PMarketplace(refetchInterval = 3000) {
         const maxTotalDebt = limits ? BigInt((limits as any).maxTotalDebt ?? limits[0]) : 0n;
         const currentTotalDebt = limits ? BigInt((limits as any).currentTotalDebt ?? limits[1]) : 0n;
         const availableCapacity = limits ? BigInt((limits as any).availableCapacity ?? limits[2]) : 0n;
-        const circularCapBps = Number(capBps || 2500n);
+        const circularCapBps = Number(capBps || 4500n);
         const circularDebt = BigInt(circDebt || 0n);
 
         const circularLimit = (maxTotalDebt * BigInt(circularCapBps)) / 10000n;
@@ -64,9 +64,9 @@ export function useP2PMarketplace(refetchInterval = 3000) {
           maxTotalDebtUSD: 7634.25,
           currentTotalDebtUSD: 0,
           availableCapacityUSD: 7634.25,
-          circularCapBps: 2500,
+          circularCapBps: 4500,
           circularDebtUSD: 0,
-          circularCapacityUSD: 1908.56
+          circularCapacityUSD: 3435.41
         };
       }
     },

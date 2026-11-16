@@ -58,12 +58,12 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
       const virajeBalance = 5000.00;  // VirajeToken.balanceOf(user)
       const navPerShareUSD = 1.0050;
 
-      const depositFeeBps = 50; // 0.50% de ProtocolTokenomicsEngine
+      const depositFeeBps = 0; // 0.00% base sin fricción de ProtocolTokenomicsEngine
       const redeemFeeBps = 100; // 1.00% de ProtocolTokenomicsEngine
 
       const depositAmountUSD = 1000.00;
-      const netDepositUSD = depositAmountUSD * (10000 - depositFeeBps) / 10000; // $995.00
-      const expectedSharesMinted = netDepositUSD / navPerShareUSD; // ~990.05 VIRAJE
+      const netDepositUSD = depositAmountUSD * (10000 - depositFeeBps) / 10000; // $1,000.00
+      const expectedSharesMinted = netDepositUSD / navPerShareUSD; // ~995.02 VIRAJE
 
       const redeemShares = 500.00;
       const grossRedeemUSD = redeemShares * navPerShareUSD; // $502.50 USD
@@ -71,8 +71,8 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
 
       expect(usdcBalance).toBe(10000.00);
       expect(virajeBalance).toBe(5000.00);
-      expect(netDepositUSD).toBe(995.00);
-      expect(expectedSharesMinted).toBeCloseTo(990.05, 2);
+      expect(netDepositUSD).toBe(1000.00);
+      expect(expectedSharesMinted).toBeCloseTo(995.02, 2);
       expect(netRedeemUSD).toBeCloseTo(497.475, 2);
     });
   });
@@ -81,7 +81,7 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
   // SECCIÓN 4: GOBERNANZA, STAKING & DEFLACIÓN (GovernanceStakingUI.tsx)
   // ---------------------------------------------------------------------------
   describe('4. Gobernanza, Staking & Deflación (GovernanceStakingUI.tsx)', () => {
-    it('debe calcular la distribución 50/50 de bóvedas y la quema deflacionaria de staking', () => {
+    it('debe calcular la distribución 50/50 de bóvedas y la paridad 1:1 de staking sin fricción', () => {
       const totalStakedSupply = 10000.00; // GovernanceStaking.totalStakedSupply()
       const totalSupply = 100000.00;      // VirajeToken.totalSupply()
       const navPerShareUSD = 1.0050;
@@ -89,11 +89,11 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
       const stakingRatioPct = (totalStakedSupply / totalSupply) * 100; // 10.00%
       const stakingBackingNav = totalStakedSupply * navPerShareUSD;     // $10,050.00 USD
 
-      // Staking Fee: 1.00% (50% quemado, 50% recompensa)
+      // Staking Fee: 0.00% (100% de tokens ingresan a stVIRAJE 1:1)
       const stakeAmount = 3000.00;
-      const feeAmount = stakeAmount * 0.01; // 30 VIRAJE
-      const burnedAmount = feeAmount * 0.50; // 15 VIRAJE quemados
-      const stVirajeReceived = stakeAmount - feeAmount; // 2970 stVIRAJE
+      const feeAmount = 0.00;
+      const burnedAmount = 0.00;
+      const stVirajeReceived = stakeAmount - feeAmount; // 3000 stVIRAJE
 
       // Bóvedas Canónicas Pure DeFi: 50% Treasury Reserves, 50% Community Yield Vault
       const treasuryBunkerStaked = totalStakedSupply * 0.50; // 5000 stVIRAJE
@@ -101,8 +101,8 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
 
       expect(stakingRatioPct).toBe(10.00);
       expect(stakingBackingNav).toBeCloseTo(10050.00, 2);
-      expect(burnedAmount).toBe(15.00);
-      expect(stVirajeReceived).toBe(2970.00);
+      expect(burnedAmount).toBe(0.00);
+      expect(stVirajeReceived).toBe(3000.00);
       expect(treasuryBunkerStaked + communityYieldStaked).toBe(totalStakedSupply);
     });
   });
@@ -111,22 +111,22 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
   // SECCIÓN 5: MERCADO DE BONOS VESTADOS (VestedVaults.tsx)
   // ---------------------------------------------------------------------------
   describe('5. Mercado de Bonos Vestados (VestedVaults.tsx)', () => {
-    it('debe calcular el descuento dinámico de bonos (5% por año) y precio de compra', () => {
+    it('debe calcular el descuento dinámico de bonos (10% por año) y precio de compra', () => {
       const principalUSD = 1000.00;
       
       // VestedDiscountVault.calculateDiscountBps(user, lockYears)
       const lockYears3 = 3;
-      const discountBps3 = lockYears3 * 500; // 15.00% (1500 Bps)
-      const discountedPrice3 = principalUSD * (10000 - discountBps3) / 10000; // $850.00 USDC
+      const discountBps3 = lockYears3 * 1000; // 30.00% (3000 Bps)
+      const discountedPrice3 = principalUSD * (10000 - discountBps3) / 10000; // $700.00 USDC
 
       const lockYears1 = 1;
-      const discountBps1 = lockYears1 * 500; // 5.00% (500 Bps)
-      const discountedPrice1 = principalUSD * (10000 - discountBps1) / 10000; // $950.00 USDC
+      const discountBps1 = lockYears1 * 1000; // 10.00% (1000 Bps)
+      const discountedPrice1 = principalUSD * (10000 - discountBps1) / 10000; // $900.00 USDC
 
-      expect(discountBps3 / 100).toBe(15.00);
-      expect(discountedPrice3).toBe(850.00);
-      expect(discountBps1 / 100).toBe(5.00);
-      expect(discountedPrice1).toBe(950.00);
+      expect(discountBps3 / 100).toBe(30.00);
+      expect(discountedPrice3).toBe(700.00);
+      expect(discountBps1 / 100).toBe(10.00);
+      expect(discountedPrice1).toBe(900.00);
     });
   });
 
@@ -141,8 +141,8 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
 
       // LTV Máximos de ProtocolTokenomicsEngine:
       const maxLtvNft = 70.00;   // 7000 Bps
-      const maxLtvWbtc = 70.00;  // 7000 Bps
-      const maxLtvWeth = 75.00;  // 7500 Bps
+      const maxLtvWbtc = 75.00;  // 7500 Bps
+      const maxLtvWeth = 80.00;  // 8000 Bps
       const maxLtvViraje = 50.00; // 5000 Bps
 
       const healthFactor = escrowCoverageRatio; // 175% >= 140% (Seguro)
@@ -150,8 +150,8 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
       expect(escrowCoverageRatio).toBe(175.00);
       expect(healthFactor).toBeGreaterThanOrEqual(140.00);
       expect(maxLtvNft).toBe(70.00);
-      expect(maxLtvWbtc).toBe(70.00);
-      expect(maxLtvWeth).toBe(75.00);
+      expect(maxLtvWbtc).toBe(75.00);
+      expect(maxLtvWeth).toBe(80.00);
       expect(maxLtvViraje).toBe(50.00);
     });
   });

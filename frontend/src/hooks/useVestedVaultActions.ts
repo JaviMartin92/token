@@ -93,7 +93,7 @@ export function useVestedVaultActions({ activeKey, userAddress, addLog, addToast
     if (isNaN(principalNum) || principalNum <= 0) return;
 
     const yearsNum = parseInt(bondLockYears) || 1;
-    let totalDiscountBps = Math.min(yearsNum * 500, 2500);
+    let totalDiscountBps = Math.min(yearsNum * 1000, 5000);
     try {
       const userAddr = (userAddress && userAddress.startsWith('0x') ? userAddress : '0x0000000000000000000000000000000000000000') as `0x${string}`;
       const onChainBps = await publicClient.readContract({
@@ -125,7 +125,7 @@ export function useVestedVaultActions({ activeKey, userAddress, addLog, addToast
         details: [
           { label: 'Plazo de Bloqueo', value: `${yearsNum} ${yearsNum === 1 ? 'Año' : 'Años'}` },
           { label: 'Descuento Total Consolidado', value: `${discountPct}% Total sobre NAV`, badge: `Ahorras $${savingsAmount.toFixed(2)} USDC` },
-          { label: 'Comisión de Emisión de Bono (1.50%)', value: `$${(paidAmount * 0.015).toFixed(2)} USDC`, badge: '100% Inyectado a Flywheel Real Yield' },
+          { label: 'Comisión de Emisión de Bono (0.00%)', value: '$0.00 USDC', badge: 'Emisión 100% Sin Comisiones' },
           { label: 'Referido Asignado', value: bondReferrer ? `${bondReferrer.slice(0, 6)}...` : 'Ninguno (0x00)' }
         ],
         warningNote: `Tu capital de $${principalNum.toLocaleString('en-US')} estará bloqueado durante ${yearsNum} ${yearsNum === 1 ? 'año' : 'años'}. Podrás usar el NFT en el mercado P2P o ejecutar Ragequit con 15% penalización si necesitas liquidez.`,

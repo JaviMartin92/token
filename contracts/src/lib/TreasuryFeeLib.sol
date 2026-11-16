@@ -6,9 +6,9 @@ pragma solidity ^0.8.20;
  * @notice Internal library providing dynamic anti-dilution and emergency fee formulas for TreasuryManager.
  */
 library TreasuryFeeLib {
-    uint256 public constant BASE_FEE_BPS = 50; // 0.50%
-    uint256 public constant IMPACT_SENSITIVITY_BPS = 500; // 5.00%
-    uint256 public constant MAX_DYNAMIC_FEE_BPS = 500; // 5.00%
+    uint256 public constant BASE_FEE_BPS = 0; // 0.00% Base Deposit Fee (Frictionless Institutional Onboarding)
+    uint256 public constant IMPACT_SENSITIVITY_BPS = 200; // 2.00% Whale Dilution Sensitivity
+    uint256 public constant MAX_DYNAMIC_FEE_BPS = 200; // 2.00% Max Slippage Fee
     uint256 public constant EMERGENCY_FEE_BPS = 500; // 5.00%
 
     struct RedeemCalculation {

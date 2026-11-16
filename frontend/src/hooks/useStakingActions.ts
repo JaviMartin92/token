@@ -29,7 +29,7 @@ export function useStakingActions({
 
   const executeStake = async () => {
     try {
-      addLog(`Iniciando staking de ${stakeAmount} VIRAJE (Comisión de entrada 1.00%)...`);
+      addLog(`Iniciando staking de ${stakeAmount} VIRAJE (0.00% comisión sin fricción)...`);
       const client = getWalletClient(activeKey);
       const amountWei = parseEther(stakeAmount);
       const userAddr = (userAddress || activeKey) as `0x${string}`;
@@ -74,7 +74,7 @@ export function useStakingActions({
         args: [amountWei]
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
-      addLog(`¡Staking exitoso de ${stakeAmount} VIRAJE! (99% en stake, 0.5% quemado, 0.5% a Community Vault).`);
+      addLog(`¡Staking exitoso de ${stakeAmount} VIRAJE! (100% en stake stVIRAJE 1:1, sin comisiones de entrada).`);
       addToast('success', 'Staking Exitoso', UI_STRINGS.TOASTS_AND_LOGS.STAKE_SUCCESS, tx);
       await fetchData();
     } catch (err: any) {
@@ -88,31 +88,29 @@ export function useStakingActions({
     const num = parseFloat(stakeAmount);
     if (isNaN(num) || num <= 0) return;
 
-    const fee = (num * 0.01).toFixed(2);
-    const net = (num * 0.99).toFixed(2);
+    const fee = '0.00';
+    const net = num.toFixed(2);
 
     if (requestConfirmation) {
       requestConfirmation({
         title: 'Bloquear Tokens VIRAJE en Staking de Gobernanza',
         actionIcon: '🔒',
-        typeBadge: 'Staking con Real Yield & Deflación',
+        typeBadge: 'Staking con Real Yield & Gobernanza',
         targetContractName: 'GovernanceStaking.sol',
         targetContractAddress: CONTRACT_ADDRESSES.STAKING,
         inputAmount: `${num.toLocaleString('en-US')}`,
         inputSymbol: 'VIRAJE',
         expectedOutput: `${net}`,
-        expectedOutputSymbol: 'stVIRAJE (Tokens Staked)',
+        expectedOutputSymbol: 'stVIRAJE (Tokens Staked 1:1)',
         details: [
           { label: 'Monto Bruto Ingresado', value: `${num.toLocaleString('en-US')} VIRAJE Tokens` },
-          { label: 'Comisión de Entrada a Staking (1.00%)', value: `${fee} VIRAJE`, badge: 'Reparto 50%/50%' },
-          { label: 'Destino 50% Comisión (Quema Deflacionaria)', value: `${(num * 0.005).toFixed(2)} VIRAJE (Quema permanente en Tesorería)`, isHighlight: true },
-          { label: 'Destino 50% Comisión (Community Yield Vault)', value: `${(num * 0.005).toFixed(2)} VIRAJE (CommunityYieldVault Real Yield Pool)` },
+          { label: 'Comisión de Entrada a Staking (0.00%)', value: `${fee} VIRAJE`, badge: '100% Libre de Fricción' },
           { label: 'Balance Neto Acreditado', value: `${net} stVIRAJE (Balance Staked On-Chain)`, badge: '100% Reembolsable en Unstake' },
           { label: 'Rendimiento Pasivo Asignado', value: 'Reparto Pro-Rata del APY de Reservas e Inyecciones de Comisiones en Liquid USDC', badge: 'Cobro en Tiempo Real' },
           { label: 'Beneficio Exclusivo Staking', value: 'Loyalty Tier Status: Hasta +5.00% Extra de Descuento en Bonos Vestados', badge: 'VIP Holder' },
           { label: 'Productividad del Yield', value: 'Auto-Compounding Activo: El Yield no reclamado sigue generando APY pasivo', badge: '🔄 Auto-Compound' }
         ],
-        warningNote: 'El contrato inteligente GovernanceStaking.sol aplica la comisión del 1.00% enviando el 50% a quema permanente (elevando el valor NAV por token) y el 50% a las bóvedas del protocolo.',
+        warningNote: 'Staking institucional 100% libre de comisiones de entrada (0.00%). Tus tokens generan stVIRAJE 1:1, poder de voto de gobernanza y dividendos de Real Yield en tiempo real.',
         confirmButtonText: '✍️ Confirmar y Bloquear Staking',
         confirmButtonVariant: 'purple'
       }, executeStake);

@@ -52,10 +52,10 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
   const principalNum = parseFloat(bondPrincipal) || 0;
   const yearsNum = parseInt(bondLockYears) || 1;
 
-  const { data: discountBps = yearsNum * 500 } = useQuery({
+  const { data: discountBps = yearsNum * 1000 } = useQuery({
     queryKey: queryKeys.vestedVault.discountBps(userAddress, yearsNum),
     queryFn: async () => {
-      if (!CONTRACT_ADDRESSES.VESTED_VAULT) return yearsNum * 500;
+      if (!CONTRACT_ADDRESSES.VESTED_VAULT) return yearsNum * 1000;
       try {
         const bps = await publicClient.readContract({
           address: CONTRACT_ADDRESSES.VESTED_VAULT,
@@ -65,7 +65,7 @@ export const VestedVaults: React.FC<VestedVaultsProps> = ({
         }) as bigint;
         return Number(bps);
       } catch (e) {
-        return yearsNum * 500;
+        return yearsNum * 1000;
       }
     },
     refetchInterval: 5000

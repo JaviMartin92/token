@@ -93,7 +93,7 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
     /// @notice 1-based position of a token inside `_expiryHeap`; zero means "not in heap".
     mapping(uint256 => uint256) private _heapIndex;
 
-    uint256 public baseYieldRateBps = 500; // 5.00% per year (5% 1yr, 10% 2yr, 15% 3yr, 20% 4yr, 25% 5yr)
+    uint256 public baseYieldRateBps = 1000; // 10.00% per year (10% 1yr, 20% 2yr, 30% 3yr, 40% 4yr, 50% 5yr)
     uint256 public haircutBps = 2000; // 20% haircut on yield
     uint256 public subsidyBps = 0; // 0% base subsidy
     uint256 public govTokenBonusBps = 100; // 1% extra bonus for gov token holders
@@ -631,7 +631,7 @@ contract VestedDiscountVault is AccessControl, ReentrancyGuard {
         address buyer
     ) private returns (uint256 refAmount, uint256 mintFee, uint256 netToTreasury) {
         uint256 refBps = REFERRAL_REWARD_BPS;
-        uint256 mintFeeBps = 150;
+        uint256 mintFeeBps = 0; // 0.00% Zero-Friction Issuance
         if (tokenomicsEngine != address(0)) {
             try ProtocolTokenomicsEngine(tokenomicsEngine).referralFeeBps() returns (uint256 rf) {
                 if (rf > 0) refBps = rf;

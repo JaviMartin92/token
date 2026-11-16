@@ -56,16 +56,15 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
     mapping(address => mapping(address => uint256)) public claimableBorrowerEquityAssets;
 
     /// @notice Haircut applied to vested-bond NFTs when sizing new loans and health factors.
-    /// @dev Bond NFTs are claims on the very treasury that funds these loans (reflexive
-    ///      collateral). 50% by default; timelock-governed.
-    uint256 public bondCollateralHaircutBps = 5000;
+    /// @dev Calibrated for competitive institutional borrowing (65% recognized * 70% LTV = ~45.5% effective LTV).
+    uint256 public bondCollateralHaircutBps = 6500;
     /// @notice Valuation floor used to refund liquidation surplus to the borrower.
     uint256 public bondLiquidationFloorBps = 8500;
     /// @notice Haircut applied to VIRAJE collateral (a direct NAV claim on the treasury).
     uint256 public virajeCollateralHaircutBps = 5000;
     /// @notice Maximum share of the treasury credit facility that may be collateralised by
     ///         reflexive assets (bond NFTs + VIRAJE), in BPS of the facility limit.
-    uint256 public circularCollateralCapBps = 2500; // 25% of the 20% facility = 5% of reserves
+    uint256 public circularCollateralCapBps = 4500; // 45% of the 20% facility = 9% of reserves
     /// @notice Treasury-funded debt currently collateralised by reflexive assets.
     uint256 public treasuryCircularDebtUSD;
     uint256 public constant MAX_COLLATERAL_HAIRCUT_BPS = 10000;
@@ -167,7 +166,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
     uint256 public constant MAX_INTEREST_BPS = 5000; // 50% APR maximum
     uint256 public constant MAX_DURATION_DAYS = 1825; // 5 years maximum
     uint256 public constant ORACLE_STALENESS = 1 hours; // Price feeds must be fresh within 1 hour
-    uint256 public constant ORIGINATION_FEE_BPS = 50; // 0.5%
+    uint256 public constant ORIGINATION_FEE_BPS = 25; // 0.25%
     uint256 public constant INTEREST_SPREAD_BPS = 1000; // 10% spread on interest
 
     enum LoanState {
@@ -345,7 +344,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
                 // Ignore tokenomics query revert, fallback to default
             }
         }
-        return 800; // 8.00% APR default fallback
+        return 600; // 6.00% APR default fallback (Competitive Calibration)
     }
 
     function createLoanOffer(
