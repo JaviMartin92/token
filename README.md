@@ -49,9 +49,9 @@ El protocolo cuenta con una suite de auditoría matemática de grado Mainnet div
 
 ### 1. Invariantes Formales & Fuzzing en Solidity (Foundry - 47/47 Tests PASS)
 Ubicado en [`contracts/test/InstitutionalAuditInvariants.t.sol`](contracts/test/InstitutionalAuditInvariants.t.sol), [`contracts/test/GuardedLaunch.t.sol`](contracts/test/GuardedLaunch.t.sol) y [`contracts/test/FounderReserveVestingVault.t.sol`](contracts/test/FounderReserveVestingVault.t.sol):
-- **Fuzzing Masivo de Fee Dinámico (`testFuzz_CalculateDynamicFeeBps`)**: Certifica que el fee devuelto se mantenga estrictamente entre $50\text{ BPS (0.50\%)}$ y $500\text{ BPS (5.00\%)}$ para entradas de $1\text{ wei}$ a $10^9\text{ tokens}$ sin desbordamientos de enteros.
+- **Fuzzing Masivo de Fee Dinámico (`testFuzz_CalculateDynamicFeeBps`)**: Certifica que el fee devuelto sea 0.00% para depósitos normales (< 20% de reserva) y escale de forma monotónica sin desbordamientos de enteros ante depósitos masivos de ballenas.
 - **Invariante de Solvencia (`test_Invariant_AssetsExceedLiabilities`)**: Garantiza formalmente $TotalAssetsExogenousUSD \ge TotalLiabilitiesUSD$.
-- **Invariante de Monotonicidad (`test_Invariant_NAVMonotonicity`)**: Demuestra que $NAV_{post} \ge NAV_{pre}$ tras cualquier depósito.
+- **Invariante de Monotonicidad (`test_Invariant_NAVMonotonicity`)**: Demuestra que $NAV_{post} \ge NAV_{pre}$ tras cualquier depósito o rescate.
 - **Invariante de Vesting por Salud de Reservas**: Certifica que el fundador solo puede reclamar tokens cuando $Solvencia > 100\%$, con tope del 10% del superávit y cooldown de 72h.
 
 ### 2. Guarded Launch Fase 1 ($100,000 USD TVL Cap) & Timelock 72h
@@ -63,8 +63,9 @@ Ubicado en [`contracts/src/TreasuryManager.sol`](contracts/src/TreasuryManager.s
 - **Desembolso Descentralizado (`withdrawUSDC`)**: Función ejecutable exclusivamente por el `TimelockController` que permite transferir USDC directamente a contratos de depósito en garantía (*escrow*) de firmas de auditoría competitiva (Code4rena, Cantina, Sherlock) y bug bounties (Immunefi).
 - **Pure DeFi (MiCA Considerando 22)**: Cero intermediación de entidades corporativas o cuentas bancarias tradicionales. La comunidad vota on-chain y financia la seguridad directamente desde los excedentes del protocolo.
 
-### 4. Protección Anti-MEV / Flash Loans
-- **Curva Dinámica de Impacto**: La tarifa de depósito escala dinámicamente según el tamaño de la transacción respecto a la tesorería existente ($50\text{ BPS} \rightarrow 500\text{ BPS}$).
+### 4. Protección Anti-MEV, VirajeHypervisor & Flash Loans
+- **Centinela Pre-Transaccional (`VirajeHypervisor.sol`)**: Simulación previa de llamadas de contrato para validar invariantes y evitar picos de gas a 30M en MetaMask por reversiones de EVM.
+- **Curva Dinámica de Impacto**: Tarifa de depósito base del 0.00% sin fricción para depósitos normales y recargo anti-dilución escalable únicamente para transacciones de ballenas (>20% de reserva).
 - **Circuito Breaker de Colateralización**: La función `redeem()` en [`TreasuryManager.sol`](contracts/src/TreasuryManager.sol) revierte cualquier intento de extracción relámpago que reduzca la ratio de colateralización.
 - **Pérdida Neta Demostrada**: Pruebas unitarias demuestran que un ataque Flash Loan sufre una pérdida neta de capital de $\sim 2.44\%$, haciendo matemáticamente imposible el arbitraje de NAV por MEV.
 
@@ -89,7 +90,7 @@ Para garantizar la viabilidad del protocolo sin requerir capital riesgo ni inver
 ```
 [FASE 1: Guarded Genesis]
 - TVL Cap: $100,000 USD
-- Generación de comisiones orgánicas por suscripción (0.50% - 5.00%)
+- Acumulación de reservas mediante rendimiento pasivo en Morpho (~6% APY) y comisiones de protocolo
 - La comunidad acumula los primeros $25,000 USDC en reservas de comisiones
           │
           ▼
@@ -301,20 +302,21 @@ npm run start:linux
 
 ---
 
-## 🏛️ Los 10 Pilares Centrales Auditados (100% Mainnet-Ready)
+## 🏛️ Los 11 Pilares Centrales Auditados (100% Mainnet-Ready)
 
 | Módulo | Contrato Principal | Características Clave & Invariantes |
 | :--- | :--- | :--- |
-| **1. Tesorería & NAV On-Chain** | [`TreasuryManager.sol`](contracts/src/TreasuryManager.sol) | 4 Librerías PoR $O(1)$, Invariante de Solvencia $100\%$, Slippage $0.05\%$, NAV por Net Equity libre de deuda de bonos, Anti-MEV Cooldown. |
-| **2. Guarded Launch & DAO Escrow** | [`TreasuryManager.sol`](contracts/src/TreasuryManager.sol) | Tope de TVL dinámico ($100K Fase 1), Revert `TVLCapExceeded`, Desembolso `withdrawUSDC` gobernado por DAO para escrows de auditoría comunitaria. |
-| **3. Bonos Vestados vPOS** | [`VestedDiscountVault.sol`](contracts/src/VestedDiscountVault.sol) | NFTs ERC-721 transferibles, Descuento dinámico 5-25%, Ragequit con 15% penalty 50/50, Deuda deducida del NAV spot. |
-| **4. Préstamos Multi-Colateral** | [`P2PLendingMarket.sol`](contracts/src/P2PLendingMarket.sol) | Fair Liquidation con restitución de equity al prestatario, APR dinámico por DAO y Circuit Breaker. |
-| **5. Motor de Recompras** | [`DiscountBuybackEngine.sol`](contracts/src/DiscountBuybackEngine.sol) | 10 Candados de Control Matemático, Fee Tier configurable, Keeper Bounty y Sweep Tokens. |
-| **6. Real Yield Router 50/50** | [`RealYieldRouter.sol`](contracts/src/RealYieldRouter.sol) | Reparto Pure DeFi, Fee Tier de reserva configurable, Protección Circuit Breaker y Sweep Tokens. |
-| **7. Circuit Breaker Automático** | [`CircuitBreaker.sol`](contracts/src/CircuitBreaker.sol) | Búfer circular gas $O(1)$, Umbrales configurables por DAO y blindaje en préstamos. |
-| **8. Gobernanza DAO & Timelock 72h** | [`GovernorViraje.sol`](contracts/src/GovernorViraje.sol) | Veto inmutable a bóvedas, Timelock 72h, Cancelación de propuestas, Quorum 80k stVIRAJE, Umbral anti-spam 25k stVIRAJE. |
-| **9. Vesting Fundador por Superávit** | [`FounderReserveVestingVault.sol`](contracts/src/FounderReserveVestingVault.sol) | 100k VIRAJE bloqueados en génesis, Liberación dinámica condicionada a Solvencia $>100\%$, Cap del 10% del superávit, Cooldown 72h y Cero extracción de reservas. |
-| **10. Blindaje Post-Cuántico W-OTS+** | [`PostQuantumGuard.sol`](contracts/src/PostQuantumGuard.sol) | Firmas hash Winternitz OTS+ ($w=4$, 67 cadenas Keccak-256), Dual-Auth EVM, Forward Secrecy y resistencia matemática Shor/Grover. |
+| **1. Tesorería & NAV On-Chain** | [`TreasuryManager.sol`](contracts/src/TreasuryManager.sol) | Modularización EIP-170 (3 Librerías), Solvencia $\ge 100\%$, Slippage $0.05\%$, NAV por Net Equity libre de deuda de bonos, 0% fee base de depósito, Anti-MEV Cooldown. |
+| **2. Centinela de Invariantes** | [`VirajeHypervisor.sol`](contracts/src/VirajeHypervisor.sol) | `PreFlightReport` pre-transaccional, simulación determinista de monotonicidad $\Delta NAV \ge 0$, prevención de reverts y sobrecoste de gas en MetaMask. |
+| **3. Guarded Launch & DAO Escrow** | [`TreasuryManager.sol`](contracts/src/TreasuryManager.sol) | Tope de TVL dinámico ($100K Fase 1), Revert `TVLCapExceeded`, Desembolso `withdrawUSDC` gobernado por DAO para escrows de auditoría comunitaria. |
+| **4. Bonos Vestados vPOS** | [`VestedDiscountVault.sol`](contracts/src/VestedDiscountVault.sol) | NFTs ERC-721 transferibles, Descuento dinámico 10-50% (10% anual base), 0% fee de emisión, Ragequit con 15% penalty 50/50, Deuda deducida del NAV spot. |
+| **5. Préstamos Multi-Colateral** | [`P2PLendingMarket.sol`](contracts/src/P2PLendingMarket.sol) | Crédito Tesorería 6.00% APR, originación 0.25%, LTV 45.5% en NFTs, 75% WBTC, 80% WETH, Techo reflexivo 45% ($3,435.41 USDC) y defensa Sequencer Grace Period. |
+| **6. Motor de Recompras** | [`DiscountBuybackEngine.sol`](contracts/src/DiscountBuybackEngine.sol) | 10 Candados de Control Matemático ($P_{\text{DEX}} \le NAV \times 0.95$), Fee Tier configurable, Keeper Bounty y Sweep Tokens. |
+| **7. Real Yield Router 50/50** | [`RealYieldRouter.sol`](contracts/src/RealYieldRouter.sol) | Reparto Pure DeFi (50% Reservas / 50% Stakers USDC), Fee Tier de reserva configurable, Protección Circuit Breaker y Sweep Tokens. |
+| **8. Staking de Gobernanza Líquido** | [`GovernanceStaking.sol`](contracts/src/GovernanceStaking.sol) | stVIRAJE 1:1 sin comisión de entrada (0.00%), comisión de salida del 0.50% (50% quema deflacionaria / 50% dividendos a stakers leales), checkpoints ERC-20 Votes. |
+| **9. Circuit Breaker Automático** | [`CircuitBreaker.sol`](contracts/src/CircuitBreaker.sol) | Búfer circular gas $O(1)$, congelamiento ante caída >15% en 6h, Umbrales configurables por DAO y blindaje en préstamos. |
+| **10. Gobernanza DAO & Timelock 72h** | [`GovernorViraje.sol`](contracts/src/GovernorViraje.sol) | Veto inmutable a bóvedas, Timelock 72h, Cancelación de propuestas, Quorum 80k stVIRAJE, Umbral anti-spam 25k stVIRAJE. |
+| **11. Blindaje Post-Cuántico W-OTS+** | [`PostQuantumGuard.sol`](contracts/src/PostQuantumGuard.sol) | Firmas hash Winternitz OTS+ ($w=4$, 67 cadenas Keccak-256), Dual-Auth EVM, Forward Secrecy y resistencia matemática Shor/Grover (NIST SP 800-208). |
 
 ---
 

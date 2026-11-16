@@ -1,31 +1,42 @@
-# Especificación Técnica y Arquitectura Institucional: Protocolo Viraje Protocol (v2.5 Enterprise Pure DeFi - Mainnet Ready)
+# Especificación Técnica y Arquitectura Institucional: Protocolo Viraje Protocol (v7.0 Enterprise Pure DeFi - Mainnet Ready)
+
+**Versión:** 7.0.0-Institutional (Pure DeFi)  
+**Fecha:** Noviembre 2026  
+**Clasificación:** Infraestructura Descentralizada Institucional (Pure DeFi / MiCA Considerando 22)  
+**Red Canónica:** Arbitrum Sepolia (`421614`) / Arbitrum One (`42161`)  
 
 ---
 
 ## 1. Visión General, Filosofía & Invariantes Institucionales
 
-El **Protocolo Viraje Protocol** es una infraestructura financiera descentralizada (*Pure DeFi*) de grado institucional diseñada para la emisión, custodia y comercialización de un activo sintético de reserva respaldado por colateral exógeno ($VIRAJE$). El protocolo opera de forma inmutable sobre Ethereum Virtual Machine (EVM) y capas de escalado Layer-2 (Base / Arbitrum), integrando gobernanza timelocked de cero privilegios corporativos, oráculos multicapa de alta resiliencia y un mercado monetario Peer-to-Peer (P2P) colateralizado por Tokens No Fungibles (NFTs ERC-721).
+El **Protocolo Viraje Protocol** es una infraestructura financiera descentralizada (*Pure DeFi*) de grado institucional diseñada para la emisión, custodia y comercialización de un activo sintético de reserva respaldado por colateral exógeno ($VIRAJE$). El protocolo opera de forma inmutable sobre Ethereum Virtual Machine (EVM) y capas de escalado Layer-2 (Arbitrum), integrando gobernanza timelocked de cero privilegios corporativos, oráculos multicapa de alta resiliencia, un centinela pre-transaccional de simulación de invariantes ([`VirajeHypervisor.sol`](../contracts/src/VirajeHypervisor.sol)) y un mercado monetario Peer-to-Peer (P2P) colateralizado por Tokens No Fungibles (NFTs ERC-721).
 
 ### 1.1. Invariantes Matemáticas y Defensas Formales
 
-El núcleo determinista del protocolo se rige por cuatro invariantes matemáticas estrictas que son verificadas on-chain en tiempo real antes de confirmar cualquier transacción de emisión, rescate, colateralización o distribución de comisiones:
+El núcleo determinista del protocolo se rige por cinco invariantes matemáticas estrictas que son verificadas on-chain en tiempo real antes de confirmar cualquier transacción de emisión, rescate, colateralización o distribución de comisiones:
 
-#### 1. Invariante de Proof of Reserves (PoR) $\ge 100\%$
+#### 1. Invariante de Proof of Reserves (PoR) $\ge 100.00\%$
 Cada token $VIRAJE$ emitido y en circulación libre está respaldado en todo momento por reservas líquidas y exógenas de primera línea (USDC, WBTC, WETH). En ningún momento el pasivo circulante puede exceder el valor neto realizable de la reserva:
 
 $$\text{ProofOfReservesRatio} = \frac{\text{TotalAssetsUSD}_{\text{exogenous}}}{\text{TotalLiabilitiesUSD}_{\text{circulating}}} \ge 1.0000 \quad (100.00\%)$$
 
-#### 2. Monotonicidad del NAV Spot ($\Delta NAV_{\text{spot}} \ge 0$)
-Ninguna operación dentro del protocolo (depósito, rescate, emisión de bonos vestados, préstamo P2P, liquidación por oráculo o quema deflacionaria) puede resultar en una disminución del Valor Patrimonial Neto por share ($NAV_{\text{spot}}$). Si una transacción degrada el NAV por share, el contrato de validación [`ProtocolTokenomicsEngine.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/ProtocolTokenomicsEngine.sol) emite un `revert` atómico:
+#### 2. Monotonicidad Estricta del NAV Spot ($\Delta NAV_{\text{spot}} \ge 0$)
+Ninguna operación dentro del protocolo (depósito, rescate, emisión de bonos vestados, préstamo P2P, liquidación por oráculo o quema deflacionaria) puede resultar en una disminución del Valor Patrimonial Neto por share ($NAV_{\text{spot}}$). Si una transacción degradara el NAV por share, el contrato de validación [`ProtocolTokenomicsEngine.sol`](../contracts/src/ProtocolTokenomicsEngine.sol) y [`TreasuryManager.sol`](../contracts/src/TreasuryManager.sol) emiten un `revert` atómico:
 
-$$NAV_{\text{spot}} = \frac{\text{TotalAssetsUSD}_{\text{exogenous}}}{\text{NetCirculatingShares}_{\text{VIRAJE}}}$$
+$$NAV_{\text{spot}} = \frac{\text{NetEquityUSD}_{\text{exogenous}}}{\text{NetCirculatingShares}_{\text{VIRAJE}}}$$
 
 $$NAV_{t+1} \ge NAV_t$$
 
-#### 3. Cumplimiento Regulatorio MiCA Pure DeFi (Exención Recital 22)
-El protocolo prescinde de cualquier figura corporativa centralizada, custodios fiduciarios, llaves privadas de administración o denominaciones de vehículos de inversión sujetas a autorización ART (*Asset-Referenced Tokens* de acuerdo con el Reglamento EU 2023/1114). Todas las cuotas generadas se distribuyen de manera inmutable: 50% a reservas y 50% a [`CommunityYieldVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/CommunityYieldVault.sol) para dividendos líquidos de stakers.
+#### 3. Centinela de Invariantes Pre-Vuelo (`VirajeHypervisor.sol`)
+Para erradicar transacciones fallidas y proteger a los usuarios de picos de gas artificiales en MetaMask (30M gas limit por revert de EVM), el centinela evalúa la transacción antes de su envío:
+* Certifica solvencia post-ejecución $\ge 100\%$.
+* Verifica que el endeudamiento respete el techo prudencial de colateral reflexivo ($3,435.41 USDC máx.).
+* Asegura que los oráculos Chainlink/Pyth cumplan con los límites de frescura ($\le 24\text{h}$) y que el secuenciador L2 esté activo.
 
-#### 4. Protección Anti-MEV y Cooldown Same-Block
+#### 4. Cumplimiento Regulatorio MiCA Pure DeFi (Exención Recital 22)
+El protocolo prescinde de cualquier figura corporativa centralizada, custodios fiduciarios, llaves privadas de administración o denominaciones de vehículos de inversión sujetas a autorización ART (*Asset-Referenced Tokens* de acuerdo con el Reglamento EU 2023/1114). Todas las cuotas generadas se distribuyen de manera inmutable: 50% a reservas (acreciendo NAV) y 50% a [`CommunityYieldVault.sol`](../contracts/src/CommunityYieldVault.sol) para dividendos líquidos de stakers.
+
+#### 5. Protección Anti-MEV y Cooldown Same-Block
 Para neutralizar ataques atómicos de sándwich y arbitraje de NAV mediante *Flash Loans* en el mismo bloque de ejecución, los contratos de tesorería imponen una restricción de altura de bloque por cuenta:
 
 $$\text{require}(\text{lastDepositBlock}[\text{msg.sender}] < \text{block.number}, \text{"Same-block deposit/redeem cooldown"})$$
@@ -40,344 +51,273 @@ $$\text{require}(\text{lastDepositBlock}[\text{msg.sender}] < \text{block.number
 graph TD
     subgraph UI ["CAPA DE PRESENTACIÓN (React 18 + Vite + Viem)"]
         Shell["App.tsx (Main Layout & Providers)"]
-        Web3State["useWeb3State.ts (Polling 4s & Multi-Call Reader)"]
-        DashboardUI["MetricsDashboard.tsx (PoR, Solvency & Charts)"]
-        TreasuryUI["TreasuryDashboard.tsx (Deposit USDC / Redeem VIRAJE)"]
-        StakingUI["GovernanceStakingUI.tsx (stVIRAJE Real Yield Pool)"]
-        BondsUI["VestedVaults.tsx (NFT Bond Engine 1-5 Yrs)"]
-        P2PUI["P2PMarketplace.tsx (P2P Collateralized Lending)"]
-        GovUI["GovernanceCommandCenter.tsx (DAO Timelock Proposals)"]
-        AdminUI["AdminControlPanel.tsx (Simulation & Oracle Testing)"]
+        Web3State["useWeb3State.ts (Polling Multi-Call Reader)"]
+        DashboardUI["MetricsDashboard.tsx (PoR, Solvency & Proof of Reserves)"]
+        TreasuryUI["TreasuryDashboard.tsx (Deposit USDC 0% / Redeem VIRAJE 1%)"]
+        StakingUI["GovernanceStakingUI.tsx (stVIRAJE Real Yield Pool: 0% in / 0.50% out)"]
+        BondsUI["VestedVaults.tsx (NFT Bond Engine: 10%-50% Descuento)"]
+        P2PUI["P2PMarketplace.tsx (P2P Collateralized Lending: 6.00% APR)"]
+        GovUI["GovernanceCommandCenter.tsx (DAO Timelock Proposals 72h)"]
         ModalApy["ApyBreakdownModal.tsx (On-Chain Yield Oracle Math)"]
     end
 
     subgraph ONCHAIN ["CAPA SMART CONTRACTS (Solidity 0.8.20 + OpenZeppelin v5)"]
         Registry["ProtocolAddressProvider.sol (Service Locator Registry)"]
+        Hypervisor["VirajeHypervisor.sol (Pre-Flight Sentinel & Invariant Simulator)"]
         
-        subgraph CORE ["Núcleo de Emisión, Tesorería & Oráculos"]
-            Treasury["TreasuryManager.sol (Pure DeFi NAV & Deposit Engine)"]
-            Gateway["CompliantTreasuryGateway.sol (Stateless KYC Wrapper)"]
+        subgraph CORE ["Núcleo de Emisión, Tesorería & Librerías EIP-170"]
+            Treasury["TreasuryManager.sol (Pure DeFi NAV & Orchestrator)"]
+            FeeLib["TreasuryFeeLib.sol (Dynamic Slippage & Anti-Whale)"]
+            PoRLib["TreasuryPoRLib.sol (Proof of Reserves & Solvency Audit)"]
+            RebalanceLib["TreasuryRebalanceLib.sol (Optimal Multi-Asset Swaps)"]
             Vault["VirajeVault.sol (Exogenous Asset Cold Bunker)"]
             Token["VirajeToken.sol (ERC-20 VIRAJE)"]
-            PriceHub["OracleHub.sol (Dual Oracles + L2 Sequencer Grace Period)"]
-            YieldOracle["DynamicYieldOracleRouter.sol (Passive Yield APYs)"]
-            Breaker["CircuitBreaker.sol (Volatility Freeze Guard)"]
             Engine["ProtocolTokenomicsEngine.sol (Pure Math Engine)"]
             Buyback["DiscountBuybackEngine.sol (10-Lock Buyback & Burn)"]
         end
 
+        subgraph ORACLES ["Oráculos, Seguridad L2 & Post-Quantum"]
+            PriceHub["OracleHub.sol (Dual Oracles + L2 Sequencer Grace Period)"]
+            YieldOracle["DynamicYieldOracleRouter.sol (Passive Yield APYs)"]
+            Breaker["CircuitBreaker.sol (Volatility Freeze Guard)"]
+            PQGuard["PostQuantumGuard.sol (W-OTS+ NIST SP 800-208 Signatures)"]
+        end
+
         subgraph YIELD ["Ecosistema Real Yield & Gobernanza DAO"]
             Staking["GovernanceStaking.sol (stVIRAJE & Voting Checkpoints)"]
-            Router["RealYieldRouter.sol (50/50 Liquid Fee Enforcer)"]
+            Router["RealYieldRouter.sol (50/50 Universal Fee Enforcer)"]
             YieldVault["CommunityYieldVault.sol (50% Staker Dividends)"]
             Governor["GovernorViraje.sol (DAO Executive)"]
-            Timelock["TimelockController.sol (72h Emergency Delay)"]
+            Timelock["TimelockController.sol (72h Delay)"]
         end
 
         subgraph MARKET ["Mercados Monetarios & Productos Estructurados"]
-            VestedVault["VestedDiscountVault.sol (Bond Discount Pricing)"]
+            VestedVault["VestedDiscountVault.sol (Bond Discount Pricing 10%-50%)"]
             NFT["VaultPositionNFT.sol (ERC-721 Collateral NFT - Packed Storage)"]
             P2P["P2PLendingMarket.sol (Escrow & Asymmetric Grace Period)"]
             Morpho["MorphoYieldVaultAdapter.sol (80% MetaMorpho Yield)"]
         end
     end
 
-    subgraph SERVICES ["SERVICIOS CORE & DEPLOYMENT AUTOMATION"]
-        DeployScript["deploy.ts (Smart Contracts Automated Deploy & Timelock)"]
-        StartApp["start_app.ps1 (State 0 Reset & Docker Forge Build)"]
-        FoundrySuite["Foundry Test Suite (30 Tests - Invariants & Fuzzing)"]
-        BackendSuite["Backend Suite (43 Tests - Reorg & PoR Reconciler)"]
-        BlockIndexer["BlockIndexer.ts (ParentHash Reorg & ORPHANED Atomic Rollback)"]
-    end
-
     Shell --> Web3State
     Web3State --> Registry
+    Web3State --> Hypervisor
     Web3State --> Treasury
-    Web3State --> YieldOracle
     Web3State --> Staking
-
-    TreasuryUI --> Treasury
-    TreasuryUI -.-> Gateway
+    
+    TreasuryUI --> Hypervisor
+    Hypervisor --> Treasury
+    Treasury --> FeeLib
+    Treasury --> PoRLib
+    Treasury --> RebalanceLib
+    Treasury --> Vault
+    Treasury --> Engine
+    
     StakingUI --> Staking
-    StakingUI --> Router
+    Staking --> Router
     BondsUI --> VestedVault
     P2PUI --> P2P
-
-    Treasury --> Vault
-    Treasury --> PriceHub
-    Treasury --> Engine
-    Gateway --> Treasury
-    Buyback --> Treasury
-    Buyback --> Vault
-    Buyback --> PriceHub
-    Router --> Vault
-    Router --> YieldVault
-    VestedVault --> NFT
     P2P --> NFT
     P2P --> Treasury
+    
+    Router --> Vault
+    Router --> YieldVault
 ```
 
 ---
 
-### 2.2. Diagrama de Secuencia: Emisión a NAV, Cooldown Anti-MEV y Reparto 50/50
+### 2.2. Diagrama de Secuencia: Acuñación Sin Fricción (0.00%) y Reparto de Rendimiento
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor Investor as Inversor
     participant App as Frontend (React/Viem)
+    participant Hypervisor as VirajeHypervisor.sol
     participant Treasury as TreasuryManager.sol
-    participant Engine as ProtocolTokenomicsEngine.sol
+    participant FeeLib as TreasuryFeeLib.sol
     participant Vault as VirajeVault.sol
-    participant Router as RealYieldRouter.sol
     participant Token as VirajeToken.sol
 
     Investor->>App: Ingresa depositAmount (USDC)
-    App->>Treasury: calculateDynamicFeeBps(amount)
-    Treasury-->>App: Retorna dynamicFeeBps (e.g. 50 bps = 0.50%)
-    App->>Investor: Muestra Modal de Confirmación
+    App->>Hypervisor: preFlightDeposit(Investor, amount)
+    Hypervisor->>Treasury: Simula impacto y solvencia post-tx
+    Treasury->>FeeLib: calculateDynamicFeeBps(amount, reserves)
+    FeeLib-->>Treasury: Retorna 0 bps (0.00% si impacto <= 20%)
+    Hypervisor-->>App: PreFlightReport (canExecute: true, expectedShares)
+    App->>Investor: Muestra Modal de Confirmación Sin Fricción
     Investor->>Treasury: deposit(amount)
     Note over Treasury: Comprobación Anti-MEV: lastDepositBlock[sender] < block.number
-    Treasury->>Engine: calculateDeposit(amount)
-    Engine-->>Treasury: Retorna feeVal, netVal, depositValueUSD
     Treasury->>Vault: Transfer USDC desde Inversor
-    Treasury->>Token: mint(Inversor, sharesToMint)
-    Treasury->>Vault: transferFunds(USDC, Router, feeVal)
-    Treasury->>Router: routeUniversalFee(USDC)
-    Router->>Vault: 50% USDC (Reserva Directa -> Eleva NAV)
-    Router->>CommunityYieldVault: 50% USDC (Pool Real Yield Stakers)
-    Treasury-->>App: Evento Deposited emitido & Estado actualizado
+    Treasury->>Token: mint(Investor, sharesMinted a valor NAV spot)
+    Treasury-->>App: Evento Deposited emitido & Balances actualizados
 ```
 
 ---
 
-### 2.3. Diagrama de Secuencia: Mercado P2P de Préstamos y Liquidación por Oráculo
+### 2.3. Diagrama de Secuencia: Des-staking con Comisión de Salida (0.50%)
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Borrower as Prestatario
-    actor Lender as Prestamista
-    participant P2P as P2PLendingMarket.sol
-    participant NFT as VaultPositionNFT.sol
-    participant Oracle as OracleHub.sol
-    participant USDC as Token USDC
+    actor Staker as Usuario con stVIRAJE
+    participant App as Frontend (React/Viem)
+    participant Staking as GovernanceStaking.sol
+    participant GovToken as VirajeToken.sol
+    participant CommunityVault as CommunityYieldVault.sol
+    participant Treasury as TreasuryManager.sol
 
-    Borrower->>P2P: createLoanOffer(positionTokenId, borrowAmount, interestBps, durationDays)
-    Borrower->>NFT: approve(P2PLendingMarket, positionTokenId)
-    P2P->>NFT: Transfer NFT a Escrow P2PLendingMarket
-    Lender->>P2P: acceptLoanAndDepositCollateral(loanId, 0)
-    Lender->>USDC: approve(P2PLendingMarket, borrowAmount)
-    P2P->>USDC: Transfer net USDC al Borrower
-    
-    Note over Borrower,P2P: Estado Activo del Préstamo (Acumulando Interés Simple)
-
-    alt Caso A: Repago Exitoso por Borrower
-        Borrower->>P2P: repayLoan(loanId)
-        P2P->>USDC: Transfer Principal + Interés a Lender
-        P2P->>NFT: Transfer NFT devuelto a Borrower
-    else Caso B: Liquidación por Caída de Salud (Health Factor < 115% o Expiración)
-        Lender->>P2P: liquidateLoan(loanId)
-        P2P->>Oracle: getAssetUsdValue(NFT Collateral)
-        Oracle-->>P2P: Valor de colateral devaluado o plazo vencido
-        P2P->>NFT: Transfer NFT colateral a Lender (Ejecución de Garantía)
-    end
+    Staker->>App: Solicita Unstake (ej. 1,000 stVIRAJE)
+    App->>Staker: Modal Desglose (Fee 0.50%: 2.5 VIRAJE quema / 2.5 VIRAJE stakers / 995 VIRAJE neto)
+    Staker->>Staking: unstake(1000e18)
+    Note over Staking: Verifica timelock de enfriamiento anti-flash loan
+    Staking->>Staking: _burn(Staker, 1000e18)
+    Staking->>GovToken: burn(2.5e18) -> Quema permanente deflacionaria
+    Staking->>Treasury: recordBurn(2.5e18) -> Actualiza contabilidad NAV
+    Staking->>GovToken: transfer(CommunityYieldVault, 2.5e18) -> Real Yield para stakers
+    Staking->>GovToken: transfer(Staker, 995e18) -> Transferencia neta de VIRAJE
+    Staking-->>App: Evento Unstaked emitido & Dividendos actualizados
 ```
 
 ---
 
-## 3. Especificación Detallada de los 25 Smart Contracts
-
-El protocolo está compuesto por 25 smart contracts fuertemente desacoplados mediante interfaces y patrones de registro centralizado.
+## 3. Especificación Detallada de los 28 Smart Contracts y Librerías
 
 ### 3.1. Módulo 1: Núcleo de Emisión y Tesorería Exógena
 
-#### 1. [`TreasuryManager.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/TreasuryManager.sol)
-- **Propósito**: Gestor central de emisión, rescate, valoración de NAV y control de solvencia.
+#### 1. [`TreasuryManager.sol`](../contracts/src/TreasuryManager.sol)
+- **Propósito**: Orquestador central de emisión a NAV, rescates, rebalanceos y control estricto de solvencia.
+- **Modularización EIP-170**: Para permanecer por debajo del límite de 24.576 bytes, delega su lógica matemática en `TreasuryFeeLib`, `TreasuryPoRLib` y `TreasuryRebalanceLib`.
 - **Funciones Principales**:
-  - `deposit(uint256 stableAmount)`: Recibe colateral en USDC, calcula la tasa de comisión dinámica adaptativa al impacto de liquidez (`calculateDynamicFeeBps`), acuña shares $VIRAJE$ a valor NAV actual y enruta la comisión de entrada al `RealYieldRouter`.
-  - `redeem(uint256 sharesAmount)`: Destruye shares $VIRAJE$, verifica las invariantes de monotonicidad de NAV y retiene la comisión de salida del 1%. Si la reserva líquida libre en `VirajeVault` es insuficiente, activa `_ensureLiquidBuffer` para rescatar capital desde `MorphoYieldVaultAdapter`.
-  - `getNetEquityUSD()`: Computa el Patrimonio Neto Libre deduciendo la deuda externa exigible (bonos vestados en `VestedDiscountVault`) del valor total de activos exógenos ($\text{NetEquityUSD} = \max(0, \text{TotalAssetsUSD} - \text{DebtLiabilitiesUSD})$).
-  - `getNAVPerShare()`: Calcula el NAV spot dividiendo el Patrimonio Neto Libre entre las shares netas en circulación ($NAV = \text{NetEquityUSD} / \text{NetCirculatingShares}$). Esto garantiza que la entrada de fondos por bonos no infle falsamente el valor intrínseco de VIRAJE.
-  - `getProofOfReserves()`: Devuelve `(totalAssetsUSD, totalLiabilitiesUSD, collateralRatioBps)`.
-- **Invariantes & Seguridad**: `nonReentrant`, `lastDepositBlock` anti-MEV cooldown, validación previa de congelamiento en `CircuitBreaker`.
+  - `deposit(uint256 stableAmount)`: Acuña participaciones VIRAJE a valor NAV spot exacto. Para transacciones normales (<20% de reserva), la comisión es estrictamente **`0.00%`**.
+  - `redeem(uint256 sharesAmount)`: Destruye participaciones VIRAJE, verifica la monotonicidad de NAV y retiene una comisión de salida fija del **`1.00%`** (50% acrece reservas / 50% dividendos en `CommunityYieldVault`).
+  - `getNetEquityUSD()`: Computa el Patrimonio Neto Libre deduciendo la deuda exigible por bonos vestados de los activos exógenos totales.
+  - `getNAVPerShare()`: Calcula el NAV spot dividiendo el Patrimonio Neto Libre entre las participaciones netas en circulación ($NAV = \text{NetEquityUSD} / \text{NetCirculatingShares}$).
 
-#### 2. [`VirajeVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/VirajeVault.sol)
-- **Propósito**: Búnker frío de custodia de activos de reserva (USDC, WBTC, WETH).
-- **Funciones Principales**:
-  - `transferFunds(address token, address to, uint256 amount)`: Transfiere fondos autorizado únicamente por contratos con rol `VAULT_MANAGER_ROLE` (`TreasuryManager` y `RealYieldRouter`).
-  - `notifyReserveFee(address token, uint256 amount)`: Recibe la inyección del 50% de las comisiones del protocolo, elevando instantáneamente el NAV Spot.
+#### 2. [`TreasuryFeeLib.sol`](../contracts/src/lib/TreasuryFeeLib.sol)
+- **Propósito**: Cálculo algorítmico de slippage dinámico y tarifas anti-dilución.
+- **Directiva de Cero Fricción**: Si el impacto del depósito es inferior o igual al 20% del pool (`impactRatio <= 2000 bps`), retorna **0 BPS (0.00%)**. Si excede el 20%, aplica recargo proporcional al exceso hasta un máximo de 200 BPS (2.00%).
 
-#### 3. [`VirajeToken.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/VirajeToken.sol)
-- **Propósito**: Implementación ERC-20 del token sintético nativo $VIRAJE$.
-- **Control de Acceso**: Operaciones de acuñación restringidas a `MINTER_ROLE` (`TreasuryManager`) y quema a `BURNER_ROLE` (`TreasuryManager` y `GovernanceStaking`).
+#### 3. [`TreasuryPoRLib.sol`](../contracts/src/lib/TreasuryPoRLib.sol)
+- **Propósito**: Cómputo $O(1)$ de Proof of Reserves, valoración patrimonial en tiempo real y deducción rigurosa de pasivos de bonos vestados.
 
-#### 4. [`ProtocolAddressProvider.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/ProtocolAddressProvider.sol)
-- **Propósito**: Service Locator Registry inmutable que mapea identificadores de módulo (`bytes32`) a sus direcciones contractuales vigentes.
+#### 4. [`TreasuryRebalanceLib.sol`](../contracts/src/lib/TreasuryRebalanceLib.sol)
+- **Propósito**: Ejecución de rebalanceos de cartera multiactivo con tolerancia máxima de slippage del 0.05% contra oráculos Chainlink.
 
----
+#### 5. [`VirajeVault.sol`](../contracts/src/VirajeVault.sol)
+- **Propósito**: Búnker frío de custodia de reservas exógenas (USDC, WBTC, WETH). Fondos transferibles únicamente mediante roles autorizados (`VAULT_MANAGER_ROLE`).
 
-### 3.2. Módulo 2: Oráculos y Resiliencia Off-Chain
-
-#### 5. [`OracleHub.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/OracleHub.sol)
-- **Propósito**: Hub normalizador de precios USD y verificador de staleness.
-- **Lógica Dual Oracle & L2 Sequencer**:
-  - Consulta en primera instancia el oráculo primario Chainlink (`priceFeeds`).
-  - Si el feed primario falla o supera `oracleStalenessLimit`, conmuta automáticamente al oráculo secundario Pyth Network (`secondaryPriceFeeds`).
-  - Inspecciona `checkSequencerUptime()` para pausar valoraciones si el secuenciador L2 se detiene.
-
-#### 6. [`CircuitBreaker.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/CircuitBreaker.sol)
-- **Propósito**: Interruptor de seguridad de volatilidad. Congela temporalmente las compras de activos si su precio sufre una depreciación superior al 15% en una ventana móvil de 6 horas.
-
-#### 7. [`DynamicYieldOracleRouter.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/DynamicYieldOracleRouter.sol)
-- **Propósito**: Consulta on-chain en tiempo real de APYs pasivos de protocolos institucionales (Morpho Blue, Lombard LBTC, Lido wstETH) para proyectar tasas de rendimiento dinámicas en la interfaz.
+#### 6. [`VirajeToken.sol`](../contracts/src/VirajeToken.sol)
+- **Propósito**: Token ERC-20 sintético respaldado. Acuñación restringida a `MINTER_ROLE` (`TreasuryManager`) y quema a `BURNER_ROLE` (`TreasuryManager`, `GovernanceStaking`, `DiscountBuybackEngine`).
 
 ---
 
-### 3.3. Módulo 3: Flujo Real Yield & Gobernanza Pure DeFi
+### 3.2. Módulo 2: Centinela Pre-Transaccional, Oráculos y Resiliencia L2
 
-#### 8. [`RealYieldRouter.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/RealYieldRouter.sol)
-- **Propósito**: Enrutador universal inmutable de comisiones con cumplimiento MiCA Pure DeFi (50/50).
-- **Regla de Reparto**:
-  - **50%** $\rightarrow$ Inyección a `VirajeVault` (Sube NAV Spot de forma inmediata).
-  - **50%** $\rightarrow$ Transferencia a `CommunityYieldVault` / `GovernanceStaking` en USDC líquido para stakers de $stVIRAJE$.
-- **Opciones de Cobro de Dividendos**:
-  - `OPTION_A_STABLECOIN`: 100% en USDC líquido directo.
-  - `OPTION_B_RESERVE_ASSET`: Auto-conversión a WBTC/WETH vía Uniswap v3 con verificación de oráculo Chainlink, protección de slippage (1.00%), fee tier configurable por DAO (`reserveFeeTier`), y fallback automático a USDC si el activo está congelado por el `CircuitBreaker`.
-- **Rescate de Fondos**: Función `sweepTokens(token, to)` administrada por la DAO para recuperar transferencias accidentales.
+#### 7. [`VirajeHypervisor.sol`](../contracts/src/VirajeHypervisor.sol)
+- **Propósito**: Centinela pre-transaccional de grado institucional.
+- **Estructura PreFlightReport**:
+  ```solidity
+  struct PreFlightReport {
+      bool canExecute;
+      uint256 expectedNAV;
+      uint256 dynamicFeeBps;
+      uint256 maxSafeAmount;
+      string rejectionReason;
+  }
+  ```
+- **Capacidades**: Simula llamadas antes del envío a la red, certifica que los límites LTV de colateral reflexivo no se sobrepasen y previene que MetaMask infle el gas a 30M por reversiones de contrato.
 
-#### 9. [`CommunityYieldVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/CommunityYieldVault.sol)
-- **Propósito**: Bóveda comunitaria de dividendos en USDC líquido para stakers de $stVIRAJE$.
-- **Notificación $O(1)$**: Al recibir rendimiento, invoca `notifyRewardAmount` en `GovernanceStaking.sol` actualizando el acumulador global Synthetix en tiempo constante.
+#### 8. [`OracleHub.sol`](../contracts/src/OracleHub.sol)
+- **Propósito**: Concentrador de oráculos con detección de caída de Secuenciador L2.
+- **Failover Automático**: Oráculo primario Chainlink con conmutación determinista a Pyth Network ante fallos de respuesta o datos desactualizados (>24h).
 
-#### 10. [`GovernanceStaking.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/GovernanceStaking.sol)
-- **Propósito**: Contrato de staking líquido ($stVIRAJE$) con registro histórico de checkpoints de voto para la DAO. Retiene una cuota de entrada del 1% (50% a quema permanente y 50% al pool de yield).
-- **Distribución de Dividendos**: Algoritmo de distribución continua $O(1)$ independiente del número de stakers.
+#### 9. [`CircuitBreaker.sol`](../contracts/src/CircuitBreaker.sol)
+- **Propósito**: Interruptor de seguridad de volatilidad. Congela temporalmente las compras de un activo si su cotización cae más de un 15% en una ventana de 6 horas.
 
-#### 11-12. [`GovernorViraje.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/GovernorViraje.sol) & [`TimelockController.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/TimelockController.sol)
-- **Propósito**: Sistema de gobernanza institucional DAO con retraso obligatorio de 72 horas para cualquier actualización de código o parámetros ("Right to Exit" para inversores).
-- **Características Institucionales**:
-  - *Veto Inmutable*: Bóvedas de reserva (`virajeVault`, `communityYieldVault`, `treasuryManager`) poseen 0 votos inmutables para impedir circularidad.
-  - *Votación de 3 Vías*: Soporte completo para `0 = Against`, `1 = For`, `2 = Abstain` (la abstención computa hacia el quórum de 10.000 stVIRAJE).
-  - *Voto con Razón On-Chain*: `castVoteWithReason(proposalId, support, reason)` emite justificantes de voto en el evento `VoteCast`.
-  - *Cancelación de Propuestas*: `cancel(proposalId)` permite al proponente o a la comunidad anular propuestas erróneas o huérfanas antes de su ejecución.
+#### 10. [`PostQuantumGuard.sol`](../contracts/src/PostQuantumGuard.sol)
+- **Propósito**: Capa de seguridad criptográfica post-cuántica mediante firmas hash Winternitz W-OTS+ (NIST SP 800-208 / 128 bits de seguridad Grover).
 
 ---
 
-### 3.4. Módulo 4: Mercados Monetarios & Productos Estructurados
+### 3.3. Módulo 3: Flujo Real Yield y Gobernanza DAO
 
-#### 15. [`VestedDiscountVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/VestedDiscountVault.sol)
-- **Propósito**: Emisión de bonos vestados a 1-5 años con descuentos dinámicos (5% a 25%) basados en la duración de bloqueo y saldo staked.
-- **Tokens ERC-721**: Cada bono emite un NFT [`VaultPositionNFT.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/VaultPositionNFT.sol) transferible que sirve como garantía líquida en mercados secundarios.
-- **Ragequit Institucional**: Permite retiro anticipado con aplicación de una penalización del 15% (`RAGEQUIT_PENALTY_BPS`), la cual se enruta al `RealYieldRouter` (7.5% a Reservas elevando NAV y 7.5% a stakers como dividendos).
+#### 11. [`RealYieldRouter.sol`](../contracts/src/RealYieldRouter.sol)
+- **Propósito**: Distribuidor binario universal de comisiones (50/50). 50% inyectado en `VirajeVault` (acrece NAV spot de todos los tenedores) y 50% a `CommunityYieldVault` (dividendos en USDC a stakers de `stVIRAJE`).
 
-#### 16. [`VaultPositionNFT.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/VaultPositionNFT.sol)
-- **Propósito**: Token ERC-721 transferible que encapsula los derechos de cobro de un bono vestado.
+#### 12. [`CommunityYieldVault.sol`](../contracts/src/CommunityYieldVault.sol)
+- **Propósito**: Bóveda comunitaria que almacena y distribuye el flujo de dividendos de Real Yield en tiempo real.
 
-#### 17. [`P2PLendingMarket.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/P2PLendingMarket.sol)
-- **Propósito**: Mercado monetario multi-colateral (NFTs de bonos, WBTC, WETH, VIRAJE) con originación P2P y línea de liquidez directa de Tesorería (hasta el 20% de las reservas exógenas).
-- **Características Institucionales**:
-  - *Fair Liquidation con Restitución de Equity*: En liquidaciones de colaterales ERC-20, el liquidador únicamente incauta el $\text{Principal} + \text{Interés} + 10\%$ de bonus. El colateral sobrante es restituido íntegramente al prestatario a través de `claimableBorrowerEquity`.
-  - *Tasa APR Dinámica Ajustable por DAO*: Consulta `treasuryBorrowAprBps()` desde `ProtocolTokenomicsEngine.sol` (configurable entre 1% y 50% APR).
-  - *Blindaje de Circuit Breaker*: Si el colateral o el stablecoin están congelados por volatilidad extrema, el contrato bloquea automáticamente la apertura de nuevos préstamos.
+#### 13. [`GovernanceStaking.sol`](../contracts/src/GovernanceStaking.sol)
+- **Propósito**: Staking líquido de gobernanza (`stVIRAJE`) con puntos de control de voto ERC-20 Votes.
+- **Comisiones**: Entrada **`0.00%`** (1:1 stVIRAJE sin coste). Salida (Unstake) **`0.50%`** (50% quema deflacionaria / 50% distribuido a stakers leales).
 
-#### 18. Gestión de Rendimiento: Universal Yield Routing (ERC-4626)
-La Tesorería implementa un enrutador de rendimiento agnóstico que gestiona el capital exógeno a través de adaptadores `IERC4626`:
-- *Morpho Blue & Aave v3*: Generación de rendimiento institucional pasivo.
-- *Ondo RWA*: Exposición a letras del tesoro estadounidense tokenizadas.
-- *Extracción Automática de Liquidez (`_ensureLiquidBuffer`)*: Ante rescates masivos de capital, la tesorería extrae liquidez de los adaptadores sin romper el respaldo del 100%.
-
-#### 19. [`DiscountBuybackEngine.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/DiscountBuybackEngine.sol)
-- **Propósito**: Motor autónomo de estabilización algorítmica y quema deflacionaria que adquiere tokens $VIRAJE$ con descuento en DEXs secundarios ($\ge 5.00\%$) y los quema inmediatamente on-chain.
-- **10 Candados de Control Matemático**:
-  1. *Descuento Mínimo*: $DEX_{\text{price}} \le NAV_{\text{spot}} \times 0.95$.
-  2. *Presupuesto Diario*: Máximo 2.50% de las reservas líquidas en 24h.
-  3. *Monotonicidad Obligatoria*: $\Delta NAV > 0$ post-quema.
-  4. *Quema Atómica*: Los tokens comprados se destruyen en la misma transacción (`_burn`).
-  5. *Control de Slippage Dinámico*: Máximo 1.00% de tolerancia.
-  6. *Cooldown Anti-Spam*: 4 horas entre ejecuciones consecutivas.
-  7. *Pureza de Colateral*: Fondos de recompra provienen exclusivamente de reservas exógenas (USDC).
-  8. *Integración con CircuitBreaker*: Bloqueo automático si el interruptor de volatilidad está activo.
-  9. *Mantenimiento de Solvencia*: Verificación de $PoR \ge 100.00\%$ antes y después de la operación.
-  10. *Límite de Impacto por Trade*: Tamaño de orden $\le 1.00\%$ de la liquidez del pool.
-- **Mejoras Institucionales**:
-  - *Fee Tier de Uniswap v3 Configurable*: `poolFee` ajustable (`100`, `500`, `3000`, `10000`).
-  - *Incentivo Keeper Bounty*: Reembolso de gas en USDC a los bots ejecutores (`keeperBountyBps`).
-  - *Rescate de Tokens Extraviados*: `sweepTokens(token, to)` controlado por DAO.
-
-#### 20. [`CompliantTreasuryGateway.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/adapters/CompliantTreasuryGateway.sol)
-- **Propósito**: Adaptador institucional stateless que permite a contrapartes reguladas operar depósitos y rescates con verificación KYC/AML delegada.
-- **Aislamiento Regulatorio**: El contrato es 100% *stateless* (no custodia fondos ni fragmenta liquidez), enrutando las operaciones directamente a [`TreasuryManager.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/TreasuryManager.sol), preservando la condición de *Pure DeFi* del Core.
-
-#### 21. [`FounderReserveVestingVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/FounderReserveVestingVault.sol)
-- **Propósito**: Bóveda autónoma de custodia y vesting para la asignación génesis de 100,000 VIRAJE del fundador/creador del protocolo.
-- **Desbloqueo Basado en Solvencia (Health-Backed Vesting)**: La liberación de participaciones no transcurre de forma ciega por calendario, sino que está condicionada de manera estricta al superávit matemático de las reservas ($\text{Solvencia} > 100.00\%$ y $\text{ActivosTotales} > \text{PasivosTotales}$).
-- **Cap de Reclamo (10% del Excedente) y Cooldown de 72 Horas**:
-  - En cada reclamo, el fundador solo puede liberar como máximo el 10% del superávit de reservas convertido a VIRAJE mediante `getNAVPerShare()` oficial.
-  - Se impone un candado temporal inmutable de 72 horas entre reclamos sucesivos.
-- **Inmunidad Patrimonial de la Tesorería**:
-  - El reclamo transfiere exclusivamente tokens VIRAJE custodiados dentro de la bóveda; **cero reservas (USDC, WBTC, WETH) son extraídas de la Tesorería**.
-  - El fundador recibe tokens VIRAJE líquidos y es libre de conservarlos, delegarlos para voto en la DAO, colocarlos en el mercado P2P como colateral o stakearlos en gobernanza.
-- **Aislamiento Génesis del Suministro Circulante**:
-  - Los 100,000 VIRAJE en custodia de este contrato se deducen automáticamente del cálculo de circulante en [`TreasuryPoRLib.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/lib/TreasuryPoRLib.sol#L180-L195) y de las obligaciones pasivas, garantizando un Estado Génesis puro y limpio a bloque 0 (0.00 VIRAJE en circulación y $1.0000 USD de NAV inicial).
+#### 14-15. [`GovernorViraje.sol`](../contracts/src/GovernorViraje.sol) & [`TimelockController.sol`](../contracts/src/TimelockController.sol)
+- **Propósito**: Gobernanza descentralizada con retardo obligatorio de 72 horas para toda modificación administrativa o de código.
 
 ---
 
-### 3.5. Módulo 5: Librerías Modulares de Tesorería & Infraestructura Auxiliar
+### 3.4. Módulo 4: Mercados Monetarios y Productos Estructurados
 
-- [`TreasuryPoRLib.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/lib/TreasuryPoRLib.sol): Librería desacoplada para el cómputo de Proof of Reserves y NAV Spot $O(1)$.
-- [`TreasuryLiquidityLib.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/lib/TreasuryLiquidityLib.sol): Librería para depósitos, rescates y extracción de buffers líquidos.
-- [`TreasuryFeeLib.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/lib/TreasuryFeeLib.sol): Librería de cálculo de comisiones dinámicas adaptativas por impacto de capital.
-- [`TreasuryRebalanceLib.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/lib/TreasuryRebalanceLib.sol): Librería de rebalanceo de reservas con protección estricta de slippage (0.05%).
-- [`ProtocolTokenomicsEngine.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/ProtocolTokenomicsEngine.sol): Motor de cálculo purificado sin estado mutable.
-- [`IProtocolErrors.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/interfaces/IProtocolErrors.sol): Catálogo centralizado de errores custom EIP-838 (eliminando strings para ahorro de gas y compatibilidad ABI).
-- [`YieldStreamingVault.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/YieldStreamingVault.sol): Reclamación gasless de rendimientos firmados vía EIP-712 con receptor forzado a la dirección del firmante.
-- [`AtomicSwapReceiver.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/AtomicSwapReceiver.sol): Intercambio atómico e inyección de colaterales secundarios (USDT $\rightarrow$ USDC).
-- [`TreasuryReserveManager.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/TreasuryReserveManager.sol): Rebalanceador de ponderación de reservas.
-- [`TreasuryProxy.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/TreasuryProxy.sol): Proxy de actualización transparente ERC-1967.
-- `ProtocolRoles.sol`: Constantes inmutables de roles RBAC.
+#### 16. [`VestedDiscountVault.sol`](../contracts/src/VestedDiscountVault.sol)
+- **Propósito**: Emisión de bonos cupón cero pre-financiados con plazos de 1 a 5 años y escala de descuento del **10.0% al 50.0%** (10% anual base). Cero comisión de emisión (`mintFeeBps = 0`). Opción de *ragequit* con 15% de penalización y quema del 100% de tokens no vestados.
+
+#### 17. [`VaultPositionNFT.sol`](../contracts/src/VaultPositionNFT.sol)
+- **Propósito**: Token ERC-721 transferible con almacenamiento compacto de parámetros de posición de bonos.
+
+#### 18. [`P2PLendingMarket.sol`](../contracts/src/P2PLendingMarket.sol)
+- **Propósito**: Mercado de préstamos sobrecolateralizados bilaterales y línea de liquidez directa de Tesorería.
+- **Parámetros Calibrados**:
+  - **Tasa Fija Tesorería**: **`6.00% APR`**.
+  - **Comisión de Originación**: **`0.25%`** (destinada a stakers).
+  - **LTV Efectivo Bonos NFT**: **`45.50%`** (Haircut del 65% $\times$ 70% Max LTV).
+  - **LTV Máximo WBTC**: **`75.00%`**.
+  - **LTV Máximo WETH**: **`80.00%`**.
+  - **LTV Efectivo VIRAJE**: **`25.00%`** (Haircut del 50% $\times$ 50% Max LTV).
+  - **Techo Colateral Reflexivo**: **`45.00%`** ($3,435.41 USDC máx.).
+  - **Defensa Asimétrica en Sequencer Grace Period**: Amortizaciones permitidas, liquidaciones pausadas temporalmente.
+
+#### 19. [`DiscountBuybackEngine.sol`](../contracts/src/DiscountBuybackEngine.sol)
+- **Propósito**: Recompra algorítmica de VIRAJE con descuento ($\ge 5\%$) en mercados secundarios y quema atómica con 10 candados de control matemático.
+
+#### 20. [`MorphoYieldVaultAdapter.sol`](../contracts/src/MorphoYieldVaultAdapter.sol)
+- **Propósito**: Adaptador ERC-4626 que canaliza el 80% de las stablecoins hacia MetaMorpho para devengo pasivo institucional de rendimiento.
 
 ---
 
 ## 4. Formulativa Matemática y Ecuaciones del Protocolo
 
-### 4.1. Tasa de Comisión Dinámica Adaptativa
-$$Fee_{\text{BPS}} = \min \left( 500, \, Fee_{\text{base}} + \left\lfloor \frac{\text{DepositUSD} \times 10000}{\text{TotalAssetsUSD} + \text{DepositUSD}} \times \frac{\text{Sensitivity}}{10000} \right\rfloor \right)$$
-
-### 4.2. Acuñación de Shares $VIRAJE$ por NAV
-$$\text{SharesToMint} = \begin{cases} 
-\text{DepositUSD}_{18} & \text{si } \text{TotalShares} = 0 \text{ o } \text{TotalAssetsUSD} = 0 \\
-\frac{\text{DepositUSD}_{18} \times \text{TotalShares}}{NAV_{\text{before}}} & \text{en otro caso}
+### 4.1. Tarifa Dinámica Adaptativa Anti-Ballena
+$$\text{DynamicFeeBps} = \begin{cases} 
+0 & \text{si } \text{ImpactRatio} \le 2000\text{ bps (20\%)} \\
+\min\left(200, \, \frac{(\text{ImpactRatio} - 2000) \times \text{Sensitivity}}{10000}\right) & \text{en otro caso}
 \end{cases}$$
 
-### 4.3. Recompra Deflacionaria y Aumento de NAV ($\Delta NAV > 0$)
-Dado un gasto de $U$ dólares de reserva para recomprar $A$ tokens $VIRAJE$ a precio de mercado $P_{\text{DEX}} \le NAV \times (1 - \text{Discount})$:
+### 4.2. Acuñación de Participaciones VIRAJE por NAV
+$$\text{SharesToMint} = \begin{cases} 
+\text{DepositUSD}_{18} & \text{si } \text{TotalShares} = 0 \text{ o } \text{TotalAssetsUSD} = 0 \\
+\frac{\text{DepositUSD}_{18} \times 10^{18}}{NAV_{\text{spot}}} & \text{en otro caso}
+\end{cases}$$
 
-$$NAV_{\text{post}} = \frac{\text{Assets}_{\text{pre}} - U}{\text{Shares}_{\text{pre}} - A} > \frac{\text{Assets}_{\text{pre}}}{\text{Shares}_{\text{pre}}} = NAV_{\text{pre}}$$
+### 4.3. Escala de Descuento en Bonos Vestados
+$$\text{Discount}_{\text{BPS}} = \min \left( 5000, \, (\text{LockYears} \times 1000) + \text{TierBonus}_{\text{stVIRAJE}} \right)$$
 
-### 4.4. Escala de Descuento en Bonos Vestados
-$$\text{Discount}_{\text{BPS}} = \min \left( 5000, \, (\text{LockYears} \times 500) + \text{TierBonus}_{\text{stVIRAJE}} \right)$$
-
-### 4.5. Factor de Salud, Grace Period y Liquidación P2P
-$$\text{HealthFactor} = \frac{\text{CollateralUSD} \times 10000}{\text{PrincipalBorrowedUSD} + \text{InterestOwedUSD}}$$
-
-$$\text{Liquidatable} \iff (\text{HealthFactor} < 11500 \lor \text{Expired}) \land \mathbf{\neg isSequencerGracePeriod()}$$
+### 4.4. Capacidad de Crédito P2P para Bonos NFT
+$$\text{MaxBorrowAllowed} = \frac{\text{DiscountedPricePaid} \times \text{Haircut}_{\text{BPS}} \times \text{MaxLTV}_{\text{BPS}}}{10000 \times 10000} = \text{DiscountedPricePaid} \times 0.455$$
 
 ---
 
 ## 5. Capa de Frontend y Estado React (Viem + TypeScript)
 
-La aplicación frontend implementa una arquitectura **Pure UI Rendering** donde la interfaz actúa de forma puramente reactiva al estado devuelto por los smart contracts, eliminando cualquier lógica de cálculo financiero en JavaScript:
-
-### 5.1. Hooks de Estado y Acciones (`frontend/src/hooks/`)
+La aplicación frontend implementa una arquitectura **Pure UI Rendering** donde la interfaz actúa de forma puramente reactiva al estado devuelto por los smart contracts:
 
 | Hook | Responsabilidad y Lecturas/Escrituras On-Chain |
 | :--- | :--- |
-| [`useWeb3State.ts`](file:///c:/Users/Admin/Desktop/token/frontend/src/hooks/useWeb3State.ts) | Realiza polling cada 4s mediante Viem `publicClient`. Lee balances, PoRAssets, PoRLiabilities, NAV Spot, APYs de `DynamicYieldOracleRouter` y préstamos P2P. |
-| [`useTreasuryActions.ts`](file:///c:/Users/Admin/Desktop/token/frontend/src/hooks/useTreasuryActions.ts) | Prepara y ejecuta firmas para `deposit(usdc)` y `redeem(viraje)` con modal de confirmación. |
-| [`useStakingActions.ts`](file:///c:/Users/Admin/Desktop/token/frontend/src/hooks/useStakingActions.ts) | Prepara transacciones de staking, unstaking y cobro de dividendos en USDC líquido. |
-| [`useVestedVaultActions.ts`](file:///c:/Users/Admin/Desktop/token/frontend/src/hooks/useVestedVaultActions.ts) | Emisión de bonos NFT, ejecuciones de `ragequit()` y cobro al vencimiento. |
-| [`useP2PLendingActions.ts`](file:///c:/Users/Admin/Desktop/token/frontend/src/hooks/useP2PLendingActions.ts) | Ofertas de préstamos P2P, financiamiento, repagos con deferencia de colateral en grace period y liquidaciones. |
+| `useWeb3State.ts` | Polling reactivo mediante Viem `publicClient`. Lee balances, PoR, NAV spot, APYs y préstamos P2P. |
+| `useTreasuryActions.ts` | Ejecución de `deposit(usdc)` con 0.00% fee y `redeem(viraje)` con 1.00% fee. |
+| `useStakingActions.ts` | Staking 1:1 sin comisión de entrada y unstaking con 0.50% de comisión de salida. |
+| `useVestedVaultActions.ts` | Emisión de bonos NFT a 10%-50% de descuento y ejecuciones de `ragequit(-15%)`. |
+| `useP2PLendingActions.ts` | Creación de ofertas P2P, financiación, créditos de tesorería al 6% APR y liquidaciones protegidas. |
 
 ---
 
@@ -385,97 +325,16 @@ La aplicación frontend implementa una arquitectura **Pure UI Rendering** donde 
 
 | Rol On-Chain | Identificador | Asignación Contractual | Permisos |
 | :--- | :--- | :--- | :--- |
-| `DEFAULT_ADMIN_ROLE` | `0x00` | `TimelockController.sol` (72h) | Modificación de parámetros clave. Cero llaves administradoras privadas. |
+| `DEFAULT_ADMIN_ROLE` | `0x00` | `TimelockController.sol` (72h) | Modificación de parámetros clave. Cero llaves privadas administradoras. |
 | `MINTER_ROLE` | `keccak256("MINTER_ROLE")` | `TreasuryManager.sol` | Acuñación exclusiva de $VIRAJE$ respaldado por colateral. |
-| `BURNER_ROLE` | `keccak256("BURNER_ROLE")` | `TreasuryManager.sol` & `DiscountBuybackEngine.sol` | Quema de tokens $VIRAJE$ en rescates y recompras. |
+| `BURNER_ROLE` | `keccak256("BURNER_ROLE")` | `TreasuryManager.sol`, `GovernanceStaking.sol`, `DiscountBuybackEngine.sol` | Destrucción de tokens en rescates, unstakes y recompras. |
 | `VAULT_MANAGER_ROLE` | `keccak256("VAULT_MANAGER_ROLE")` | `TreasuryManager.sol` & `RealYieldRouter.sol` | Extracción autorizada de fondos de `VirajeVault`. |
-| `ORACLE_MANAGER_ROLE` | `keccak256("ORACLE_MANAGER_ROLE")` | Dirección de Gobernanza (Timelock) | Registro de feeds primarios, secundarios y staleness limits. |
-
-### 6.1. Descentralización Plena (MiCA Recital 22) y Pasarela KYC Stateless
-* **Core Descentralizado (Pure DeFi):** El contrato [`TreasuryManager.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/TreasuryManager.sol) es 100% permissionless. Las funciones `deposit()` y `redeem()` no tienen restricciones administrativas de lista blanca, cumpliendo con la exención del Considerando 22 del Reglamento MiCA (UE 2023/1114).
-* **Adaptador Institucional Aislado:** La verificación KYC/AML se delega íntegramente en [`CompliantTreasuryGateway.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/adapters/CompliantTreasuryGateway.sol), un contrato *stateless* que valida identidades institucionales y redirige instantáneamente las transacciones al núcleo de tesorería sin crear pools fragmentados.
+| `ORACLE_MANAGER_ROLE` | `keccak256("ORACLE_MANAGER_ROLE")` | Dirección de Gobernanza (Timelock) | Registro de feeds primarios, secundarios y límites de staleness. |
 
 ---
 
 ## 7. Arquitectura L2 & Resiliencia Off-Chain
 
-### 7.1. L2 Sequencer Grace Period & Defensa Asimétrica
-* En redes Layer-2 (Arbitrum / Base), si el secuenciador sufre una caída o reinicio reciente (`< 3600 segundos`), [`OracleHub.sol`](file:///c:/Users/Admin/Desktop/token/contracts/src/OracleHub.sol) activa el estado `isSequencerGracePeriod()`.
-* **Defensa Asimétrica en P2P:**
-  - `repayLoan()`: **Permitido.** Permite a los usuarios amortizar su deuda. El colateral excedente se retiene de forma segura en `claimableBorrowerEquity` hasta que los oráculos confirmen su frescura.
-  - `liquidateLoan()`: **Bloqueado.** Revierte con `SequencerGracePeriodActive()` para proteger a prestatarios ante liquidaciones injustas con precios obsoletos.
-
-### 7.2. Indexación Off-Chain, Detección de Reorgs y Rollback Atómico
-* [`BlockIndexer.ts`](file:///c:/Users/Admin/Desktop/token/services/core/src/indexer/BlockIndexer.ts) verifica criptográficamente `parentHash` contra el historial de bloques canónicos.
-* Ante una bifurcación de red (*Reorg*), el sistema no realiza eliminaciones ciegas (`DELETE`), sino que:
-  1. Marca los bloques y eventos huérfanos con estado `ORPHANED`.
-  2. Ejecuta un rollback atómico en [`IdempotentLedgerEngine.ts`](file:///c:/Users/Admin/Desktop/token/services/core/src/ledger/IdempotentLedger.ts), recalculando balances sobre asientos `CANONICAL`.
-  3. Rebobina el cursor al ancestro común seguro.
-
----
-
-## 8. Protocolo de Auditoría y Verificación Integrada
-
-### 8.1. Suite de Fuzzing e Invariantes en Foundry (`forge test`)
-- **Fuzzing Configurado**: `runs = 10000` en `foundry.toml`.
-- **Suites Ejecutadas**: `InstitutionalAuditInvariants.t.sol`, `CompliantTreasuryGateway.t.sol`, `DiscountBuybackEngine.t.sol`, `ModularProtocol.t.sol`, `FullSystemCoverage.t.sol`, `TreasuryInvariants.t.sol`.
-- **Resultado**: `30 passed; 0 failed; 0 skipped` (100% Éxito).
-
-### 8.2. Suite de Servicios Backend y Conciliación PoR
-- **Tests Ejecutados**: `backend-improvements.test.ts` (43 pruebas unitarias e invariantes).
-- **Cobertura**: Checkpoint de indexación, Flashbots MEV relay, failover de RPC, libro mayor contable de partida doble y conciliador PoR con tolerancia del 0.01%.
-- **Resultado**: `43 passed; 0 failed; 0 skipped` (100% Éxito).
-
-### 8.3. Alineación Frontend / ABIs y Build de Producción
-- **Alineación de Interfaces**: `18 passed; 0 failed`.
-- **Tests Unitarios Frontend (Vitest)**: `21 passed; 0 failed`.
-- **Compilación de Producción**: Vite + Rollup empaquetado en `1.31s` sin errores de tipo.
-
-### 8.4. Simulación E2E Master Tokenomics en Playwright
-- **Prueba Ejecutada**: `tests/master_tokenomics_simulation.spec.ts`.
-- **Resultado**: `1 passed (1.7m)`.
-- Auditados con precisión del 0.1% los 15 pasos del ciclo de vida del protocolo sobre el bundle compilado de producción.
-
-### 8.5. Suite de Verificación Continua por Enjambres de IA Autónomos (Qwen3:8B + Orion)
-Ubicada en [`services/core/src/agents/`](../services/core/src/agents/) y documentada exhaustivamente en [`docs/AI_TESTING_FRAMEWORK.md`](AI_TESTING_FRAMEWORK.md):
-- **Motor de Inferencia Local Acelerado por GPU**: Ejecución con modelo de lenguaje [`qwen3:8b`](https://ollama.com/library/qwen3) en VRAM de GPU NVIDIA RTX (Tensor Cores 4ª Generación, Flash Attention, cuantización de pesos Q4_K_M y caché de pares clave-valor Q8_0).
-- **Orquestador Supervisor (Orion)**:
-  - *Poda Dinámica de Manifiesto Negativo*: Elimina del contexto de inferencia funciones que alcancen el umbral de saturación, erradicando bucles repetitivos y sesgos hacia primitivas como `stake` o `propose`.
-  - *Priorización de Funciones Vírgenes*: Detecta métodos con cobertura histórica del 0% e inyecta directivas sintéticas de ataque para maximizar la exploración de código no probado.
-  - *Métrica de Diversidad Cognitiva*: Monitorea en tiempo real la dispersión de llamadas y asigna una puntuación de exploración (Score: 85/100).
-- **Aislamiento Génesis por Snapshots (`anvil_snapshot` / `anvil_revert`)**:
-  - Cada acción o ataque se ejecuta sobre un estado clonado de manera atómica.
-  - Al término de cada evaluación de invariantes, se ejecuta `evm_revert(0x1)`, eliminando contaminación residual, fuga de liquidez o agotamiento de colaterales.
-- **Enjambre Red Team Adversarial (Apex, Cipher, Echo)**:
-  - Campaña de 1 Hora: **73 rondas, 217 llamadas de penetración sobre 23 smart contracts**, con 186 reverts defendidos (85.71%) y 31 mutaciones autorizadas. Cero llamadas repetitivas en bucle.
-- **Enjambre de Simulación de Perfiles de Usuario Reales (5 Arquetipos DeFi)**:
-  - *Elena (Retail Yield)*, *Marcus (Whale Bonos)*, *Sofia (Prestataria P2P)*, *Viktor (Keeper MEV)*, *Lucas (DAO Activista)*.
-  - Campaña de 1 Hora: **43 rondas, 214 flujos ejecutados, 176 operaciones exitosas (82.24%)** y 38 bloqueos de salvaguarda matemática formal (`NoDiscountVsNAV()`), confirmando la invulnerabilidad de la tesorería ante recompras que no ofrecen descuento frente al NAV spot.
-- **Verificación de Invariantes On-Chain en Tiempo Real**:
-  - 100% de cumplimiento en Solvencia de Reservas ($\ge 100\%$), Monotonicidad de NAV ($\Delta NAV \ge 0$), respaldo 1:1 de stVIRAJE y límites de Circuit Breaker.
-
----
-
-## 9. Blindaje Criptográfico Post-Cuántico (PQC NIST SP 800-208 / W-OTS+)
-
-### 9.1. Análisis de Amenaza Cuántica y Vectores de Ataque
-Las infraestructuras de contratos inteligentes estándar dependen de la criptografía de curva elíptica ECDSA sobre la curva $secp256k1$. La llegada inminente de ordenadores cuánticos a escala criptográfica comprometerá dicha seguridad mediante el **Algoritmo de Shor**, el cual reduce el cálculo del logaritmo discreto a tiempo polinomial $O((\log N)^3)$, permitiendo deducir las claves privadas a partir de las claves públicas expuestas en transacciones previas.
-
-Por el contrario, las funciones de dispersión unidireccionales (hashes como Keccak-256) son inmunes a Shor y solo ven su seguridad reducida a la mitad mediante el **Algoritmo de Grover** ($O(\sqrt{N})$), lo cual mantiene una seguridad post-cuántica robusta de **128 bits** para digest de 256 bits, catalogada como de grado militar institucional por el NIST.
-
-### 9.2. Arquitectura de Implementación: PostQuantumGuard.sol
-Para dotar al Protocolo Viraje Protocol de soberanía de seguridad cuántica, se incorpora el módulo [`PostQuantumGuard.sol`](../contracts/src/PostQuantumGuard.sol) alineado con las directrices de NIST SP 800-208 y RFC 8391:
-
-1. **Parámetro Winternitz ($w = 4$)**:
-   - Cada mensaje de 256 bits se divide en $64$ nibbles de 4 bits (valores de $0$ a $15$).
-   - Se añade una suma de verificación (*checksum*) de $3$ nibbles para prevenir falsificaciones mediante acortamiento de cadenas, totalizando **$67$ cadenas de hash independientes**.
-2. **Cadenas de Hash Reversibles**:
-   - Clave privada: 67 semillas pseudoaleatorias de 32 bytes generadas criptográficamente.
-   - Clave pública: Cada semilla es aplicada iterativamente a través de $15$ rondas consecutivas de `Keccak-256`.
-   - Raíz de Compromiso (*Commitment Root*): Se ancla on-chain el hash condensado `keccak256(abi.encode(publicKeys[67]))`.
-3. **Verificación On-Chain Gas-Efficient**:
-   - Al validar una firma, el contrato solo itera los pasos restantes hasta completar 15 hashes por cadena: $\sum (15 - nibble_i)$.
-   - Consumo de gas ultra-optimizado: ~50,000 - 75,000 unidades de gas, permitiendo ejecución nativa en Ethereum L1, Base y Arbitrum sin depender de precompilados experimentales.
-4. **Protección Anti-Replay y Forward Secrecy**:
-   - Cada raíz de compromiso solo puede ser utilizada una única vez (`usedCommitments[root] = true`), garantizando *Perfect Forward Secrecy* (PFS).
-   - Las acciones administrativas sensibles (pausa de emergencia, sobreescritura de oráculos o traspaso de custodia) quedan certificadas on-chain con el mapping `quantumAuthorizedActions[actionId]`.
+* **L2 Sequencer Grace Period:** Ante caídas o reinicios del secuenciador de Arbitrum, se permite amortizar deuda (`repayLoan`), pero las liquidaciones forzosas (`liquidateLoan`) quedan pausadas para impedir liquidaciones con datos de oráculo congelados.
+* **Indexación Off-Chain con Detección de Reorgs:** `BlockIndexer.ts` valida `parentHash` y ejecuta rollbacks atómicos mediante `IdempotentLedgerEngine.ts`, asegurando consistencia patrimonial continua.
+* **Blindaje Post-Cuántico W-OTS+:** Implementación de firmas Winternitz hash de 128 bits de seguridad Grover evaluadas en gas nativo EVM sin precompilados experimentales.
