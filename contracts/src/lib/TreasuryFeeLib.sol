@@ -34,7 +34,15 @@ library TreasuryFeeLib {
 
         uint256 totalDenom = totalAssetsExogenousUSD + grossDepositUSD;
         uint256 impactRatio = (grossDepositUSD * 10000) / totalDenom;
-        uint256 dynamicFeeBps = BASE_FEE_BPS + ((impactRatio * IMPACT_SENSITIVITY_BPS) / 10000);
+
+        // Normal deposits (< 20% of reserves) are 100% frictionless (0.00% fee)
+        if (impactRatio <= 2000) {
+            return 0;
+        }
+
+        // Anti-dilution fee strictly for massive whale deposits (> 20% pool impact)
+        uint256 excessImpact = impactRatio - 2000;
+        uint256 dynamicFeeBps = (excessImpact * IMPACT_SENSITIVITY_BPS) / 10000;
 
         if (dynamicFeeBps > MAX_DYNAMIC_FEE_BPS) {
             dynamicFeeBps = MAX_DYNAMIC_FEE_BPS;

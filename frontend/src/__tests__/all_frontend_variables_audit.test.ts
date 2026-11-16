@@ -81,7 +81,7 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
   // SECCIÓN 4: GOBERNANZA, STAKING & DEFLACIÓN (GovernanceStakingUI.tsx)
   // ---------------------------------------------------------------------------
   describe('4. Gobernanza, Staking & Deflación (GovernanceStakingUI.tsx)', () => {
-    it('debe calcular la distribución 50/50 de bóvedas y la paridad 1:1 de staking sin fricción', () => {
+    it('debe calcular la distribución 50/50 de bóvedas, paridad 1:1 de staking y comisión de salida 0.50% al unstakear', () => {
       const totalStakedSupply = 10000.00; // GovernanceStaking.totalStakedSupply()
       const totalSupply = 100000.00;      // VirajeToken.totalSupply()
       const navPerShareUSD = 1.0050;
@@ -95,6 +95,13 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
       const burnedAmount = 0.00;
       const stVirajeReceived = stakeAmount - feeAmount; // 3000 stVIRAJE
 
+      // Unstaking Fee: 0.50% al salir (50% quemado, 50% recompensa stakers)
+      const unstakeAmount = 1000.00;
+      const unstakeFee = unstakeAmount * 0.005; // 5.00 VIRAJE
+      const unstakeBurned = unstakeFee * 0.50;  // 2.50 VIRAJE
+      const unstakeCommunity = unstakeFee * 0.50; // 2.50 VIRAJE
+      const unstakeNetReceived = unstakeAmount - unstakeFee; // 995.00 VIRAJE
+
       // Bóvedas Canónicas Pure DeFi: 50% Treasury Reserves, 50% Community Yield Vault
       const treasuryBunkerStaked = totalStakedSupply * 0.50; // 5000 stVIRAJE
       const communityYieldStaked = totalStakedSupply * 0.50;  // 5000 stVIRAJE
@@ -103,6 +110,10 @@ describe('Auditoría Completa 100% de Variables de Interfaz (Headless Audit Suit
       expect(stakingBackingNav).toBeCloseTo(10050.00, 2);
       expect(burnedAmount).toBe(0.00);
       expect(stVirajeReceived).toBe(3000.00);
+      expect(unstakeFee).toBe(5.00);
+      expect(unstakeBurned).toBe(2.50);
+      expect(unstakeCommunity).toBe(2.50);
+      expect(unstakeNetReceived).toBe(995.00);
       expect(treasuryBunkerStaked + communityYieldStaked).toBe(totalStakedSupply);
     });
   });

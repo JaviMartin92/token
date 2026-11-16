@@ -144,6 +144,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
     // Timelock state (Anti Flash-Loan Voting)
     uint256 public constant MIN_STAKE_DURATION = 7 days;
     uint256 public constant STAKING_ENTRY_FEE_BPS = 0; // 0.00% Frictionless Staking Entry
+    uint256 public constant UNSTAKE_FEE_BPS = 50; // 0.50% Exit Fee on Unstaking (Anti-Mercenary & Real Yield Reward)
     mapping(address => uint256) public lastStakeTime;
 
     event Staked(address indexed user, uint256 amount);
@@ -346,9 +347,34 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
         // AC-15: _burn already calls _moveVotingPower internally via ERC20 override
         _burn(msg.sender, amount);
 
-        govToken.safeTransfer(msg.sender, amount);
+        if (msg.sender != treasury && UNSTAKE_FEE_BPS > 0) {
+            uint256 fee = (amount * UNSTAKE_FEE_BPS) / 10000;
+            uint256 netToUser = amount - fee;
+            uint256 burnShare = fee / 2;
+            uint256 communityShare = fee - burnShare;
 
-        emit Unstaked(msg.sender, amount);
+            if (burnShare > 0) {
+                IBurnable(address(govToken)).burn(burnShare);
+                if (treasury != address(0)) {
+                    ITreasury(treasury).recordBurn(burnShare);
+                }
+            }
+
+            if (communityShare > 0 && communityYieldVault != address(0)) {
+                govToken.safeTransfer(communityYieldVault, communityShare);
+            } else if (communityShare > 0) {
+                IBurnable(address(govToken)).burn(communityShare);
+                if (treasury != address(0)) {
+                    ITreasury(treasury).recordBurn(communityShare);
+                }
+            }
+
+            govToken.safeTransfer(msg.sender, netToUser);
+            emit Unstaked(msg.sender, netToUser);
+        } else {
+            govToken.safeTransfer(msg.sender, amount);
+            emit Unstaked(msg.sender, amount);
+        }
     }
 
     /**

@@ -132,7 +132,7 @@ export const UI_STRINGS = {
     INPUT_STAKE_PLACEHOLDER: 'ej. 1000',
     BTN_STAKE: '🔒 Bloquear VIRAJE en Staking',
     CARD_UNSTAKE_TITLE: '📤 Retirar (Unstake) Tokens VIRAJE',
-    CARD_UNSTAKE_DESC: 'Libera tus tokens VIRAJE bloqueados de vuelta a tu billetera sin comisiones ni penalizaciones.',
+    CARD_UNSTAKE_DESC: 'Libera tus tokens VIRAJE. Aplica una comisión de salida prudencial del 0.50%: 50% se quema (deflación) y 50% se distribuye a los stakers que permanecen en Community Yield Vault.',
     INPUT_UNSTAKE_LABEL: 'Monto stVIRAJE a Liberar:',
     INPUT_UNSTAKE_PLACEHOLDER: 'ej. 500',
     BTN_UNSTAKE: '🔓 Confirmar Retiro (Unstake)',

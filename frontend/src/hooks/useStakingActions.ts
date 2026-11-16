@@ -121,7 +121,7 @@ export function useStakingActions({
 
   const executeUnstake = async () => {
     try {
-      addLog(`Unstaking ${stakeAmount} VIRAJE tokens...`);
+      addLog(`Iniciando unstake de ${stakeAmount} stVIRAJE (Comisión de salida 0.50%: 50% quema / 50% a stakers leales)...`);
       const client = getWalletClient(activeKey);
       const tx = await client.writeContract({
         address: CONTRACT_ADDRESSES.STAKING,
@@ -130,7 +130,8 @@ export function useStakingActions({
         args: [parseEther(stakeAmount)]
       });
       await publicClient.waitForTransactionReceipt({ hash: tx });
-      addLog(`¡Unstake de ${stakeAmount} VIRAJE completado!`);
+      const netReceived = (parseFloat(stakeAmount) * 0.995).toFixed(2);
+      addLog(`¡Unstake de ${stakeAmount} stVIRAJE completado! (${netReceived} VIRAJE acreditados tras 0.50% de salida).`);
       addToast('success', 'Unstake Exitoso', UI_STRINGS.TOASTS_AND_LOGS.UNSTAKE_SUCCESS);
       await fetchData();
     } catch (err: any) {
@@ -144,6 +145,11 @@ export function useStakingActions({
     const num = parseFloat(stakeAmount);
     if (isNaN(num) || num <= 0) return;
 
+    const fee = (num * 0.005).toFixed(2);
+    const net = (num * 0.995).toFixed(2);
+    const burnFee = (num * 0.0025).toFixed(2);
+    const communityFee = (num * 0.0025).toFixed(2);
+
     if (requestConfirmation) {
       requestConfirmation({
         title: 'Liberar (Unstake) Tokens VIRAJE',
@@ -153,11 +159,16 @@ export function useStakingActions({
         targetContractAddress: CONTRACT_ADDRESSES.STAKING,
         inputAmount: `${num.toLocaleString('en-US')}`,
         inputSymbol: 'stVIRAJE Bloqueados',
-        expectedOutput: `${num.toLocaleString('en-US')}`,
+        expectedOutput: `${net}`,
         expectedOutputSymbol: 'VIRAJE Liberados a Billetera',
         details: [
-          { label: 'Penalización de Retiro', value: '0.00% (Sin Penalización)' }
+          { label: 'Monto Bruto a Retirar', value: `${num.toLocaleString('en-US')} stVIRAJE` },
+          { label: 'Comisión de Salida Unstake (0.50%)', value: `${fee} VIRAJE`, badge: 'Reparto 50%/50%' },
+          { label: 'Destino 50% Comisión (Quema Deflacionaria)', value: `${burnFee} VIRAJE (Quema permanente)`, isHighlight: true },
+          { label: 'Destino 50% Comisión (Community Yield Vault)', value: `${communityFee} VIRAJE (Para stakers leales)` },
+          { label: 'Monto Neto Acreditado', value: `${net} VIRAJE`, badge: '99.50% Neto' }
         ],
+        warningNote: 'GovernanceStaking.sol aplica una comisión de salida del 0.50%: el 50% se quema permanentemente (reduciendo oferta y elevando NAV) y el 50% se distribuye entre los stakers que permanecen en el protocolo.',
         confirmButtonText: '✍️ Confirmar Unstake',
         confirmButtonVariant: 'blue'
       }, executeUnstake);
