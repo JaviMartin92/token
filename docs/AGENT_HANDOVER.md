@@ -212,6 +212,16 @@ Para que comprendas la evolución del código sin necesidad de explorar el histo
 * **Optimización:** Se eliminó la lentitud extrema causada por `docker run npm install` sobre el volumen montado NTFS de Windows. La construcción del bundle de Vite se realiza nativamente en el host en ~400ms.
 * **Propuesta Génesis Activa:** Al iniciar la aplicación, el script `services/core/src/seed_governance_proposal.ts` acuña stVIRAJE y somete la primera propuesta on-chain para que la interfaz muestre el módulo de gobernanza completamente funcional desde el primer segundo.
 
+### J. Calibración de Comisiones Competitivas (0.00% Base Mint / 0.50% Unstake Fee 50/50 Burn-Yield)
+* **Decisión:** Para maximizar la competitividad frente a protocolos DeFi líderes (Ethena, Maker/Sky, Frax) y eliminar cualquier fricción de captación de capital, la acuñación de VIRAJE vía depósito en tesorería y la emisión de bonos vestados se fijan en 0.00% de comisión base.
+* **Mecanismo Anti-Dilución Ballena:** `TreasuryFeeLib.calculateDynamicFeeBps` aplica 0 BPS si el depósito es $\le 20\%$ de las reservas exógenas, aplicando un recargo de deslizamiento exclusivamente a depósitos masivos de ballenas (>20% de reserva, tope 2.00%).
+* **Comisión de Salida de Staking:** En `GovernanceStaking.sol`, el ingreso a staking es 1:1 sin coste (0.00%). Al retirar (`unstake`), se aplica un 0.50% de comisión de salida: 50% se quema permanentemente (`IBurnable.burn`) reduciendo el suministro libre e incrementando el NAV para los holders restantes, y el 50% se transfiere a `CommunityYieldVault` premiando la lealtad de los stakers activos.
+
+### K. Centinela Pre-Transaccional `VirajeHypervisor.sol` y Modularización EIP-170
+* **Decisión:** Blindar la interacción del usuario final frente a estimaciones erróneas de gas (picos de 30M gas limit en MetaMask producidos por reverts de EVM) y garantizar el estricto cumplimiento del límite EIP-170 (24,576 bytes por contrato).
+* **Mecanismo:** `VirajeHypervisor.sol` implementa la función `simulatePreFlight` off-chain/on-chain emitiendo un `PreFlightReport` determinista con `canExecute`, deteniendo en la UI cualquier llamada antes de ser enviada a la mempool si violaría invariantes de colateralización o TVL cap.
+* **Librerías EIP-170:** La lógica matemática pesada de `TreasuryManager.sol` se modularizó en 3 librerías independientes (`TreasuryFeeLib.sol`, `TreasuryPoRLib.sol`, `TreasuryRebalanceLib.sol`), manteniendo todos los contratos dentro de los límites de bytecode de EVM.
+
 ---
 
 ## 📜 7. Reglas de Oro Obligatorias para el Agente
