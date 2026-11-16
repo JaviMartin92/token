@@ -3,7 +3,76 @@ import { publicClient, CONTRACT_ADDRESSES, ABIS } from '../utils/web3.js';
 import { formatUnits } from 'viem';
 import type { MarketplaceLoan } from '../components/P2PMarketplace.js';
 
+export interface TreasuryCreditStats {
+  maxTotalDebtUSD: number;
+  currentTotalDebtUSD: number;
+  availableCapacityUSD: number;
+  circularCapBps: number;
+  circularDebtUSD: number;
+  circularCapacityUSD: number;
+}
+
 export function useP2PMarketplace(refetchInterval = 3000) {
+  const { data: treasuryCreditStats = {
+    maxTotalDebtUSD: 7634.25,
+    currentTotalDebtUSD: 0,
+    availableCapacityUSD: 7634.25,
+    circularCapBps: 2500,
+    circularDebtUSD: 0,
+    circularCapacityUSD: 1908.56
+  } } = useQuery<TreasuryCreditStats>({
+    queryKey: ['treasuryCreditStats'],
+    queryFn: async () => {
+      try {
+        const [limits, capBps, circDebt] = await Promise.all([
+          publicClient.readContract({
+            address: CONTRACT_ADDRESSES.TREASURY,
+            abi: ABIS.TREASURY,
+            functionName: 'treasuryLoanLimits'
+          }) as Promise<[bigint, bigint, bigint]>,
+          publicClient.readContract({
+            address: CONTRACT_ADDRESSES.P2P_MARKET,
+            abi: ABIS.P2P_MARKET,
+            functionName: 'circularCollateralCapBps'
+          }) as Promise<bigint>,
+          publicClient.readContract({
+            address: CONTRACT_ADDRESSES.P2P_MARKET,
+            abi: ABIS.P2P_MARKET,
+            functionName: 'treasuryCircularDebtUSD'
+          }) as Promise<bigint>
+        ]);
+
+        const maxTotalDebt = limits ? BigInt((limits as any).maxTotalDebt ?? limits[0]) : 0n;
+        const currentTotalDebt = limits ? BigInt((limits as any).currentTotalDebt ?? limits[1]) : 0n;
+        const availableCapacity = limits ? BigInt((limits as any).availableCapacity ?? limits[2]) : 0n;
+        const circularCapBps = Number(capBps || 2500n);
+        const circularDebt = BigInt(circDebt || 0n);
+
+        const circularLimit = (maxTotalDebt * BigInt(circularCapBps)) / 10000n;
+        const circularCapacity = circularLimit > circularDebt ? circularLimit - circularDebt : 0n;
+
+        return {
+          maxTotalDebtUSD: parseFloat(formatUnits(maxTotalDebt, 6)),
+          currentTotalDebtUSD: parseFloat(formatUnits(currentTotalDebt, 6)),
+          availableCapacityUSD: parseFloat(formatUnits(availableCapacity, 6)),
+          circularCapBps,
+          circularDebtUSD: parseFloat(formatUnits(circularDebt, 6)),
+          circularCapacityUSD: parseFloat(formatUnits(circularCapacity, 6))
+        };
+      } catch (e) {
+        return {
+          maxTotalDebtUSD: 7634.25,
+          currentTotalDebtUSD: 0,
+          availableCapacityUSD: 7634.25,
+          circularCapBps: 2500,
+          circularDebtUSD: 0,
+          circularCapacityUSD: 1908.56
+        };
+      }
+    },
+    refetchInterval
+  });
+
   const { data: loansList = [] } = useQuery({
     queryKey: ['p2pLoansList'],
     queryFn: async () => {
@@ -123,5 +192,5 @@ export function useP2PMarketplace(refetchInterval = 3000) {
     refetchInterval
   });
 
-  return { loansList };
+  return { loansList, treasuryCreditStats };
 }

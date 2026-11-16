@@ -626,6 +626,50 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
       const amountWei = parseUnits(amountStr, 6);  // USDC = 6 decimals
       const daysBig = BigInt(daysStr || '30');
       const userClient = getWalletClient(activeKey);
+      const ownerAddr = (userAddress || (userClient.account as any)?.address || userClient.account) as `0x${string}`;
+
+      // 🛡️ Salvaguarda 1: Consulta de límites y capacidad prudencial de Tesorería on-chain
+      try {
+        const limits = await publicClient.readContract({
+          address: CONTRACT_ADDRESSES.TREASURY,
+          abi: ABIS.TREASURY,
+          functionName: 'treasuryLoanLimits'
+        }) as [bigint, bigint, bigint];
+        const maxTotalDebt = limits ? BigInt((limits as any).maxTotalDebt ?? limits[0]) : 0n;
+        const availableCapacity = limits ? BigInt((limits as any).availableCapacity ?? limits[2]) : 0n;
+
+        if (availableCapacity > 0n && amountWei > availableCapacity) {
+          const capStr = formatUnits(availableCapacity, 6);
+          addToast('warning', 'Tope de Tesorería Superado', `La capacidad máxima disponible en Tesorería es de $${parseFloat(capStr).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC.`);
+          addLog(`[Aviso Tesorería] Solicitud rechazada: $${amountStr} USDC supera la capacidad disponible ($${capStr} USDC).`);
+          return;
+        }
+
+        if (collateralType === 'nft' || collateralType === 'viraje') {
+          const capBps = await publicClient.readContract({
+            address: CONTRACT_ADDRESSES.P2P_MARKET,
+            abi: ABIS.P2P_MARKET,
+            functionName: 'circularCollateralCapBps'
+          }) as bigint;
+          const circDebt = await publicClient.readContract({
+            address: CONTRACT_ADDRESSES.P2P_MARKET,
+            abi: ABIS.P2P_MARKET,
+            functionName: 'treasuryCircularDebtUSD'
+          }) as bigint;
+
+          const circLimit = (maxTotalDebt * capBps) / 10000n;
+          const maxCircularCap = circLimit > circDebt ? circLimit - circDebt : 0n;
+
+          if (maxCircularCap > 0n && amountWei > maxCircularCap) {
+            const capStr = formatUnits(maxCircularCap, 6);
+            addToast('warning', 'Tope de Colateral Reflexivo', `El límite prudencial para colateral reflexivo es de $${parseFloat(capStr).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC. Reduce el monto o utiliza colateral exógeno (WBTC/WETH).`);
+            addLog(`[Aviso Tesorería] Solicitud rechazada preventivamente: $${amountStr} USDC excede el tope circular ($${capStr} USDC).`);
+            return;
+          }
+        }
+      } catch (e: any) {
+        addLog(`[Aviso Capacidad] Comprobación de límites no concluyente: ${e?.message || e}`);
+      }
 
       if (collateralType === 'nft') {
         const tokenIdBig = BigInt(tokenIdOrAmountStr || '0');
@@ -675,8 +719,6 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         addLog(`[Tesorería] Solicitando préstamo institucional de $${amountStr} USDC con NFT #${tokenIdBig}...`);
         addToast('info', 'Préstamo Tesorería', 'Verificando autorización del NFT...');
 
-        const ownerAddr = (userAddress || (userClient.account as any)?.address || userClient.account) as `0x${string}`;
-
         let isApproved = false;
         try {
           const isAllApproved = await publicClient.readContract({
@@ -716,6 +758,25 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
           await new Promise((res) => setTimeout(res, 500));
         }
 
+        // 🛡️ Salvaguarda 2: Simulación Pre-Vuelo On-Chain (Zero-Revert UX)
+        addToast('info', 'Simulación Pre-Vuelo', 'Verificando ejecución on-chain sin gas...');
+        const preflight = await simulatePreflightTransaction(
+          CONTRACT_ADDRESSES.P2P_MARKET,
+          ABIS.P2P_MARKET,
+          'borrowFromTreasury',
+          [tokenIdBig, amountWei, daysBig],
+          ownerAddr
+        );
+
+        if (!preflight.canExecute) {
+          addLog(`[Preflight] Fallo de simulación: ${preflight.error?.message || 'Revert on-chain detectado'}`);
+          addToast('error', preflight.error?.title || 'Simulación Fallida', preflight.error?.message || 'La transacción revertirá on-chain.');
+          if (preflight.error?.actionableHint) {
+            addLog(`[Preflight] Pista: ${preflight.error.actionableHint}`);
+          }
+          return;
+        }
+
         // Direct Treasury borrow: instant funding & disbursement
         addLog(`[Paso 2/2] Desembolsando $${amountStr} USDC directamente desde las Reservas de Tesorería...`);
         const txCreate = await userClient.writeContract({
@@ -735,8 +796,6 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
           addToast('warning', 'Monto de VIRAJE Requerido', 'Calcula o introduce una cantidad válida de tokens VIRAJE como colateral.');
           return;
         }
-
-        const ownerAddr = (userAddress || (userClient.account as any)?.address || userClient.account) as `0x${string}`;
 
         let currentAllowance = 0n;
         try {
@@ -760,6 +819,25 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
           await publicClient.waitForTransactionReceipt({ hash: appHash });
           addToast('info', 'Paso 2/2: Desembolso', 'Autorización completada. Desembolsando crédito...');
           await new Promise((res) => setTimeout(res, 500));
+        }
+
+        // 🛡️ Simulación Pre-Vuelo On-Chain
+        addToast('info', 'Simulación Pre-Vuelo', 'Verificando ejecución on-chain sin gas...');
+        const preflight = await simulatePreflightTransaction(
+          CONTRACT_ADDRESSES.P2P_MARKET,
+          ABIS.P2P_MARKET,
+          'borrowFromTreasuryWithAsset',
+          [CONTRACT_ADDRESSES.VIRAJE_TOKEN, colAmtWei, amountWei, daysBig],
+          ownerAddr
+        );
+
+        if (!preflight.canExecute) {
+          addLog(`[Preflight] Fallo de simulación: ${preflight.error?.message || 'Revert on-chain detectado'}`);
+          addToast('error', preflight.error?.title || 'Simulación Fallida', preflight.error?.message || 'La transacción revertirá on-chain.');
+          if (preflight.error?.actionableHint) {
+            addLog(`[Preflight] Pista: ${preflight.error.actionableHint}`);
+          }
+          return;
         }
 
         addLog(`[Paso 2/2] Desembolsando $${amountStr} USDC desde Reservas con respaldo de ${tokenIdOrAmountStr} VIRAJE...`);
@@ -793,6 +871,22 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         await publicClient.waitForTransactionReceipt({ hash: appHash });
         await new Promise((res) => setTimeout(res, 500));
 
+        // 🛡️ Simulación Pre-Vuelo On-Chain
+        addToast('info', 'Simulación Pre-Vuelo', 'Verificando ejecución on-chain sin gas...');
+        const preflight = await simulatePreflightTransaction(
+          CONTRACT_ADDRESSES.P2P_MARKET,
+          ABIS.P2P_MARKET,
+          'borrowFromTreasuryWithAsset',
+          [CONTRACT_ADDRESSES.WBTC, colAmtWei, amountWei, daysBig],
+          ownerAddr
+        );
+
+        if (!preflight.canExecute) {
+          addLog(`[Preflight] Fallo de simulación: ${preflight.error?.message || 'Revert on-chain detectado'}`);
+          addToast('error', preflight.error?.title || 'Simulación Fallida', preflight.error?.message || 'La transacción revertirá on-chain.');
+          return;
+        }
+
         addLog(`Desembolsando $${amountStr} USDC desde Reservas con respaldo de ${tokenIdOrAmountStr} WBTC (70% Max LTV)...`);
         const txBorrow = await userClient.writeContract({
           address: CONTRACT_ADDRESSES.P2P_MARKET,
@@ -824,6 +918,22 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
         await publicClient.waitForTransactionReceipt({ hash: appHash });
         await new Promise((res) => setTimeout(res, 500));
 
+        // 🛡️ Simulación Pre-Vuelo On-Chain
+        addToast('info', 'Simulación Pre-Vuelo', 'Verificando ejecución on-chain sin gas...');
+        const preflight = await simulatePreflightTransaction(
+          CONTRACT_ADDRESSES.P2P_MARKET,
+          ABIS.P2P_MARKET,
+          'borrowFromTreasuryWithAsset',
+          [CONTRACT_ADDRESSES.WETH, colAmtWei, amountWei, daysBig],
+          ownerAddr
+        );
+
+        if (!preflight.canExecute) {
+          addLog(`[Preflight] Fallo de simulación: ${preflight.error?.message || 'Revert on-chain detectado'}`);
+          addToast('error', preflight.error?.title || 'Simulación Fallida', preflight.error?.message || 'La transacción revertirá on-chain.');
+          return;
+        }
+
         addLog(`Desembolsando $${amountStr} USDC desde Reservas con respaldo de ${tokenIdOrAmountStr} WETH (75% Max LTV)...`);
         const txBorrow = await userClient.writeContract({
           address: CONTRACT_ADDRESSES.P2P_MARKET,
@@ -853,6 +963,45 @@ export function useP2PLendingActions({ activeKey, userAddress, addLog, addToast,
 
     const numAmt = parseFloat(amountStr);
     const colSymbol = collateralType === 'viraje' ? 'VIRAJE' : collateralType.toUpperCase();
+
+    // 🛡️ Verificación inmediata de capacidad de Tesorería antes del modal
+    try {
+      const amountWei = parseUnits(amountStr, 6);
+      const limits = await publicClient.readContract({
+        address: CONTRACT_ADDRESSES.TREASURY,
+        abi: ABIS.TREASURY,
+        functionName: 'treasuryLoanLimits'
+      }) as [bigint, bigint, bigint];
+      const maxTotalDebt = limits ? BigInt((limits as any).maxTotalDebt ?? limits[0]) : 0n;
+      const availableCapacity = limits ? BigInt((limits as any).availableCapacity ?? limits[2]) : 0n;
+
+      if (availableCapacity > 0n && amountWei > availableCapacity) {
+        const capStr = formatUnits(availableCapacity, 6);
+        addToast('warning', 'Tope de Tesorería Superado', `La capacidad disponible en Tesorería es de $${parseFloat(capStr).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC.`);
+        return;
+      }
+
+      if (collateralType === 'nft' || collateralType === 'viraje') {
+        const capBps = await publicClient.readContract({
+          address: CONTRACT_ADDRESSES.P2P_MARKET,
+          abi: ABIS.P2P_MARKET,
+          functionName: 'circularCollateralCapBps'
+        }) as bigint;
+        const circDebt = await publicClient.readContract({
+          address: CONTRACT_ADDRESSES.P2P_MARKET,
+          abi: ABIS.P2P_MARKET,
+          functionName: 'treasuryCircularDebtUSD'
+        }) as bigint;
+        const circLimit = (maxTotalDebt * capBps) / 10000n;
+        const maxCircularCap = circLimit > circDebt ? circLimit - circDebt : 0n;
+
+        if (maxCircularCap > 0n && amountWei > maxCircularCap) {
+          const capStr = formatUnits(maxCircularCap, 6);
+          addToast('warning', 'Tope de Colateral Reflexivo', `El límite prudencial para colateral reflexivo es de $${parseFloat(capStr).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC. Reduce el importe para solicitar el crédito.`);
+          return;
+        }
+      }
+    } catch (_) {}
 
     if (requestConfirmation) {
       requestConfirmation({

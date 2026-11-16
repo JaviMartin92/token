@@ -46,6 +46,10 @@ const PROTOCOL_CUSTOM_ERRORS_ABI = [
   { type: 'error', name: 'NotBorrower', inputs: [] },
   { type: 'error', name: 'NotLender', inputs: [] },
   { type: 'error', name: 'MaxDebtExceeded', inputs: [] },
+  { type: 'error', name: 'TreasuryLoanCapExceeded', inputs: [{ name: 'requested', type: 'uint256' }, { name: 'capacity', type: 'uint256' }] },
+  { type: 'error', name: 'CircularCollateralCapExceeded', inputs: [{ name: 'requested', type: 'uint256' }, { name: 'capacity', type: 'uint256' }] },
+  { type: 'error', name: 'OutstandingTreasuryDebt', inputs: [] },
+  { type: 'error', name: 'InvalidCollateralAsset', inputs: [] },
 
   // Timelock & Governance
   { type: 'error', name: 'ProposalThresholdNotMet', inputs: [{ name: 'votes', type: 'uint256' }, { name: 'threshold', type: 'uint256' }] },
@@ -108,7 +112,7 @@ export function decodeWeb3Error(err: any): DecodedWeb3Error {
     return {
       title: 'Saldo Insuficiente para Gas',
       message: 'Tu billetera no dispone de suficiente ETH para cubrir la tarifa de red (Gas).',
-      actionableHint: 'Añade fondos de gas a tu billetera o reduce el monto ingresado.',
+      actionableHint: 'Nota: Si tienes saldo de ETH, este error suele ocurrir cuando el contrato revierte y MetaMask estima un gas irreal de 30M. Comprueba que el importe no supere el límite de colateral o crédito.',
       code: -32000,
       isUserRejection: false
     };
@@ -156,6 +160,33 @@ export function decodeWeb3Error(err: any): DecodedWeb3Error {
       title: 'Tope de TVL Alcanzado ($1,000,000 USD)',
       message: 'El protocolo se encuentra en fase de Guarded Launch y ha alcanzado su tope máximo de TVL.',
       actionableHint: 'La DAO puede votar incrementar el tope mediante propuesta de gobernanza.',
+      isUserRejection: false
+    };
+  }
+
+  if (msg.includes('CircularCollateralCapExceeded')) {
+    return {
+      title: 'Tope de Colateral Reflexivo Excedido',
+      message: 'La Tesorería limita el crédito respaldado por colateral reflexivo (Bono NFT o VIRAJE) al 25% de la línea de crédito total para proteger la solvencia del protocolo.',
+      actionableHint: 'Reduce el importe a solicitar o utiliza colateral exógeno (WBTC o WETH) para acceder a mayor liquidez.',
+      isUserRejection: false
+    };
+  }
+
+  if (msg.includes('TreasuryLoanCapExceeded')) {
+    return {
+      title: 'Límite de Crédito de Tesorería Superado',
+      message: 'El importe solicitado excede la capacidad disponible de la línea de crédito de la Tesorería (20% de las reservas líquidas).',
+      actionableHint: 'Solicita un importe menor o aguarda al reembolso de préstamos activos.',
+      isUserRejection: false
+    };
+  }
+
+  if (msg.includes('OutstandingTreasuryDebt')) {
+    return {
+      title: 'Deuda Pendiente en Tesorería',
+      message: 'Ya posees un préstamo activo con la Tesorería. Debes amortizarlo antes de solicitar un nuevo crédito.',
+      actionableHint: 'Reembolsa tu deuda vigente en la pestaña Préstamos Activos.',
       isUserRejection: false
     };
   }
@@ -314,6 +345,34 @@ function mapSolidityErrorToMessage(errorName: string): DecodedWeb3Error {
       return {
         title: 'Préstamo Ya Activo',
         message: 'Esta oferta de préstamo ya ha sido financiada por otro prestamista.',
+        isUserRejection: false
+      };
+    case 'CircularCollateralCapExceeded':
+      return {
+        title: 'Tope de Colateral Reflexivo Excedido',
+        message: 'La Tesorería limita el crédito respaldado por colateral reflexivo (Bono NFT o VIRAJE) al 25% de la línea de crédito total para proteger la solvencia del protocolo.',
+        actionableHint: 'Reduce el importe a solicitar o utiliza colateral exógeno (WBTC o WETH) para acceder a mayor liquidez.',
+        isUserRejection: false
+      };
+    case 'TreasuryLoanCapExceeded':
+      return {
+        title: 'Límite de Crédito de Tesorería Superado',
+        message: 'El importe solicitado excede la capacidad disponible de la línea de crédito de la Tesorería (20% de las reservas líquidas).',
+        actionableHint: 'Solicita un importe menor o aguarda al reembolso de préstamos activos.',
+        isUserRejection: false
+      };
+    case 'OutstandingTreasuryDebt':
+      return {
+        title: 'Deuda Pendiente en Tesorería',
+        message: 'Ya posees un préstamo activo con la Tesorería. Debes amortizarlo antes de solicitar un nuevo crédito.',
+        actionableHint: 'Reembolsa tu deuda vigente en la pestaña Préstamos Activos.',
+        isUserRejection: false
+      };
+    case 'InvalidCollateralAsset':
+      return {
+        title: 'Activo Colateral No Válido',
+        message: 'El activo aportado no está habilitado como colateral elegible en el mercado de crédito.',
+        actionableHint: 'Utiliza Bono NFT, VIRAJE, WBTC o WETH.',
         isUserRejection: false
       };
     case 'HealthFactorTooLow':

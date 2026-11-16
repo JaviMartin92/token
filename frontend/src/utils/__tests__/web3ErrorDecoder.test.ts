@@ -36,4 +36,18 @@ describe('web3ErrorDecoder Unit Tests', () => {
     expect(decoded.title).toBe('Error Desconocido');
     expect(decoded.isUserRejection).toBe(false);
   });
+
+  it('correctly decodes CircularCollateralCapExceeded error', () => {
+    const err = { message: 'execution reverted: CircularCollateralCapExceeded(2125000000, 1908562500)' };
+    const decoded = decodeWeb3Error(err);
+    expect(decoded.title).toBe('Tope de Colateral Reflexivo Excedido');
+    expect(decoded.message).toContain('colateral reflexivo');
+  });
+
+  it('correctly decodes TreasuryLoanCapExceeded error', () => {
+    const err = { message: 'execution reverted: TreasuryLoanCapExceeded(10000000000, 7634250000)' };
+    const decoded = decodeWeb3Error(err);
+    expect(decoded.title).toBe('Límite de Crédito de Tesorería Superado');
+    expect(decoded.message).toContain('20% de las reservas');
+  });
 });

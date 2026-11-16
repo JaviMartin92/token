@@ -230,6 +230,11 @@ export const ABIS = {
       { name: 'totalAssetsExogenousUSD', type: 'uint256' }
     ], outputs: [{ name: '', type: 'uint256' }] },
     { name: 'getNAVPerShare', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
+    { name: 'treasuryLoanLimits', type: 'function', stateMutability: 'view', inputs: [], outputs: [
+      { name: 'maxTotalDebt', type: 'uint256' },
+      { name: 'currentTotalDebt', type: 'uint256' },
+      { name: 'availableCapacity', type: 'uint256' }
+    ]},
     { name: 'tvlCap', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
     { name: 'setTvlCap', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'newCap', type: 'uint256' }], outputs: [] },
     { name: 'withdrawUSDC', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'recipient', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [] }
@@ -313,6 +318,8 @@ export const ABIS = {
       { name: 'borrowAmount', type: 'uint256' },
       { name: 'durationDays', type: 'uint256' }
     ], outputs: [{ name: 'loanId', type: 'uint256' }] },
+    { name: 'circularCollateralCapBps', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
+    { name: 'treasuryCircularDebtUSD', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
     { name: 'loanCollateralAsset', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'uint256' }], outputs: [{ name: '', type: 'address' }] }
   ] as const,
   STAKING: [

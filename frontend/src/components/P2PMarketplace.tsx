@@ -3,6 +3,7 @@ import styles from './P2PMarketplace.module.css';
 import { UI_STRINGS } from '../constants/strings.js';
 import { Card, Badge, Button, DataTable, TokenAmountInput } from './common/index.js';
 import type { UserPosition } from './VestedVaults.js';
+import type { TreasuryCreditStats } from '../hooks/useP2PMarketplace.js';
 
 export interface MarketplaceLoan {
   id: number;
@@ -49,6 +50,7 @@ interface P2PMarketplaceProps {
   onRepayLoanById?: (loanId: number, loanObj?: any) => void;
   onLiquidateLoanById?: (loanId: number, loanObj?: any) => void;
   onBorrowFromTreasury?: (collateralType: string, tokenIdOrAmt: string, amount: string, days: string) => void;
+  treasuryCreditStats?: TreasuryCreditStats;
 }
 
 export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
@@ -77,7 +79,15 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
   onCancelLoanOffer,
   onRepayLoanById,
   onLiquidateLoanById,
-  onBorrowFromTreasury
+  onBorrowFromTreasury,
+  treasuryCreditStats = {
+    maxTotalDebtUSD: 7634.25,
+    currentTotalDebtUSD: 0,
+    availableCapacityUSD: 7634.25,
+    circularCapBps: 2500,
+    circularDebtUSD: 0,
+    circularCapacityUSD: 1908.56
+  }
 }) => {
   const [filterTab, setFilterTab] = useState<'all' | 'created' | 'active' | 'my' | 'history'>('all');
   const [treasuryColType, setTreasuryColType] = useState<string>('nft');
@@ -94,7 +104,21 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
     weth: assetPrices?.weth && assetPrices.weth > 0 ? assetPrices.weth : 3000.0
   };
 
+  const isCircularCol = treasuryColType === 'nft' || treasuryColType === 'viraje';
+  const effectiveFacilityCap = isCircularCol
+    ? (treasuryCreditStats?.circularCapacityUSD ?? 1908.56)
+    : (treasuryCreditStats?.availableCapacityUSD ?? 7634.25);
+
+  const selectedPos = userPositions.find(p => p.id.toString() === p2pTokenId);
+  const nftPaidVal = selectedPos ? parseFloat((selectedPos.paid || selectedPos.principal || '0').replace(/,/g, '')) : 0;
+  const nftMaxBorrowLtv = Math.floor(nftPaidVal * 0.25);
+  const maxSafeBorrow = treasuryColType === 'nft'
+    ? (selectedPos ? Math.min(nftMaxBorrowLtv, effectiveFacilityCap) : effectiveFacilityCap)
+    : effectiveFacilityCap;
+
   const borrowAmtNum = parseFloat(p2pBorrowAmount || '0') || 0;
+  const isExceeded = borrowAmtNum > 0 && borrowAmtNum > maxSafeBorrow;
+
   const currentLtv = MAX_LTV_MAP[treasuryColType] || 0.50;
   const currentPrice = ASSET_PRICE_MAP[treasuryColType] || 1.0;
   const requiredUsdBacking = borrowAmtNum > 0 ? borrowAmtNum / currentLtv : 0;
@@ -208,9 +232,10 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                     {userPositions.filter(p => !p.isRagequitted && !p.isMaturedClaimed).map((pos) => {
                       const paidVal = parseFloat((pos.paid || pos.principal || '0').replace(/,/g, ''));
                       const maxBorrowUsd = Math.floor(paidVal * 0.25);
+                      const safeCap = Math.min(maxBorrowUsd, Math.floor(effectiveFacilityCap));
                       return (
                         <option key={pos.id} value={pos.id.toString()}>
-                          NFT #{pos.id} (Principal: ${pos.principal} USDC — Crédito Máx: ~${maxBorrowUsd.toLocaleString()} USDC @ 25% LTV)
+                          NFT #{pos.id} (Principal: ${pos.principal} USDC — LTV: ${maxBorrowUsd.toLocaleString()} | Máx Seguro: ${safeCap.toLocaleString()} USDC)
                         </option>
                       );
                     })}
@@ -252,10 +277,35 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
               </div>
             </div>
 
+            {/* Panel de Capacidad Prudencial y Techo de Crédito */}
+            <div className={`${styles.capacityNotice} ${isExceeded ? styles.capacityNoticeWarning : ''}`}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <span>
+                  {isCircularCol ? '🛡️ Límite Prudencial Colateral Reflexivo:' : '🏛️ Capacidad Disponible Tesorería:'}{' '}
+                  <strong>${effectiveFacilityCap.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC</strong>
+                </span>
+                {maxSafeBorrow > 0 && (
+                  <button
+                    type="button"
+                    className={styles.maxSafeBtn}
+                    onClick={() => setP2pBorrowAmount(Math.floor(maxSafeBorrow).toString())}
+                  >
+                    ⚡ Ajustar a Máximo Seguro (${Math.floor(maxSafeBorrow).toLocaleString()} USDC)
+                  </button>
+                )}
+              </div>
+              {isExceeded && (
+                <div style={{ fontSize: '0.75rem', marginTop: '4px', fontWeight: 600 }}>
+                  ⚠️ El importe solicitado (${borrowAmtNum.toLocaleString()} USDC) supera el límite prudencial ({effectiveFacilityCap.toLocaleString()} USDC). Reduce el monto para evitar que MetaMask infle el gas a 30M por revert.
+                </div>
+              )}
+            </div>
+
             <Button
               data-testid="p2p-treasury-request-btn"
-              variant="emerald"
+              variant={isExceeded ? "secondary" : "emerald"}
               size="md"
+              disabled={isExceeded || borrowAmtNum <= 0}
               onClick={() => onBorrowFromTreasury && onBorrowFromTreasury(
                 treasuryColType,
                 treasuryColType === 'nft'
@@ -265,7 +315,7 @@ export const P2PMarketplace: React.FC<P2PMarketplaceProps> = ({
                 p2pDays
               )}
             >
-              {UI_STRINGS.P2P_MARKETPLACE.BTN_BORROW_TREASURY} ({treasuryColType === 'viraje' ? 'VIRAJE' : treasuryColType.toUpperCase()})
+              {isExceeded ? '⚠️ Importe Supera Límite Prudencial' : `${UI_STRINGS.P2P_MARKETPLACE.BTN_BORROW_TREASURY} (${treasuryColType === 'viraje' ? 'VIRAJE' : treasuryColType.toUpperCase()})`}
             </Button>
           </div>
         </Card>

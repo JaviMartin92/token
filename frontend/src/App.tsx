@@ -303,6 +303,7 @@ export default function App() {
               userPositions={portfolio.userPositions}
               navPerShareNum={treasuryMetrics.navPerShareNum}
               assetPrices={treasuryMetrics.assetPrices}
+              treasuryCreditStats={p2pMarket.treasuryCreditStats}
             />
 
             <GovernanceStakingUI
