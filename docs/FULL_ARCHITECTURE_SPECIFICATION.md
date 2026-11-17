@@ -444,6 +444,18 @@ sequenceDiagram
 - **Salvaguarda de Circuit Breaker**:
   - Consulta en tiempo real el estado de congelación de USDT y USDC en `CircuitBreaker.sol`, abortando preventivamente la operación en caso de desanclaje o anomalía de mercado.
 
+#### 22. [`VirajeHypervisor.sol`](../contracts/src/VirajeHypervisor.sol)
+- **Propósito**: Centinela de solvencia bicameral e inspección pre-transaccional off-chain/on-chain para el ecosistema Viraje Protocol.
+- **Capacidades de Inspección Pre-Flight (`inspectPreFlight`)**:
+  - Simulación estática instantánea vía `eth_call` sin consumo de gas (coste 0 gas).
+  - Enrutamiento especializado multicontrato para canjes (`redeem`), depósitos (`deposit`), préstamos con colateral $VIRAJE$ y préstamos con bonos NFT (`VaultPositionNFT`).
+  - Verificación proactiva de saldos, asignaciones (`allowances`), liquidez libre en Tesorería, estado de Circuit Breaker y límites de LTV efectivos (25.00% para VIRAJE, 45.50% para Bonos NFT).
+- **Verificación de Invariantes On-Chain (`verifyStateTransition`)**:
+  - **Invariante 1**: Prohíbe formalmente que el NAV por acción descienda más allá de la tolerancia por redondeo ($\text{postNAV} + \text{tolerance} \ge \text{preNAV}$, con $\text{navToleranceBps} = 5 \text{ BPS} = 0.05\%$).
+  - **Invariante 2**: Exige que el ratio de colateralización no caiga por debajo del mínimo institucional ($100.00\%$) ni disminuya respecto al estado previo ($\text{postCR} \ge 10000 \land \text{postCR} \ge \text{preCR}$).
+- **Interoperabilidad Universal de Selectores**:
+  - Matriz dual que soporta tanto selectores canónicos EIP-165/ABI V2 (`0xdb006a75`, `0x7cbc2373`, `0xb6b55f25`, `0xe2bbb158`, `0xc92097d8`, `0xf284a096`) como selectores heredados de testnet/mocks (`0xba087652`, `0x89791475`, `0xfd7b27be`, `0x221375d0`, `0x933be074`).
+
 ---
 
 ## 4. Formulativa Matemática y Ecuaciones del Protocolo
