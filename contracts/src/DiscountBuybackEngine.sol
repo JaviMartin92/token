@@ -1,3 +1,4 @@
+/* solhint-disable gas-struct-packing */
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -57,9 +58,23 @@ interface ISwapRouterBuyback {
  *         Executes discount buyback & burns when VIRAJE trades on DEX at a discount >= 5% vs NAV.
  *         Enforces 10 institutional safety locks to eliminate liquidity bleed, flash-loan manipulation,
  *         MEV sandwich attacks, and black swan vulnerability.
+ * @custom:security-note 10 Institutional Safety Locks Matrix:
+ *                       1. Minimum Discount: Buybacks require >= 5.00% discount vs Oracle NAV.
+ *                       2. Daily Budget Cap: Max 2.50% of vault liquid reserves spent per 24 hours.
+ *                       3. Immediate Burn: Purchased shares are burned immediately upon receipt.
+ *                       4. Packed Storage: Control parameters are packed into a single 32-byte storage slot.
+ *                       5. Strict Slippage: Hard execution bound (max 1.00% slippage vs Chainlink reference).
+ *                       6. Cooldown Period: Mandatory 4-hour cooldown between successive buyback executions.
+ *                       7. Reentrancy Protection: Protected with nonReentrant guard.
+ *                       8. Circuit Breaker Check: Aborts if collateral asset is frozen by CircuitBreaker.
+ *                       9. Solvency Guarantee: Reverts if Proof of Reserves collateral ratio < 100.00%.
+ *                       10. Max Trade Impact: Single trade volume capped at 1.00% of vault liquid balance.
  */
 contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
+
+    uint256 public constant BPS_DENOMINATOR = 10000;
+    uint256 public constant SWAP_DEADLINE_BUFFER = 15 minutes;
 
     // Domain Specific Errors
     error DEXSwapFailed();
@@ -116,6 +131,11 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Initializes the buyback engine with immutable registries
+     * @param _addressProvider Canonical protocol address provider
+     * @param _redemptionToken Address of primary collateral stablecoin (USDC)
+     * @param _redemptionTokenDecimals Decimals of collateral stablecoin (6)
+     * @param _swapRouter Uniswap V3 swap router address
+     * @param initialAdmin Protocol governance / timelock address
      */
     constructor(
         ProtocolAddressProvider _addressProvider,
@@ -144,8 +164,10 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Updates the Uniswap v3 SwapRouter address
+     * @param _swapRouter New Uniswap V3 router address
      */
     function setSwapRouter(address _swapRouter) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (_swapRouter == address(0)) revert IProtocolErrors.ZeroAddress();
         address old = swapRouter;
         swapRouter = _swapRouter;
         emit SwapRouterUpdated(old, _swapRouter);
@@ -234,8 +256,7 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
         }
 
         // --- LOCK 8: CircuitBreaker Check ---
-        bytes32 idCircuitBreaker = keccak256("CIRCUIT_BREAKER");
-        address circuitBreaker = addressProvider.getAddress(idCircuitBreaker);
+        address circuitBreaker = addressProvider.getCircuitBreaker();
         if (circuitBreaker != address(0) && ICircuitBreakerBuyback(circuitBreaker).isFrozen(redemptionToken)) {
             revert IProtocolErrors.CircuitBreakerActive(redemptionToken);
         }
@@ -258,7 +279,7 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
         if (spotPriceUSD == 0) revert IProtocolErrors.InvalidPrice();
         if (spotPriceUSD >= navPerShareUSD) revert IProtocolErrors.NoDiscountVsNAV();
 
-        discountBps = ((navPerShareUSD - spotPriceUSD) * 10000) / navPerShareUSD;
+        discountBps = ((navPerShareUSD - spotPriceUSD) * BPS_DENOMINATOR) / navPerShareUSD;
         if (discountBps < minDiscountBps) {
             revert IProtocolErrors.DiscountTooLow(discountBps, minDiscountBps);
         }
@@ -274,12 +295,12 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
         uint256 liquidVaultBalance = IVirajeVaultBuyback(virajeVault).getBalance(redemptionToken);
         if (liquidVaultBalance == 0) revert IProtocolErrors.InvalidAmount();
 
-        uint256 maxDailyBudget = (liquidVaultBalance * maxDailyBudgetBps) / 10000;
+        uint256 maxDailyBudget = (liquidVaultBalance * maxDailyBudgetBps) / BPS_DENOMINATOR;
         if (spentToday + usdcToSpend > maxDailyBudget) {
             revert IProtocolErrors.DailyBudgetExceeded(spentToday + usdcToSpend, maxDailyBudget);
         }
 
-        uint256 maxSingleTrade = (liquidVaultBalance * maxTradeImpactBps) / 10000;
+        uint256 maxSingleTrade = (liquidVaultBalance * maxTradeImpactBps) / BPS_DENOMINATOR;
         if (usdcToSpend > maxSingleTrade) {
             revert IProtocolErrors.TradeSizeTooLarge(usdcToSpend, maxSingleTrade);
         }
@@ -302,7 +323,7 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
                 tokenOut: virajeToken,
                 fee: poolFee,
                 recipient: address(this),
-                deadline: block.timestamp + 15 minutes,
+                deadline: block.timestamp + SWAP_DEADLINE_BUFFER,
                 amountIn: usdcToSpend,
                 amountOutMinimum: minVirajeOut,
                 sqrtPriceLimitX96: 0
@@ -384,14 +405,14 @@ contract DiscountBuybackEngine is AccessControl, ReentrancyGuard {
 
     function _calculateMinViraje(uint256 usdcToSpend, uint256 spotPriceUSD, uint256 minVirajeOut) private view returns (uint256) {
         uint256 expectedVirajeFromOracle = (usdcToSpend * (10 ** (18 - redemptionTokenDecimals)) * 1e18) / spotPriceUSD;
-        uint256 minAllowedViraje = (expectedVirajeFromOracle * (10000 - maxSlippageBps)) / 10000;
+        uint256 minAllowedViraje = (expectedVirajeFromOracle * (BPS_DENOMINATOR - maxSlippageBps)) / BPS_DENOMINATOR;
         return (minVirajeOut < minAllowedViraje) ? minAllowedViraje : minVirajeOut;
     }
 
     function _payKeeperBounty(address virajeVault, uint256 usdcToSpend) private returns (uint256 totalOutflow) {
         totalOutflow = usdcToSpend;
         if (keeperBountyBps > 0) {
-            uint256 bounty = (usdcToSpend * keeperBountyBps) / 10000;
+            uint256 bounty = (usdcToSpend * keeperBountyBps) / BPS_DENOMINATOR;
             if (bounty > 0) {
                 try IVirajeVaultBuyback(virajeVault).transferFunds(redemptionToken, msg.sender, bounty) {
                     totalOutflow += bounty;
