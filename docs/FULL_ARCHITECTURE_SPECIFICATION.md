@@ -296,8 +296,14 @@ sequenceDiagram
   - Telemetría on-chain en tiempo real mediante contadores acumulativos de ciclo de vida (`totalYieldReceived`, `totalYieldFlushed`).
 
 #### 13. [`GovernanceStaking.sol`](../contracts/src/GovernanceStaking.sol)
-- **Propósito**: Staking líquido de gobernanza (`stVIRAJE`) con puntos de control de voto ERC-20 Votes.
-- **Comisiones**: Entrada **`0.00%`** (1:1 stVIRAJE sin coste). Salida (Unstake) **`0.50%`** (50% quema deflacionaria / 50% distribuido a stakers leales).
+- **Propósito**: Bóveda de staking líquido de gobernanza (`stVIRAJE`) con puntos de control de voto por bloques ERC-20 Votes y motor de streaming continuo de rendimientos reales (*Real Yield*) en USDC.
+- **Mecánica de Staking y Comisiones Calibradas**:
+  - **Entrada (Stake)**: Estrictamente **`0.00%`** (`STAKING_ENTRY_FEE_BPS = 0`), permitiendo el acceso libre de fricción y la conversión 1:1 de $VIRAJE$ en $stVIRAJE$.
+  - **Salida (Unstake)**: Comisión anti-mercenaria del **`0.50%`** (`UNSTAKE_FEE_BPS = 50`), distribuida en 50% quema deflacionaria atómica (acrecentando el NAV spot para todos los participantes) y 50% transferido a `CommunityYieldVault.sol` para remuneración de stakers leales.
+- **Seguridad Criptográfica & Resiliencia Synthetix**:
+  - **Streaming Continuo Submétrico**: Modela las recompensas segundo a segundo a lo largo de ventanas de 7 días (`rewardsDuration = 7 days`), impidiendo ataques de arbitraje MEV sandwich sobre dividendos.
+  - **Timelock Anti Flash-Stake / Flash-Voting**: Exige una permanencia mínima incondicional de 7 días (`MIN_STAKE_DURATION = 7 days`) antes de permitir rescates, transferencias de $stVIRAJE$ o cobros de dividendos.
+  - **Búsqueda Binaria O(log N)**: Puntos de control `Checkpoint` de 32 bytes (`uint32 fromBlock`, `uint224 votes`) con búsqueda binaria sobre `getPastVotes()`, inmune a ataques de gas DoS.
 
 #### 14-15. [`GovernorViraje.sol`](../contracts/src/GovernorViraje.sol) & [`TimelockController.sol`](../contracts/src/TimelockController.sol)
 - **Propósito**: Gobernanza descentralizada con retardo obligatorio de 72 horas para toda modificación administrativa o de código.

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+/* solhint-disable max-states-count */
+
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -16,14 +18,33 @@ interface IBurnable {
 
 /**
  * @title GovernanceStaking
+ * @author Viraje Protocol Architecture Team
  * @notice Staking pool for VIRAJE governance token holders to earn real yield from protocol fees.
  *         Unallocated yields for non-staked tokens are automatically redistributed to active stakers.
  *         Inherits ERC20 ("Staked Viraje", "stVIRAJE") with block-based voting checkpoints for DAO governance.
+ * @dev Enforces 7-day anti flash-stake / flash-loan timelocks, zero-friction 0.00% staking entry,
+ *      and 0.50% anti-mercenary exit fee (50% deflacionary burn / 50% community reserve).
  */
 contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
+
+    /// @notice Canonical Basis Points Denominator (10,000 = 100.00%)
+    uint256 public constant BPS_DENOMINATOR = 10000;
+
+    /// @notice Standard Math Scaling Unit (1e18)
+    uint256 public constant WAD = 1e18;
+
+    /// @notice Minimum Staking Duration (7 days) protecting against flash-stake yield extraction and flash voting
+    uint256 public constant MIN_STAKE_DURATION = 7 days;
+
+    /// @notice 0.00% Frictionless Staking Entry Fee
+    uint256 public constant STAKING_ENTRY_FEE_BPS = 0;
+
+    /// @notice 0.50% Exit Fee on Unstaking (Anti-Mercenary & Real Yield Reward)
+    uint256 public constant UNSTAKE_FEE_BPS = 50;
+
     IERC20 public immutable govToken;
-    IERC20 public immutable rewardToken; // e.g. USDC
+    IERC20 public immutable rewardToken; // USDC
 
     uint256 public totalStaked;
     uint256 public eligibleStaked;
@@ -141,10 +162,6 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
     uint256 public rewardRate; // Scaled by 1e18 for exact sub-wei precision
     uint256 public lastUpdateTime;
 
-    // Timelock state (Anti Flash-Loan Voting)
-    uint256 public constant MIN_STAKE_DURATION = 7 days;
-    uint256 public constant STAKING_ENTRY_FEE_BPS = 0; // 0.00% Frictionless Staking Entry
-    uint256 public constant UNSTAKE_FEE_BPS = 50; // 0.50% Exit Fee on Unstaking (Anti-Mercenary & Real Yield Reward)
     mapping(address => uint256) public lastStakeTime;
 
     event Staked(address indexed user, uint256 amount);
@@ -161,17 +178,20 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
     event AuthorizedCallerUpdated(address indexed caller, bool authorized);
 
     constructor(address _govToken, address _rewardToken, address _initialOwner) ERC20("Staked Viraje", "stVIRAJE") {
-        if (_govToken == address(0) || _rewardToken == address(0)) revert IProtocolErrors.ZeroAddress();
+        if (_govToken == address(0) || _rewardToken == address(0) || _initialOwner == address(0)) {
+            revert IProtocolErrors.ZeroAddress();
+        }
         govToken = IERC20(_govToken);
         rewardToken = IERC20(_rewardToken);
 
-        address admin = (_initialOwner != address(0)) ? _initialOwner : msg.sender;
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(ProtocolRoles.ADMIN_ROLE, admin);
+        _grantRole(DEFAULT_ADMIN_ROLE, _initialOwner);
+        _grantRole(ProtocolRoles.ADMIN_ROLE, _initialOwner);
     }
 
     /**
      * @notice Registers or unregisters CEX accounts so they do not receive yield distribution.
+     * @param account Target address to exclude or re-include
+     * @param excluded True if excluded, false otherwise
      */
     function setExcludedAddress(address account, bool excluded) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         if (account == address(0)) revert IProtocolErrors.ZeroAddress();
@@ -194,6 +214,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
 
     /**
      * @notice Sets the Treasury address for NAV-based staked value computation.
+     * @param _treasury Canonical Treasury contract address
      */
     function setTreasury(address _treasury) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         if (_treasury == address(0)) revert IProtocolErrors.ZeroAddress();
@@ -203,6 +224,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
 
     /**
      * @notice Sets Protocol Community Yield Vault for Staking Fee distribution.
+     * @param _communityYieldVault Address of CommunityYieldVault
      */
     function setProtocolVaults(address _communityYieldVault) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         if (_communityYieldVault == address(0)) revert IProtocolErrors.ZeroAddress();
@@ -212,6 +234,8 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
 
     /**
      * @notice Grants or revokes permission for an address to call notifyRewardAmount.
+     * @param caller Address to authorize or revoke
+     * @param authorized True to authorize, false to revoke
      */
     function setAuthorizedCaller(address caller, bool authorized) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         if (caller == address(0)) revert IProtocolErrors.ZeroAddress();
@@ -261,20 +285,24 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
 
     function earned(address account) public view returns (uint256) {
         if (isExcludedFromYield[account]) return 0;
-        return (balanceOf(account) * (rewardPerToken() - userRewardPerTokenPaid[account])) / 1e18 + rewards[account];
+        return (balanceOf(account) * (rewardPerToken() - userRewardPerTokenPaid[account])) / WAD + rewards[account];
     }
 
+    /**
+     * @notice Injects new yield tokens to be streamed over rewardsDuration (7 days)
+     * @param amount Quantity of reward tokens (USDC) to distribute
+     */
     function notifyRewardAmount(uint256 amount) external nonReentrant onlyAuthorized updateReward(address(0)) {
         if (amount == 0) revert IProtocolErrors.ZeroAmount();
         if (eligibleStaked == 0) revert IProtocolErrors.NoActiveStakers();
         rewardToken.safeTransferFrom(msg.sender, address(this), amount);
 
         if (block.timestamp >= periodFinish) {
-            rewardRate = (amount * 1e18) / rewardsDuration;
+            rewardRate = (amount * WAD) / rewardsDuration;
         } else {
             uint256 remaining = periodFinish - block.timestamp;
-            uint256 leftover = (remaining * rewardRate) / 1e18;
-            rewardRate = ((amount + leftover) * 1e18) / rewardsDuration;
+            uint256 leftover = (remaining * rewardRate) / WAD;
+            rewardRate = ((amount + leftover) * WAD) / rewardsDuration;
         }
         lastUpdateTime = block.timestamp;
         periodFinish = block.timestamp + rewardsDuration;
@@ -282,6 +310,10 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
         emit RewardAdded(amount);
     }
 
+    /**
+     * @notice Updates rewards streaming duration after current period ends
+     * @param _rewardsDuration New streaming duration in seconds
+     */
     function setRewardsDuration(uint256 _rewardsDuration) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         if (_rewardsDuration == 0) revert IProtocolErrors.InvalidAmount();
         if (block.timestamp < periodFinish) revert IProtocolErrors.TimelockActive(periodFinish);
@@ -289,7 +321,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
     }
 
     /**
-     * @notice Stakes Governance tokens into the protocol, applying a 1% entry fee.
+     * @notice Stakes Governance tokens into the protocol with zero entry fee (0.00% friction).
      *         Staked tokens gain voting power and accumulate USDC rewards.
      * @param amount The amount of Governance tokens to stake.
      */
@@ -300,22 +332,21 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
             lastStakeTime[msg.sender] = block.timestamp;
         }
 
-        // 0% Staking Entry Fee — 100% net stake (Zero friction)
-        uint256 fee = (amount * STAKING_ENTRY_FEE_BPS) / 10000;
+        // 0.00% Staking Entry Fee — 100% net stake (Zero friction)
+        uint256 fee = (amount * STAKING_ENTRY_FEE_BPS) / BPS_DENOMINATOR;
         uint256 netStake = amount - fee;
 
         totalStaked += netStake;
         if (!isExcludedFromYield[msg.sender]) {
             eligibleStaked += netStake;
         }
-        // AC-15: _mint already calls _moveVotingPower internally via ERC20 override
         _mint(msg.sender, netStake);
 
         govToken.safeTransferFrom(msg.sender, address(this), amount);
         if (fee > 0) {
             IBurnable(address(govToken)).burn(fee);
             if (treasury != address(0)) {
-                ITreasury(treasury).recordBurn(fee);
+                try ITreasury(treasury).recordBurn(fee) {} catch {}
             }
         }
 
@@ -323,7 +354,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
     }
 
     /**
-     * @notice Unstakes Governance tokens, subject to a timelock cooldown.
+     * @notice Unstakes Governance tokens, subject to a 7-day timelock cooldown.
      *         Withdraws principal and removes corresponding voting power.
      * @param amount The amount of staked tokens to withdraw.
      */
@@ -344,11 +375,10 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
                 eligibleStaked = 0;
             }
         }
-        // AC-15: _burn already calls _moveVotingPower internally via ERC20 override
         _burn(msg.sender, amount);
 
         if (msg.sender != treasury && UNSTAKE_FEE_BPS > 0) {
-            uint256 fee = (amount * UNSTAKE_FEE_BPS) / 10000;
+            uint256 fee = (amount * UNSTAKE_FEE_BPS) / BPS_DENOMINATOR;
             uint256 netToUser = amount - fee;
             uint256 burnShare = fee / 2;
             uint256 communityShare = fee - burnShare;
@@ -356,7 +386,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
             if (burnShare > 0) {
                 IBurnable(address(govToken)).burn(burnShare);
                 if (treasury != address(0)) {
-                    ITreasury(treasury).recordBurn(burnShare);
+                    try ITreasury(treasury).recordBurn(burnShare) {} catch {}
                 }
             }
 
@@ -365,7 +395,7 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
             } else if (communityShare > 0) {
                 IBurnable(address(govToken)).burn(communityShare);
                 if (treasury != address(0)) {
-                    ITreasury(treasury).recordBurn(communityShare);
+                    try ITreasury(treasury).recordBurn(communityShare) {} catch {}
                 }
             }
 
@@ -394,6 +424,11 @@ contract GovernanceStaking is ERC20, AccessControl, ReentrancyGuard {
         }
     }
 
+    /**
+     * @notice Allows authorized fee router to claim rewards on behalf of a user for multi-asset basket distribution.
+     * @param user Account claiming rewards
+     * @return reward Exact USDC reward amount transferred to msg.sender (RealYieldRouter)
+     */
     function claimRewardFor(address user)
         external
         nonReentrant
