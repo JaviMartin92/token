@@ -495,6 +495,15 @@ sequenceDiagram
   - La función `harvestYield()` calcula en tiempo real el rendimiento neto devengado sobre el capital invertido ($\text{currentBalance} - \text{totalStablecoinInvested}$) y lo transfiere automáticamente a `TreasuryManager.sol` para alimentar el flujo de Real Yield.
   - Incorpora función `sweepTokens()` con candado inquebrantable que prohíbe retirar el activo subyacente por debajo de la inversión activa total (`totalStablecoinInvested`).
 
+#### 27. [`OndoRWAAdapter.sol`](../contracts/src/adapters/OndoRWAAdapter.sol)
+- **Propósito**: Adaptador institucional compatible con la especificación `IUniversalYieldAdapter` (ERC-4626) para la inversión fiduciaria en activos del mundo real (Real World Assets - RWA, bonos del Tesoro de EE. UU. tokenizados vía Ondo Finance USDY / OUSG).
+- **Modelo de Renta Fija Soberana**:
+  - Canaliza capital hacia rendimientos soberanos libres de riesgo de impago DeFi, con factor dinámico de devengo de intereses (`yieldFactor`, acotado entre 1.0x y 5.0x, $10000 \le \text{yieldFactor} \le 50000$).
+  - Emite eventos canónicos EIP-4626 (`Deposit` y `Withdraw`) para auditoría y trazabilidad on-chain.
+- **Seguridad Fiduciaria y Respaldo Inviolable**:
+  - Adhesión estricta al patrón Checks-Effects-Interactions (CEI) y blindaje con `ReentrancyGuard` (`nonReentrant`) en operaciones de depósito y retiro.
+  - Función de rescate `sweepTokens()` con candado algorítmico que garantiza en todo momento la cobertura del 100% de las participaciones emitidas ($\text{required} = \frac{\text{TotalSupply} \times \text{yieldFactor}}{10000}$).
+
 ---
 
 ## 4. Formulativa Matemática y Ecuaciones del Protocolo
