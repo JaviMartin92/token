@@ -316,6 +316,89 @@ async function main() {
     account.address
   ]);
 
+  // 9b. Desplegar VirajeHypervisor (Centinela Pre-Transaccional y de Solvencia)
+  console.log('\n--- PASO 6B: CENTINELA DE SOLVENCIA (HYPERVISOR) ---');
+  const vhArtifact = loadArtifact('VirajeHypervisor');
+  const hypervisorAddr = await deploy('VirajeHypervisor', vhArtifact.abi, vhArtifact.bytecode.object, [
+    addressProviderAddr,
+    account.address
+  ]);
+
+  // 9c. Desplegar Bóvedas Operativas y de Incentivos
+  console.log('\n--- PASO 6C: BÓVEDAS OPERATIVAS, INCENTIVOS Y CONTRIBUCIÓN ---');
+  const ysvArtifact = loadArtifact('YieldStreamingVault');
+  const yieldStreamingVaultAddr = await deploy('YieldStreamingVault', ysvArtifact.abi, ysvArtifact.bytecode.object, [
+    usdcAddr,
+    account.address
+  ]);
+
+  const pivArtifact = loadArtifact('PromotionalIncentiveVault');
+  const promoVaultAddr = await deploy('PromotionalIncentiveVault', pivArtifact.abi, pivArtifact.bytecode.object, [
+    virajeTokenAddr,
+    account.address
+  ]);
+
+  const opExArtifact = loadArtifact('ProtocolOpExVault');
+  const opExVaultAddr = await deploy('ProtocolOpExVault', opExArtifact.abi, opExArtifact.bytecode.object, [
+    usdcAddr,
+    account.address
+  ]);
+
+  const pcArtifact = loadArtifact('ProtocolContribution');
+  const contributionAddr = await deploy('ProtocolContribution', pcArtifact.abi, pcArtifact.bytecode.object, [
+    usdcAddr,
+    virajeTokenAddr,
+    stakingAddr,
+    '0x0000000000000000000000000000000000000000', // Mock swap router en testnet
+    account.address
+  ]);
+
+  // 9d. Desplegar Gobernanza y Timelock DAO
+  console.log('\n--- PASO 6D: GOBERNANZA DAO Y PROTOCOL TIMELOCK ---');
+  const tlArtifact = loadArtifact('ProtocolTimelock');
+  const timelockAddr = await deploy('ProtocolTimelock', tlArtifact.abi, tlArtifact.bytecode.object, [
+    3600n, // 1 hora delay en testnet
+    [],
+    ['0x0000000000000000000000000000000000000000'],
+    account.address
+  ]);
+
+  const govArtifact = loadArtifact('GovernorViraje');
+  const governorAddr = await deploy('GovernorViraje', govArtifact.abi, govArtifact.bytecode.object, [
+    stakingAddr,
+    timelockAddr,
+    virajeVaultAddr,
+    communityVaultAddr,
+    treasuryProxyAddr,
+    account.address
+  ]);
+
+  // 9e. Desplegar Adaptadores de Rendimiento Institucional (Fase 7)
+  console.log('\n--- PASO 6E: ADAPTADORES DE RENDIMIENTO INSTITUCIONAL Y RWA ---');
+  const ctgArtifact = loadArtifact('CompliantTreasuryGateway');
+  const compliantGatewayAddr = await deploy('CompliantTreasuryGateway', ctgArtifact.abi, ctgArtifact.bytecode.object, [
+    treasuryProxyAddr,
+    virajeTokenAddr,
+    account.address
+  ]);
+
+  const aaveArtifact = loadArtifact('AaveV3Adapter');
+  const aaveAdapterAddr = await deploy('AaveV3Adapter (Aave V3)', aaveArtifact.abi, aaveArtifact.bytecode.object, [
+    usdcAddr
+  ]);
+
+  const morphoArtifact = loadArtifact('MorphoYieldVaultAdapter');
+  const morphoAdapterAddr = await deploy('MorphoYieldVaultAdapter (MetaMorpho)', morphoArtifact.abi, morphoArtifact.bytecode.object, [
+    usdcAddr,
+    treasuryProxyAddr,
+    account.address
+  ]);
+
+  const ondoArtifact = loadArtifact('OndoRWAAdapter');
+  const ondoAdapterAddr = await deploy('OndoRWAAdapter (Ondo RWA USDY)', ondoArtifact.abi, ondoArtifact.bytecode.object, [
+    usdcAddr
+  ]);
+
   // 10. Registrar Todas las Direcciones en ProtocolAddressProvider
   console.log('\n--- PASO 7: REGISTRO CENTRAL DE SERVICIOS (ADDRESS PROVIDER) ---');
   const ap = apArtifact.abi;
@@ -333,6 +416,17 @@ async function main() {
   await sendTx('Registrar POST_QUANTUM_GUARD', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('POST_QUANTUM_GUARD')), pqcGuardAddr]);
   await sendTx('Registrar FOUNDER_VESTING_VAULT', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('FOUNDER_VESTING_VAULT')), founderVaultAddr]);
   await sendTx('Registrar P2P_MARKET', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('P2P_MARKET')), p2pMarketAddr]);
+  await sendTx('Registrar HYPERVISOR', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('HYPERVISOR')), hypervisorAddr]);
+  await sendTx('Registrar TIMELOCK', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('TIMELOCK')), timelockAddr]);
+  await sendTx('Registrar GOVERNOR', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('GOVERNOR')), governorAddr]);
+  await sendTx('Registrar YIELD_STREAMING_VAULT', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('YIELD_STREAMING_VAULT')), yieldStreamingVaultAddr]);
+  await sendTx('Registrar PROMOTIONAL_VAULT', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('PROMOTIONAL_VAULT')), promoVaultAddr]);
+  await sendTx('Registrar OPEX_VAULT', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('OPEX_VAULT')), opExVaultAddr]);
+  await sendTx('Registrar PROTOCOL_CONTRIBUTION', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('PROTOCOL_CONTRIBUTION')), contributionAddr]);
+  await sendTx('Registrar COMPLIANT_GATEWAY', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('COMPLIANT_GATEWAY')), compliantGatewayAddr]);
+  await sendTx('Registrar AAVE_ADAPTER', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('AAVE_ADAPTER')), aaveAdapterAddr]);
+  await sendTx('Registrar MORPHO_ADAPTER', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('MORPHO_ADAPTER')), morphoAdapterAddr]);
+  await sendTx('Registrar ONDO_ADAPTER', addressProviderAddr, ap, 'setAddress', [keccak256(toHex('ONDO_ADAPTER')), ondoAdapterAddr]);
 
   // 11. Concesión de Permisos Cruzados de Seguridad RBAC
   console.log('\n--- PASO 8: ASIGNACIÓN DE ROLES RBAC Y WHITELISTS ---');
@@ -388,6 +482,17 @@ async function main() {
   contractsConfig['POST_QUANTUM_GUARD'] = pqcGuardAddr;
   contractsConfig['FOUNDER_VESTING_VAULT'] = founderVaultAddr;
   contractsConfig['P2P_MARKET'] = p2pMarketAddr;
+  contractsConfig['HYPERVISOR'] = hypervisorAddr;
+  contractsConfig['TIMELOCK'] = timelockAddr;
+  contractsConfig['GOVERNOR'] = governorAddr;
+  contractsConfig['YIELD_VAULT'] = yieldStreamingVaultAddr;
+  contractsConfig['PROMO_VAULT'] = promoVaultAddr;
+  contractsConfig['OPEX_VAULT'] = opExVaultAddr;
+  contractsConfig['PROTOCOL_CONTRIBUTION'] = contributionAddr;
+  contractsConfig['COMPLIANT_GATEWAY'] = compliantGatewayAddr;
+  contractsConfig['AAVE_ADAPTER'] = aaveAdapterAddr;
+  contractsConfig['MORPHO_ADAPTER'] = morphoAdapterAddr;
+  contractsConfig['ONDO_ADAPTER'] = ondoAdapterAddr;
 
   fs.writeFileSync(contractsJsonPath, JSON.stringify(contractsConfig, null, 2), 'utf8');
   console.log(`[+] frontend/src/contracts.json actualizado con éxito.`);
