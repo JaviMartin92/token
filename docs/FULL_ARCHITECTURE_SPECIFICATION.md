@@ -215,6 +215,10 @@ sequenceDiagram
 - **Propósito**: Cómputo $O(1)$ de Proof of Reserves, valoración patrimonial en tiempo real y deducción rigurosa de pasivos de bonos vestados.
 - **Aislamiento de Fallos en Cascada**: Encapsula todas las consultas a adaptadores externos ERC-4626 y mercados P2P en bloques `try/catch` estructurados para garantizar que la indisponibilidad de terceros no impida la auditoría de solvencia ni las transacciones nucleares. Descuenta rigurosamente todas las participaciones en posesión del protocolo (bóveda fría, vesting de fundadores y bóveda comunitaria de staking) para calcular las acciones netas en circulación exactas.
 
+#### 3b. [`TreasuryLiquidityLib.sol`](../contracts/src/lib/TreasuryLiquidityLib.sol)
+- **Propósito**: Gestión del búfer líquido de stablecoins y desinversión automatizada de bóvedas de rendimiento ERC-4626 ante rescates o desembolsos de crédito P2P.
+- **Cascada de Liquidez y Resiliencia**: Consume prioritariamente el saldo ocioso en `VirajeVault`; en caso de déficit, desinvierte de forma acotada (máximo 10 adaptadores, `MAX_ADAPTER_SCAN_LIMIT`) con llamadas `withdraw` encapsuladas en `try/catch` anidado, asegurando que pausas o iliquidez en protocolos externos nunca bloqueen las redenciones de los usuarios.
+
 #### 4. [`TreasuryRebalanceLib.sol`](../contracts/src/lib/TreasuryRebalanceLib.sol)
 - **Propósito**: Ejecución de rebalanceos de cartera multiactivo con tolerancia máxima de slippage del 0.05% contra oráculos Chainlink.
 
