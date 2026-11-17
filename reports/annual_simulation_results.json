@@ -24,9 +24,9 @@
       "assetsUsd": 1539294.2505,
       "liabilitiesUsd": 1502727.8839151917,
       "porRatioPct": 102.43333253985669,
-      "circulatingAlpha": 475442.68654898944,
-      "stakedAlpha": 505038.5390688811,
-      "burnedAlpha": 20050.699692267077,
+      "circulatingViraje": 475442.68654898944,
+      "stakedViraje": 505038.5390688811,
+      "burnedViraje": 20050.699692267077,
       "activeP2PLoans": 26
     },
     {
@@ -41,9 +41,9 @@
       "assetsUsd": 2055968.6227,
       "liabilitiesUsd": 2019294.149664045,
       "porRatioPct": 101.81620260931557,
-      "circulatingAlpha": 604212.8613708764,
-      "stakedAlpha": 650514.5983277365,
-      "burnedAlpha": 20785.427264281498,
+      "circulatingViraje": 604212.8613708764,
+      "stakedViraje": 650514.5983277365,
+      "burnedViraje": 20785.427264281498,
       "activeP2PLoans": 27
     },
     {
@@ -58,9 +58,9 @@
       "assetsUsd": 2597590.4975,
       "liabilitiesUsd": 2560699.327331911,
       "porRatioPct": 101.44066778064598,
-      "circulatingAlpha": 744953.6278320043,
-      "stakedAlpha": 807125.9067548814,
-      "burnedAlpha": 21576.393468459,
+      "circulatingViraje": 744953.6278320043,
+      "stakedViraje": 807125.9067548814,
+      "burnedViraje": 21576.393468459,
       "activeP2PLoans": 28
     },
     {
@@ -75,9 +75,9 @@
       "assetsUsd": 3139223.6193,
       "liabilitiesUsd": 3102301.3512386363,
       "porRatioPct": 101.19015736645385,
-      "circulatingAlpha": 880808.5068996203,
-      "stakedAlpha": 960441.4413670073,
-      "burnedAlpha": 22350.71435033842,
+      "circulatingViraje": 880808.5068996203,
+      "stakedViraje": 960441.4413670073,
+      "burnedViraje": 22350.71435033842,
       "activeP2PLoans": 29
     },
     {
@@ -92,9 +92,9 @@
       "assetsUsd": 3680866.7427,
       "liabilitiesUsd": 3643943.1013673437,
       "porRatioPct": 101.01328808671026,
-      "circulatingAlpha": 1012803.4062658161,
-      "stakedAlpha": 1109485.644294388,
-      "burnedAlpha": 23103.462849971656,
+      "circulatingViraje": 1012803.4062658161,
+      "stakedViraje": 1109485.644294388,
+      "burnedViraje": 23103.462849971656,
       "activeP2PLoans": 30
     },
     {
@@ -109,9 +109,9 @@
       "assetsUsd": 4197576.1163,
       "liabilitiesUsd": 4160861.9000661667,
       "porRatioPct": 100.88237045870831,
-      "circulatingAlpha": 1125481.3438093634,
-      "stakedAlpha": 1239363.6718317433,
-      "burnedAlpha": 23759.412483998705,
+      "circulatingViraje": 1125481.3438093634,
+      "stakedViraje": 1239363.6718317433,
+      "burnedViraje": 23759.412483998705,
       "activeP2PLoans": 31
     },
     {
@@ -126,9 +126,9 @@
       "assetsUsd": 4739229.2413,
       "liabilitiesUsd": 4702338.107674077,
       "porRatioPct": 100.78452745806852,
-      "circulatingAlpha": 1251594.0132217726,
-      "stakedAlpha": 1379676.2440690426,
-      "burnedAlpha": 24468.061838732538,
+      "circulatingViraje": 1251594.0132217726,
+      "stakedViraje": 1379676.2440690426,
+      "burnedViraje": 24468.061838732538,
       "activeP2PLoans": 32
     },
     {
@@ -143,9 +143,9 @@
       "assetsUsd": 5280882.3663,
       "liabilitiesUsd": 5243964.886323095,
       "porRatioPct": 100.70399937408409,
-      "circulatingAlpha": 1375322.143275548,
-      "stakedAlpha": 1518994.5549214121,
-      "burnedAlpha": 25171.689671320262,
+      "circulatingViraje": 1375322.143275548,
+      "stakedViraje": 1518994.5549214121,
+      "burnedViraje": 25171.689671320262,
       "activeP2PLoans": 33
     },
     {
@@ -160,9 +160,9 @@
       "assetsUsd": 5822535.4913,
       "liabilitiesUsd": 5785616.886544979,
       "porRatioPct": 100.63811008366072,
-      "circulatingAlpha": 1496969.4562467071,
-      "stakedAlpha": 1656041.1249244884,
-      "burnedAlpha": 25863.844065275192,
+      "circulatingViraje": 1496969.4562467071,
+      "stakedViraje": 1656041.1249244884,
+      "burnedViraje": 25863.844065275192,
       "activeP2PLoans": 34
     },
     {
@@ -177,9 +177,9 @@
       "assetsUsd": 6339293.068354,
       "liabilitiesUsd": 6302542.216401016,
       "porRatioPct": 100.58311155548229,
-      "circulatingAlpha": 1601767.5558715432,
-      "stakedAlpha": 1776660.4863002782,
-      "burnedAlpha": 26473.032759092315,
+      "circulatingViraje": 1601767.5558715432,
+      "stakedViraje": 1776660.4863002782,
+      "burnedViraje": 26473.032759092315,
       "activeP2PLoans": 33
     },
     {
@@ -194,9 +194,9 @@
       "assetsUsd": 6856019.940554,
       "liabilitiesUsd": 6819342.619097559,
       "porRatioPct": 100.5378424799148,
-      "circulatingAlpha": 1705136.7893152083,
-      "stakedAlpha": 1893578.7889204116,
-      "burnedAlpha": 27063.529236971775,
+      "circulatingViraje": 1705136.7893152083,
+      "stakedViraje": 1893578.7889204116,
+      "burnedViraje": 27063.529236971775,
       "activeP2PLoans": 34
     },
     {
@@ -211,9 +211,9 @@
       "assetsUsd": 7337786.264808,
       "liabilitiesUsd": 7303822.464705932,
       "porRatioPct": 100.46501404252624,
-      "circulatingAlpha": 1807176.9175080336,
-      "stakedAlpha": 2008670.0261453995,
-      "burnedAlpha": 27644.79811184545,
+      "circulatingViraje": 1807176.9175080336,
+      "stakedViraje": 2008670.0261453995,
+      "burnedViraje": 27644.79811184545,
       "activeP2PLoans": 33
     }
   ]

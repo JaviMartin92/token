@@ -32,14 +32,14 @@
    *Resultado:* **100% CUMPLIDO**. El protocolo se mantuvo permanentemente sobrecolateralizado en todos los escenarios.
 
 3. **Invariante de Reconocimiento Honesto de Pasivos:**  
-   $$\text{Pasivos Totales} = (\text{ALPHA en Circulación} \times \text{NAV}) + \text{Obligaciones Devengadas de Bonos}$$  
+   $$\text{Pasivos Totales} = (\text{VIRAJE en Circulación} \times \text{NAV}) + \text{Obligaciones Devengadas de Bonos}$$  
    *Resultado:* **100% CUMPLIDO**. Cada bono vendido aumentó instantáneamente los pasivos registrados sin descalces.
 
 4. **Invariante de Ausencia de Fugas de Capital:**  
    Todas las comisiones cobradas en depósitos, reembolsos, préstamos y penalizaciones de salida se dirigieron íntegramente a acrecentar las reservas de tesorería o a la distribución directa en el `RealYieldRouter`.
 
 5. **Invariante de Integridad Deflacionaria:**  
-   Los tokens recomprados en el DEX o liquidados por comisiones fueron destruidos irreversiblemente en el contrato `AlphaToken`, incrementando permanentemente el contador `totalBurnedTokens`.
+   Los tokens recomprados en el DEX o liquidados por comisiones fueron destruidos irreversiblemente en el contrato `VirajeToken`, incrementando permanentemente el contador `totalBurnedTokens`.
 
 ---
 
@@ -57,56 +57,56 @@
 | `TX01_FAUCET-IT08` | Reclamo de Fondos Faucet USDC | 8/10 | Tesorería & Liquidez | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
 | `TX01_FAUCET-IT09` | Reclamo de Fondos Faucet USDC | 9/10 | Tesorería & Liquidez | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
 | `TX01_FAUCET-IT10` | Reclamo de Fondos Faucet USDC | 10/10 | Tesorería & Liquidez | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
-| `TX02_DEPOSIT-IT01` | Suscripción de ALPHA (Depósito USDC a NAV) | 1/10 | Tesorería & Mercado Primario | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
-| `TX02_DEPOSIT-IT02` | Suscripción de ALPHA (Depósito USDC a NAV) | 2/10 | Tesorería & Mercado Primario | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
-| `TX02_DEPOSIT-IT03` | Suscripción de ALPHA (Depósito USDC a NAV) | 3/10 | Tesorería & Mercado Primario | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
-| `TX02_DEPOSIT-IT04` | Suscripción de ALPHA (Depósito USDC a NAV) | 4/10 | Tesorería & Mercado Primario | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
-| `TX02_DEPOSIT-IT05` | Suscripción de ALPHA (Depósito USDC a NAV) | 5/10 | Tesorería & Mercado Primario | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
-| `TX02_DEPOSIT-IT06` | Suscripción de ALPHA (Depósito USDC a NAV) | 6/10 | Tesorería & Mercado Primario | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
-| `TX02_DEPOSIT-IT07` | Suscripción de ALPHA (Depósito USDC a NAV) | 7/10 | Tesorería & Mercado Primario | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
-| `TX02_DEPOSIT-IT08` | Suscripción de ALPHA (Depósito USDC a NAV) | 8/10 | Tesorería & Mercado Primario | $1.0509 | $1.0510 | 100.00% | ✅ APROBADO |
-| `TX02_DEPOSIT-IT09` | Suscripción de ALPHA (Depósito USDC a NAV) | 9/10 | Tesorería & Mercado Primario | $1.0510 | $1.0510 | 100.00% | ✅ APROBADO |
-| `TX02_DEPOSIT-IT10` | Suscripción de ALPHA (Depósito USDC a NAV) | 10/10 | Tesorería & Mercado Primario | $1.0510 | $1.0510 | 100.00% | ✅ APROBADO |
-| `TX03_REDEEM-IT01` | Reembolso de ALPHA (Retiro USDC a NAV) | 1/10 | Tesorería & Mercado Primario | $1.0510 | $1.0510 | 100.00% | ✅ APROBADO |
-| `TX03_REDEEM-IT02` | Reembolso de ALPHA (Retiro USDC a NAV) | 2/10 | Tesorería & Mercado Primario | $1.0510 | $1.0510 | 100.00% | ✅ APROBADO |
-| `TX03_REDEEM-IT03` | Reembolso de ALPHA (Retiro USDC a NAV) | 3/10 | Tesorería & Mercado Primario | $1.0510 | $1.0510 | 100.00% | ✅ APROBADO |
-| `TX03_REDEEM-IT04` | Reembolso de ALPHA (Retiro USDC a NAV) | 4/10 | Tesorería & Mercado Primario | $1.0510 | $1.0510 | 100.00% | ✅ APROBADO |
-| `TX03_REDEEM-IT05` | Reembolso de ALPHA (Retiro USDC a NAV) | 5/10 | Tesorería & Mercado Primario | $1.0510 | $1.0510 | 100.00% | ✅ APROBADO |
-| `TX03_REDEEM-IT06` | Reembolso de ALPHA (Retiro USDC a NAV) | 6/10 | Tesorería & Mercado Primario | $1.0510 | $1.0510 | 100.00% | ✅ APROBADO |
-| `TX03_REDEEM-IT07` | Reembolso de ALPHA (Retiro USDC a NAV) | 7/10 | Tesorería & Mercado Primario | $1.0510 | $1.0510 | 100.00% | ✅ APROBADO |
-| `TX03_REDEEM-IT08` | Reembolso de ALPHA (Retiro USDC a NAV) | 8/10 | Tesorería & Mercado Primario | $1.0510 | $1.0510 | 100.00% | ✅ APROBADO |
-| `TX03_REDEEM-IT09` | Reembolso de ALPHA (Retiro USDC a NAV) | 9/10 | Tesorería & Mercado Primario | $1.0510 | $1.0509 | 100.00% | ✅ APROBADO |
-| `TX03_REDEEM-IT10` | Reembolso de ALPHA (Retiro USDC a NAV) | 10/10 | Tesorería & Mercado Primario | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
-| `TX04_STAKE-IT01` | Staking de Gobernanza (ALPHA -> stALPHA) | 1/10 | Gobernanza & Real Yield | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
-| `TX04_STAKE-IT02` | Staking de Gobernanza (ALPHA -> stALPHA) | 2/10 | Gobernanza & Real Yield | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
-| `TX04_STAKE-IT03` | Staking de Gobernanza (ALPHA -> stALPHA) | 3/10 | Gobernanza & Real Yield | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
-| `TX04_STAKE-IT04` | Staking de Gobernanza (ALPHA -> stALPHA) | 4/10 | Gobernanza & Real Yield | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
-| `TX04_STAKE-IT05` | Staking de Gobernanza (ALPHA -> stALPHA) | 5/10 | Gobernanza & Real Yield | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
-| `TX04_STAKE-IT06` | Staking de Gobernanza (ALPHA -> stALPHA) | 6/10 | Gobernanza & Real Yield | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
-| `TX04_STAKE-IT07` | Staking de Gobernanza (ALPHA -> stALPHA) | 7/10 | Gobernanza & Real Yield | $1.0509 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX04_STAKE-IT08` | Staking de Gobernanza (ALPHA -> stALPHA) | 8/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX04_STAKE-IT09` | Staking de Gobernanza (ALPHA -> stALPHA) | 9/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX04_STAKE-IT10` | Staking de Gobernanza (ALPHA -> stALPHA) | 10/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX05_UNSTAKE-IT01` | Desbloqueo de Staking (stALPHA -> ALPHA) | 1/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX05_UNSTAKE-IT02` | Desbloqueo de Staking (stALPHA -> ALPHA) | 2/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX05_UNSTAKE-IT03` | Desbloqueo de Staking (stALPHA -> ALPHA) | 3/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX05_UNSTAKE-IT04` | Desbloqueo de Staking (stALPHA -> ALPHA) | 4/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX05_UNSTAKE-IT05` | Desbloqueo de Staking (stALPHA -> ALPHA) | 5/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX05_UNSTAKE-IT06` | Desbloqueo de Staking (stALPHA -> ALPHA) | 6/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX05_UNSTAKE-IT07` | Desbloqueo de Staking (stALPHA -> ALPHA) | 7/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX05_UNSTAKE-IT08` | Desbloqueo de Staking (stALPHA -> ALPHA) | 8/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX05_UNSTAKE-IT09` | Desbloqueo de Staking (stALPHA -> ALPHA) | 9/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX05_UNSTAKE-IT10` | Desbloqueo de Staking (stALPHA -> ALPHA) | 10/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX06_YIELD_PREFERENCE-IT01` | Preferencia de Pago de Rendimiento (USDC vs Compounding ALPHA) | 1/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX06_YIELD_PREFERENCE-IT02` | Preferencia de Pago de Rendimiento (USDC vs Compounding ALPHA) | 2/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX06_YIELD_PREFERENCE-IT03` | Preferencia de Pago de Rendimiento (USDC vs Compounding ALPHA) | 3/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX06_YIELD_PREFERENCE-IT04` | Preferencia de Pago de Rendimiento (USDC vs Compounding ALPHA) | 4/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX06_YIELD_PREFERENCE-IT05` | Preferencia de Pago de Rendimiento (USDC vs Compounding ALPHA) | 5/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX06_YIELD_PREFERENCE-IT06` | Preferencia de Pago de Rendimiento (USDC vs Compounding ALPHA) | 6/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX06_YIELD_PREFERENCE-IT07` | Preferencia de Pago de Rendimiento (USDC vs Compounding ALPHA) | 7/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX06_YIELD_PREFERENCE-IT08` | Preferencia de Pago de Rendimiento (USDC vs Compounding ALPHA) | 8/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX06_YIELD_PREFERENCE-IT09` | Preferencia de Pago de Rendimiento (USDC vs Compounding ALPHA) | 9/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
-| `TX06_YIELD_PREFERENCE-IT10` | Preferencia de Pago de Rendimiento (USDC vs Compounding ALPHA) | 10/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX02_DEPOSIT-IT01` | Suscripción de VIRAJE (Depósito USDC a NAV) | 1/10 | Tesorería & Mercado Primario | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
+| `TX02_DEPOSIT-IT02` | Suscripción de VIRAJE (Depósito USDC a NAV) | 2/10 | Tesorería & Mercado Primario | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
+| `TX02_DEPOSIT-IT03` | Suscripción de VIRAJE (Depósito USDC a NAV) | 3/10 | Tesorería & Mercado Primario | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
+| `TX02_DEPOSIT-IT04` | Suscripción de VIRAJE (Depósito USDC a NAV) | 4/10 | Tesorería & Mercado Primario | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
+| `TX02_DEPOSIT-IT05` | Suscripción de VIRAJE (Depósito USDC a NAV) | 5/10 | Tesorería & Mercado Primario | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
+| `TX02_DEPOSIT-IT06` | Suscripción de VIRAJE (Depósito USDC a NAV) | 6/10 | Tesorería & Mercado Primario | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
+| `TX02_DEPOSIT-IT07` | Suscripción de VIRAJE (Depósito USDC a NAV) | 7/10 | Tesorería & Mercado Primario | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
+| `TX02_DEPOSIT-IT08` | Suscripción de VIRAJE (Depósito USDC a NAV) | 8/10 | Tesorería & Mercado Primario | $1.0509 | $1.0510 | 100.00% | ✅ APROBADO |
+| `TX02_DEPOSIT-IT09` | Suscripción de VIRAJE (Depósito USDC a NAV) | 9/10 | Tesorería & Mercado Primario | $1.0510 | $1.0510 | 100.00% | ✅ APROBADO |
+| `TX02_DEPOSIT-IT10` | Suscripción de VIRAJE (Depósito USDC a NAV) | 10/10 | Tesorería & Mercado Primario | $1.0510 | $1.0510 | 100.00% | ✅ APROBADO |
+| `TX03_REDEEM-IT01` | Reembolso de VIRAJE (Retiro USDC a NAV) | 1/10 | Tesorería & Mercado Primario | $1.0510 | $1.0510 | 100.00% | ✅ APROBADO |
+| `TX03_REDEEM-IT02` | Reembolso de VIRAJE (Retiro USDC a NAV) | 2/10 | Tesorería & Mercado Primario | $1.0510 | $1.0510 | 100.00% | ✅ APROBADO |
+| `TX03_REDEEM-IT03` | Reembolso de VIRAJE (Retiro USDC a NAV) | 3/10 | Tesorería & Mercado Primario | $1.0510 | $1.0510 | 100.00% | ✅ APROBADO |
+| `TX03_REDEEM-IT04` | Reembolso de VIRAJE (Retiro USDC a NAV) | 4/10 | Tesorería & Mercado Primario | $1.0510 | $1.0510 | 100.00% | ✅ APROBADO |
+| `TX03_REDEEM-IT05` | Reembolso de VIRAJE (Retiro USDC a NAV) | 5/10 | Tesorería & Mercado Primario | $1.0510 | $1.0510 | 100.00% | ✅ APROBADO |
+| `TX03_REDEEM-IT06` | Reembolso de VIRAJE (Retiro USDC a NAV) | 6/10 | Tesorería & Mercado Primario | $1.0510 | $1.0510 | 100.00% | ✅ APROBADO |
+| `TX03_REDEEM-IT07` | Reembolso de VIRAJE (Retiro USDC a NAV) | 7/10 | Tesorería & Mercado Primario | $1.0510 | $1.0510 | 100.00% | ✅ APROBADO |
+| `TX03_REDEEM-IT08` | Reembolso de VIRAJE (Retiro USDC a NAV) | 8/10 | Tesorería & Mercado Primario | $1.0510 | $1.0510 | 100.00% | ✅ APROBADO |
+| `TX03_REDEEM-IT09` | Reembolso de VIRAJE (Retiro USDC a NAV) | 9/10 | Tesorería & Mercado Primario | $1.0510 | $1.0509 | 100.00% | ✅ APROBADO |
+| `TX03_REDEEM-IT10` | Reembolso de VIRAJE (Retiro USDC a NAV) | 10/10 | Tesorería & Mercado Primario | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
+| `TX04_STAKE-IT01` | Staking de Gobernanza (VIRAJE -> stVIRAJE) | 1/10 | Gobernanza & Real Yield | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
+| `TX04_STAKE-IT02` | Staking de Gobernanza (VIRAJE -> stVIRAJE) | 2/10 | Gobernanza & Real Yield | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
+| `TX04_STAKE-IT03` | Staking de Gobernanza (VIRAJE -> stVIRAJE) | 3/10 | Gobernanza & Real Yield | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
+| `TX04_STAKE-IT04` | Staking de Gobernanza (VIRAJE -> stVIRAJE) | 4/10 | Gobernanza & Real Yield | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
+| `TX04_STAKE-IT05` | Staking de Gobernanza (VIRAJE -> stVIRAJE) | 5/10 | Gobernanza & Real Yield | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
+| `TX04_STAKE-IT06` | Staking de Gobernanza (VIRAJE -> stVIRAJE) | 6/10 | Gobernanza & Real Yield | $1.0509 | $1.0509 | 100.00% | ✅ APROBADO |
+| `TX04_STAKE-IT07` | Staking de Gobernanza (VIRAJE -> stVIRAJE) | 7/10 | Gobernanza & Real Yield | $1.0509 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX04_STAKE-IT08` | Staking de Gobernanza (VIRAJE -> stVIRAJE) | 8/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX04_STAKE-IT09` | Staking de Gobernanza (VIRAJE -> stVIRAJE) | 9/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX04_STAKE-IT10` | Staking de Gobernanza (VIRAJE -> stVIRAJE) | 10/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX05_UNSTAKE-IT01` | Desbloqueo de Staking (stVIRAJE -> VIRAJE) | 1/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX05_UNSTAKE-IT02` | Desbloqueo de Staking (stVIRAJE -> VIRAJE) | 2/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX05_UNSTAKE-IT03` | Desbloqueo de Staking (stVIRAJE -> VIRAJE) | 3/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX05_UNSTAKE-IT04` | Desbloqueo de Staking (stVIRAJE -> VIRAJE) | 4/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX05_UNSTAKE-IT05` | Desbloqueo de Staking (stVIRAJE -> VIRAJE) | 5/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX05_UNSTAKE-IT06` | Desbloqueo de Staking (stVIRAJE -> VIRAJE) | 6/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX05_UNSTAKE-IT07` | Desbloqueo de Staking (stVIRAJE -> VIRAJE) | 7/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX05_UNSTAKE-IT08` | Desbloqueo de Staking (stVIRAJE -> VIRAJE) | 8/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX05_UNSTAKE-IT09` | Desbloqueo de Staking (stVIRAJE -> VIRAJE) | 9/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX05_UNSTAKE-IT10` | Desbloqueo de Staking (stVIRAJE -> VIRAJE) | 10/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX06_YIELD_PREFERENCE-IT01` | Preferencia de Pago de Rendimiento (USDC vs Compounding VIRAJE) | 1/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX06_YIELD_PREFERENCE-IT02` | Preferencia de Pago de Rendimiento (USDC vs Compounding VIRAJE) | 2/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX06_YIELD_PREFERENCE-IT03` | Preferencia de Pago de Rendimiento (USDC vs Compounding VIRAJE) | 3/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX06_YIELD_PREFERENCE-IT04` | Preferencia de Pago de Rendimiento (USDC vs Compounding VIRAJE) | 4/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX06_YIELD_PREFERENCE-IT05` | Preferencia de Pago de Rendimiento (USDC vs Compounding VIRAJE) | 5/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX06_YIELD_PREFERENCE-IT06` | Preferencia de Pago de Rendimiento (USDC vs Compounding VIRAJE) | 6/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX06_YIELD_PREFERENCE-IT07` | Preferencia de Pago de Rendimiento (USDC vs Compounding VIRAJE) | 7/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX06_YIELD_PREFERENCE-IT08` | Preferencia de Pago de Rendimiento (USDC vs Compounding VIRAJE) | 8/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX06_YIELD_PREFERENCE-IT09` | Preferencia de Pago de Rendimiento (USDC vs Compounding VIRAJE) | 9/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
+| `TX06_YIELD_PREFERENCE-IT10` | Preferencia de Pago de Rendimiento (USDC vs Compounding VIRAJE) | 10/10 | Gobernanza & Real Yield | $1.0510 | $1.0510 | 100.01% | ✅ APROBADO |
 | `TX07_CLAIM_YIELD-IT01` | Reclamo de Real Yield Acumulado | 1/10 | Gobernanza & Real Yield | $1.0510 | $1.0503 | 99.94% | ✅ APROBADO |
 | `TX07_CLAIM_YIELD-IT02` | Reclamo de Real Yield Acumulado | 2/10 | Gobernanza & Real Yield | $1.0503 | $1.0500 | 99.91% | ✅ APROBADO |
 | `TX07_CLAIM_YIELD-IT03` | Reclamo de Real Yield Acumulado | 3/10 | Gobernanza & Real Yield | $1.0500 | $1.0492 | 99.84% | 🚨 RECHAZADO |
@@ -119,7 +119,7 @@ El Agente Supervisor comparó los valores mostrados en pantalla en los elementos
 
 - **Concordancia de NAV:** La desviación máxima observada entre la etiqueta del Header y la función `getNAVPerShare()` fue inferior a **$0.0001 USDC** (debido al redondeo institucional a 4 decimales en pantalla).
 - **Concordancia de PoR:** La discrepancia entre la etiqueta del PoR y `getProofOfReserves()` fue inferior al **0.01%**, reflejando la solvencia en tiempo real sin latencias perjudiciales.
-- **Concordancia de Pasivos:** Los pasivos mostrados en el desglose de métricas reflejan fielmente la suma de las cuotas de ALPHA y los bonos vestados.
+- **Concordancia de Pasivos:** Los pasivos mostrados en el desglose de métricas reflejan fielmente la suma de las cuotas de VIRAJE y los bonos vestados.
 
 ---
 

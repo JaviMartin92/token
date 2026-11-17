@@ -113,7 +113,7 @@ El despliegue debe seguir un orden topológico estricto para satisfacer las depe
 
 ### Fase 1: Registro Maestro e Infraestructura Base
 1. **`ProtocolAddressProvider`**: Desplegar el Service Locator central.
-2. **`VirajeToken (VIRAJE)`**: Desplegar el token de gobernanza ERC-20 con soporte ERC-2612 Permit y puntos de control (checkpoints).
+2. **`VirajeToken (VIRAJE)`**: Desplegar el token patrimonial ERC-20 respaldado a NAV con soporte EIP-2612 Permit (sin gas) y eventos institucionales de trazabilidad (`SharesMinted`, `SharesBurned`). Los derechos y puntos de control de voto se segregan a `GovernanceStaking (stVIRAJE)` para neutralizar ataques de gobernanza vía Flash Loans.
 3. **`VaultPositionNFT`**: Desplegar el contrato ERC-721 para la titulización de bonos vestados.
 4. **`OracleHub`**: Configurar con los Feeds oficiales de Chainlink y el `SequencerUptimeFeed` con periodo de gracia de 3,600 segundos para proteger contra transacciones estancadas en reinicios de L2.
 
