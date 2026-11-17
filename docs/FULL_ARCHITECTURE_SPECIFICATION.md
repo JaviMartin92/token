@@ -220,7 +220,9 @@ sequenceDiagram
 - **Cascada de Liquidez y Resiliencia**: Consume prioritariamente el saldo ocioso en `VirajeVault`; en caso de déficit, desinvierte de forma acotada (máximo 10 adaptadores, `MAX_ADAPTER_SCAN_LIMIT`) con llamadas `withdraw` encapsuladas en `try/catch` anidado, asegurando que pausas o iliquidez en protocolos externos nunca bloqueen las redenciones de los usuarios.
 
 #### 4. [`TreasuryRebalanceLib.sol`](../contracts/src/lib/TreasuryRebalanceLib.sol)
-- **Propósito**: Ejecución de rebalanceos de cartera multiactivo con tolerancia máxima de slippage del 0.05% contra oráculos Chainlink.
+- **Propósito**: Ejecución de rebalanceos automáticos de cartera multiactivo (WBTC, WETH) y asignación dinámica de sub-reservas de participaciones $VIRAJE$.
+- **Tolerancia a Fallos y Protección Anti-MEV**: Consultas a oráculos y swaps de DEX encapsulados en `try/catch` con cotas mínimas obligatorias de salida (`minOut`) calculadas sobre precios de referencia Chainlink/Pyth. En caso de volatilidad excesiva o fallo de oráculo, la operación se cancela sin revertir el depósito del usuario y el 100% de los fondos permanece seguro en USDC en `VirajeVault`.
+- **Invariante de Cero Emisión Desrespaldada**: La sub-reserva de $VIRAJE$ sólo se adquiere mediante recompras en mercado secundario cuando cotiza con descuento frente al NAV ($P \le NAV$), seguida de auto-staking institucional para enriquecer la liquidez propiedad del protocolo (POL).
 
 #### 5. [`VirajeVault.sol`](../contracts/src/VirajeVault.sol)
 - **Propósito**: Búnker frío de custodia de reservas exógenas (USDC, WBTC, WETH). Fondos transferibles únicamente mediante roles autorizados (`VAULT_MANAGER_ROLE`). Inmune a reentrancia al carecer de estado mutable financiero. Emite eventos con operador (`FundsTransferred`, `FundsApproved`) e implementa reseteo preventivo de allowance para compatibilidad universal con tokens no estándar (ej. USDT).
