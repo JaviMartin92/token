@@ -193,6 +193,13 @@ sequenceDiagram
 #### 1. [`TreasuryManager.sol`](../contracts/src/TreasuryManager.sol)
 - **Propósito**: Orquestador central de emisión a NAV, rescates, rebalanceos y control estricto de solvencia.
 - **Modularización EIP-170**: Para permanecer por debajo del límite de 24.576 bytes, delega su lógica matemática en `TreasuryFeeLib`, `TreasuryPoRLib` y `TreasuryRebalanceLib`.
+- **Invariantes Financieros y Regulatorios**:
+  - **Monotonicidad de NAV ($\Delta NAV \ge 0$)**: Impide matemáticamente que cualquier depósito o rescate reduzca el valor patrimonial neto por share.
+  - **Monotonicidad de Solvencia ($\Delta \text{Solvency} \ge 0$)**: Exige que el ratio de colateralización de Proof of Reserves no decaiga.
+  - **Inmunidad Anti-MEV / Flash Loans**: `SameBlockCooldown` prohíbe interactuar en depósito y rescate dentro del mismo bloque para el usuario o beneficiario.
+  - **Facilidad de Crédito P2P (C-03)**: Limita la exposición agregada de préstamos de tesorería a un máximo configurable del 20% (techo institucional incondicional del 50%) de las reservas líquidas de stablecoins.
+  - **Deducción de Pasivos Vested (C-02)**: Ejecuta `_accrueVestedVault()` antes de cada cómputo de NAV para garantizar la valoración justa del equity neto.
+  - **Aislamiento Regulatorio (C-01)**: Vincula criptográficamente `msg.sender` con el beneficiario en rescates para blindar el perímetro KYC.
 - **Funciones Principales**:
   - `deposit(uint256 stableAmount)`: Acuña participaciones VIRAJE a valor NAV spot exacto. Para transacciones normales (<20% de reserva), la comisión es estrictamente **`0.00%`**.
   - `redeem(uint256 sharesAmount)`: Destruye participaciones VIRAJE, verifica la monotonicidad de NAV y retiene una comisión de salida fija del **`1.00%`** (50% acrece reservas / 50% dividendos en `CommunityYieldVault`).
