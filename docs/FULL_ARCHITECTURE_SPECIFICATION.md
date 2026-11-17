@@ -207,8 +207,9 @@ sequenceDiagram
   - `getNAVPerShare()`: Calcula el NAV spot dividiendo el Patrimonio Neto Libre entre las participaciones netas en circulación ($NAV = \text{NetEquityUSD} / \text{NetCirculatingShares}$).
 
 #### 2. [`TreasuryFeeLib.sol`](../contracts/src/lib/TreasuryFeeLib.sol)
-- **Propósito**: Cálculo algorítmico de slippage dinámico y tarifas anti-dilución.
-- **Directiva de Cero Fricción**: Si el impacto del depósito es inferior o igual al 20% del pool (`impactRatio <= 2000 bps`), retorna **0 BPS (0.00%)**. Si excede el 20%, aplica recargo proporcional al exceso hasta un máximo de 200 BPS (2.00%).
+- **Propósito**: Cálculo algorítmico determinista de slippage dinámico, tarifas anti-dilución y comisiones de rescate.
+- **Directiva de Cero Fricción**: Si el impacto del depósito es inferior o igual al 20.00% del pool (`impactRatio <= WHALE_IMPACT_THRESHOLD_BPS` = 2000 bps), retorna estrictamente **`BASE_FEE_BPS` (0.00%)**. Si excede el 20%, aplica recargo anti-dilución proporcional al impacto excedente con un tope incondicional de 200 BPS (2.00%).
+- **Comisiones de Salida y Emergencia**: Aplica comisión fija de salida del **`1.00%`** (`STANDARD_REDEMPTION_FEE_BPS` = 100, 50% acrece NAV / 50% yield a stakers) y tarifa de retención de emergencia del **`5.00%`** (`EMERGENCY_FEE_BPS` = 500) en rescates de cuentas revocadas de KYC. Ambas liquidaciones emplean división truncada al suelo (sub-aditiva) para blindar a la tesorería contra fugas por redondeo.
 
 #### 3. [`TreasuryPoRLib.sol`](../contracts/src/lib/TreasuryPoRLib.sol)
 - **Propósito**: Cómputo $O(1)$ de Proof of Reserves, valoración patrimonial en tiempo real y deducción rigurosa de pasivos de bonos vestados.
