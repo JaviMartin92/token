@@ -13,12 +13,10 @@ interface IVirajeVaultBuyback {
     function transferFunds(address token, address to, uint256 amount) external;
     function getBalance(address token) external view returns (uint256);
 }
-interface IAlphaVaultBuyback is IVirajeVaultBuyback {}
 
 interface IVirajeTokenBuyback {
     function burn(uint256 amount) external;
 }
-interface IAlphaTokenBuyback is IVirajeTokenBuyback {}
 
 interface ITreasuryManagerBuyback {
     function getNAVPerShare() external view returns (uint256);

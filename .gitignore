@@ -20,6 +20,7 @@ contracts/broadcast/*/.last-run.json
 frontend/dist/
 frontend/.vite/
 services/dist/
+services/**/dist/
 dist/
 
 # IDE

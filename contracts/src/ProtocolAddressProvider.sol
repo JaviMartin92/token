@@ -20,8 +20,6 @@ contract ProtocolAddressProvider is AccessControl {
     bytes32 public constant ID_TREASURY_MANAGER = keccak256("TREASURY_MANAGER");
     bytes32 public constant ID_VIRAJE_VAULT = keccak256("VIRAJE_VAULT");
     bytes32 public constant ID_VIRAJE_TOKEN = keccak256("VIRAJE_TOKEN");
-    bytes32 public constant ID_ALPHA_VAULT = keccak256("VIRAJE_VAULT");
-    bytes32 public constant ID_ALPHA_TOKEN = keccak256("VIRAJE_TOKEN");
     bytes32 public constant ID_ORACLE_HUB = keccak256("ORACLE_HUB");
     bytes32 public constant ID_TOKENOMICS_ENGINE = keccak256("TOKENOMICS_ENGINE");
     bytes32 public constant ID_GOVERNANCE_STAKING = keccak256("GOVERNANCE_STAKING");
@@ -115,14 +113,6 @@ contract ProtocolAddressProvider is AccessControl {
     function getVirajeToken() public view returns (address) {
         address t = getAddress(ID_VIRAJE_TOKEN);
         return t != address(0) ? t : getAddress(ID_VIRAJE_TOKEN);
-    }
-
-    function getAlphaVault() external view returns (address) {
-        return getVirajeVault();
-    }
-
-    function getAlphaToken() external view returns (address) {
-        return getVirajeToken();
     }
 
     function getOracleHub() external view returns (address) {

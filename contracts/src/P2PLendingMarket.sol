@@ -99,9 +99,6 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         emit VirajeTokenUpdated(old, _virajeToken);
     }
 
-    // Backward-compatible aliases
-    function setAlphaToken(address _token) external onlyOwner { setVirajeToken(_token); }
-
     function setWbtcToken(address _wbtcToken) external onlyOwner {
         if (_wbtcToken == address(0)) revert IProtocolErrors.ZeroAddress();
         address old = wbtcToken;
