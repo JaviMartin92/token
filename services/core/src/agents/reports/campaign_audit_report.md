@@ -15,7 +15,7 @@
 > **Guía Estratégica:** Prioritize untested contracts with complex financial logic (DISCOUNT_BUYBACK_ENGINE, REAL_YIELD_ROUTER) and P2P lending mechanisms. Focus on reentrancy vulnerabilities, improper access controls, and yield calculation flaws. Avoid repetitive testing of permit/role management functions. Use coordinated attacks to exploit edge cases in untested contracts.
 
 * **Contratos Prioritarios Asignados:** `DISCOUNT_BUYBACK_ENGINE`, `REAL_YIELD_ROUTER`, `P2P_MARKET`
-* **Funciones Restringidas Temporalmente (Sobre-probadas):** `ALPHA_TOKEN::permit`, `ORACLE_HUB::grantRole`, `GOVERNOR::propose`
+* **Funciones Restringidas Temporalmente (Sobre-probadas):** `VIRAJE_TOKEN::permit`, `ORACLE_HUB::grantRole`, `GOVERNOR::propose`
 
 ---
 
@@ -33,8 +33,8 @@
 | **TIMELOCK** | `revokeRole`, `renounceRole`, `grantRole`, `cancel` | ✅ Auditado (4 métodos) |
 | **POSITION_NFT** | `approve`, `safeTransferFrom`, `setApprovalForAll`, `burn`, `transferFrom` | ✅ Auditado (5 métodos) |
 | **GOVERNOR** | `castVote`, `execute`, `cancel`, `propose`, `revokeRole`, `castVoteWithReason` | ✅ Auditado (6 métodos) |
-| **ALPHA_VAULT** | `revokeRole`, `renounceRole`, `approveFunds`, `grantRole`, `transferFunds` | ✅ Auditado (5 métodos) |
-| **ALPHA_TOKEN** | `mint`, `approve`, `transfer`, `permit`, `burnFrom`, `transferFrom` | ✅ Auditado (6 métodos) |
+| **VIRAJE_VAULT** | `revokeRole`, `renounceRole`, `approveFunds`, `grantRole`, `transferFunds` | ✅ Auditado (5 métodos) |
+| **VIRAJE_TOKEN** | `mint`, `approve`, `transfer`, `permit`, `burnFrom`, `transferFrom` | ✅ Auditado (6 métodos) |
 | **ORACLE_HUB** | `setSequencerUptimeFeed`, `revokeRole`, `updatePrimaryPriceCache`, `grantRole` | ✅ Auditado (4 métodos) |
 | **CIRCUIT_BREAKER** | `checkAssetDeviation`, `setDropThresholds`, `grantRole`, `renounceRole`, `setOracleStalenessLimit`, `setPriceFeed`, `triggerFreeze`, `revokeRole` | ✅ Auditado (8 métodos) |
 | **DYNAMIC_YIELD_ORACLE** | `checkDailyOpportunity`, `renounceRole`, `revokeRole`, `rejectOpportunity`, `setSanityBounds` | ✅ Auditado (5 métodos) |
@@ -43,7 +43,7 @@
 | **STAKING** | `setAuthorizedCaller`, `claimRewardFor`, `setProtocolVaults`, `setReserveVaults`, `stake`, `approve`, `setExcludedAddress` | ✅ Auditado (7 métodos) |
 | **USDC** | `transferFrom`, `transfer`, `approve` | ✅ Auditado (3 métodos) |
 | **PROMO_VAULT** | `renounceRole`, `createCampaign`, `distributeReward`, `grantRole` | ✅ Auditado (4 métodos) |
-| **P2P_MARKET** | `borrowFromTreasuryWithAsset`, `createLoanOfferWithCollateral`, `acceptLoanAndDepositCollateral`, `borrowFromTreasuryWithAlpha`, `cancelLoan`, `borrowFromTreasury`, `cancelLoanOffer`, `createLoanOfferWithNFT`, `claimBorrowerEquity`, `createLoanOffer` | ✅ Auditado (10 métodos) |
+| **P2P_MARKET** | `borrowFromTreasuryWithAsset`, `createLoanOfferWithCollateral`, `acceptLoanAndDepositCollateral`, `borrowFromTreasuryWithViraje`, `cancelLoan`, `borrowFromTreasury`, `cancelLoanOffer`, `createLoanOfferWithNFT`, `claimBorrowerEquity`, `createLoanOffer` | ✅ Auditado (10 métodos) |
 | **FOUNDER_VESTING_VAULT** | `revokeRole`, `renounceRole`, `grantRole` | ✅ Auditado (3 métodos) |
 | **TOKENOMICS_ENGINE** | `renounceRole`, `grantRole`, `revokeRole` | ✅ Auditado (3 métodos) |
 
@@ -53,10 +53,10 @@
 | Ronda | Agente | Acción | Hipótesis / Razón | Resultado |
 | :---: | :--- | :--- | :--- | :---: |
 | R73 | **Cipher** | `TIMELOCK::cancel` | *"Exploración dinámica asignada sobre TIMELOCK::cancel..."* | 🛡️ Defendido (Revert) |
-| R72 | **Echo** | `ALPHA_TOKEN::transferFrom` | *"Exploración dinámica asignada sobre ALPHA_TOKEN::transferFrom..."* | ✅ Éxito |
+| R72 | **Echo** | `VIRAJE_TOKEN::transferFrom` | *"Exploración dinámica asignada sobre VIRAJE_TOKEN::transferFrom..."* | ✅ Éxito |
 | R72 | **Apex** | `ORACLE_HUB::revokeRole` | *"Exploración dinámica asignada sobre ORACLE_HUB::revokeRole..."* | 🛡️ Defendido (Revert) |
 | R72 | **Cipher** | `GOVERNOR::propose` | *"Exploración dinámica asignada sobre GOVERNOR::propose..."* | 🛡️ Defendido (Revert) |
-| R71 | **Echo** | `ALPHA_TOKEN::permit` | *"Exploración dinámica asignada sobre ALPHA_TOKEN::permit..."* | 🛡️ Defendido (Revert) |
+| R71 | **Echo** | `VIRAJE_TOKEN::permit` | *"Exploración dinámica asignada sobre VIRAJE_TOKEN::permit..."* | 🛡️ Defendido (Revert) |
 | R71 | **Apex** | `ORACLE_HUB::grantRole` | *"Exploración dinámica asignada sobre ORACLE_HUB::grantRole..."* | 🛡️ Defendido (Revert) |
 | R71 | **Cipher** | `ATOMIC_SWAP::grantRole` | *"Exploración dinámica asignada sobre ATOMIC_SWAP::grantRole..."* | 🛡️ Defendido (Revert) |
 | R70 | **Echo** | `VESTED_VAULT::renounceRole` | *"Exploración dinámica asignada sobre VESTED_VAULT::renounceRole..."* | 🛡️ Defendido (Revert) |

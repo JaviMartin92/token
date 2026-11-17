@@ -1,7 +1,7 @@
 # 🛡️ Informe Exhaustivo de Auditoría E2E: Agente Autónomo de Usuario Real
 **Fecha:** 2026-10-29T14:34:26.235Z  
 **Entorno de Ejecución:** Anvil Blockchain (EVM 31337) & Playwright Chromium Engine  
-**Plataforma Auditada:** Alpha Centauri DeFi Platform (BotPremium Token Ecosystem)  
+**Plataforma Auditada:** Viraje Protocol DeFi Platform (BotPremium Token Ecosystem)  
 **Cobertura Funcional:** 100% de Operativas & Vistas de Usuario  
 
 ---
@@ -40,19 +40,19 @@ $$\text{PoR} = \frac{\text{Total Reservas Exógenas (USDC + WBTC + WETH) + Respa
 | :--- | :---: | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
 | **R1-OP01** | R1 | Retail Desktop Investor (1920x1080) | Autenticación & Header Web3 | Conexión de Billetera & Lectura de Métricas | $1.0509 | $1.0509 | `+0.0000` | 121ms | ✅ PASS |
 | **R1-OP02** | R1 | Retail Desktop Investor (1920x1080) | Tesorería & Mercado Primario | Reclamo de Fondos Faucet USDC | $1.0509 | $1.0509 | `+0.0000` | 1631ms | ✅ PASS |
-| **R1-OP03** | R1 | Retail Desktop Investor (1920x1080) | Tesorería & Mercado Primario | Suscripción de ALPHA (Depósito USDC) | $1.0509 | $1.0509 | `+0.0000` | 2527ms | ✅ PASS |
-| **R1-OP04** | R1 | Retail Desktop Investor (1920x1080) | Tesorería & Mercado Primario | Reembolso de ALPHA (Retiro USDC) | $1.0509 | $1.0508 | `-0.0001` | 2487ms | ❌ FAIL |
-| **R1-OP05** | R1 | Retail Desktop Investor (1920x1080) | Gobernanza & Staking DAO | Staking de ALPHA a stALPHA | $1.0508 | $1.0509 | `+0.0001` | 2488ms | ✅ PASS |
+| **R1-OP03** | R1 | Retail Desktop Investor (1920x1080) | Tesorería & Mercado Primario | Suscripción de VIRAJE (Depósito USDC) | $1.0509 | $1.0509 | `+0.0000` | 2527ms | ✅ PASS |
+| **R1-OP04** | R1 | Retail Desktop Investor (1920x1080) | Tesorería & Mercado Primario | Reembolso de VIRAJE (Retiro USDC) | $1.0509 | $1.0508 | `-0.0001` | 2487ms | ❌ FAIL |
+| **R1-OP05** | R1 | Retail Desktop Investor (1920x1080) | Gobernanza & Staking DAO | Staking de VIRAJE a stVIRAJE | $1.0508 | $1.0509 | `+0.0001` | 2488ms | ✅ PASS |
 | **R1-OP06** | R1 | Retail Desktop Investor (1920x1080) | Gobernanza & Staking DAO | Configuración Payout Opción A (USDC) | $1.0509 | $1.0509 | `+0.0000` | 1551ms | ✅ PASS |
-| **R1-OP07** | R1 | Retail Desktop Investor (1920x1080) | Gobernanza & Staking DAO | Configuración Payout Opción B (Compounding ALPHA) | $1.0509 | $1.0509 | `+0.0000` | 1550ms | ✅ PASS |
+| **R1-OP07** | R1 | Retail Desktop Investor (1920x1080) | Gobernanza & Staking DAO | Configuración Payout Opción B (Compounding VIRAJE) | $1.0509 | $1.0509 | `+0.0000` | 1550ms | ✅ PASS |
 | **R1-OP08** | R1 | Retail Desktop Investor (1920x1080) | Bonos Vestados & Posiciones NFT | Adquisición de Bono Vestado (1 Año) | $1.0509 | $1.0509 | `+0.0000` | 3030ms | ✅ PASS |
 | **R1-OP09** | R1 | Retail Desktop Investor (1920x1080) | Transparencia & Métricas | Apertura e Inspección de Modal APY Desglosado | $1.0509 | $1.0509 | `+0.0000` | 1549ms | ✅ PASS |
 | **R1-OP10** | R1 | Retail Desktop Investor (1920x1080) | Programa de Referidos | Generación y Copia de Enlace de Referidos | $1.0509 | $1.0509 | `+0.0000` | 1674ms | ✅ PASS |
 | **R1-OP11** | R1 | Retail Desktop Investor (1920x1080) | Gobernanza & Staking DAO | Retiro Parcial de Staking (Unstake) | $1.0509 | $1.0509 | `+0.0000` | 2005ms | ✅ PASS |
 | **R1-OP12** | R1 | Retail Desktop Investor (1920x1080) | Auditoría & Solvencia PoR | Auditoría Live de Proof of Reserves y Desglose | $1.0509 | $1.0509 | `+0.0000` | 2679ms | ✅ PASS |
 | **R2-OP13** | R2 | Institutional Whale Investor (1440x900) | Autenticación & Faucet | Conexión Institucional & Faucet USDC | $1.0509 | $1.0509 | `+0.0000` | 1675ms | ✅ PASS |
-| **R2-OP14** | R2 | Institutional Whale Investor (1440x900) | Tesorería & Mercado Primario | Suscripción Institucional de ALPHA (5,000 USDC) | $1.0509 | $1.0510 | `+0.0001` | 2508ms | ✅ PASS |
-| **R2-OP15** | R2 | Institutional Whale Investor (1440x900) | Gobernanza & Staking DAO | Staking Institucional a stALPHA (2,000 ALPHA) | $1.0510 | $1.0511 | `+0.0001` | 2487ms | ✅ PASS |
+| **R2-OP14** | R2 | Institutional Whale Investor (1440x900) | Tesorería & Mercado Primario | Suscripción Institucional de VIRAJE (5,000 USDC) | $1.0509 | $1.0510 | `+0.0001` | 2508ms | ✅ PASS |
+| **R2-OP15** | R2 | Institutional Whale Investor (1440x900) | Gobernanza & Staking DAO | Staking Institucional a stVIRAJE (2,000 VIRAJE) | $1.0510 | $1.0511 | `+0.0001` | 2487ms | ✅ PASS |
 | **R2-OP16** | R2 | Institutional Whale Investor (1440x900) | Bonos Vestados & Posiciones NFT | Adquisición de Bono Vestado 3 Años con Descuento VIP | $1.0511 | $1.0511 | `+0.0000` | 3046ms | ✅ PASS |
 | **R2-OP17** | R2 | Institutional Whale Investor (1440x900) | Préstamos P2P & Escrow | Publicación de Oferta de Préstamo P2P con NFT | $1.0511 | $1.0511 | `+0.0000` | 9614ms | ✅ PASS |
 | **R2-OP18** | R2 | Institutional Whale Investor (1440x900) | Préstamos P2P & Escrow | Cancelación de Oferta de Préstamo P2P | $1.0511 | $1.0511 | `+0.0000` | 2048ms | ✅ PASS |
@@ -63,8 +63,8 @@ $$\text{PoR} = \frac{\text{Total Reservas Exógenas (USDC + WBTC + WETH) + Respa
 | **R2-OP23** | R2 | Institutional Whale Investor (1440x900) | Administración & Gestión de Reservas | Rebalanceo de Ponderaciones de Cartera | $1.0511 | $1.0511 | `+0.0000` | 3137ms | ✅ PASS |
 | **R3-OP24** | R3 | Mobile Smartphone User (390x844) | Mobile UX & Responsive Layout | Conexión Mobile & Verificación de Viewport | $1.0511 | $1.0511 | `+0.0000` | 108ms | ✅ PASS |
 | **R3-OP25** | R3 | Mobile Smartphone User (390x844) | Tesorería & Mercado Primario | Reclamo Mobile de Faucet USDC | $1.0511 | $1.0511 | `+0.0000` | 1628ms | ✅ PASS |
-| **R3-OP26** | R3 | Mobile Smartphone User (390x844) | Tesorería & Mercado Primario | Suscripción Mobile de ALPHA | $1.0511 | $1.0512 | `+0.0001` | 2495ms | ✅ PASS |
-| **R3-OP27** | R3 | Mobile Smartphone User (390x844) | Gobernanza & Staking DAO | Staking Mobile de ALPHA a stALPHA | $1.0512 | $1.0512 | `+0.0000` | 2484ms | ✅ PASS |
+| **R3-OP26** | R3 | Mobile Smartphone User (390x844) | Tesorería & Mercado Primario | Suscripción Mobile de VIRAJE | $1.0511 | $1.0512 | `+0.0001` | 2495ms | ✅ PASS |
+| **R3-OP27** | R3 | Mobile Smartphone User (390x844) | Gobernanza & Staking DAO | Staking Mobile de VIRAJE a stVIRAJE | $1.0512 | $1.0512 | `+0.0000` | 2484ms | ✅ PASS |
 | **R3-OP28** | R3 | Mobile Smartphone User (390x844) | Bonos Vestados & Posiciones NFT | Adquisición Mobile de Bono Vestado (1 Año) | $1.0512 | $1.0512 | `+0.0000` | 3051ms | ✅ PASS |
 | **R3-OP29** | R3 | Mobile Smartphone User (390x844) | Bonos Vestados & Salida Anticipada | Ejecución de Ragequit con 15% de Penalización | $1.0512 | $1.0515 | `+0.0003` | 3263ms | ✅ PASS |
 | **R3-OP30** | R3 | Mobile Smartphone User (390x844) | Bonos Vestados & Vencimiento | Avance Temporal (366 Días) & Reclamo de Bono Vencido | $1.0515 | $1.0515 | `+0.0000` | 4615ms | ✅ PASS |
@@ -77,17 +77,17 @@ $$\text{PoR} = \frac{\text{Total Reservas Exógenas (USDC + WBTC + WETH) + Respa
 
 ### 🏛️ Ronda 1: Usuario Minorista (Desktop 1920x1080)
 * **Perfil:** Inversionista particular operando en pantalla panorámica.
-* **Flujo Probado:** Faucet ➔ Depósito 2,500 USDC ➔ Rescate parcial 500 ALPHA ➔ Staking 600 ALPHA ➔ Conmutación de Preferencias de Real Yield (Opción A vs B) ➔ Compra de Bono Vestado 1 Año ➔ Inspección de Modal APY ➔ Enlaces de Referidos ➔ Retiro de Staking ➔ Auditoría de Solvencia.
+* **Flujo Probado:** Faucet ➔ Depósito 2,500 USDC ➔ Rescate parcial 500 VIRAJE ➔ Staking 600 VIRAJE ➔ Conmutación de Preferencias de Real Yield (Opción A vs B) ➔ Compra de Bono Vestado 1 Año ➔ Inspección de Modal APY ➔ Enlaces de Referidos ➔ Retiro de Staking ➔ Auditoría de Solvencia.
 * **Observaciones UX:** Las ventanas modales de confirmación de 2 pasos mostraron con precisión los montos brutos, comisiones dinámicas estimadas y los contratos receptores. Toasts informativos notificaron cada hito on-chain.
 
 ### 🐋 Ronda 2: Inversor Institucional / Whale (Desktop 1440x900)
 * **Perfil:** Entidad de alto patrimonio operando con volúmenes institucionales y rango VIP.
-* **Flujo Probado:** Faucet ➔ Depósito institucional 5,000 USDC ➔ Staking de 2,000 ALPHA ➔ Compra de Bono a 3 Años (2,000 USDC con descuento VIP de fidelidad) ➔ Creación de Oferta P2P en Escrow ➔ Cancelación de Oferta P2P ➔ Solicitud de Crédito a Tesorería ➔ Reembolso con Intereses ➔ Activación de Discount Buyback Engine ➔ Envío de Propuesta DAO en GovernorAlphaCentauri ➔ Rebalanceo de Cartera.
+* **Flujo Probado:** Faucet ➔ Depósito institucional 5,000 USDC ➔ Staking de 2,000 VIRAJE ➔ Compra de Bono a 3 Años (2,000 USDC con descuento VIP de fidelidad) ➔ Creación de Oferta P2P en Escrow ➔ Cancelación de Oferta P2P ➔ Solicitud de Crédito a Tesorería ➔ Reembolso con Intereses ➔ Activación de Discount Buyback Engine ➔ Envío de Propuesta DAO en GovernorViraje ➔ Rebalanceo de Cartera.
 * **Observaciones UX:** La emisión de bonos calculó de forma transparente los pasivos presentes devengados, preservando el NAV sin generar fluctuaciones no justificadas. El Buyback Engine ejecutó la quema on-chain de forma adecuada.
 
 ### 📱 Ronda 3: Usuario Móvil Smartphone (Viewport 390x844 - iPhone 14)
 * **Perfil:** Usuario en movilidad interactuando con interfaz táctil y espacio vertical restringido.
-* **Flujo Probado:** Conexión Mobile ➔ Faucet ➔ Depósito 1,500 USDC ➔ Staking 400 ALPHA ➔ Compra de Bono 1 Año ➔ Salida de Emergencia (Ragequit con penalización del 15%) ➔ Avance Temporal de 366 Días en Blockchain ➔ Reclamo de Bono Vencido ➔ Simulación y Reactivación de Circuit Breaker ➔ Verificación Final de Solvencia.
+* **Flujo Probado:** Conexión Mobile ➔ Faucet ➔ Depósito 1,500 USDC ➔ Staking 400 VIRAJE ➔ Compra de Bono 1 Año ➔ Salida de Emergencia (Ragequit con penalización del 15%) ➔ Avance Temporal de 366 Días en Blockchain ➔ Reclamo de Bono Vencido ➔ Simulación y Reactivación de Circuit Breaker ➔ Verificación Final de Solvencia.
 * **Observaciones UX:** Todos los formularios y tarjetas colapsables se adaptaron fluidamente sin scroll horizontal ni colisión de botones táctiles. El Ragequit aplicó exactamente el 15% de penalización y amortizó la obligación sin impactar negativamente en el NAV.
 
 ---
