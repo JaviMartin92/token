@@ -229,8 +229,8 @@ sequenceDiagram
 - **Capacidades**: Simula llamadas antes del envío a la red, certifica que los límites LTV de colateral reflexivo no se sobrepasen y previene que MetaMask infle el gas a 30M por reversiones de contrato.
 
 #### 8. [`OracleHub.sol`](../contracts/src/OracleHub.sol)
-- **Propósito**: Concentrador de oráculos con detección de caída de Secuenciador L2.
-- **Failover Automático**: Oráculo primario Chainlink con conmutación determinista a Pyth Network ante fallos de respuesta o datos desactualizados (>24h).
+- **Propósito**: Concentrador central de oráculos multicapa con detección de caídas del Secuenciador L2 de Arbitrum (periodo de gracia de 1 hora).
+- **Failover Automático Protegido**: Oráculo primario Chainlink con validación de staleness (1 hora por defecto) y conmutación determinista blindada mediante `try/catch` a oráculo secundario (Pyth/Redundante), con control de divergencia máxima del 5% acotado a cachés primarias recientes (antigüedad $\le$ 24 horas) para erradicar falsos positivos.
 
 #### 9. [`CircuitBreaker.sol`](../contracts/src/CircuitBreaker.sol)
 - **Propósito**: Interruptor de seguridad de volatilidad. Congela temporalmente las compras de un activo si su cotización cae más de un 15% en una ventana de 6 horas.
