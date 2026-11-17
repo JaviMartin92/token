@@ -1,3 +1,4 @@
+/* solhint-disable max-states-count */
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -35,6 +36,13 @@ import "./interfaces/IVestedDiscountVault.sol";
  *      1. Monotonicity of NAV per share: ΔNAV >= 0 on all deposits and redemptions.
  *      2. Solvency: Proof of Reserves collateral ratio >= 100% and non-decreasing.
  *      3. Anti-MEV: SameBlockCooldown prevents deposit/redeem arbitrage in identical block.
+ * @custom:security-note Solvency Invariant: All deposits and redemptions execute pre- and post-flight
+ *                       Proof of Reserves verification (`getProofOfReserves`), reverting atomically
+ *                       if the collateral backing ratio or NAV per share degrades.
+ * @custom:security-note Regulatory Isolation: Redemptions bind msg.sender to the beneficiary address,
+ *                       preventing non-whitelisted actors from burning shares through proxy addresses.
+ * @custom:security-note Credit Facility Caps: Outstanding P2P loans are strictly capped to 20%
+ *                       (hard ceiling: 50%) of stablecoin reserves, preserving instant redemption liquidity.
  */
 contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -48,8 +56,6 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     error AccountIsWhitelisted();
     error InsufficientShareBalance();
     error ZeroNetCirculatingShares();
-    error OnlyRealYieldRouter();
-    error TransferFromFailed();
     error UnauthorizedDisburseLoans();
     error UnauthorizedVaultPayout();
     error InsufficientLiquidity();
@@ -192,6 +198,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
      * @notice Updates KYC verification status for institutional gateway
      */
     function setKYCStatus(address account, bool status) external onlyRole(ProtocolRoles.COMPLIANCE_ROLE) {
+        if (account == address(0)) revert ZeroAddress();
         kycWhitelist[account] = status;
         emit WhitelistUpdated(account, status);
     }
@@ -216,11 +223,14 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
      * @notice Removes an active yield adapter
      */
     function removeYieldAdapter(address adapter) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (adapter == address(0)) revert InvalidAdapterAddress();
         uint256 len = activeYieldAdapters.length;
+        bool found = false;
         for (uint256 i = 0; i < len;) {
             if (activeYieldAdapters[i] == adapter) {
                 activeYieldAdapters[i] = activeYieldAdapters[len - 1];
                 activeYieldAdapters.pop();
+                found = true;
                 emit YieldAdapterRemoved(adapter);
                 break;
             }
@@ -228,6 +238,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
                 ++i;
             }
         }
+        if (!found) revert AdapterNotActive();
     }
 
     /**
@@ -641,16 +652,6 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
         emit Redeemed(beneficiary, sharesAmount, assetsReceived);
     }
 
-    function _updateLastSettledNAV() internal {
-        try this.getNAVPerShare() returns (uint256 nav) {
-            if (nav > 0) {
-                lastSettledNAVPerShare = nav;
-            }
-        } catch {
-            // Keep previous settled NAV on transient query revert
-        }
-    }
-
     /**
      * @notice Settles matured vested bonds before any NAV-based pricing decision.
      * @dev C-02: without this, a bond that matured since the last interaction is still valued
@@ -888,7 +889,7 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
 
         VirajeVault vault = VirajeVault(addressProvider.getVirajeVault());
         _transferWithLiquidity(vault, recipient, amount);
-        emit TreasuryGrantDisbursed(recipient, amount, "DAO Proposal Grant / Audit Escrow");
+        emit TreasuryGrantDisbursed(recipient, amount, "DAO Grant / Audit Escrow");
     }
 
     function _transferWithLiquidity(VirajeVault vault, address recipient, uint256 amount) internal {
