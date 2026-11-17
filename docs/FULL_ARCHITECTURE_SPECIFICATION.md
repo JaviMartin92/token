@@ -329,6 +329,15 @@ sequenceDiagram
   - Soporta `claimYieldGasless()` con verificación de firmas estructuradas EIP-712 (`ClaimRequest(address user,uint256 amount,uint256 nonce,uint256 deadline)`), permitiendo a keepers/relayers pagar el gas en nombre del usuario mientras el 100% de los fondos se transfiere a la billetera beneficiaria.
   - Protección de saldo ante iliquidez transitoria: si la bóveda no posee suficiente liquidez en el momento del retiro, la transacción revierte sin alterar los balances contables pendientes del usuario.
 
+#### 15c. [`PromotionalIncentiveVault.sol`](../contracts/src/PromotionalIncentiveVault.sol)
+- **Propósito**: Bóveda de custodia y distribución del fondo promocional del 10% de tokens $VIRAJE$, gobernada por Timelock para recompensas de marketing, referidos y alianzas del ecosistema.
+- **Control Presupuestario y Doble Contabilidad**:
+  - Toda campaña compromete formalmente fondos en `totalAllocatedPool`. La función `availableUnallocatedBalance()` computa en tiempo real los tokens no comprometidos, imposibilitando sobregiros presupuestarios.
+  - Al concluir una campaña, `closeCampaign()` devuelve atómicamente el remanente no reclamado al pool libre de asignación.
+- **Protección Anti-Gas DoS & Rescate Seguro**:
+  - Acota estrictamente el tamaño de lotes de distribución (`distributeRewardBatch`) a un máximo de 250 receptores (`MAX_BATCH_SIZE = 250`) con incrementos optimizados en gas, blindando la ejecución frente a límites de gas del bloque.
+  - Incorpora `sweepTokens()` para rescate de activos accidentales con una guarda que prohíbe incondicionalmente retirar el token $VIRAJE$.
+
 ---
 
 ### 3.4. Módulo 4: Mercados Monetarios y Productos Estructurados
