@@ -323,13 +323,24 @@ La aplicación frontend implementa una arquitectura **Pure UI Rendering** donde 
 
 ## 6. Matriz de Control de Acceso (RBAC) y Cumplimiento MiCA
 
-| Rol On-Chain | Identificador | Asignación Contractual | Permisos |
+| Rol On-Chain | Identificador (`bytes32`) | Asignación Contractual en Producción | Permisos & Responsabilidad Operativa |
 | :--- | :--- | :--- | :--- |
-| `DEFAULT_ADMIN_ROLE` | `0x00` | `TimelockController.sol` (72h) | Modificación de parámetros clave. Cero llaves privadas administradoras. |
-| `MINTER_ROLE` | `keccak256("MINTER_ROLE")` | `TreasuryManager.sol` | Acuñación exclusiva de $VIRAJE$ respaldado por colateral. |
-| `BURNER_ROLE` | `keccak256("BURNER_ROLE")` | `TreasuryManager.sol`, `GovernanceStaking.sol`, `DiscountBuybackEngine.sol` | Destrucción de tokens en rescates, unstakes y recompras. |
-| `VAULT_MANAGER_ROLE` | `keccak256("VAULT_MANAGER_ROLE")` | `TreasuryManager.sol` & `RealYieldRouter.sol` | Extracción autorizada de fondos de `VirajeVault`. |
-| `ORACLE_MANAGER_ROLE` | `keccak256("ORACLE_MANAGER_ROLE")` | Dirección de Gobernanza (Timelock) | Registro de feeds primarios, secundarios y límites de staleness. |
+| `ROOT_ADMIN_ROLE` | `0x00` (`DEFAULT_ADMIN_ROLE`) | `TimelockController.sol` (72h) | Concesión y revocación exclusiva de roles. Cero llaves privadas administradoras. |
+| `ADMIN_ROLE` | `keccak256("PROTOCOL_ADMIN_ROLE")` | `TimelockController.sol` (72h) | Modificación y ajuste de parámetros fiduciarios operativos (slippage, pools, límites). |
+| `EMERGENCY_ADMIN_ROLE` | `keccak256("EMERGENCY_ADMIN_ROLE")` | `CircuitBreaker.sol` & Timelock | Activación de pausas defensivas y cortafuegos de volatilidad. |
+| `TIMELOCK_ADMIN_ROLE` | `keccak256("TIMELOCK_ADMIN_ROLE")` | `TimelockController.sol` | Administración interna de parámetros del timelock de ejecución. |
+| `PROPOSER_ROLE` | `keccak256("PROPOSER_ROLE")` | `GovernorViraje.sol` | Encolado de propuestas de gobernanza aprobadas por la comunidad stVIRAJE. |
+| `EXECUTOR_ROLE` | `keccak256("EXECUTOR_ROLE")` | `address(0)` (Permisionless) | Ejecución descentralizada de transacciones una vez transcurrido el retardo de 72h. |
+| `CANCELLER_ROLE` | `keccak256("CANCELLER_ROLE")` | `GovernorViraje.sol` & Timelock | Cancelación de propuestas encoladas ante detección de fallos o exploits. |
+| `VAULT_MANAGER_ROLE` | `keccak256("VAULT_MANAGER_ROLE")` | `TreasuryManager.sol`, `DiscountBuybackEngine.sol` | Extracción y autorización de fondos en `VirajeVault.sol`. |
+| `RESERVE_MANAGER_ROLE`| `keccak256("RESERVE_MANAGER_ROLE")` | `TimelockController.sol` | Ajuste de ponderaciones de activos de reserva y límites prudenciales. |
+| `YIELD_ROUTER_ROLE` | `keccak256("YIELD_ROUTER_ROLE")` | `RealYieldRouter.sol` | Enrutamiento y reparto atómico 50/50 de rendimientos reales. |
+| `MINTER_ROLE` | `keccak256("MINTER_ROLE")` | `TreasuryManager.sol` | Acuñación exclusiva de participaciones $VIRAJE$ respaldadas por colateral a NAV. |
+| `BURNER_ROLE` | `keccak256("BURNER_ROLE")` | `TreasuryManager.sol`, `DiscountBuybackEngine.sol` | Destrucción de participaciones en rescates y recompras deflacionarias. |
+| `ORACLE_MANAGER_ROLE` | `keccak256("ORACLE_MANAGER_ROLE")` | `TimelockController.sol` | Registro y conmutación de feeds Chainlink/Pyth y límites de staleness. |
+| `COMPLIANCE_ROLE` | `keccak256("COMPLIANCE_ROLE")` | Pasarela de Verificación MiCA | Habilitación de estatus KYC institucional para participantes mayoristas. |
+| `KEEPER_ROLE` | `keccak256("KEEPER_ROLE")` | Keeper Bots de Protocolo | Ejecución de recompras con descuento y mantenimiento periódico. |
+| `QUANTUM_OPERATOR_ROLE`| `keccak256("QUANTUM_OPERATOR_ROLE")` | `PostQuantumGuard.sol` | Verificación de firmas criptográficas hash W-OTS+ y migraciones cuánticas. |
 
 ---
 
