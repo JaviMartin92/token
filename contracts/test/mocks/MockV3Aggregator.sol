@@ -23,7 +23,8 @@ contract MockV3Aggregator {
         view
         returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
     {
-        return (uint80(latestRound), latestAnswer, latestTimestamp, latestTimestamp, uint80(latestRound));
+        uint256 ts = latestTimestamp == 0 ? block.timestamp : block.timestamp;
+        return (uint80(latestRound), latestAnswer, ts, ts, uint80(latestRound));
     }
 
     function setLatestAnswer(int256 _answer) public {
