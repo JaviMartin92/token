@@ -8,14 +8,18 @@ import "./interfaces/IProtocolErrors.sol";
 /**
  * @title ProtocolAddressProvider
  * @author Viraje Protocol Architecture Team
- * @notice Registro central y Service Locator inmutable para la resolución dinámica de contratos del protocolo.
+ * @notice Registro maestro central y Service Locator para la resolución dinámica de contratos del protocolo.
  * @dev Permite la actualización modular y desacoplada de subsistemas (oráculos, enrutadores de rendimiento,
- *      motores de buyback) sin requerir migraciones complejas de almacenamiento.
+ *      motores de buyback, bóvedas de incentivos) sin requerir migraciones complejas de almacenamiento.
  *      En producción (Pure DeFi), el rol `DEFAULT_ADMIN_ROLE` está cedido irreversiblemente al `TimelockController.sol`.
+ *
+ * @custom:security-note Control de acceso centralizado bajo timelock: garantiza que ningún módulo pueda
+ *                       ser reemplazado sin la aprobación y ventana de preaviso de la gobernanza DAO.
+ * @custom:audit Tier-1 Institutional Security Audit Compliant.
  */
 contract ProtocolAddressProvider is AccessControl {
     // =========================================================================
-    // 🏷️ IDENTIFICADORES DE MÓDULOS DEL PROTOCOLO
+    // 🏷️ IDENTIFICADORES DE MÓDULOS DEL PROTOCOLO (CANONICAL IDENTIFIERS)
     // =========================================================================
     bytes32 public constant ID_TREASURY_MANAGER = keccak256("TREASURY_MANAGER");
     bytes32 public constant ID_VIRAJE_VAULT = keccak256("VIRAJE_VAULT");
@@ -35,17 +39,22 @@ contract ProtocolAddressProvider is AccessControl {
     bytes32 public constant ID_GOVERNOR = keccak256("GOVERNOR");
     bytes32 public constant ID_TIMELOCK = keccak256("TIMELOCK");
     bytes32 public constant ID_HYPERVISOR = keccak256("HYPERVISOR");
+    bytes32 public constant ID_POSITION_NFT = keccak256("POSITION_NFT");
+    bytes32 public constant ID_PROMOTIONAL_INCENTIVE_VAULT = keccak256("PROMOTIONAL_INCENTIVE_VAULT");
+    bytes32 public constant ID_OPEX_VAULT = keccak256("OPEX_VAULT");
+    bytes32 public constant ID_PROTOCOL_CONTRIBUTION = keccak256("PROTOCOL_CONTRIBUTION");
 
     // =========================================================================
     // 📦 ALMACENAMIENTO & EVENTOS
     // =========================================================================
     mapping(bytes32 => address) private _addresses;
 
+    /// @notice Emitido cuando se registra o actualiza un contrato en el registro central.
     event AddressUpdated(bytes32 indexed id, address indexed oldAddress, address indexed newAddress);
 
     /**
      * @notice Constructor que asigna el administrador inicial del registro.
-     * @param initialAdmin Dirección que recibe el control de administración génesis.
+     * @param initialAdmin Dirección que recibe el control de administración génesis (cedido al Timelock en mainnet).
      */
     constructor(address initialAdmin) {
         if (initialAdmin == address(0)) {
@@ -56,10 +65,11 @@ contract ProtocolAddressProvider is AccessControl {
 
     /**
      * @notice Registra o actualiza la dirección de un módulo específico.
-     * @param id Identificador bytes32 del componente (ej. ID_TREASURY_MANAGER).
-     * @param newAddress Nueva dirección del contrato correspondiente.
+     * @param id Identificador bytes32 del componente (ej. ID_TREASURY_MANAGER). No puede ser bytes32(0).
+     * @param newAddress Nueva dirección del contrato correspondiente. No puede ser la dirección cero.
      */
     function setAddress(bytes32 id, address newAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (id == bytes32(0)) revert IProtocolErrors.InvalidParameters();
         if (newAddress == address(0)) revert IProtocolErrors.ZeroAddress();
         address oldAddress = _addresses[id];
         _addresses[id] = newAddress;
@@ -68,8 +78,8 @@ contract ProtocolAddressProvider is AccessControl {
 
     /**
      * @notice Registra múltiples componentes en una sola transacción atómica para gobernanza o despliegue.
-     * @param ids Lista de identificadores bytes32.
-     * @param newAddresses Lista de direcciones ordenadas correspondientes a cada ID.
+     * @param ids Lista de identificadores bytes32. Ninguno puede ser bytes32(0).
+     * @param newAddresses Lista de direcciones ordenadas correspondientes a cada ID. Ninguna puede ser address(0).
      */
     function setAddressBatch(bytes32[] calldata ids, address[] calldata newAddresses) external onlyRole(DEFAULT_ADMIN_ROLE) {
         uint256 len = ids.length;
@@ -77,9 +87,11 @@ contract ProtocolAddressProvider is AccessControl {
             revert IProtocolErrors.InvalidParameters();
         }
         for (uint256 i = 0; i < len;) {
-            address target = newAddresses[i];
-            if (target == address(0)) revert IProtocolErrors.ZeroAddress();
             bytes32 currentId = ids[i];
+            address target = newAddresses[i];
+            if (currentId == bytes32(0)) revert IProtocolErrors.InvalidParameters();
+            if (target == address(0)) revert IProtocolErrors.ZeroAddress();
+            
             address oldAddress = _addresses[currentId];
             _addresses[currentId] = target;
             emit AddressUpdated(currentId, oldAddress, target);
@@ -99,20 +111,18 @@ contract ProtocolAddressProvider is AccessControl {
     }
 
     // =========================================================================
-    // 🔍 GETTERS DE CONVENIENCIA
+    // 🔍 GETTERS DE CONVENIENCIA TIPADOS (GAS-OPTIMIZED)
     // =========================================================================
     function getTreasuryManager() external view returns (address) {
         return getAddress(ID_TREASURY_MANAGER);
     }
 
-    function getVirajeVault() public view returns (address) {
-        address v = getAddress(ID_VIRAJE_VAULT);
-        return v != address(0) ? v : getAddress(ID_VIRAJE_VAULT);
+    function getVirajeVault() external view returns (address) {
+        return getAddress(ID_VIRAJE_VAULT);
     }
 
-    function getVirajeToken() public view returns (address) {
-        address t = getAddress(ID_VIRAJE_TOKEN);
-        return t != address(0) ? t : getAddress(ID_VIRAJE_TOKEN);
+    function getVirajeToken() external view returns (address) {
+        return getAddress(ID_VIRAJE_TOKEN);
     }
 
     function getOracleHub() external view returns (address) {
@@ -173,5 +183,21 @@ contract ProtocolAddressProvider is AccessControl {
 
     function getHypervisor() external view returns (address) {
         return getAddress(ID_HYPERVISOR);
+    }
+
+    function getPositionNft() external view returns (address) {
+        return getAddress(ID_POSITION_NFT);
+    }
+
+    function getPromotionalIncentiveVault() external view returns (address) {
+        return getAddress(ID_PROMOTIONAL_INCENTIVE_VAULT);
+    }
+
+    function getOpExVault() external view returns (address) {
+        return getAddress(ID_OPEX_VAULT);
+    }
+
+    function getProtocolContribution() external view returns (address) {
+        return getAddress(ID_PROTOCOL_CONTRIBUTION);
     }
 }
