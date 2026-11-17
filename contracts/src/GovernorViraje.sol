@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./ProtocolRoles.sol";
+import "./lib/security/ReentrancyGuard.sol";
 import "./interfaces/IProtocolErrors.sol";
 
 interface IGovernanceStakingVotes {
@@ -26,7 +27,7 @@ interface ITimelock {
  *         minimum quorum requirements, and immutable veto on system vaults.
  * @dev Full lifecycle: Pending -> Active -> Defeated | Succeeded -> Queued -> Expired | Executed.
  */
-contract GovernorViraje is AccessControl {
+contract GovernorViraje is AccessControl, ReentrancyGuard {
     IGovernanceStakingVotes public immutable stakingToken;
     address public timelock;
 
@@ -37,6 +38,7 @@ contract GovernorViraje is AccessControl {
     address public promoVault;
     address public founderVault;
 
+    event SystemVaultsUpdated(address indexed virajeVault, address indexed communityYieldVault, address indexed treasuryManager);
     event PromoVaultUpdated(address indexed oldVault, address indexed newVault);
     event FounderVaultUpdated(address indexed oldVault, address indexed newVault);
 
@@ -59,6 +61,8 @@ contract GovernorViraje is AccessControl {
         Executed
     }
 
+    /* solhint-disable gas-struct-packing */
+    /// @dev Layout order preserved strictly for Web3 and indexer positional ABI compatibility
     struct Proposal {
         uint256 id;
         address proposer;
@@ -72,6 +76,7 @@ contract GovernorViraje is AccessControl {
         bool executed;
         bytes32 timelockTxHash;
     }
+    /* solhint-enable gas-struct-packing */
 
     uint256 public proposalCount;
     mapping(uint256 => Proposal) public proposals;
@@ -112,6 +117,12 @@ contract GovernorViraje is AccessControl {
 
     /**
      * @notice Initializes DAO Governor with voting token, timelock, and vault vetos
+     * @param _stakingToken GovernanceStaking contract providing past voting weights
+     * @param _timelock TimelockController contract executing passed proposals
+     * @param _virajeVault Cold custody bunker address vetoed from voting
+     * @param _communityYieldVault Community yield vault address vetoed from voting
+     * @param _treasuryManager Treasury manager address vetoed from voting
+     * @param _initialOwner Governance administrator
      */
     constructor(
         address _stakingToken,
@@ -121,7 +132,11 @@ contract GovernorViraje is AccessControl {
         address _treasuryManager,
         address _initialOwner
     ) {
-        if (_stakingToken == address(0) || _timelock == address(0) || _initialOwner == address(0)) {
+        if (
+            _stakingToken == address(0) || _timelock == address(0) || _virajeVault == address(0)
+                || _communityYieldVault == address(0) || _treasuryManager == address(0)
+                || _initialOwner == address(0)
+        ) {
             revert IProtocolErrors.ZeroAddress();
         }
 
@@ -137,6 +152,9 @@ contract GovernorViraje is AccessControl {
 
     /**
      * @notice Immutable veto: System vaults and Treasury return 0 voting weight.
+     * @param account Address being inspected
+     * @param blockNumber Historical block number
+     * @return Eligible voting power (0 if vetoed or null)
      */
     function _getVotes(address account, uint256 blockNumber) internal view returns (uint256) {
         if (
@@ -149,7 +167,28 @@ contract GovernorViraje is AccessControl {
     }
 
     /**
+     * @notice Updates core system vault addresses subject to governance veto
+     * @param _virajeVault Updated VirajeVault address
+     * @param _communityYieldVault Updated CommunityYieldVault address
+     * @param _treasuryManager Updated TreasuryManager address
+     */
+    function setSystemVaults(
+        address _virajeVault,
+        address _communityYieldVault,
+        address _treasuryManager
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_virajeVault == address(0) || _communityYieldVault == address(0) || _treasuryManager == address(0)) {
+            revert IProtocolErrors.ZeroAddress();
+        }
+        virajeVault = _virajeVault;
+        communityYieldVault = _communityYieldVault;
+        treasuryManager = _treasuryManager;
+        emit SystemVaultsUpdated(_virajeVault, _communityYieldVault, _treasuryManager);
+    }
+
+    /**
      * @notice Sets Promotional Incentive Vault for governance veto
+     * @param _promoVault PromotionalIncentiveVault address
      */
     function setPromoVault(address _promoVault) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_promoVault == address(0)) revert IProtocolErrors.ZeroAddress();
@@ -160,6 +199,7 @@ contract GovernorViraje is AccessControl {
 
     /**
      * @notice Sets Founder Reserve Vesting Vault for governance veto
+     * @param _founderVault FounderReserveVestingVault address
      */
     function setFounderVault(address _founderVault) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_founderVault == address(0)) revert IProtocolErrors.ZeroAddress();
@@ -170,6 +210,9 @@ contract GovernorViraje is AccessControl {
 
     /**
      * @notice Returns past votes for an account at a historical block
+     * @param account Address inspected
+     * @param blockNumber Historical block inspected
+     * @return Eligible voting weight
      */
     function getVotes(address account, uint256 blockNumber) external view returns (uint256) {
         return _getVotes(account, blockNumber);
@@ -188,7 +231,7 @@ contract GovernorViraje is AccessControl {
         uint256 value,
         bytes calldata data,
         string memory description
-    ) public returns (uint256 proposalId) {
+    ) public nonReentrant returns (uint256 proposalId) {
         if (target == address(0)) revert IProtocolErrors.ZeroAddress();
         uint256 voterVotes = _getVotes(msg.sender, block.number - 1);
         if (voterVotes < proposalThreshold) revert ProposerVotesBelowThreshold(voterVotes, proposalThreshold);
@@ -223,6 +266,10 @@ contract GovernorViraje is AccessControl {
 
     /**
      * @notice Legacy propose overload without explicit description.
+     * @param target Target execution contract
+     * @param value Native ETH forwarded
+     * @param data Execution payload
+     * @return proposalId Assigned proposal ID
      */
     function propose(address target, uint256 value, bytes calldata data) external returns (uint256 proposalId) {
         return propose(target, value, data, "");
@@ -232,6 +279,7 @@ contract GovernorViraje is AccessControl {
      * @notice Casts a vote on an active proposal
      * @param proposalId Target proposal ID
      * @param support 0 = Against, 1 = For, 2 = Abstain
+     * @return weight Voting weight recorded
      */
     function castVote(uint256 proposalId, uint8 support) external returns (uint256 weight) {
         return _castVoteInternal(proposalId, support, "");
@@ -242,6 +290,7 @@ contract GovernorViraje is AccessControl {
      * @param proposalId Target proposal ID
      * @param support 0 = Against, 1 = For, 2 = Abstain
      * @param reason Comment string explaining the vote
+     * @return weight Voting weight recorded
      */
     function castVoteWithReason(uint256 proposalId, uint8 support, string calldata reason) external returns (uint256 weight) {
         return _castVoteInternal(proposalId, support, reason);
@@ -273,7 +322,7 @@ contract GovernorViraje is AccessControl {
      * @notice Cancels a proposal before voting concludes
      * @param proposalId Proposal ID to cancel
      */
-    function cancel(uint256 proposalId) external {
+    function cancel(uint256 proposalId) external nonReentrant {
         if (proposalId == 0 || proposalId > proposalCount) revert IProtocolErrors.InvalidParameters();
         ProposalState currentState = state(proposalId);
         if (currentState != ProposalState.Pending && currentState != ProposalState.Active) {
@@ -291,6 +340,7 @@ contract GovernorViraje is AccessControl {
     /**
      * @notice Returns current state of a proposal
      * @param proposalId Target proposal ID
+     * @return Current ProposalState
      */
     function state(uint256 proposalId) public view returns (ProposalState) {
         Proposal storage p = proposals[proposalId];
@@ -313,8 +363,9 @@ contract GovernorViraje is AccessControl {
     /**
      * @notice Queues a succeeded proposal in the TimelockController
      * @param proposalId Target proposal ID
+     * @return txHash Unique hash of queued transaction in Timelock
      */
-    function queue(uint256 proposalId) external returns (bytes32 txHash) {
+    function queue(uint256 proposalId) external nonReentrant returns (bytes32 txHash) {
         if (state(proposalId) != ProposalState.Succeeded) revert ProposalNotSucceeded();
         Proposal storage p = proposals[proposalId];
 
@@ -331,8 +382,9 @@ contract GovernorViraje is AccessControl {
     /**
      * @notice Executes a queued proposal via the TimelockController
      * @param proposalId Target proposal ID
+     * @return Resulting execution return bytes
      */
-    function execute(uint256 proposalId) external payable returns (bytes memory) {
+    function execute(uint256 proposalId) external payable nonReentrant returns (bytes memory) {
         if (state(proposalId) != ProposalState.Queued) revert ProposalNotQueued();
         Proposal storage p = proposals[proposalId];
         p.executed = true;
@@ -348,6 +400,11 @@ contract GovernorViraje is AccessControl {
 
     /**
      * @notice Returns execution parameters of a proposal
+     * @param proposalId Target proposal ID
+     * @return target Destination address
+     * @return value Native ETH value forwarded
+     * @return data Execution calldata
+     * @return description Textual summary
      */
     function getProposalActions(uint256 proposalId)
         external
