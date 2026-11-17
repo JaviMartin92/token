@@ -20,18 +20,21 @@ interface IP2PLendingMarketView {
 /* solhint-enable func-name-mixedcase */
 
 interface IVaultPositionNFTView {
-    struct BondPosition {
-        uint256 principal;
-        uint256 discountedPrice;
-        uint256 maturity;
-        uint256 apr;
-        bool claimed;
-        bool isPledged;
+    struct Position {
+        uint256 id;
+        address underlyingAsset;
+        uint64 depositTimestamp;
+        uint32 lockYears;
+        uint64 expirationTimestamp;
+        bool isRagequitted;
+        bool isMaturedClaimed;
+        uint256 principalAmount;
+        uint256 discountedPricePaid;
     }
     function ownerOf(uint256 tokenId) external view returns (address);
     function getApproved(uint256 tokenId) external view returns (address);
     function isApprovedForAll(address owner, address operator) external view returns (bool);
-    function getPosition(uint256 tokenId) external view returns (BondPosition memory);
+    function getPosition(uint256 tokenId) external view returns (Position memory);
 }
 
 /**
@@ -40,24 +43,36 @@ interface IVaultPositionNFTView {
  * @notice Centinela de Solvencia e Invariantes Pre-Transaccionales de Viraje Protocol.
  * @dev Permite simulación estática instantánea vía eth_call sin consumo de gas (inspectPreFlight)
  *      y verificación de transiciones de estado on-chain (verifyStateTransition).
+ *      Las cadenas de texto de diagnóstico superan intencionadamente los 32 bytes para ofrecer
+ *      telemetría descriptiva en la interfaz web3 sin coste de gas on-chain.
  */
+/* solhint-disable gas-small-strings */
 contract VirajeHypervisor is IVirajeHypervisor, AccessControl {
     // =========================================================================
     // 🏷️ CONSTANTES & CONFIGURACIÓN
     // =========================================================================
 
+    uint256 public constant BPS_DENOMINATOR = 10000;
+    uint256 public constant WAD = 1e18;
+    bytes32 private constant ID_POSITION_NFT = keccak256("POSITION_NFT");
+
     ProtocolAddressProvider public immutable addressProvider;
 
     HypervisorConfig public config;
 
-    // Selectores conocidos para inspección especializada
-    bytes4 private constant SEL_REDEEM_1 = 0xba087652; // redeem(uint256)
-    bytes4 private constant SEL_REDEEM_2 = 0x89791475; // redeem(uint256,uint256)
-    bytes4 private constant SEL_DEPOSIT_1 = 0xb6b55f25; // deposit(uint256)
-    bytes4 private constant SEL_DEPOSIT_2 = 0x003e8784; // deposit(uint256,uint256)
-    bytes4 private constant SEL_BORROW_VIRAJE_1 = 0xfd7b27be; // borrowFromTreasuryWithViraje(uint256,uint256,uint256)
-    bytes4 private constant SEL_BORROW_VIRAJE_2 = 0x221375d0; // borrowFromTreasuryWithViraje(uint256,uint256)
-    bytes4 private constant SEL_BORROW_NFT = 0x933be074; // borrowFromTreasury(uint256,uint256)
+    // Selectores Canónicos y Heredados para inspección especializada
+    bytes4 private constant SEL_REDEEM_CANONICAL_1 = 0xdb006a75; // redeem(uint256)
+    bytes4 private constant SEL_REDEEM_CANONICAL_2 = 0x7cbc2373; // redeem(uint256,uint256)
+    bytes4 private constant SEL_REDEEM_LEGACY_1 = 0xba087652;    // redeem(uint256) mock
+    bytes4 private constant SEL_REDEEM_LEGACY_2 = 0x89791475;    // redeem(uint256,uint256) mock
+    bytes4 private constant SEL_DEPOSIT_CANONICAL_1 = 0xb6b55f25; // deposit(uint256)
+    bytes4 private constant SEL_DEPOSIT_CANONICAL_2 = 0xe2bbb158; // deposit(uint256,uint256)
+    bytes4 private constant SEL_DEPOSIT_LEGACY_2 = 0x003e8784;    // deposit(uint256,uint256) mock
+    bytes4 private constant SEL_BORROW_VIRAJE_3ARG = 0xc92097d8; // borrowFromTreasuryWithViraje(uint256,uint256,uint256)
+    bytes4 private constant SEL_BORROW_VIRAJE_LEGACY_1 = 0xfd7b27be; // legacy 3-arg
+    bytes4 private constant SEL_BORROW_VIRAJE_LEGACY_2 = 0x221375d0; // legacy 2-arg
+    bytes4 private constant SEL_BORROW_NFT_3ARG = 0xf284a096;    // borrowFromTreasury(uint256,uint256,uint256)
+    bytes4 private constant SEL_BORROW_NFT_LEGACY = 0x933be074;  // legacy 2-arg
 
     // Hash de anomalías conocidas
     bytes32 public constant ANOMALY_NONE = bytes32(0);
@@ -145,7 +160,7 @@ contract VirajeHypervisor is IVirajeHypervisor, AccessControl {
             }
         }
 
-        health.maxDebtCapUSD = (health.totalAssetsUSD * config.maxTreasuryLoanRatioBps) / 10000;
+        health.maxDebtCapUSD = (health.totalAssetsUSD * config.maxTreasuryLoanRatioBps) / BPS_DENOMINATOR;
 
         bool solvencyOk = health.collateralRatioBps >= config.minCollateralRatioBps;
         bool debtCapOk = health.totalDebtUSD <= health.maxDebtCapUSD;
@@ -194,17 +209,47 @@ contract VirajeHypervisor is IVirajeHypervisor, AccessControl {
         address p2pAddr = addressProvider.getP2PMarket();
 
         // 1. Canje (Redeem)
-        if (target == treasuryAddr && (selector == SEL_REDEEM_1 || selector == SEL_REDEEM_2)) {
+        if (
+            target == treasuryAddr &&
+            (
+                selector == SEL_REDEEM_CANONICAL_1 ||
+                selector == SEL_REDEEM_CANONICAL_2 ||
+                selector == SEL_REDEEM_LEGACY_1 ||
+                selector == SEL_REDEEM_LEGACY_2
+            )
+        ) {
             return _inspectRedeem(data, user, health, report);
         }
 
-        // 2. Préstamo con VIRAJE en P2P
-        if (target == p2pAddr && (selector == SEL_BORROW_VIRAJE_1 || selector == SEL_BORROW_VIRAJE_2)) {
+        // 2. Depósito en Tesorería (Deposit)
+        if (
+            target == treasuryAddr &&
+            (
+                selector == SEL_DEPOSIT_CANONICAL_1 ||
+                selector == SEL_DEPOSIT_CANONICAL_2 ||
+                selector == SEL_DEPOSIT_LEGACY_2
+            )
+        ) {
+            return _inspectDeposit(data, user, health, report);
+        }
+
+        // 3. Préstamo con VIRAJE en P2P
+        if (
+            target == p2pAddr &&
+            (
+                selector == SEL_BORROW_VIRAJE_3ARG ||
+                selector == SEL_BORROW_VIRAJE_LEGACY_1 ||
+                selector == SEL_BORROW_VIRAJE_LEGACY_2
+            )
+        ) {
             return _inspectBorrowViraje(data, user, health, report);
         }
 
-        // 3. Préstamo con NFT en P2P
-        if (target == p2pAddr && selector == SEL_BORROW_NFT) {
+        // 4. Préstamo con NFT en P2P
+        if (
+            target == p2pAddr &&
+            (selector == SEL_BORROW_NFT_3ARG || selector == SEL_BORROW_NFT_LEGACY)
+        ) {
             return _inspectBorrowNFT(data, user, p2pAddr, report);
         }
 
@@ -252,7 +297,7 @@ contract VirajeHypervisor is IVirajeHypervisor, AccessControl {
             }
         }
 
-        uint256 requiredUsdc = (sharesAmount * health.navPerShare) / 1e18;
+        uint256 requiredUsdc = (sharesAmount * health.navPerShare) / WAD;
         if (requiredUsdc > health.totalAssetsUSD) {
             report.isSafe = false;
             report.severity = AnomalySeverity.CRITICAL;
@@ -266,6 +311,55 @@ contract VirajeHypervisor is IVirajeHypervisor, AccessControl {
         report.severity = AnomalySeverity.NONE;
         report.riskScore = 5;
         report.summary = "Inspeccion pre-flight exitosa: Canje a NAV institucionalmente validado.";
+        return report;
+    }
+
+    function _inspectDeposit(
+        bytes calldata data,
+        address user,
+        TreasuryHealthReport memory health,
+        PreFlightReport memory report
+    ) internal view returns (PreFlightReport memory) {
+        uint256 depositAmount = abi.decode(data[4:36], (uint256));
+        address treasuryAddr = addressProvider.getTreasuryManager();
+        address cbAddr = addressProvider.getCircuitBreaker();
+
+        if (user != address(0) && treasuryAddr != address(0)) {
+            address stablecoin = addressProvider.getAddress(keccak256("STABLECOIN"));
+            if (stablecoin != address(0)) {
+                if (cbAddr != address(0) && ICircuitBreaker(cbAddr).isFrozen(stablecoin)) {
+                    report.isSafe = false;
+                    report.severity = AnomalySeverity.FATAL;
+                    report.riskScore = 95;
+                    report.anomalyCode = ANOMALY_CIRCUIT_BREAKER_ACTIVE;
+                    report.summary = "El token de deposito esta congelado por el Circuit Breaker.";
+                    return report;
+                }
+
+                if (IERC20(stablecoin).balanceOf(user) < depositAmount) {
+                    report.isSafe = false;
+                    report.severity = AnomalySeverity.CRITICAL;
+                    report.riskScore = 85;
+                    report.anomalyCode = ANOMALY_INSUFFICIENT_BALANCE;
+                    report.summary = "Saldo de stablecoin insuficiente para completar el deposito.";
+                    return report;
+                }
+
+                if (IERC20(stablecoin).allowance(user, treasuryAddr) < depositAmount) {
+                    report.isSafe = false;
+                    report.severity = AnomalySeverity.WARNING;
+                    report.riskScore = 50;
+                    report.anomalyCode = ANOMALY_INSUFFICIENT_ALLOWANCE;
+                    report.summary = "Falta aprobacion de gasto (allowance) de stablecoin para la Tesoreria.";
+                    return report;
+                }
+            }
+        }
+
+        report.isSafe = health.isHealthy;
+        report.severity = health.isHealthy ? AnomalySeverity.NONE : AnomalySeverity.WARNING;
+        report.riskScore = health.isHealthy ? 5 : 35;
+        report.summary = "Inspeccion pre-flight exitosa: Deposito fiduciario en Tesoreria validado.";
         return report;
     }
 
@@ -299,8 +393,8 @@ contract VirajeHypervisor is IVirajeHypervisor, AccessControl {
         }
 
         // Límite de LTV Efectivo (25%: 50% Haircut * 50% Max LTV)
-        uint256 collateralValueUSD = (virajeCollateral * health.navPerShare) / 1e18;
-        uint256 maxBorrowAllowed = (collateralValueUSD * 2500) / 10000;
+        uint256 collateralValueUSD = (virajeCollateral * health.navPerShare) / WAD;
+        uint256 maxBorrowAllowed = (collateralValueUSD * 2500) / BPS_DENOMINATOR;
         uint256 maxBorrowAllowedUSDC = maxBorrowAllowed / 1e12; // De 18 a 6 decimales
 
         if (borrowAmount > maxBorrowAllowedUSDC) {
@@ -336,7 +430,7 @@ contract VirajeHypervisor is IVirajeHypervisor, AccessControl {
         PreFlightReport memory report
     ) internal view returns (PreFlightReport memory) {
         (uint256 positionId, uint256 borrowAmount) = abi.decode(data[4:68], (uint256, uint256));
-        address nftAddr = addressProvider.getAddress(keccak256("POSITION_NFT"));
+        address nftAddr = addressProvider.getAddress(ID_POSITION_NFT);
 
         if (user != address(0) && nftAddr != address(0)) {
             IVaultPositionNFTView nft = IVaultPositionNFTView(nftAddr);
@@ -368,23 +462,25 @@ contract VirajeHypervisor is IVirajeHypervisor, AccessControl {
                 return report;
             }
 
-            IVaultPositionNFTView.BondPosition memory pos = nft.getPosition(positionId);
-            if (pos.isPledged || pos.claimed) {
+            IVaultPositionNFTView.Position memory pos = nft.getPosition(positionId);
+            if (pos.isRagequitted || pos.isMaturedClaimed) {
                 report.isSafe = false;
                 report.severity = AnomalySeverity.CRITICAL;
                 report.riskScore = 95;
                 report.anomalyCode = ANOMALY_NFT_ALREADY_PLEDGED;
-                report.summary = "La posicion NFT ya esta pignorada en otro prestamo o ya fue liquidada.";
+                report.summary = "La posicion NFT ya esta inactiva (ragequitted o ya reclamada).";
                 return report;
             }
 
-            uint256 maxBorrowAllowedUSDC = (pos.discountedPrice * 2500) / 10000;
+            // LTV Efectivo de Bonos NFT (45.50%: 65% Haircut * 70% Max LTV = 4550 BPS)
+            uint256 basePrice = pos.discountedPricePaid > 0 ? pos.discountedPricePaid : pos.principalAmount;
+            uint256 maxBorrowAllowedUSDC = (basePrice * 4550) / BPS_DENOMINATOR;
             if (borrowAmount > maxBorrowAllowedUSDC) {
                 report.isSafe = false;
                 report.severity = AnomalySeverity.CRITICAL;
                 report.riskScore = 90;
                 report.anomalyCode = ANOMALY_MAX_LTV_EXCEEDED;
-                report.summary = "El importe solicitado supera el 25% LTV Efectivo de la posicion NFT.";
+                report.summary = "El importe solicitado supera el 45.50% LTV Efectivo de la posicion NFT.";
                 return report;
             }
         }
@@ -410,7 +506,7 @@ contract VirajeHypervisor is IVirajeHypervisor, AccessControl {
         if (!config.enforceOnChain) return;
 
         // Invariante 1: NAV por acción no puede descender más allá de la tolerancia de redondeo
-        uint256 tolerance = (preNAVPerShare * config.navToleranceBps) / 10000;
+        uint256 tolerance = (preNAVPerShare * config.navToleranceBps) / BPS_DENOMINATOR;
         if (postNAVPerShare + tolerance < preNAVPerShare) {
             revert InvariantNAVDecreased(preNAVPerShare, postNAVPerShare);
         }
