@@ -23,6 +23,7 @@ interface IProtocolTokenomicsEngineApr {
  * @notice Collateralized P2P lending market allowing position NFT holders to leverage positions up to 70% LTV.
  *         Features Fair Liquidation with Claimable Borrower Equity preservation (MakerDAO/Liquity Tier-1 Standard).
  */
+/* solhint-disable max-states-count */
 contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
     using SafeERC20 for IERC20;
 
@@ -904,13 +905,7 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
             if (nftFloorValue > maxLiquidatorReward) {
                 uint256 borrowerRefund = nftFloorValue - maxLiquidatorReward;
                 IERC20(stablecoin).safeTransferFrom(msg.sender, address(this), borrowerRefund);
-                (bool success, bytes memory data) = stablecoin.call(
-                    abi.encodeWithSelector(IERC20.transfer.selector, loan.borrower, borrowerRefund)
-                );
-                bool transferred = success && (data.length == 0 || abi.decode(data, (bool)));
-                if (!transferred) {
-                    claimableBorrowerEquityAssets[loan.borrower][stablecoin] += borrowerRefund;
-                }
+                _refundBorrowerEquity(stablecoin, loan.borrower, borrowerRefund);
             }
         } catch {}
         positionNFT.safeTransferFrom(address(this), msg.sender, loan.positionTokenId);
@@ -947,14 +942,25 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
         IERC20(targetAsset).safeTransfer(msg.sender, seizeAmount);
 
         if (surplusEquity > 0) {
-            (bool success, bytes memory data) = targetAsset.call(
-                abi.encodeWithSelector(IERC20.transfer.selector, loan.borrower, surplusEquity)
-            );
-            bool transferred = success && (data.length == 0 || abi.decode(data, (bool)));
-            if (!transferred) {
-                claimableBorrowerEquityAssets[loan.borrower][targetAsset] += surplusEquity;
-            }
+            _refundBorrowerEquity(targetAsset, loan.borrower, surplusEquity);
         }
+    }
+
+    /**
+     * @dev Reembolsa de forma segura el remanente de equidad al prestatario tras una liquidación justa.
+     *      Si la transferencia directa falla (por ejemplo, contratos receptores sin fallback),
+     *      el saldo se registra de forma defensiva en claimableBorrowerEquityAssets para su retiro diferido (pull).
+     */
+    function _refundBorrowerEquity(address token, address borrower, uint256 amount) private {
+        /* solhint-disable avoid-low-level-calls, reentrancy */
+        (bool success, bytes memory data) = token.call(
+            abi.encodeWithSelector(IERC20.transfer.selector, borrower, amount)
+        );
+        bool transferred = success && (data.length == 0 || abi.decode(data, (bool)));
+        if (!transferred) {
+            claimableBorrowerEquityAssets[borrower][token] += amount;
+        }
+        /* solhint-enable avoid-low-level-calls, reentrancy */
     }
 
     /**
@@ -987,7 +993,8 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
     }
 
     /**
-     * @notice Rescues erroneously transferred tokens without affecting active collateral.
+     * @notice Rescata tokens transferidos erróneamente sin comprometer los colaterales ni fondos de préstamos activos.
+     * @dev Bloquea incondicionalmente el drenaje de stablecoin, virajeToken, wbtcToken, wethToken y VaultPositionNFT.
      */
     function sweepTokens(address token, address to, uint256 amount) external onlyOwner {
         if (token == address(0) || to == address(0)) revert IProtocolErrors.ZeroAddress();
@@ -995,6 +1002,13 @@ contract P2PLendingMarket is Ownable, ReentrancyGuard, IERC721Receiver {
             uint256 currentBal = IERC20(token).balanceOf(address(this));
             if (currentBal <= _totalActiveLoansReceivableUSD) revert InsufficientBalance();
             if (amount > currentBal - _totalActiveLoansReceivableUSD) revert InsufficientBalance();
+        } else if (
+            token == virajeToken ||
+            token == wbtcToken ||
+            token == wethToken ||
+            token == address(positionNFT)
+        ) {
+            revert InsufficientBalance();
         }
         IERC20(token).safeTransfer(to, amount);
         emit TokensSwept(token, to, amount);
