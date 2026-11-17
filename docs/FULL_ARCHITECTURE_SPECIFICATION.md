@@ -314,7 +314,11 @@ sequenceDiagram
   - **Veto Inmutable sobre Bóvedas**: Asigna estrictamente 0 peso de voto a todas las bóvedas del sistema (`VirajeVault`, `CommunityYieldVault`, `TreasuryManager`, `PromotionalIncentiveVault`, `FounderReserveVestingVault`), imposibilitando la auto-gobernanza o colusión institucional.
 
 #### 15. [`TimelockController.sol`](../contracts/src/TimelockController.sol)
-- **Propósito**: Controlador de retardo temporal descentralizado con retardo incondicional de 72 horas para toda modificación administrativa o de código.
+- **Propósito**: Poder ejecutivo descentralizado y custodio supremo de privilegios administrativos de Viraje Protocol, imponiendo un retardo incondicional de 72 horas para toda modificación administrativa o de código.
+- **Invariantes de Gobernanza & Ragequit Window**:
+  - **Ventana de Rescate Protegido**: Toda decisión aprobada por la DAO en `GovernorViraje.sol` se encola durante un mínimo de 72 horas (`MIN_DELAY = 1 day`, por defecto 72h, `MAX_DELAY = 30 days`), garantizando a los usuarios una ventana transparente para retirar su capital si disienten de la propuesta.
+  - **Auto-Gobernanza Estricta**: La función `setDelay()` está restringida incondicionalmente a `msg.sender == address(this)`, impidiendo cualquier alteración del retardo fuera del proceso de gobernanza timelocked.
+  - **Propagación Diagnóstica de Errores (Revert Bubbling)**: En caso de fallo en `target.call`, propaga de forma transparente los bytes de revert originales del contrato invocado mediante código de bajo nivel blindado contra vulnerabilidades de reentrancia (`ReentrancyGuard`).
 
 ---
 
