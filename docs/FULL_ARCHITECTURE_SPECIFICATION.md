@@ -407,6 +407,10 @@ sequenceDiagram
   - **LTV Efectivo VIRAJE**: **`25.00%`** (Haircut del 50% $\times$ 50% Max LTV).
   - **Techo Colateral Reflexivo**: **`45.00%`** ($3,435.41 USDC máx.).
   - **Defensa Asimétrica en Sequencer Grace Period**: Amortizaciones permitidas, liquidaciones pausadas temporalmente.
+- **Mecanismo de Liquidación Justa & Salvaguardas**:
+  - Reembolso de equidad excedente del prestatario centralizado en `_refundBorrowerEquity()` con fallback automático a almacenamiento *pull-payment* (`claimableBorrowerEquityAssets`) ante fallos de transferencia externa.
+  - Optimización de bytecode EVM (24,198 bytes, consumo 98.46% del límite EIP-170) con margen seguro de 378 bytes.
+  - Función `sweepTokens()` reforzada con bloqueo incondicional contra el drenaje de cualquier activo de colateral activo (`stablecoin`, `virajeToken`, `wbtcToken`, `wethToken`, `positionNFT`).
 
 #### 19. [`DiscountBuybackEngine.sol`](../contracts/src/DiscountBuybackEngine.sol)
 - **Propósito**: Recompra algorítmica de $VIRAJE$ con descuento ($\ge 5.00\%$) en mercados secundarios (Uniswap V3) y quema atómica inmediata para acrecentar el NAV spot por share de los tenedores leales.
