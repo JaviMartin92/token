@@ -287,7 +287,13 @@ sequenceDiagram
   - **Higiene Criptográfica y Resiliencia**: Protegido contra manipulación de swaps mediante cota mínima de slippage calculada sobre oráculos (`OracleHub.getPriceBase18`) y chequeo de congelamiento en `CircuitBreaker`. En caso de fallo o iliquidez en Uniswap V3, resetea a cero de forma obligatoria las aprobaciones concedidas (`safeApprove(swapRouter, 0)`) y canaliza el 100% del tramo fallido en USDC nativo directamente al usuario.
 
 #### 12. [`CommunityYieldVault.sol`](../contracts/src/CommunityYieldVault.sol)
-- **Propósito**: Bóveda comunitaria que almacena y distribuye el flujo de dividendos de Real Yield en tiempo real.
+- **Propósito**: Bóveda de compensación y custodia descentralizada Pure DeFi para la captación y distribución del 50% de comisiones protocolarias (Real Yield) en USDC líquido, en estricto cumplimiento con el Considerando 22 del Reglamento MiCA de la UE.
+- **Flujo Atómico y Búfer Asíncrono de Resiliencia**:
+  - Transfiere inmediatamente el USDC recibido a `GovernanceStaking.sol` mediante `notifyRewardAmount()` para su devengo en streaming durante 7 días.
+  - Si la notificación transitoria revierte (e.g. `eligibleStaked == 0` en despliegues génesis sin stakers activos), resetea criptográficamente el allowance a 0 (`safeApprove(stakingPool, 0)`) y retiene los fondos en custodia segura hasta que cualquier usuario invoque la función pública permisionless `flushPendingYield()`.
+- **Invariante de No Extracción y Rescate Protegido**:
+  - Incorpora `sweepTokens()` para rescate de tokens accidentales, con una guarda incondicional que prohíbe terminantemente rescatar el token `stablecoin`, garantizando la inmunidad matemática del dividendo comunitario frente a administradores hostiles.
+  - Telemetría on-chain en tiempo real mediante contadores acumulativos de ciclo de vida (`totalYieldReceived`, `totalYieldFlushed`).
 
 #### 13. [`GovernanceStaking.sol`](../contracts/src/GovernanceStaking.sol)
 - **Propósito**: Staking líquido de gobernanza (`stVIRAJE`) con puntos de control de voto ERC-20 Votes.
