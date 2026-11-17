@@ -224,6 +224,11 @@ sequenceDiagram
 - **Tolerancia a Fallos y Protección Anti-MEV**: Consultas a oráculos y swaps de DEX encapsulados en `try/catch` con cotas mínimas obligatorias de salida (`minOut`) calculadas sobre precios de referencia Chainlink/Pyth. En caso de volatilidad excesiva o fallo de oráculo, la operación se cancela sin revertir el depósito del usuario y el 100% de los fondos permanece seguro en USDC en `VirajeVault`.
 - **Invariante de Cero Emisión Desrespaldada**: La sub-reserva de $VIRAJE$ sólo se adquiere mediante recompras en mercado secundario cuando cotiza con descuento frente al NAV ($P \le NAV$), seguida de auto-staking institucional para enriquecer la liquidez propiedad del protocolo (POL).
 
+#### 4b. [`ProtocolTokenomicsEngine.sol`](../contracts/src/ProtocolTokenomicsEngine.sol)
+- **Propósito**: Motor matemático maestro de tokenómica y regulador central de parámetros de tarifas, ratios LTV y solvencia del protocolo.
+- **Cotas Constitucionales Anti-Griefing**: Restringe cualquier actualización futura de comisiones a techos de seguridad inviolables (`setFeeParameters`: depósito/rescate $\le 5.00\%$, penalización ragequit $\le 30.00\%$, originación $\le 5.00\%$), blindando el protocolo frente a gobernanza hostil.
+- **Distribución Pure DeFi**: En penalizaciones de rescate anticipado de bonos, el 100% se reparte estrictamente 50/50 entre la Reserva Estratégica (acrecentando el NAV) y el Staking Flywheel comunitario, con un `0.00%` absoluto de extracción operativa.
+
 #### 5. [`VirajeVault.sol`](../contracts/src/VirajeVault.sol)
 - **Propósito**: Búnker frío de custodia de reservas exógenas (USDC, WBTC, WETH). Fondos transferibles únicamente mediante roles autorizados (`VAULT_MANAGER_ROLE`). Inmune a reentrancia al carecer de estado mutable financiero. Emite eventos con operador (`FundsTransferred`, `FundsApproved`) e implementa reseteo preventivo de allowance para compatibilidad universal con tokens no estándar (ej. USDT).
 

@@ -11,10 +11,17 @@ import "./interfaces/IProtocolErrors.sol";
  * @notice Centralized Master Math & Tokenomics Engine for Viraje Protocol.
  * @dev Enforces 100% mathematical consistency, decimal conversions, fee splits,
  *      bond discounts, LTV capacity, interest calculations, and Proof-of-Reserves solvency.
+ * @custom:security-note Constitutional Parameter Caps: Administrative updates in `setFeeParameters`
+ *                       are hard-bounded by protocol invariants (e.g. deposit/redeem <= 5.00%,
+ *                       ragequit penalty <= 30.00%), preventing governance fee-griefing.
+ * @custom:security-note Pure DeFi Distribution: Early bond exit penalties and liquidation fees are distributed
+ *                       strictly 50/50 between Treasury reserves and community stakers, with 0% operator fee extraction.
  */
 contract ProtocolTokenomicsEngine is AccessControl {
     // --- PROTOCOL PARAMETERS & BASIS POINTS ---
     uint256 public constant BPS_DENOMINATOR = 10000;
+    uint256 public constant DAYS_PER_YEAR = 365;
+    uint256 public constant INFINITE_HEALTH_FACTOR = 999000; // 9,990% representation when total debt is zero
 
     // Default Fees (in BPS)
     uint256 public depositFeeBps = 0; // 0.00% Frictionless Deposit
@@ -186,7 +193,7 @@ contract ProtocolTokenomicsEngine is AccessControl {
         if (principalAmountUsdc == 0) revert IProtocolErrors.ZeroAmount();
         if (lockYears < 1 || lockYears > 5) revert IProtocolErrors.InvalidLockYears();
 
-        // Base discount = lockYears * 5% (500 BPS)
+        // Base discount = lockYears * baseYieldRateBps (e.g. 1000 BPS = 10.00% per year)
         uint256 rawDiscount = lockYears * baseYieldRateBps;
 
         // Governance Staking Bonus Tier
@@ -267,7 +274,7 @@ contract ProtocolTokenomicsEngine is AccessControl {
         calc.originationFee = (requestedBorrowAmountUsd * originationFeeBps) / BPS_DENOMINATOR;
         calc.netDisbursed = requestedBorrowAmountUsd - calc.originationFee;
 
-        calc.interestOwed = (requestedBorrowAmountUsd * aprBps * durationDays) / (365 * BPS_DENOMINATOR);
+        calc.interestOwed = (requestedBorrowAmountUsd * aprBps * durationDays) / (DAYS_PER_YEAR * BPS_DENOMINATOR);
         calc.totalOwed = requestedBorrowAmountUsd + calc.interestOwed;
     }
 
@@ -285,9 +292,9 @@ contract ProtocolTokenomicsEngine is AccessControl {
         returns (HealthFactorResult memory res)
     {
         if (totalOwedUsd == 0) {
-            return HealthFactorResult({healthFactorRatioPct: 999000, isLiquidatable: false});
+            return HealthFactorResult({healthFactorRatioPct: INFINITE_HEALTH_FACTOR, isLiquidatable: false});
         }
-        res.healthFactorRatioPct = (collateralUsd * 10000) / totalOwedUsd; // 10000 BPS = 100.00%
+        res.healthFactorRatioPct = (collateralUsd * BPS_DENOMINATOR) / totalOwedUsd;
         res.isLiquidatable = (res.healthFactorRatioPct < minHealthFactorBps) || isExpired;
     }
 
@@ -309,7 +316,7 @@ contract ProtocolTokenomicsEngine is AccessControl {
         returns (SolvencyResult memory res)
     {
         if (totalLiabilitiesUSD18 == 0) {
-            return SolvencyResult({collateralRatioBps: 10000, isSolvent: true});
+            return SolvencyResult({collateralRatioBps: BPS_DENOMINATOR, isSolvent: true});
         }
         res.collateralRatioBps = (totalAssetsUSD18 * BPS_DENOMINATOR) / totalLiabilitiesUSD18;
         res.isSolvent = totalAssetsUSD18 >= totalLiabilitiesUSD18 && res.collateralRatioBps >= BPS_DENOMINATOR;
