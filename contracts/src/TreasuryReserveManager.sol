@@ -46,7 +46,6 @@ contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
 
     // --- Events ---
     event VirajeVaultUpdated(address indexed oldVault, address indexed newVault);
-    event AlphaVaultUpdated(address indexed oldVault, address indexed newVault);
     event ProductionRebalanceExecuted(
         uint256 totalUsdcAllocated, uint256 liquidLoansPool, uint256 morphoVaultDeposit, uint256 timestamp
     );
@@ -113,11 +112,6 @@ contract TreasuryReserveManager is AccessControl, ReentrancyGuard {
         address old = virajeVault;
         virajeVault = _virajeVault;
         emit VirajeVaultUpdated(old, _virajeVault);
-        emit AlphaVaultUpdated(old, _virajeVault);
-    }
-
-    function setAlphaVault(address _virajeVault) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        setVirajeVault(_virajeVault);
     }
 
     /**

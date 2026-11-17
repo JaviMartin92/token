@@ -78,7 +78,6 @@ interface ITreasury {
      * @notice Returns the canonical VirajeVault custody address.
      */
     function virajeVault() external view returns (address);
-    function alphaVault() external view returns (address);
 
     /**
      * @notice Records the amount of tokens burned by external contracts (e.g. GovernanceStaking) to track total burned.

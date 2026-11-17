@@ -879,13 +879,6 @@ contract TreasuryManager is ITreasury, IProtocolErrors, Initializable, AccessCon
     }
 
     /**
-     * @notice Returns the canonical VirajeVault custody address (backward-compatible alias).
-     */
-    function alphaVault() external view returns (address) {
-        return addressProvider.getVirajeVault();
-    }
-
-    /**
      * @notice Disburses USDC funds to external destination (e.g. Code4rena audit escrow, community grant).
      *         Callable ONLY by TimelockController via passed on-chain DAO proposal.
      */

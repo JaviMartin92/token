@@ -186,8 +186,4 @@ library TreasuryRebalanceLib {
             }
         }
     }
-
-    function allocateAlphaReserve(RebalanceParams memory params, uint256 altsUsdc) external {
-        allocateVirajeReserve(params, altsUsdc);
-    }
 }
