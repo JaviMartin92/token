@@ -347,6 +347,18 @@ sequenceDiagram
   - Registra contadores acumulativos de flujos históricos (`totalOpExReceived` y `totalOpExDisbursed`) para observabilidad en tiempo real.
   - Incorpora función de rescate de activos de terceros (`sweepTokens`) con una barrera inviolable que prohíbe taxativamente retirar el token operativo (`stablecoin`), garantizando la preservación absoluta del fondo fiduciario.
 
+#### 15e. [`ProtocolContribution.sol`](../contracts/src/ProtocolContribution.sol)
+- **Propósito**: Módulo fiduciario para la recepción de ingresos externos en USDC y ejecución programada TWAP (*Time-Weighted Average Price*) de recompras de tokens nativos $VIRAJE$ en Uniswap v3/DEX con quema deflacionaria al 100%.
+- **Contabilidad Anti-Sobrecompromiso (`totalCommittedUsdc`)**:
+  - Rastrea en tiempo real el capital comprometido en órdenes TWAP activas. La función `createTwapOrder()` exige incondicionalmente $\text{balanceOf}(\text{usdcToken}) \ge \text{totalCommittedUsdc} + \text{amount}$, imposibilitando matemáticamente el doble gasto o la concurrencia de órdenes sin respaldo.
+  - Al ejecutar intervalos (`executeTwapStep`) o cancelar órdenes (`cancelTwapOrder`), el capital se descuenta atómicamente de `totalCommittedUsdc`.
+- **Protección MEV & Higiene de Aprobaciones**:
+  - Calcula el `amountOutMinimum` mediante consulta directa normalizada a `OracleHub.sol` ($\frac{\text{amountToSwap} \times 10^{12} \times 10^{18}}{\text{price18}} \times (1 - \text{slippage})$). Si el oráculo falla o está congelado, revierte con `InvalidPrice()` en lugar de asumir precios arbitrarios.
+  - Resetea inmediatamente a 0 la aprobación en `swapRouter` post-ejecución, erradicando *dangling allowances*.
+- **Telemetría On-Chain & Rescate Seguro**:
+  - Dispone de 4 acumuladores acumulativos de observabilidad: `totalUsdcInjected`, `totalUsdcSpent`, `totalTokensBought` y `totalTokensBurned`.
+  - La función `sweepTokens()` bloquea incondicionalmente tanto `usdcToken` como `nativeToken`, impidiendo cualquier drenaje de fondos de recompra.
+
 ---
 
 ### 3.4. Módulo 4: Mercados Monetarios y Productos Estructurados
