@@ -237,7 +237,8 @@ sequenceDiagram
 - **Protección Cuantitativa**: Límites de prudencia financiera (Sanity Bounds) con techo incondicional del 50.00% APY. Despliega el 90% de los stablecoins en rendimiento pasivo institucional y retiene el 10% en colchón líquido en `VirajeVault.sol`. Garantiza la exclusión estricta de bóvedas no verificadas.
 
 #### 9. [`CircuitBreaker.sol`](../contracts/src/CircuitBreaker.sol)
-- **Propósito**: Interruptor de seguridad de volatilidad. Congela temporalmente las compras de un activo si su cotización cae más de un 15% en una ventana de 6 horas.
+- **Propósito**: Interruptor de seguridad de volatilidad. Congela temporalmente las órdenes de compra de un activo colateral si su cotización cae más de un 15% en una ventana deslizante de 6 horas.
+- **Resiliencia Operativa**: Emplea un búfer circular anular acotado ($O(1)$) de 50 muestras cronológicas con tasa de muestreo mínima de 15 minutos (inmune a vector de Gas DoS o manipulación intra-bloque), límite de staleness de oráculo de 1 hora por defecto y consultas a Chainlink encapsuladas en `try/catch` estructurado para garantizar continuidad de keepers. Control dual de emergencia (`ADMIN_ROLE` y `EMERGENCY_ADMIN_ROLE`).
 
 #### 10. [`PostQuantumGuard.sol`](../contracts/src/PostQuantumGuard.sol)
 - **Propósito**: Capa de seguridad criptográfica post-cuántica mediante firmas hash Winternitz W-OTS+ (NIST SP 800-208 / 128 bits de seguridad Grover).

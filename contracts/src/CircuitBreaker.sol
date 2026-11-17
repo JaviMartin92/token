@@ -14,6 +14,12 @@ import "./ProtocolRoles.sol";
  *         experiencing rapid price drops (>15% within a 6-hour sliding window by default).
  * @dev Employs a circular ring buffer (max 50 points) to achieve O(1) storage writes
  *      and bounded lookback scans, immune to gas exhaustion attacks.
+ * @custom:security-note The circular ring buffer rate-limits sample insertions to a minimum interval
+ *                       of 15 minutes. This mathematically prevents buffer stuffing and flash-crash
+ *                       manipulation within a single block or short transaction burst.
+ * @custom:security-note Oracle queries to AggregatorV3 are safely wrapped in try/catch to ensure
+ *                       protocol keepers and callers receive standardized `IProtocolErrors.InvalidPrice()`
+ *                       even in the event of upstream Chainlink reverts or transport failures.
  */
 contract CircuitBreaker is ICircuitBreaker, AccessControl {
     mapping(address => address) public priceFeeds;
@@ -30,8 +36,8 @@ contract CircuitBreaker is ICircuitBreaker, AccessControl {
     mapping(address => uint256) public priceHistoryHead;
     mapping(address => uint256) public priceHistoryCount;
 
-    // Default 24 hours (86400s) for test/dev; set to 1 hour for production
-    uint256 public oracleStalenessLimit = 86400;
+    // Default 1 hour (3600s) staleness limit for production institutional security
+    uint256 public oracleStalenessLimit = 3600;
 
     // Configurable Circuit Breaker trigger parameters
     uint256 public dropThresholdPct = 15; // 15% default price drop
@@ -56,7 +62,7 @@ contract CircuitBreaker is ICircuitBreaker, AccessControl {
 
     /**
      * @notice Configures the maximum allowable age for Chainlink oracle price reports
-     * @param limit Staleness threshold in seconds
+     * @param limit Staleness threshold in seconds (between 60 seconds and 30 days)
      */
     function setOracleStalenessLimit(uint256 limit) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
         if (limit < 60 || limit > 30 days) revert IProtocolErrors.InvalidParameters();
@@ -152,7 +158,26 @@ contract CircuitBreaker is ICircuitBreaker, AccessControl {
         address feed = priceFeeds[asset];
         if (feed == address(0)) revert IProtocolErrors.PriceFeedNotSet();
 
-        (uint80 roundId, int256 price,, uint256 updatedAt, uint80 answeredInRound) = IAggregatorV3(feed).latestRoundData();
+        uint80 roundId;
+        int256 price;
+        uint256 updatedAt;
+        uint80 answeredInRound;
+
+        try IAggregatorV3(feed).latestRoundData() returns (
+            uint80 _roundId,
+            int256 _price,
+            uint256, /* startedAt */
+            uint256 _updatedAt,
+            uint80 _answeredInRound
+        ) {
+            roundId = _roundId;
+            price = _price;
+            updatedAt = _updatedAt;
+            answeredInRound = _answeredInRound;
+        } catch {
+            revert IProtocolErrors.InvalidPrice();
+        }
+
         if (price <= 0) revert IProtocolErrors.InvalidPrice();
         if (updatedAt == 0 || updatedAt > block.timestamp) revert IProtocolErrors.InvalidPrice();
         if (answeredInRound < roundId) revert IProtocolErrors.StalePriceFeed(updatedAt, oracleStalenessLimit);
