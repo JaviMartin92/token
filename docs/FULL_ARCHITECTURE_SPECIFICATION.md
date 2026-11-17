@@ -478,6 +478,19 @@ sequenceDiagram
 
 ---
 
+### 3.6. Módulo 6: Adaptadores de Rendimiento Institucional
+
+#### 25. [`AaveV3Adapter.sol`](../contracts/src/adapters/AaveV3Adapter.sol)
+- **Propósito**: Adaptador institucional compatible con la especificación `IUniversalYieldAdapter` (inspirada en ERC-4626) para la canalización de stablecoins hacia los mercados de crédito de Aave V3.
+- **Modelo de Conversión y Rendimiento Continuo**:
+  - Transforma activos subyacentes (`underlyingAsset`) en participaciones mediante un factor dinámico de rendimiento (`yieldFactor`, acotado estrictamente entre 1.0x y 5.0x, $10000 \le \text{yieldFactor} \le 50000$).
+  - Emite eventos canónicos EIP-4626 (`Deposit` y `Withdraw`) para auditoría e indexación precisa en subgraphs de Arbitrum.
+- **Seguridad y Preservación de Respaldo**:
+  - Adhesión estricta al patrón Checks-Effects-Interactions (CEI) y blindaje con `ReentrancyGuard` (`nonReentrant`) en depósitos y retiros.
+  - Función de rescate `sweepTokens()` con candado criptográfico que protege incondicionalmente el balance de respaldo requerido ($\text{required} = \frac{\text{TotalSupply} \times \text{yieldFactor}}{10000}$), impidiendo la insolvencia del adaptador.
+
+---
+
 ## 4. Formulativa Matemática y Ecuaciones del Protocolo
 
 ### 4.1. Tarifa Dinámica Adaptativa Anti-Ballena
