@@ -305,8 +305,16 @@ sequenceDiagram
   - **Timelock Anti Flash-Stake / Flash-Voting**: Exige una permanencia mínima incondicional de 7 días (`MIN_STAKE_DURATION = 7 days`) antes de permitir rescates, transferencias de $stVIRAJE$ o cobros de dividendos.
   - **Búsqueda Binaria O(log N)**: Puntos de control `Checkpoint` de 32 bytes (`uint32 fromBlock`, `uint224 votes`) con búsqueda binaria sobre `getPastVotes()`, inmune a ataques de gas DoS.
 
-#### 14-15. [`GovernorViraje.sol`](../contracts/src/GovernorViraje.sol) & [`TimelockController.sol`](../contracts/src/TimelockController.sol)
-- **Propósito**: Gobernanza descentralizada con retardo obligatorio de 72 horas para toda modificación administrativa o de código.
+#### 14. [`GovernorViraje.sol`](../contracts/src/GovernorViraje.sol)
+- **Propósito**: Gobernador autónomo DAO on-chain con ciclo de vida completo de propuestas (`Pending` -> `Active` -> `Defeated` | `Succeeded` -> `Queued` -> `Expired` | `Executed`).
+- **Seguridad Electoral & Parámetros Anti-Spam**:
+  - **Umbral de Propuesta**: Mínimo 25,000 $stVIRAJE$ requeridos para someter propuestas a consideración de la comunidad.
+  - **Quórum Mínimo Requerido**: 80,000 $stVIRAJE$ (~4.00% del poder de voto neto circulante) requeridos para dar validez vinculante a la votación.
+  - **Retardo e Instantánea Anti-Flash Loan**: Retardo de votación de 1 bloque (`VOTING_DELAY = 1`) y cálculo de instantánea en $\text{proposeBlock} - 1$, bloqueando ataques de votación relámpago con capital prestado.
+  - **Veto Inmutable sobre Bóvedas**: Asigna estrictamente 0 peso de voto a todas las bóvedas del sistema (`VirajeVault`, `CommunityYieldVault`, `TreasuryManager`, `PromotionalIncentiveVault`, `FounderReserveVestingVault`), imposibilitando la auto-gobernanza o colusión institucional.
+
+#### 15. [`TimelockController.sol`](../contracts/src/TimelockController.sol)
+- **Propósito**: Controlador de retardo temporal descentralizado con retardo incondicional de 72 horas para toda modificación administrativa o de código.
 
 ---
 
