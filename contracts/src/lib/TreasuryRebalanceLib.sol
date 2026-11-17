@@ -1,3 +1,4 @@
+/* solhint-disable gas-struct-packing */
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -15,10 +16,24 @@ interface IGovernanceStakingRebalance {
 
 /**
  * @title TreasuryRebalanceLib
+ * @author Viraje Protocol Architecture Team
  * @notice Internal library executing automatic DEX portfolio rebalancing and dynamic VIRAJE sub-reserve allocation.
+ * @dev Enforces oracle-bounded slippage thresholds and isolates oracle or DEX failures to ensure user deposits never revert.
+ * @custom:security-note Fault-Tolerant Rebalancing: Asset rebalancing swaps are strictly opportunistic.
+ *                       If an oracle query reverts or a DEX pool lacks liquidity, the failure is caught,
+ *                       approvals are reset to zero, and the funds remain safely in USDC within VirajeVault.
+ * @custom:security-note Anti-MEV Protection: All swap transactions enforce strict minimum outputs calculated
+ *                       from fresh Chainlink oracle reference prices adjusted by slippageToleranceBps.
+ * @custom:security-note Zero Unbacked Minting: The protocol never mints unbacked VIRAJE shares for treasury reserves;
+ *                       sub-reserves are acquired solely through market swaps when VIRAJE trades at or below NAV.
  */
 library TreasuryRebalanceLib {
     using SafeERC20 for IERC20;
+
+    uint256 public constant BPS_DENOMINATOR = 10000;
+    uint24 public constant UNISWAP_POOL_FEE_TIER = 3000; // 0.30% Uniswap V3 Pool Fee Tier
+    uint256 public constant SWAP_DEADLINE_BUFFER = 15 minutes;
+
     struct RebalanceParams {
         ProtocolAddressProvider addressProvider;
         VirajeVault vault;
@@ -27,6 +42,7 @@ library TreasuryRebalanceLib {
         address wbtcToken;
         address wethToken;
         address redemptionToken;
+        address treasuryContract;
         uint8 redemptionTokenDecimals;
         uint256 slippageToleranceBps;
         uint256 stableWeight;
@@ -35,86 +51,76 @@ library TreasuryRebalanceLib {
         uint256 virajeWeight;
         uint256 netDeposited;
         uint256 totalNavUSD;
-        address treasuryContract;
     }
 
     event SwapRebalanceFailed(address indexed tokenOut, uint256 amountIn);
 
     /**
      * @notice Executes automatic swap rebalancing into WBTC, WETH and allocates VIRAJE sub-reserves.
+     * @param params Complete configuration and balance parameters for the rebalance transaction.
      */
     function executeRebalanceSwaps(RebalanceParams memory params) public {
         if (params.swapRouter != address(0)) {
             // 1. WBTC Rebalance Swap
-            uint256 btcUsdc = (params.netDeposited * params.wbtcWeight) / 10000;
+            uint256 btcUsdc = (params.netDeposited * params.wbtcWeight) / BPS_DENOMINATOR;
             if (btcUsdc > 0 && params.wbtcToken != address(0)) {
-                uint256 btcPrice18 = IOracleHub(params.addressProvider.getOracleHub()).getPriceBase18(params.wbtcToken);
-                uint256 expectedWbtc = (btcUsdc * 10 ** 20) / btcPrice18;
-                uint256 minWbtc = (expectedWbtc * (10000 - params.slippageToleranceBps)) / 10000;
-
-                params.vault.approveFunds(params.redemptionToken, params.swapRouter, btcUsdc);
-                try ISwapRouter(params.swapRouter)
-                    .exactInputSingle(
-                        ISwapRouter.ExactInputSingleParams(
-                            params.redemptionToken,
-                            params.wbtcToken,
-                            3000,
-                            address(params.vault),
-                            block.timestamp + 15 minutes,
-                            btcUsdc,
-                            minWbtc,
-                            0
-                        )
-                    ) returns (
-                    uint256
-                ) {
-                    // Swap to WBTC completed
-                }
-                catch {
-                    params.vault.approveFunds(params.redemptionToken, params.swapRouter, 0);
-                    emit SwapRebalanceFailed(params.wbtcToken, btcUsdc);
-                }
+                _executeTokenSwap(params, params.wbtcToken, btcUsdc, 10 ** 20);
             }
 
             // 2. WETH Rebalance Swap
-            uint256 ethUsdc = (params.netDeposited * params.wethWeight) / 10000;
+            uint256 ethUsdc = (params.netDeposited * params.wethWeight) / BPS_DENOMINATOR;
             if (ethUsdc > 0 && params.wethToken != address(0)) {
-                uint256 ethPrice18 = IOracleHub(params.addressProvider.getOracleHub()).getPriceBase18(params.wethToken);
-                uint256 expectedWeth = (ethUsdc * 10 ** 30) / ethPrice18;
-                uint256 minWeth = (expectedWeth * (10000 - params.slippageToleranceBps)) / 10000;
-
-                params.vault.approveFunds(params.redemptionToken, params.swapRouter, ethUsdc);
-                try ISwapRouter(params.swapRouter)
-                    .exactInputSingle(
-                        ISwapRouter.ExactInputSingleParams(
-                            params.redemptionToken,
-                            params.wethToken,
-                            3000,
-                            address(params.vault),
-                            block.timestamp + 15 minutes,
-                            ethUsdc,
-                            minWeth,
-                            0
-                        )
-                    ) returns (
-                    uint256
-                ) {
-                    // Swap to WETH completed
-                }
-                catch {
-                    params.vault.approveFunds(params.redemptionToken, params.swapRouter, 0);
-                    emit SwapRebalanceFailed(params.wethToken, ethUsdc);
-                }
+                _executeTokenSwap(params, params.wethToken, ethUsdc, 10 ** 30);
             }
         }
 
         // 3. VIRAJE Dynamic Sub-Reserve Allocation
-        uint256 altsUsdc = (params.netDeposited * params.virajeWeight) / 10000;
+        uint256 altsUsdc = (params.netDeposited * params.virajeWeight) / BPS_DENOMINATOR;
         allocateVirajeReserve(params, altsUsdc);
+    }
+
+    function _executeTokenSwap(
+        RebalanceParams memory params,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 scaleFactor
+    ) private {
+        address oracleHubAddr = params.addressProvider.getOracleHub();
+        if (oracleHubAddr == address(0)) return;
+
+        try IOracleHub(oracleHubAddr).getPriceBase18(tokenOut) returns (uint256 priceBase18) {
+            if (priceBase18 == 0) return;
+
+            uint256 expectedOut = (amountIn * scaleFactor) / priceBase18;
+            uint256 minOut = (expectedOut * (BPS_DENOMINATOR - params.slippageToleranceBps)) / BPS_DENOMINATOR;
+
+            params.vault.approveFunds(params.redemptionToken, params.swapRouter, amountIn);
+            try ISwapRouter(params.swapRouter).exactInputSingle(
+                ISwapRouter.ExactInputSingleParams(
+                    params.redemptionToken,
+                    tokenOut,
+                    UNISWAP_POOL_FEE_TIER,
+                    address(params.vault),
+                    block.timestamp + SWAP_DEADLINE_BUFFER,
+                    amountIn,
+                    minOut,
+                    0
+                )
+            ) returns (uint256) {
+                // Swap completed successfully
+            } catch {
+                params.vault.approveFunds(params.redemptionToken, params.swapRouter, 0);
+                emit SwapRebalanceFailed(tokenOut, amountIn);
+            }
+        } catch {
+            emit SwapRebalanceFailed(tokenOut, amountIn);
+        }
     }
 
     /**
      * @notice Dynamically allocates VIRAJE sub-reserve via DEX swap with automatic NAV Fallback mint + auto-staking.
+     * @param params Complete configuration and balance parameters for the rebalance transaction.
+     * @param altsUsdc Amount of USDC designated for the VIRAJE sub-reserve allocation.
      */
     function allocateVirajeReserve(RebalanceParams memory params, uint256 altsUsdc) public {
         if (altsUsdc == 0) return;
@@ -134,31 +140,28 @@ library TreasuryRebalanceLib {
                 uint256 currentNav = ITreasury(params.treasuryContract).getNAVPerShare();
                 if (virajePrice18 > 0 && virajePrice18 <= currentNav) {
                     uint256 expectedViraje = (altsUsdc * 10 ** 30) / virajePrice18;
-                    uint256 minViraje = (expectedViraje * (10000 - params.slippageToleranceBps)) / 10000;
+                    uint256 minViraje = (expectedViraje * (BPS_DENOMINATOR - params.slippageToleranceBps)) / BPS_DENOMINATOR;
 
                     params.vault.approveFunds(params.redemptionToken, params.swapRouter, altsUsdc);
 
-                    try ISwapRouter(params.swapRouter)
-                        .exactInputSingle(
-                            ISwapRouter.ExactInputSingleParams(
-                                params.redemptionToken,
-                                virajeTokenAddr,
-                                3000,
-                                params.treasuryContract,
-                                block.timestamp + 15 minutes,
-                                altsUsdc,
-                                minViraje,
-                                0
-                            )
-                        ) returns (
-                        uint256 amountOut
-                    ) {
+                    try ISwapRouter(params.swapRouter).exactInputSingle(
+                        ISwapRouter.ExactInputSingleParams(
+                            params.redemptionToken,
+                            virajeTokenAddr,
+                            UNISWAP_POOL_FEE_TIER,
+                            params.treasuryContract,
+                            block.timestamp + SWAP_DEADLINE_BUFFER,
+                            altsUsdc,
+                            minViraje,
+                            0
+                        )
+                    ) returns (uint256 amountOut) {
                         if (amountOut >= minViraje) {
                             dexSuccess = true;
                             virajeObtained = amountOut;
                         }
                     } catch {
-                        // DEX swap failed, fall back to NAV mint
+                        // DEX swap failed, retain USDC in vault
                     }
 
                     if (!dexSuccess) {
@@ -167,7 +170,7 @@ library TreasuryRebalanceLib {
                     }
                 }
             } catch {
-                // Oracle query failed, fall back to NAV mint
+                // Oracle query failed, retain USDC in vault
             }
         }
 
