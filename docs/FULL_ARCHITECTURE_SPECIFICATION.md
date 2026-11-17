@@ -338,6 +338,15 @@ sequenceDiagram
   - Acota estrictamente el tamaño de lotes de distribución (`distributeRewardBatch`) a un máximo de 250 receptores (`MAX_BATCH_SIZE = 250`) con incrementos optimizados en gas, blindando la ejecución frente a límites de gas del bloque.
   - Incorpora `sweepTokens()` para rescate de activos accidentales con una guarda que prohíbe incondicionalmente retirar el token $VIRAJE$.
 
+#### 15d. [`ProtocolOpExVault.sol`](../contracts/src/ProtocolOpExVault.sol)
+- **Propósito**: Bóveda fiduciaria para gastos operacionales, auditorías externas de seguridad, infraestructura de nodos RPC y subvenciones de desarrollo técnico. Custodia el flujo de comisiones protocolarias reservadas para sostenibilidad técnica.
+- **Control de Acceso & Timelock Fiduciario**:
+  - Los desembolsos (`withdrawOpEx`) están restringidos estrictamente al rol `ADMIN_ROLE` (gobernado obligatoriamente por el `TimelockController.sol` con 72h de retardo).
+  - Obligatoriedad estricta de trazabilidad on-chain: valida que la justificación (`purpose`) no sea vacía (`bytes(purpose).length > 0`), emitiendo un evento auditable para inspección pública forense.
+- **Telemetría & Rescate Seguro**:
+  - Registra contadores acumulativos de flujos históricos (`totalOpExReceived` y `totalOpExDisbursed`) para observabilidad en tiempo real.
+  - Incorpora función de rescate de activos de terceros (`sweepTokens`) con una barrera inviolable que prohíbe taxativamente retirar el token operativo (`stablecoin`), garantizando la preservación absoluta del fondo fiduciario.
+
 ---
 
 ### 3.4. Módulo 4: Mercados Monetarios y Productos Estructurados
