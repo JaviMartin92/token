@@ -232,6 +232,10 @@ sequenceDiagram
 - **Propósito**: Concentrador central de oráculos multicapa con detección de caídas del Secuenciador L2 de Arbitrum (periodo de gracia de 1 hora).
 - **Failover Automático Protegido**: Oráculo primario Chainlink con validación de staleness (1 hora por defecto) y conmutación determinista blindada mediante `try/catch` a oráculo secundario (Pyth/Redundante), con control de divergencia máxima del 5% acotado a cachés primarias recientes (antigüedad $\le$ 24 horas) para erradicar falsos positivos.
 
+#### 8b. [`DynamicYieldOracleRouter.sol`](../contracts/src/DynamicYieldOracleRouter.sol)
+- **Propósito**: Motor dinámico de descubrimiento y optimización cuantitativa de rendimientos APY para reservas de tesorería (Morpho Blue, Lido, Lombard/Babylon).
+- **Protección Cuantitativa**: Límites de prudencia financiera (Sanity Bounds) con techo incondicional del 50.00% APY. Despliega el 90% de los stablecoins en rendimiento pasivo institucional y retiene el 10% en colchón líquido en `VirajeVault.sol`. Garantiza la exclusión estricta de bóvedas no verificadas.
+
 #### 9. [`CircuitBreaker.sol`](../contracts/src/CircuitBreaker.sol)
 - **Propósito**: Interruptor de seguridad de volatilidad. Congela temporalmente las compras de un activo si su cotización cae más de un 15% en una ventana de 6 horas.
 
