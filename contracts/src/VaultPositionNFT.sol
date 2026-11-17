@@ -2,6 +2,8 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./ProtocolRoles.sol";
 import "./interfaces/IProtocolErrors.sol";
@@ -14,6 +16,8 @@ import "./interfaces/IProtocolErrors.sol";
  *      sean negociables en mercados secundarios o utilizadas como colateral en el mercado P2P (`P2PLendingMarket.sol`).
  */
 contract VaultPositionNFT is ERC721, AccessControl {
+    using SafeERC20 for IERC20;
+
     // =========================================================================
     // ⚠️ ERRORES PERSONALIZADOS (EIP-838)
     // =========================================================================
@@ -36,6 +40,7 @@ contract VaultPositionNFT is ERC721, AccessControl {
     event PositionRagequitted(uint256 indexed tokenId, address indexed caller);
     event PositionClaimed(uint256 indexed tokenId, address indexed caller);
     event MinterUpdated(address indexed oldMinter, address indexed newMinter);
+    event TokensSwept(address indexed token, address indexed to, uint256 amount);
 
     // =========================================================================
     // 📦 ESTRUCTURA DE DATOS DE LA POSICIÓN (OPTIMIZADA EN SLOTS DE 32 BYTES)
@@ -191,6 +196,21 @@ contract VaultPositionNFT is ERC721, AccessControl {
     }
 
     /**
+     * @notice Rescata tokens ERC-20 transferidos accidentalmente a este contrato.
+     * @dev Restringido a `ADMIN_ROLE` (TimelockController con 72h de retardo).
+     * @param token Dirección del token a rescatar.
+     * @param to Dirección de destino donde se transferirán los tokens rescatados.
+     */
+    function sweepTokens(address token, address to) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (token == address(0) || to == address(0)) revert IProtocolErrors.ZeroAddress();
+        uint256 bal = IERC20(token).balanceOf(address(this));
+        if (bal == 0) revert IProtocolErrors.InvalidAmount();
+
+        IERC20(token).safeTransfer(to, bal);
+        emit TokensSwept(token, to, bal);
+    }
+
+    /**
      * @notice Comprobación de interfaces compatibles conforme a EIP-165.
      * @param interfaceId Identificador de la interfaz consultada.
      */
@@ -198,6 +218,7 @@ contract VaultPositionNFT is ERC721, AccessControl {
         return
             interfaceId == 0x80ac58cd || // ERC-721 Interface ID
             interfaceId == 0x5b5e139f || // ERC-721 Metadata Interface ID
+            interfaceId == 0x7965db0b || // AccessControl Interface ID
             interfaceId == 0x01ffc9a7;   // ERC-165 Interface ID
     }
 }

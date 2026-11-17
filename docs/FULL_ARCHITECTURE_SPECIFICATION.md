@@ -387,7 +387,14 @@ sequenceDiagram
   - Incorpora `sweepTokens()` con bloqueo incondicional e inviolable del token de liquidación (`stablecoin`) y del NFT de posiciones (`positionNFT`).
 
 #### 17. [`VaultPositionNFT.sol`](../contracts/src/VaultPositionNFT.sol)
-- **Propósito**: Token ERC-721 transferible con almacenamiento compacto de parámetros de posición de bonos.
+- **Propósito**: Token ERC-721 transferible (`vPOS`) que representa la propiedad fiduciaria y temporal de una posición de bonos con descuento pre-financiados en `VestedDiscountVault.sol`.
+- **Estructura y Optimización de Almacenamiento**:
+  - Almacena los parámetros inmutables del bono (activo subyacente, marca de depósito, años de bloqueo, fecha de expiración, principal nominal, precio con descuento pagado y flags de ragequit/cobro) empaquetados milimétricamente en 5 slots EVM contiguos de 32 bytes (160 bytes totales).
+  - Preserva el registro histórico en `positions[tokenId]` de forma inmutable tras la quema del NFT, permitiendo auditorías forenses on-chain permanentes.
+- **Interoperabilidad & Colateralización P2P**:
+  - Utilizado como activo de colateral en `P2PLendingMarket.sol` con valoración basada en el precio pagado o nominal con haircut de liquidación.
+  - Soporte completo de interfaces EIP-165: ERC-721 (`0x80ac58cd`), ERC-721 Metadata (`0x5b5e139f`), AccessControl (`0x7965db0b`) y ERC-165 (`0x01ffc9a7`).
+  - Incorpora función `sweepTokens()` para rescate seguro de activos accidentales restringida a `ADMIN_ROLE`.
 
 #### 18. [`P2PLendingMarket.sol`](../contracts/src/P2PLendingMarket.sol)
 - **Propósito**: Mercado de préstamos sobrecolateralizados bilaterales y línea de liquidez directa de Tesorería.
