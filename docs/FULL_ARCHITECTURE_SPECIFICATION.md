@@ -426,9 +426,6 @@ sequenceDiagram
   9. **Garantía de Solvencia Superior**: Exige que el ratio de colateralización de Proof of Reserves sea $\ge 100.00\%$.
   10. **Tope de Impacto por Operación**: Límite estricto del 1.00% del balance líquido de la bóveda por transacción.
 
-#### 20. [`MorphoYieldVaultAdapter.sol`](../contracts/src/MorphoYieldVaultAdapter.sol)
-- **Propósito**: Adaptador ERC-4626 que canaliza el 80% de las stablecoins hacia MetaMorpho para devengo pasivo institucional de rendimiento.
-
 ---
 
 ### 3.5. Módulo 5: Infraestructura de Arbitraje y Resiliencia Post-Cuántica
@@ -488,6 +485,15 @@ sequenceDiagram
 - **Seguridad y Preservación de Respaldo**:
   - Adhesión estricta al patrón Checks-Effects-Interactions (CEI) y blindaje con `ReentrancyGuard` (`nonReentrant`) en depósitos y retiros.
   - Función de rescate `sweepTokens()` con candado criptográfico que protege incondicionalmente el balance de respaldo requerido ($\text{required} = \frac{\text{TotalSupply} \times \text{yieldFactor}}{10000}$), impidiendo la insolvencia del adaptador.
+
+#### 26. [`MorphoYieldVaultAdapter.sol`](../contracts/src/adapters/MorphoYieldVaultAdapter.sol)
+- **Propósito**: Adaptador institucional compatible con ERC-4626 que canaliza el 80% de las reservas líquidas en stablecoins hacia las bóvedas de crédito institucional MetaMorpho / Morpho Blue.
+- **Mitigación Matemática de Ataques de Inflación (Virtual Offset)**:
+  - Implementa participaciones y activos virtuales ($\text{TotalSupply} + 1$, $\text{TotalAssets} + 1$) en `convertToShares` y `convertToAssets`, blindando matemáticamente el adaptador contra ataques de donación/vaciado por redondeo en bóvedas recién desplegadas.
+- **Flujos Operativos y Cosecha Automatizada**:
+  - Adhesión estricta al patrón CEI en `deposit()` y `depositStablecoins()`, actualizando balances internos antes de transferencias externas.
+  - La función `harvestYield()` calcula en tiempo real el rendimiento neto devengado sobre el capital invertido ($\text{currentBalance} - \text{totalStablecoinInvested}$) y lo transfiere automáticamente a `TreasuryManager.sol` para alimentar el flujo de Real Yield.
+  - Incorpora función `sweepTokens()` con candado inquebrantable que prohíbe retirar el activo subyacente por debajo de la inversión activa total (`totalStablecoinInvested`).
 
 ---
 
