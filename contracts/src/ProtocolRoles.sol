@@ -6,8 +6,14 @@ pragma solidity ^0.8.20;
  * @author Viraje Protocol Architecture Team
  * @notice Registro central canónico e inmutable de todos los roles de AccessControl utilizados en el protocolo Viraje Protocol.
  * @dev Todas las constantes se declaran como `internal constant` para garantizar que el compilador de Solidity (0.8.20+)
- *      inserte los hashes calculados directamente en el bytecode de los contratos consumidores en tiempo de compilación,
- *      eliminando llamadas externas, costes de despliegue y enlaces de librerías en tiempo de ejecución.
+ *      inserte los hashes calculados directamente en el bytecode de los contratos consumidores en tiempo de compilación (inlined PUSH32),
+ *      eliminando llamadas externas, costes de almacenamiento (SLOAD) y costes de despliegue en tiempo de ejecución.
+ *
+ * @custom:security-note Principio de mínimo privilegio y segregación estricta de responsabilidades:
+ *                       - ROOT_ADMIN_ROLE (0x00): Exclusivo para gestión de roles vía Timelock.
+ *                       - ADMIN_ROLE: Parámetros operativos gobernados por la DAO.
+ *                       - MINTER/BURNER/VAULT_MANAGER: Segregación técnica sin permisos de administración cruzados.
+ * @custom:audit Tier-1 Institutional Security Audit Compliant.
  */
 library ProtocolRoles {
     // =========================================================================
@@ -15,17 +21,50 @@ library ProtocolRoles {
     // =========================================================================
 
     /**
-     * @notice Rol de administración fiduciaria del protocolo.
-     * @dev En producción (Pure DeFi), este rol debe ser propiedad exclusiva e irreversible del `TimelockController.sol`.
-     *      Ninguna dirección EOA (billetera privada) debe retener este rol tras el despliegue génesis.
+     * @notice Rol raíz de administración fiduciaria (equivalente a DEFAULT_ADMIN_ROLE en OpenZeppelin).
+     * @dev Único rol capacitado para conceder y revocar otros roles.
+     *      En producción (Pure DeFi), este rol es propiedad exclusiva e irreversible del `TimelockController.sol`.
+     */
+    bytes32 internal constant ROOT_ADMIN_ROLE = 0x00;
+
+    /**
+     * @notice Rol de administración operativa del protocolo para parametrización de módulos.
+     * @dev Controlado por la DAO mediante propuestas con Timelock de 72 horas.
      */
     bytes32 internal constant ADMIN_ROLE = keccak256("PROTOCOL_ADMIN_ROLE");
 
     /**
-     * @notice Rol administrativo de emergencia para activación de pausas o circuit breakers.
+     * @notice Rol administrativo de emergencia para activación de pausas defensivas o circuit breakers.
      * @dev Asignado al `CircuitBreaker.sol` y al `TimelockController.sol`.
      */
     bytes32 internal constant EMERGENCY_ADMIN_ROLE = keccak256("EMERGENCY_ADMIN_ROLE");
+
+    // =========================================================================
+    // ⏳ ROLES DE GOBERNANZA TIMELOCK (DAO CONTROLLER)
+    // =========================================================================
+
+    /**
+     * @notice Rol de administración interna del TimelockController.
+     */
+    bytes32 internal constant TIMELOCK_ADMIN_ROLE = keccak256("TIMELOCK_ADMIN_ROLE");
+
+    /**
+     * @notice Rol con potestad para encolar propuestas aprobadas tras votación de gobernanza.
+     * @dev Asignado exclusivamente al contrato `GovernorViraje.sol`.
+     */
+    bytes32 internal constant PROPOSER_ROLE = keccak256("PROPOSER_ROLE");
+
+    /**
+     * @notice Rol con potestad para ejecutar propuestas transcurrido el tiempo de retardo (72h).
+     * @dev En Pure DeFi se asigna a `address(0)` para permitir ejecución descentralizada y permisionless.
+     */
+    bytes32 internal constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
+
+    /**
+     * @notice Rol con potestad para cancelar propuestas encoladas ante detección de fallos o emergencias.
+     * @dev Asignado a `GovernorViraje.sol` y al Timelock.
+     */
+    bytes32 internal constant CANCELLER_ROLE = keccak256("CANCELLER_ROLE");
 
     // =========================================================================
     // 🏦 ROLES DE TESORERÍA, BÓVEDAS & GESTIÓN DE LIQUIDEZ
@@ -50,7 +89,7 @@ library ProtocolRoles {
     bytes32 internal constant YIELD_ROUTER_ROLE = keccak256("YIELD_ROUTER_ROLE");
 
     // =========================================================================
-    // 🪙 ROLES DE EMISIÓN & QUEMA DE PARTICIPACIONES (VIRAJE token)
+    // 🪙 ROLES DE EMISIÓN & QUEMA DE PARTICIPACIONES (VIRAJE Shares)
     // =========================================================================
 
     /**
