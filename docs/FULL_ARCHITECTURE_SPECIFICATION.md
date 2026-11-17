@@ -431,6 +431,21 @@ sequenceDiagram
 
 ---
 
+### 3.5. Módulo 5: Infraestructura de Arbitraje y Resiliencia Post-Cuántica
+
+#### 21. [`AtomicSwapReceiver.sol`](../contracts/src/AtomicSwapReceiver.sol)
+- **Propósito**: Pasarela institucional de arbitraje y swap atómico para depósitos de usuarios en Tether USD (USDT).
+- **Mecanismo de Ejecución Atómica y Protección MEV**:
+  - Recibe depósitos de USDT (token con interfaz ERC-20 no estándar) y los convierte atómicamente a USDC a través del pool de Uniswap V3 en Arbitrum One.
+  - Deposita inmediatamente el 100% del USDC obtenido en `TreasuryManager.sol` vía `depositFor()`, acuñando participaciones fiduciarias $VIRAJE$ a favor del depositante en la misma transacción atómica.
+  - Aplica un control de deslizamiento institucional estricto (`minUsdcExpected >= maxSlippageLimit`), calculando la cota mínima mediante `maxSlippageBps` (máximo 5.00%, por defecto 0.50% para absorber comisiones de pool) para neutralizar ataques de sándwich o front-running en mempool.
+- **Higiene de Aprobaciones Cero Residuales (Zero Dangling Approvals)**:
+  - Resetea incondicionalmente a 0 las asignaciones tanto de USDT en el SwapRouter de Uniswap como de USDC en la Tesorería inmediatamente después de cada interacción.
+- **Salvaguarda de Circuit Breaker**:
+  - Consulta en tiempo real el estado de congelación de USDT y USDC en `CircuitBreaker.sol`, abortando preventivamente la operación en caso de desanclaje o anomalía de mercado.
+
+---
+
 ## 4. Formulativa Matemática y Ecuaciones del Protocolo
 
 ### 4.1. Tarifa Dinámica Adaptativa Anti-Ballena
