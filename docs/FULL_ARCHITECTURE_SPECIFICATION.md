@@ -235,6 +235,11 @@ sequenceDiagram
 #### 6. [`VirajeToken.sol`](../contracts/src/VirajeToken.sol)
 - **Propósito**: Token ERC-20 representativo de cuota patrimonial (Shares) respaldado al 100% por reservas exógenas a NAV. Emite eventos institucionales de trazabilidad (`SharesMinted`, `SharesBurned`). Acuñación restringida a `MINTER_ROLE` (`TreasuryManager`) y quema a `BURNER_ROLE` (`TreasuryManager`, `GovernanceStaking`, `DiscountBuybackEngine`). Soporta aprobaciones sin gas (EIP-2612 Permit). Excluye `ERC20Votes` para delegar el gobierno a `stVIRAJE`, eliminando ataques de gobernanza vía Flash Loans.
 
+#### 6b. [`TreasuryReserveManager.sol`](../contracts/src/TreasuryReserveManager.sol)
+- **Propósito**: Gestor de ejecución de reservas en producción y enrutador a protocolos externos DeFi (1inch V5, Lido wstETH, Lombard LBTC, Morpho Blue MetaMorpho).
+- **Invariante de Despliegue Prudencial (90/10)**: Despliega automáticamente el 90.00% del capital USDC asignado en MetaMorpho Vaults para devengo pasivo institucional de rendimiento y retiene estrictamente el 10.00% (`LIQUID_BUFFER_BPS` = 1000 bps) en la bóveda de custodia (`VirajeVault.sol`) como colchón de liquidez para la facilidad de crédito P2P y redenciones.
+- **Higiene de Aprobaciones y Resiliencia**: En caso de reversión o fallo en el depósito de Morpho, resetea a cero de forma atómica la aprobación de allowance (`safeApprove(morphoUsdcVault, 0)`) y canaliza el 100% de los fondos de vuelta a `VirajeVault`, garantizando la preservación incondicional del capital y previniendo aprobaciones residuales vulnerables.
+
 ---
 
 ### 3.2. Módulo 2: Centinela Pre-Transaccional, Oráculos y Resiliencia L2
