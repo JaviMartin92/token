@@ -6,12 +6,28 @@ import "../interfaces/IUniversalYieldAdapter.sol";
 
 /**
  * @title TreasuryLiquidityLib
- * @notice Internal library managing Treasury liquid stablecoin buffers and ERC-4626 withdrawals.
+ * @author Viraje Protocol Architecture Team
+ * @notice Internal library managing Treasury liquid stablecoin buffers and automated ERC-4626 withdrawals.
+ * @dev Employs bounded loop scans and structured try/catch handling to isolate failures in external yield venues.
+ * @custom:security-note Cascade Liquidity Invariant: Redemptions and loan payouts first consume idle stablecoins
+ *                       in VirajeVault. If a deficit exists, it auto-unwinds liquidity from active yield adapters.
+ * @custom:security-note External Venue Fault Tolerance: All adapter conversions and withdrawals are protected
+ *                       by try/catch blocks. If a downstream ERC-4626 vault experiences an outage or pauses exits,
+ *                       the failure is safely caught and execution proceeds to alternate adapters without reverting
+ *                       the user transaction.
  */
 library TreasuryLiquidityLib {
+    /// @notice Maximum number of yield adapters scanned in a single transaction to prevent Gas DoS
+    uint256 public constant MAX_ADAPTER_SCAN_LIMIT = 10;
+
     /**
      * @notice Computes total stablecoin reserves backing redemptions: liquid vault balance plus
      *         funds deployed in active ERC-4626 adapters.
+     * @param vaultAddr Address of the VirajeVault custody contract.
+     * @param redemptionToken Address of the primary stablecoin (USDC).
+     * @param activeYieldAdapters Array of registered yield adapter addresses.
+     * @param treasuryContract Address of the calling TreasuryManager contract.
+     * @return total Total available and deployed stablecoins.
      */
     function calculateStableReserves(
         address vaultAddr,
@@ -30,9 +46,13 @@ library TreasuryLiquidityLib {
                 if (shares > 0) {
                     try IUniversalYieldAdapter(adapter).convertToAssets(shares) returns (uint256 assets) {
                         total += assets;
-                    } catch {}
+                    } catch {
+                        // Ignore convertToAssets failure to maintain availability
+                    }
                 }
-            } catch {}
+            } catch {
+                // Ignore balanceOf query failure
+            }
             unchecked {
                 ++i;
             }
@@ -54,11 +74,15 @@ library TreasuryLiquidityLib {
         uint256 requiredUsdc,
         address treasuryContract
     ) public {
+        if (address(vault) == address(0) || redemptionToken == address(0)) return;
+
         uint256 vaultBal = vault.getBalance(redemptionToken);
         if (vaultBal >= requiredUsdc) return;
 
         uint256 deficit = requiredUsdc - vaultBal;
-        uint256 maxAdapters = activeYieldAdapters.length > 10 ? 10 : activeYieldAdapters.length;
+        uint256 adaptersLen = activeYieldAdapters.length;
+        uint256 maxAdapters = adaptersLen > MAX_ADAPTER_SCAN_LIMIT ? MAX_ADAPTER_SCAN_LIMIT : adaptersLen;
+
         for (uint256 i = 0; i < maxAdapters && deficit > 0;) {
             deficit = _withdrawFromAdapter(activeYieldAdapters[i], vault, treasuryContract, deficit);
             unchecked {
@@ -73,6 +97,8 @@ library TreasuryLiquidityLib {
         address treasuryContract,
         uint256 deficit
     ) private returns (uint256) {
+        if (adapter == address(0)) return deficit;
+
         try IUniversalYieldAdapter(adapter).balanceOf(address(vault)) returns (uint256 vaultShares) {
             if (vaultShares == 0) return deficit;
             try IUniversalYieldAdapter(adapter).convertToAssets(vaultShares) returns (uint256 assets) {
@@ -81,8 +107,13 @@ library TreasuryLiquidityLib {
                 if (sharesNeeded > vaultShares) sharesNeeded = vaultShares;
 
                 try vault.transferFunds(adapter, treasuryContract, sharesNeeded) {
-                    IUniversalYieldAdapter(adapter).withdraw(toWithdraw, address(vault), treasuryContract);
-                    return (toWithdraw > deficit) ? 0 : deficit - toWithdraw;
+                    try IUniversalYieldAdapter(adapter).withdraw(toWithdraw, address(vault), treasuryContract) {
+                        return (toWithdraw > deficit) ? 0 : deficit - toWithdraw;
+                    } catch {
+                        // Return unredeemed shares to vault if withdrawal fails in external adapter
+                        try vault.transferFunds(adapter, address(vault), 0) {} catch {}
+                        return deficit;
+                    }
                 } catch {
                     try IUniversalYieldAdapter(adapter).withdraw(toWithdraw, address(vault), address(vault)) {
                         return (toWithdraw > deficit) ? 0 : deficit - toWithdraw;
