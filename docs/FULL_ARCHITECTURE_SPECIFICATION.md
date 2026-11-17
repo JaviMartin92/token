@@ -308,7 +308,18 @@ sequenceDiagram
   - **Defensa Asimétrica en Sequencer Grace Period**: Amortizaciones permitidas, liquidaciones pausadas temporalmente.
 
 #### 19. [`DiscountBuybackEngine.sol`](../contracts/src/DiscountBuybackEngine.sol)
-- **Propósito**: Recompra algorítmica de VIRAJE con descuento ($\ge 5\%$) en mercados secundarios y quema atómica con 10 candados de control matemático.
+- **Propósito**: Recompra algorítmica de $VIRAJE$ con descuento ($\ge 5.00\%$) en mercados secundarios (Uniswap V3) y quema atómica inmediata para acrecentar el NAV spot por share de los tenedores leales.
+- **Matriz de los 10 Candados de Seguridad Institucional**:
+  1. **Descuento Mínimo**: Descuento spot $\ge 5.00\%$ obligatorio respecto al NAV reportado por oráculos.
+  2. **Presupuesto Diario Acotado**: Desembolso máximo del 2.50% de las reservas líquidas de la bóveda por ventana de 24 horas.
+  3. **Quema Criptográfica Inmediata**: Destrucción atómica e irreversible (`burn`) de todos los tokens adquiridos en el swap.
+  4. **Layout de Almacenamiento Empaquetado**: Empaquetamiento de 9 variables de control en un único slot de 32 bytes.
+  5. **Cota Estricta de Slippage**: Tolerancia máxima de ejecución acotada al 1.00% contra el precio de referencia Chainlink.
+  6. **Periodo de Cooldown**: Retardo obligatorio de 4 horas entre ejecuciones para mitigar sangrado continuo de liquidez.
+  7. **Inmunidad a Reentrancia**: Blindaje con modificador `nonReentrant` en la función ejecutora.
+  8. **Verificación de Circuit Breaker**: Aborta inmediatamente si `CircuitBreaker.sol` ha congelado el activo colateral.
+  9. **Garantía de Solvencia Superior**: Exige que el ratio de colateralización de Proof of Reserves sea $\ge 100.00\%$.
+  10. **Tope de Impacto por Operación**: Límite estricto del 1.00% del balance líquido de la bóveda por transacción.
 
 #### 20. [`MorphoYieldVaultAdapter.sol`](../contracts/src/MorphoYieldVaultAdapter.sol)
 - **Propósito**: Adaptador ERC-4626 que canaliza el 80% de las stablecoins hacia MetaMorpho para devengo pasivo institucional de rendimiento.
