@@ -278,7 +278,13 @@ sequenceDiagram
 ### 3.3. Módulo 3: Flujo Real Yield y Gobernanza DAO
 
 #### 11. [`RealYieldRouter.sol`](../contracts/src/RealYieldRouter.sol)
-- **Propósito**: Distribuidor binario universal de comisiones (50/50). 50% inyectado en `VirajeVault` (acrece NAV spot de todos los tenedores) y 50% a `CommunityYieldVault` (dividendos en USDC a stakers de `stVIRAJE`).
+- **Propósito**: Distribuidor binario universal de comisiones (50/50) y motor de liquidación de la Cesta Multiactivo de Real Yield conforme al estándar *Pure DeFi* MiCA-Compliant.
+- **Enrutamiento Binario 50/50 de Tarifas**:
+  - **50.00% Reserva Estratégica**: Transferido a `treasuryBunker` (`TreasuryManager.sol`), el cual barre los fondos de forma atómica a `VirajeVault.sol` mediante `notifyReserveFee()`, acrecentando el NAV spot patrimonial de todas las participaciones $VIRAJE$.
+  - **50.00% Rendimiento Comunitario**: Canalizado a `CommunityYieldVault.sol` (o fallback a `GovernanceStaking.sol`) para devengo en streaming continuo por segundo a los stakers de $stVIRAJE$.
+- **Cesta Multiactivo Universal (`claimRealYield`)**:
+  - Permite a los stakers elegir entre 100% USDC (`PayoutPreference.ALL_USDC`) o la Cesta Cuadridimensional (`PayoutPreference.BASKET`): 50.00% USDC líquido, 25.00% WBTC (swap Uniswap V3), 12.50% WETH (swap Uniswap V3) y 12.50% VIRAJE (acuñado a NAV spot exacto vía `mintCorporateFeeShares`).
+  - **Higiene Criptográfica y Resiliencia**: Protegido contra manipulación de swaps mediante cota mínima de slippage calculada sobre oráculos (`OracleHub.getPriceBase18`) y chequeo de congelamiento en `CircuitBreaker`. En caso de fallo o iliquidez en Uniswap V3, resetea a cero de forma obligatoria las aprobaciones concedidas (`safeApprove(swapRouter, 0)`) y canaliza el 100% del tramo fallido en USDC nativo directamente al usuario.
 
 #### 12. [`CommunityYieldVault.sol`](../contracts/src/CommunityYieldVault.sol)
 - **Propósito**: Bóveda comunitaria que almacena y distribuye el flujo de dividendos de Real Yield en tiempo real.
