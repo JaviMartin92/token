@@ -1,3 +1,4 @@
+/* solhint-disable gas-struct-packing */
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -20,30 +21,35 @@ interface IVestedDiscountVaultPoR {
     function totalPresentLiability() external view returns (uint256);
 }
 
-interface IProtocolTokenomicsEnginePoR {
-    function calculateProofOfReserves(uint256 totalAssetsUSD18, uint256 totalLiabilitiesUSD18)
-        external
-        view
-        returns (uint256 collateralRatioBps, bool isSolvent);
-}
-
 /**
  * @title TreasuryPoRLib
- * @notice Internal library handling multi-asset Proof of Reserves, NAV accounting, and circulating supply calculations.
+ * @author Viraje Protocol Architecture Team
+ * @notice Pure mathematical and valuation library handling multi-asset Proof of Reserves,
+ *         NAV accounting, and net circulating share supply calculations for TreasuryManager.
+ * @dev All basis point calculations use BPS_DENOMINATOR (10,000 = 100%). Token scaling uses standard WAD (1e18).
+ * @custom:security-note Fault Isolation: External yield adapter queries and P2P market queries are
+ *                       strictly encapsulated within try/catch blocks. Transient outages or reverts
+ *                       in downstream protocols cannot cause a Denial-of-Service in the core treasury.
+ * @custom:security-note Net Circulating Deductions: Protocol-owned shares (held in VirajeVault,
+ *                       TreasuryManager, FounderVestingVault, or CommunityYieldVault) are strictly
+ *                       deducted from total supply to ensure NAV per share is not diluted or overstated.
  */
 library TreasuryPoRLib {
+    uint256 public constant BPS_DENOMINATOR = 10000;
+    uint256 private constant WAD = 1e18;
+
     struct PoRContext {
         ProtocolAddressProvider addressProvider;
         address redemptionToken;
+        address treasuryManagerContract;
         uint8 redemptionTokenDecimals;
         uint256 lastSettledNAVPerShare;
-        address treasuryManagerContract;
     }
 
     struct AssetBreakdownParams {
+        uint8 redemptionTokenDecimals;
         ProtocolAddressProvider addressProvider;
         address redemptionToken;
-        uint8 redemptionTokenDecimals;
         address wbtcToken;
         address wethToken;
         address treasuryManagerContract;
@@ -51,6 +57,9 @@ library TreasuryPoRLib {
 
     /**
      * @notice Computes total USD value of all exogenous reserves (USDC, WBTC, WETH, P2P loans, Yield Adapters).
+     * @param ctx Valuation context containing protocol registries and token decimals.
+     * @param activeYieldAdapters Array of registered ERC-4626 external yield adapter addresses.
+     * @return totalAssetsUSD Aggregate USD value scaled to 18 decimals.
      */
     function calculatePoRAssets(PoRContext memory ctx, address[] memory activeYieldAdapters)
         public
@@ -112,6 +121,8 @@ library TreasuryPoRLib {
 
     /**
      * @notice Computes total USD liabilities (Circulating VIRAJE at settled NAV + Vested Discount liabilities).
+     * @param ctx Valuation context containing protocol registries and settled NAV per share.
+     * @return totalLiabilitiesUSD Aggregate USD liabilities scaled to 18 decimals.
      */
     function calculatePoRLiabilities(PoRContext memory ctx) public view returns (uint256 totalLiabilitiesUSD) {
         VirajeVault vault = VirajeVault(ctx.addressProvider.getVirajeVault());
@@ -139,9 +150,7 @@ library TreasuryPoRLib {
         uint256 circulatingViraje = token.totalSupply();
         if (circulatingViraje > protocolOwnedViraje) {
             uint256 netVirajeLiability = circulatingViraje - protocolOwnedViraje;
-            if (netVirajeLiability > 0) {
-                totalLiabilitiesUSD += (netVirajeLiability * ctx.lastSettledNAVPerShare) / 10 ** 18;
-            }
+            totalLiabilitiesUSD += (netVirajeLiability * ctx.lastSettledNAVPerShare) / WAD;
         }
 
         address vestedAddr = ctx.addressProvider.getVestedVault();
@@ -156,6 +165,11 @@ library TreasuryPoRLib {
 
     /**
      * @notice Calculates Proof of Reserves and Solvency ratio.
+     * @param ctx Valuation context containing protocol registries and parameters.
+     * @param activeYieldAdapters Array of registered ERC-4626 external yield adapter addresses.
+     * @return totalAssetsUSD Exogenous asset valuation in USD.
+     * @return totalLiabilitiesUSD Total protocol liability valuation in USD.
+     * @return solvencyRatioBps Collateralization ratio in basis points (10,000 = 100%).
      */
     function getProofOfReserves(PoRContext memory ctx, address[] memory activeYieldAdapters)
         public
@@ -166,12 +180,18 @@ library TreasuryPoRLib {
         totalLiabilitiesUSD = calculatePoRLiabilities(ctx);
 
         if (totalLiabilitiesUSD == 0) {
-            solvencyRatioBps = totalAssetsUSD > 0 ? 10000 : 0;
+            solvencyRatioBps = totalAssetsUSD > 0 ? BPS_DENOMINATOR : 0;
         } else {
-            solvencyRatioBps = (totalAssetsUSD * 10000) / totalLiabilitiesUSD;
+            solvencyRatioBps = (totalAssetsUSD * BPS_DENOMINATOR) / totalLiabilitiesUSD;
         }
     }
 
+    /**
+     * @notice Computes net circulating shares by deducting all protocol-held reserves and unvested allocations.
+     * @param addressProvider Protocol address registry.
+     * @param treasuryManagerContract Address of the TreasuryManager orchestrator.
+     * @return Net circulating shares eligible for NAV per share division.
+     */
     function getNetCirculatingShares(ProtocolAddressProvider addressProvider, address treasuryManagerContract)
         public
         view
@@ -213,6 +233,8 @@ library TreasuryPoRLib {
 
     /**
      * @notice Computes total external debt obligations (e.g. active Vested Bonds liability) to deduct from Net Equity.
+     * @param addressProvider Protocol address registry.
+     * @return debtUSD Total present liability of active discount bonds in USD.
      */
     function getDebtLiabilitiesUSD(ProtocolAddressProvider addressProvider) public view returns (uint256 debtUSD) {
         address vestedAddr = addressProvider.getVestedVault();
@@ -227,6 +249,12 @@ library TreasuryPoRLib {
 
     /**
      * @notice Detailed asset breakdown for frontend dashboards and transparent auditing.
+     * @param params Parameter struct specifying addresses and decimals.
+     * @param activeYieldAdapters Array of registered ERC-4626 external yield adapter addresses.
+     * @return stablesUsd USD value of all stablecoins (liquid + yield adapters).
+     * @return wbtcUsd USD value of vaulted WBTC.
+     * @return wethUsd USD value of vaulted WETH.
+     * @return loansUsd USD value of outstanding P2P market credit facility receivables.
      */
     function getAssetBreakdown(AssetBreakdownParams memory params, address[] memory activeYieldAdapters)
         public

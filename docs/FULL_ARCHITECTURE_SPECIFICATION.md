@@ -213,6 +213,7 @@ sequenceDiagram
 
 #### 3. [`TreasuryPoRLib.sol`](../contracts/src/lib/TreasuryPoRLib.sol)
 - **Propósito**: Cómputo $O(1)$ de Proof of Reserves, valoración patrimonial en tiempo real y deducción rigurosa de pasivos de bonos vestados.
+- **Aislamiento de Fallos en Cascada**: Encapsula todas las consultas a adaptadores externos ERC-4626 y mercados P2P en bloques `try/catch` estructurados para garantizar que la indisponibilidad de terceros no impida la auditoría de solvencia ni las transacciones nucleares. Descuenta rigurosamente todas las participaciones en posesión del protocolo (bóveda fría, vesting de fundadores y bóveda comunitaria de staking) para calcular las acciones netas en circulación exactas.
 
 #### 4. [`TreasuryRebalanceLib.sol`](../contracts/src/lib/TreasuryRebalanceLib.sol)
 - **Propósito**: Ejecución de rebalanceos de cartera multiactivo con tolerancia máxima de slippage del 0.05% contra oráculos Chainlink.
