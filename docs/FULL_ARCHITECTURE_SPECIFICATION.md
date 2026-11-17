@@ -465,6 +465,17 @@ sequenceDiagram
   - Cada clave de un solo uso queda irreversiblemente invalidada tras su consumo (`usedCommitments[root] = true`), enlazándose atómicamente a la raíz sucesiva (`nextCommitment`) en un esquema de trinquete criptográfico (*hash-ratchet*).
   - Incorpora blindaje de reentrancia (`ReentrancyGuard`) en las funciones de autorización y función fiduciaria de rescate de activos accidentales (`sweepTokens`).
 
+#### 24. [`CompliantTreasuryGateway.sol`](../contracts/src/adapters/CompliantTreasuryGateway.sol)
+- **Propósito**: Pasarela fiduciaria y aislador regulatorio sin estado (*Stateless MiCA/AML Compliance Wrapper*) para inversores institucionales.
+- **Arquitectura de Delegación Sin Estado (Stateless Execution)**:
+  - No custodia pools de liquidez paralelos ni fragmenta reservas; reenvía el 100% de los depósitos (`depositCompliant`) y reembolsos (`redeemCompliant`) atómicamente a `TreasuryManager.sol`.
+  - Acuña tokens $VIRAJE$ o transfiere stablecoins directamente a la dirección institucional beneficiaria (`msg.sender`), eliminando discrepancias de precios y vectores de arbitraje MEV entre clases de inversores.
+- **Salvaguardas Fiduciarias & Anti-Manipulación**:
+  - Control de acceso estricto mediante `COMPLIANCE_ROLE` para parametrización individual (`setKYCStatus`) o por lotes acotados a 250 direcciones (`batchSetKYCStatus`).
+  - Salvaguarda anti-flash-loan (`userLastDepositBlock`): prohíbe taxativamente depósitos y reembolsos dentro del mismo bloque para prevenir manipulación temporal del NAV.
+  - Higiene estricta de asignación residual cero (*Zero Dangling Approvals*): resetea incondicionalmente a 0 la aprobación en `TreasuryManager` tras cada operación.
+  - Incorpora función de rescate de activos accidentales (`sweepTokens`) restringida a `DEFAULT_ADMIN_ROLE`.
+
 ---
 
 ## 4. Formulativa Matemática y Ecuaciones del Protocolo
