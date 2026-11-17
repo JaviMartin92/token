@@ -10,9 +10,10 @@ import "./interfaces/IProtocolErrors.sol";
 
 /**
  * @title PromotionalIncentiveVault
+ * @author Viraje Protocol Architecture Team
  * @notice Dedicated vault holding the 10% VIRAJE token promotional & campaign pool.
- *         Enforces linear release, budget commitment tracking, and governance-approved
- *         distributions for marketing, referral rewards, and ecosystem partnerships.
+ *         Enforces budget commitment tracking, and governance-approved distributions
+ *         for marketing, referral rewards, and ecosystem partnerships.
  * @dev Fully non-custodial and Timelock-governed. Supports batch distributions and
  *      reclaiming unspent campaign allocations.
  */
@@ -26,6 +27,9 @@ contract PromotionalIncentiveVault is AccessControl, ReentrancyGuard {
     error InvalidCampaignId();
     error EmptyCampaignName();
     error ArrayLengthMismatch();
+
+    /// @notice Maximum allowed recipients in a single batch transaction to prevent block gas limit DoS
+    uint256 public constant MAX_BATCH_SIZE = 250;
 
     // --- Immutables & State Variables ---
     IERC20 public immutable virajeToken;
@@ -49,6 +53,7 @@ contract PromotionalIncentiveVault is AccessControl, ReentrancyGuard {
     event CampaignToggled(uint256 indexed campaignId, bool isActive);
     event CampaignClosed(uint256 indexed campaignId, uint256 unspentAmountRecovered);
     event RewardDistributed(uint256 indexed campaignId, address indexed recipient, uint256 amount);
+    event TokensSwept(address indexed token, address indexed to, uint256 amount);
 
     /**
      * @notice Initializes the promotional vault with VIRAJE token and initial administrator
@@ -67,11 +72,29 @@ contract PromotionalIncentiveVault is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Returns uncommitted balance available for new campaign allocations
+     * @return Available unallocated VIRAJE token balance
      */
     function availableUnallocatedBalance() public view returns (uint256) {
         uint256 vaultBalance = virajeToken.balanceOf(address(this));
         uint256 unspentCommitments = totalAllocatedPool - totalDistributed;
         return vaultBalance > unspentCommitments ? vaultBalance - unspentCommitments : 0;
+    }
+
+    /**
+     * @notice Rescues accidentally transferred ERC-20 tokens (excluding the promotional VIRAJE token).
+     * @dev Strictly prohibits sweeping the canonical virajeToken to guarantee committed pool safety.
+     * @param token Address of the token to sweep.
+     * @param to Destination address receiving the swept tokens.
+     */
+    function sweepTokens(address token, address to) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+        if (token == address(0) || to == address(0)) revert IProtocolErrors.ZeroAddress();
+        if (token == address(virajeToken)) revert IProtocolErrors.InvalidParameters();
+
+        uint256 bal = IERC20(token).balanceOf(address(this));
+        if (bal == 0) revert IProtocolErrors.InvalidAmount();
+
+        IERC20(token).safeTransfer(to, bal);
+        emit TokensSwept(token, to, bal);
     }
 
     /**
@@ -153,15 +176,22 @@ contract PromotionalIncentiveVault is AccessControl, ReentrancyGuard {
         onlyRole(ProtocolRoles.ADMIN_ROLE)
         nonReentrant
     {
-        if (recipients.length != amounts.length) revert ArrayLengthMismatch();
+        uint256 len = recipients.length;
+        if (len == 0 || len != amounts.length) revert ArrayLengthMismatch();
+        if (len > MAX_BATCH_SIZE) revert IProtocolErrors.InvalidParameters();
         if (campaignId == 0 || campaignId > campaignCount) revert InvalidCampaignId();
 
         Campaign storage campaign = campaigns[campaignId];
         if (!campaign.isActive) revert CampaignNotActive();
 
         uint256 totalBatch = 0;
-        for (uint256 i = 0; i < amounts.length; i++) {
+        for (uint256 i = 0; i < len;) {
+            if (recipients[i] == address(0)) revert IProtocolErrors.ZeroAddress();
+            if (amounts[i] == 0) revert IProtocolErrors.ZeroAmount();
             totalBatch += amounts[i];
+            unchecked {
+                ++i;
+            }
         }
 
         if (campaign.claimedRewardAmount + totalBatch > campaign.totalRewardAmount) {
@@ -171,11 +201,12 @@ contract PromotionalIncentiveVault is AccessControl, ReentrancyGuard {
         campaign.claimedRewardAmount += totalBatch;
         totalDistributed += totalBatch;
 
-        for (uint256 i = 0; i < recipients.length; i++) {
-            if (recipients[i] == address(0)) revert IProtocolErrors.ZeroAddress();
-            if (amounts[i] == 0) revert IProtocolErrors.ZeroAmount();
+        for (uint256 i = 0; i < len;) {
             virajeToken.safeTransfer(recipients[i], amounts[i]);
             emit RewardDistributed(campaignId, recipients[i], amounts[i]);
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -209,6 +240,7 @@ contract PromotionalIncentiveVault is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Returns total campaign count
+     * @return Total number of created campaigns
      */
     function getCampaignCount() external view returns (uint256) {
         return campaignCount;
