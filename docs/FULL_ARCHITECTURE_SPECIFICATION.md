@@ -376,7 +376,15 @@ sequenceDiagram
 ### 3.4. Módulo 4: Mercados Monetarios y Productos Estructurados
 
 #### 16. [`VestedDiscountVault.sol`](../contracts/src/VestedDiscountVault.sol)
-- **Propósito**: Emisión de bonos cupón cero pre-financiados con plazos de 1 a 5 años y escala de descuento del **10.0% al 50.0%** (10% anual base). Cero comisión de emisión (`mintFeeBps = 0`). Opción de *ragequit* con 15% de penalización y quema del 100% de tokens no vestados.
+- **Propósito**: Emisión y custodia de bonos cupón cero pre-financiados con plazos de 1 a 5 años y escala de descuento del **10.0% al 50.0%** (10% anual base). Cero comisión de emisión (`mintFeeBps = 0`). Opción de *ragequit* con 15% de penalización y transferencia del 100% de la penalización a stakers vía `RealYieldRouter`.
+- **Modelo de Deuda Continua (Mitigación C-02)**:
+  - Implementa un acumulador lineal continuo de momentos de primer orden (`discountedOutstanding`, `accrualRateSum`, `accrualStartSum`) que evalúa el pasivo presente total en $O(1)$ sin saltos discretos ni caídas abruptas de NAV (*no NAV cliffs*).
+  - Gestiona los vencimientos de los bonos mediante un **Min-Heap binario** en almacenamiento que permite liquidar bonos madurados a su valor nominal fijo en $O(\log n)$ a través de `accrue()`.
+- **Invariante de Solvencia & Salvaguardas**:
+  - `_validateSolvency()` exige formalmente $\text{TotalAssetsUSD} \ge \text{TotalLiabilitiesUSD}$ y ratio de colateralización $\ge 100\%$ previo a cualquier emisión de nuevos bonos.
+  - Soporta Circuit Breaker para congelar la adquisición ante anomalías en el token de pago (`stablecoin`).
+  - Las consultas de saldo a `GovernanceStaking` están blindadas con `try/catch` defensivo para prevenir vectores de DoS.
+  - Incorpora `sweepTokens()` con bloqueo incondicional e inviolable del token de liquidación (`stablecoin`) y del NFT de posiciones (`positionNFT`).
 
 #### 17. [`VaultPositionNFT.sol`](../contracts/src/VaultPositionNFT.sol)
 - **Propósito**: Token ERC-721 transferible con almacenamiento compacto de parámetros de posición de bonos.
