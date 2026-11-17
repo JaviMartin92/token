@@ -185,6 +185,11 @@ sequenceDiagram
 
 ### 3.1. Módulo 1: Núcleo de Emisión y Tesorería Exógena
 
+#### 0. [`TreasuryProxy.sol`](../contracts/src/TreasuryProxy.sol)
+- **Propósito**: Proxy de actualización canónico EIP-1967 que canaliza la ejecución y preserva el estado y fondos de la tesorería institucional delegando en `TreasuryManager.sol`.
+- **Invariante de Almacenamiento**: No declara variables secuenciales en almacenamiento (slots 0, 1... libres); utiliza exclusivamente los slots de constantes canónicas EIP-1967 (`keccak256("eip1967.proxy.implementation") - 1` y `keccak256("eip1967.proxy.admin") - 1`), erradicando colisiones de almacenamiento con librerías o implementaciones.
+- **Seguridad y Gobernanza**: Las funciones administrativas (`upgradeTo`, `upgradeToAndCall`, `changeAdmin`) están restringidas a `onlyOwner` (asignado incondicionalmente a `TimelockController.sol` con retardo obligatorio de 72 horas en producción). Soporta migraciones atómicas con propagación de errores (`revert`) y enrutamiento canónico seguro de `receive()` y `fallback()`.
+
 #### 1. [`TreasuryManager.sol`](../contracts/src/TreasuryManager.sol)
 - **Propósito**: Orquestador central de emisión a NAV, rescates, rebalanceos y control estricto de solvencia.
 - **Modularización EIP-170**: Para permanecer por debajo del límite de 24.576 bytes, delega su lógica matemática en `TreasuryFeeLib`, `TreasuryPoRLib` y `TreasuryRebalanceLib`.

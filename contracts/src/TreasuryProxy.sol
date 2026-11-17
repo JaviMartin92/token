@@ -1,4 +1,4 @@
-/* solhint-disable no-inline-assembly */
+/* solhint-disable no-inline-assembly, avoid-low-level-calls */
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -7,9 +7,19 @@ import "./interfaces/IProtocolErrors.sol";
 /**
  * @title TreasuryProxy
  * @author Viraje Protocol Architecture Team
- * @notice ERC-1967 upgradeable proxy delegating calls to an implementation address.
- *         Uses standard EIP-1967 slots for implementation and admin to prevent storage collisions.
- *         Inline assembly is required by EIP-1967 specification for slot reading and delegatecall.
+ * @notice Standard EIP-1967 upgradeable proxy delegating execution to the TreasuryManager logic contract.
+ * @dev Storage slots for implementation and administrator are hardcoded constants calculated according
+ *      to EIP-1967 specifications:
+ *      - Implementation slot: bytes32(uint256(keccak256("eip1967.proxy.implementation")) - 1)
+ *      - Admin slot: bytes32(uint256(keccak256("eip1967.proxy.admin")) - 1)
+ *      Inline assembly is required by the EIP-1967 specification for slot reading, storage writes,
+ *      and delegatecall invocation.
+ * @custom:security-note Storage Safety: This proxy declares zero sequential state variables.
+ *                       All proxy-level state is maintained in dedicated EIP-1967 storage slots,
+ *                       guaranteeing zero storage collisions with implementation storage layouts.
+ * @custom:security-note Governance Handoff: The administrative role must be assigned to the
+ *                       TimelockController in production, enforcing an unbypassable 72-hour delay
+ *                       on all implementation upgrades or admin modifications.
  */
 contract TreasuryProxy {
     // Standard ERC-1967 implementation slot: keccak-256("eip1967.proxy.implementation") - 1
@@ -17,21 +27,27 @@ contract TreasuryProxy {
     // Standard ERC-1967 admin slot: keccak-256("eip1967.proxy.admin") - 1
     bytes32 private constant ADMIN_SLOT = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
 
+    /// @notice Thrown when the target implementation address contains no runtime bytecode
     error InvalidImplementation();
+    /// @notice Thrown when an atomic upgrade migration call reverts without returning error data
     error MigrationCallFailed();
 
+    /// @notice Emitted when the proxy implementation is upgraded
     event Upgraded(address indexed implementation);
-    event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
+    /// @notice Canonical EIP-1967 event emitted when proxy admin is updated
+    event AdminChanged(address previousAdmin, address newAdmin);
 
     /**
-     * @notice Initializes proxy with initial implementation contract and sets deployer as initial admin
-     * @param _implementation Address of deployed logic implementation contract
+     * @notice Initializes the proxy with the initial logic implementation and assigns deployer as admin
+     * @param _implementation Address of the deployed logic implementation contract
      */
     constructor(address _implementation) {
         if (_implementation == address(0)) revert IProtocolErrors.ZeroAddress();
         if (_implementation.code.length == 0) revert InvalidImplementation();
         _setAdmin(msg.sender);
         _setImplementation(_implementation);
+        emit AdminChanged(address(0), msg.sender);
+        emit Upgraded(_implementation);
     }
 
     modifier onlyOwner() {
@@ -48,6 +64,13 @@ contract TreasuryProxy {
         }
     }
 
+    /**
+     * @notice Canonical EIP-1967 getter returning the proxy administrator address
+     */
+    function admin() external view returns (address) {
+        return owner();
+    }
+
     function _setAdmin(address newAdmin) internal {
         assembly {
             sstore(ADMIN_SLOT, newAdmin)
@@ -55,8 +78,8 @@ contract TreasuryProxy {
     }
 
     /**
-     * @notice Transfers proxy administrative ownership (TimelockController in production)
-     * @param newAdmin Address of new proxy admin
+     * @notice Transfers proxy administrative ownership (assigned to TimelockController in production)
+     * @param newAdmin Address of the new proxy administrator
      */
     function changeAdmin(address newAdmin) external onlyOwner {
         if (newAdmin == address(0)) revert IProtocolErrors.ZeroAddress();
@@ -66,26 +89,20 @@ contract TreasuryProxy {
     }
 
     /**
-     * @notice Upgrades proxy logic to a new implementation contract
-     * @param newImplementation Address of new logic implementation
+     * @notice Upgrades the proxy logic to a new implementation contract
+     * @param newImplementation Address of the new logic implementation
      */
     function upgradeTo(address newImplementation) external onlyOwner {
-        if (newImplementation == address(0)) revert IProtocolErrors.ZeroAddress();
-        if (newImplementation.code.length == 0) revert InvalidImplementation();
-        _setImplementation(newImplementation);
-        emit Upgraded(newImplementation);
+        _upgradeTo(newImplementation);
     }
 
     /**
      * @notice Upgrades proxy logic and atomically executes a migration call
-     * @param newImplementation Address of new logic implementation
-     * @param data Migration calldata to execute via delegatecall
+     * @param newImplementation Address of the new logic implementation
+     * @param data Migration calldata to execute via delegatecall in proxy context
      */
     function upgradeToAndCall(address newImplementation, bytes calldata data) external payable onlyOwner {
-        if (newImplementation == address(0)) revert IProtocolErrors.ZeroAddress();
-        if (newImplementation.code.length == 0) revert InvalidImplementation();
-        _setImplementation(newImplementation);
-        emit Upgraded(newImplementation);
+        _upgradeTo(newImplementation);
 
         if (data.length > 0) {
             (bool success, bytes memory returnData) = newImplementation.delegatecall(data);
@@ -117,12 +134,16 @@ contract TreasuryProxy {
         }
     }
 
-    /**
-     * @notice Delegates all unrecognized calls to the current implementation contract
-     */
-    fallback() external payable {
+    function _upgradeTo(address newImplementation) internal {
+        if (newImplementation == address(0)) revert IProtocolErrors.ZeroAddress();
+        if (newImplementation.code.length == 0) revert InvalidImplementation();
+        _setImplementation(newImplementation);
+        emit Upgraded(newImplementation);
+    }
+
+    /// @dev Internal forwarding function using EIP-1967 canonical delegatecall assembly
+    function _delegate(address impl) internal {
         assembly {
-            let impl := sload(IMPLEMENTATION_SLOT)
             calldatacopy(0, 0, calldatasize())
             let result := delegatecall(gas(), impl, 0, calldatasize(), 0, 0)
             returndatacopy(0, 0, returndatasize())
@@ -133,7 +154,16 @@ contract TreasuryProxy {
     }
 
     /**
-     * @notice Receives native ETH
+     * @notice Delegates all unrecognized calls to the current implementation contract
      */
-    receive() external payable {}
+    fallback() external payable {
+        _delegate(implementation());
+    }
+
+    /**
+     * @notice Delegates plain ETH transfers to the current implementation contract
+     */
+    receive() external payable {
+        _delegate(implementation());
+    }
 }
