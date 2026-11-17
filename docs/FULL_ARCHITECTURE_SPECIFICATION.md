@@ -359,6 +359,18 @@ sequenceDiagram
   - Dispone de 4 acumuladores acumulativos de observabilidad: `totalUsdcInjected`, `totalUsdcSpent`, `totalTokensBought` y `totalTokensBurned`.
   - La función `sweepTokens()` bloquea incondicionalmente tanto `usdcToken` como `nativeToken`, impidiendo cualquier drenaje de fondos de recompra.
 
+#### 15f. [`FounderReserveVestingVault.sol`](../contracts/src/FounderReserveVestingVault.sol)
+- **Propósito**: Bóveda fiduciaria de consolidación (*vesting*) para el fundador y colaboradores clave del protocolo, indexada exclusivamente a la solvencia financiera de la Tesorería (*Proof-of-Reserves Solvency Vesting*).
+- **Alineación de Incentivos Fiduciarios & Parámetros Calibrados**:
+  - **Condición de Solvencia**: Reclamaciones estrictamente habilitadas solo cuando $\text{TotalAssetsUSD} > \text{TotalLiabilitiesUSD}$ (Ratio de Solvencia > 100%).
+  - **Techo por Reclamación**: Acotado al **10.00% del excedente neto de reservas** ($\text{Assets} - \text{Liabilities}$) convertido a tokens $VIRAJE$ valorados a su NAV contable.
+  - **Barrera de Paridad**: Bloquea incondicionalmente retiros si el NAV por token se sitúa por debajo de la paridad contable ($\text{navPerShare} < \$1.00 \text{ USD}$).
+  - **Cooldown Temporal**: Período de enfriamiento de 72 horas (`COOLDOWN_PERIOD = 72 hours`) obligatorio entre reclamaciones sucesivas.
+  - **Asignación Vitalicia Inviolable**: Límite máximo vitalicio de 100,000 $VIRAJE$ (`TOTAL_ALLOCATION = 100_000 * 1e18`).
+- **Rescate Seguro & Gobernanza**:
+  - Incorpora `sweepTokens()` para rescate de activos ERC-20 transferidos accidentalmente, con una salvaguarda inquebrantable que prohíbe taxativamente retirar el token de consolidación $VIRAJE$.
+  - Registrado en `GovernorViraje.sol` con 0 peso electoral, erradicando auto-gobernanza.
+
 ---
 
 ### 3.4. Módulo 4: Mercados Monetarios y Productos Estructurados
