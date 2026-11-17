@@ -320,6 +320,15 @@ sequenceDiagram
   - **Auto-Gobernanza Estricta**: La función `setDelay()` está restringida incondicionalmente a `msg.sender == address(this)`, impidiendo cualquier alteración del retardo fuera del proceso de gobernanza timelocked.
   - **Propagación Diagnóstica de Errores (Revert Bubbling)**: En caso de fallo en `target.call`, propaga de forma transparente los bytes de revert originales del contrato invocado mediante código de bajo nivel blindado contra vulnerabilidades de reentrancia (`ReentrancyGuard`).
 
+#### 15b. [`YieldStreamingVault.sol`](../contracts/src/YieldStreamingVault.sol)
+- **Propósito**: Bóveda de distribución de rendimientos devengados con soporte para reclamaciones sin gas mediante firmas digitales EIP-712 e interés compuesto continuo.
+- **Invariante de Solvencia & Auto-Composición Acotada**:
+  - Auto-compone el rendimiento no reclamado a una tasa configurable del 6.45% APY (`compoundingApyBps = 645`).
+  - Para erradicar cualquier vector de insolvencia o dilución de principal de otros depositantes, el devengo compuesto está acotado estrictamente al excedente de reservas custodiado en la bóveda (`availableSurplus = max(0, vaultBal - totalUnclaimedPrincipal)`).
+- **Reclamaciones Gasless EIP-712**:
+  - Soporta `claimYieldGasless()` con verificación de firmas estructuradas EIP-712 (`ClaimRequest(address user,uint256 amount,uint256 nonce,uint256 deadline)`), permitiendo a keepers/relayers pagar el gas en nombre del usuario mientras el 100% de los fondos se transfiere a la billetera beneficiaria.
+  - Protección de saldo ante iliquidez transitoria: si la bóveda no posee suficiente liquidez en el momento del retiro, la transacción revierte sin alterar los balances contables pendientes del usuario.
+
 ---
 
 ### 3.4. Módulo 4: Mercados Monetarios y Productos Estructurados
