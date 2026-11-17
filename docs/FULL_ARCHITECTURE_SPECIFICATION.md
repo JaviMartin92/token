@@ -456,6 +456,15 @@ sequenceDiagram
 - **Interoperabilidad Universal de Selectores**:
   - Matriz dual que soporta tanto selectores canónicos EIP-165/ABI V2 (`0xdb006a75`, `0x7cbc2373`, `0xb6b55f25`, `0xe2bbb158`, `0xc92097d8`, `0xf284a096`) como selectores heredados de testnet/mocks (`0xba087652`, `0x89791475`, `0xfd7b27be`, `0x221375d0`, `0x933be074`).
 
+#### 23. [`PostQuantumGuard.sol`](../contracts/src/PostQuantumGuard.sol)
+- **Propósito**: Módulo de seguridad criptográfica post-cuántica (PQC) híbrida de Viraje Protocol, inmune al algoritmo de Shor.
+- **Fundamento Matemático & Criptográfico (W-OTS+ w=4)**:
+  - Implementa el esquema de firmas basadas en hash de un solo uso Winternitz OTS+ parametrizado con $w = 4$ bits (base 16), descomponiendo los digests de 32 bytes en 64 nibbles más 3 nibbles de suma de comprobación estricta ($l = 67$ cadenas de hash en total).
+  - La suma de comprobación anti-forja ($C = 960 - \sum n_i$) garantiza que cualquier modificación incremental de los dígitos del mensaje forzaría un decremento en el checksum, exigiendo el cómputo de preimágenes de Keccak-256 ($H^{-1}$), cuya resistencia es de 128 bits frente a algoritmos cuánticos de búsqueda (Grover) y 256 bits clásicos.
+- **Secreto Hacia Adelante y Trinquete de Claves (PFS)**:
+  - Cada clave de un solo uso queda irreversiblemente invalidada tras su consumo (`usedCommitments[root] = true`), enlazándose atómicamente a la raíz sucesiva (`nextCommitment`) en un esquema de trinquete criptográfico (*hash-ratchet*).
+  - Incorpora blindaje de reentrancia (`ReentrancyGuard`) en las funciones de autorización y función fiduciaria de rescate de activos accidentales (`sweepTokens`).
+
 ---
 
 ## 4. Formulativa Matemática y Ecuaciones del Protocolo

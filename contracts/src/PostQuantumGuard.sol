@@ -5,36 +5,43 @@ import "./interfaces/IPostQuantumGuard.sol";
 import "./ProtocolAddressProvider.sol";
 import "./ProtocolRoles.sol";
 import "./interfaces/IProtocolErrors.sol";
+import "./lib/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
  * @title PostQuantumGuard
  * @author Viraje Protocol Architecture Team
- * @notice Hybrid Post-Quantum Cryptography (PQC) security module for the Viraje Protocol.
- * @dev Implements on-chain verification of Winternitz One-Time Signatures (W-OTS+, w=4, 67 hash chains),
- *      completely immune to quantum factorization and discrete log algorithms (Shor).
- *      Natively executable on EVM using Keccak-256 operations (Grover-resistant at 128-bit security level).
- *      Provides Perfect Forward Secrecy (PFS) by chaining each single-use key commitment to a subsequent root.
+ * @notice Módulo de seguridad criptográfica post-cuántica (PQC) híbrida de Viraje Protocol.
+ * @dev Implementa verificación on-chain de firmas Winternitz One-Time Signatures (W-OTS+, w=4, 67 cadenas de hash),
+ *      completamente inmunes a algoritmos cuánticos de factorización y logaritmo discreto (Shor).
+ *      Totalmente ejecutable en la EVM mediante operaciones Keccak-256 (resistencia Grover al nivel de 128 bits de seguridad).
+ *      Garantiza Secreto Hacia Adelante (Perfect Forward Secrecy - PFS) mediante el encadenamiento de cada clave
+ *      comprometida de un solo uso con la raíz sucesiva en un esquema de trinquete criptográfico.
  */
-contract PostQuantumGuard is IPostQuantumGuard, AccessControl {
+contract PostQuantumGuard is IPostQuantumGuard, AccessControl, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
     bytes32 public constant QUANTUM_OPERATOR_ROLE = ProtocolRoles.QUANTUM_OPERATOR_ROLE;
     bytes32 public constant QUANTUM_AUDITOR_ROLE = ProtocolRoles.QUANTUM_AUDITOR_ROLE;
 
     ProtocolAddressProvider public immutable addressProvider;
 
-    // Number of hash chains for Winternitz w=4 (64 message nibbles + 3 checksum nibbles)
+    // Número de cadenas de hash para Winternitz w=4 (64 nibbles de mensaje + 3 nibbles de checksum)
     uint256 public constant CHAINS_COUNT = 67;
     uint256 public constant MAX_NIBBLE_VALUE = 15;
     uint256 public constant MAX_CHECKSUM_SUM = 64 * 15; // 960
 
-    // Registry of active quantum public key roots (Merkle / chain commitment)
+    // Registro de raíces de clave pública cuántica activas (compromiso de Merkle / trinquete)
     mapping(address => bytes32) private _activeCommitments;
     mapping(bytes32 => bool) public usedCommitments;
+    mapping(bytes32 => uint256) public commitmentNonce;
 
-    // High-impact actions certified with valid quantum signatures
+    // Acciones de alto impacto certificadas con firmas cuánticas válidas
     mapping(bytes32 => bool) public quantumAuthorizedActions;
 
-    // --- Domain Custom Errors ---
+    // --- Errores Personalizados de Dominio (EIP-838) ---
     error InvalidQuantumSignature();
     error QuantumCommitmentAlreadyUsed();
     error NoActiveQuantumCommitment();
@@ -43,11 +50,12 @@ contract PostQuantumGuard is IPostQuantumGuard, AccessControl {
     error ActionAlreadyAuthorized();
 
     event QuantumActionConsumed(bytes32 indexed actionId, address indexed consumer);
+    event TokensSwept(address indexed token, address indexed to, uint256 amount);
 
     /**
-     * @notice Initializes PostQuantumGuard with protocol address provider and admin
-     * @param initialAdmin Address of initial governance administrator
-     * @param _addressProvider Address of ProtocolAddressProvider registry
+     * @notice Inicializa el centinela cuántico con el registro fiduciario del protocolo.
+     * @param initialAdmin Dirección del administrador de gobernanza inicial.
+     * @param _addressProvider Dirección del registro ProtocolAddressProvider.
      */
     constructor(address initialAdmin, address _addressProvider) {
         if (initialAdmin == address(0) || _addressProvider == address(0)) {
@@ -59,8 +67,8 @@ contract PostQuantumGuard is IPostQuantumGuard, AccessControl {
     }
 
     /**
-     * @notice Registers initial post-quantum public key commitment (hash root of 67 chain extremities)
-     * @param commitmentRoot Keccak-256 hash of the 67 public key endpoints
+     * @notice Registra el compromiso inicial de clave pública post-cuántica (raíz hash de las 67 extremidades).
+     * @param commitmentRoot Hash Keccak-256 de los 67 puntos finales de la clave pública.
      */
     function registerQuantumCommitment(bytes32 commitmentRoot) external override {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender) && !hasRole(QUANTUM_OPERATOR_ROLE, msg.sender)) {
@@ -74,11 +82,11 @@ contract PostQuantumGuard is IPostQuantumGuard, AccessControl {
     }
 
     /**
-     * @notice Verifies mathematically if a W-OTS+ (w=4) signature corresponds to a given message and commitment root
-     * @param messageHash 32-byte digest of the signed action payload
-     * @param signature 67 intermediate preimages corresponding to each nibble and checksum
-     * @param expectedCommitment Expected root hash of the public key chain endpoints
-     * @return isValid True if reconstructed public key endpoints hash to expected commitment
+     * @notice Verifica matemáticamente si una firma W-OTS+ (w=4) corresponde a un mensaje y compromiso dados.
+     * @param messageHash Digest de 32 bytes del payload firmado.
+     * @param signature 67 preimágenes intermedias correspondientes a cada nibble y checksum.
+     * @param expectedCommitment Raíz hash esperada de los extremos de la clave pública.
+     * @return isValid True si los extremos reconstruidos coinciden con el compromiso esperado.
      */
     function verifyWinternitzSignature(
         bytes32 messageHash,
@@ -90,7 +98,7 @@ contract PostQuantumGuard is IPostQuantumGuard, AccessControl {
         bytes32[67] memory reconstructedPubKeys;
         uint256 sumNibbles = 0;
 
-        // 1. Deconstruct the 32 message bytes into 64 nibbles (4 bits each, values 0..15)
+        // 1. Descomposición de los 32 bytes del mensaje en 64 nibbles (4 bits cada uno, valores 0..15)
         for (uint256 i = 0; i < 32;) {
             uint8 byteVal = uint8(messageHash[i]);
             uint8 n0 = byteVal >> 4;
@@ -98,7 +106,7 @@ contract PostQuantumGuard is IPostQuantumGuard, AccessControl {
 
             sumNibbles += (n0 + n1);
 
-            // Hash forward (15 - nibble) times to reach the public key chain extremity
+            // Hashea hacia adelante (15 - nibble) veces hasta alcanzar el extremo de la cadena
             reconstructedPubKeys[i * 2] = _hashForward(signature[i * 2], 15 - n0);
             reconstructedPubKeys[i * 2 + 1] = _hashForward(signature[i * 2 + 1], 15 - n1);
 
@@ -107,36 +115,36 @@ contract PostQuantumGuard is IPostQuantumGuard, AccessControl {
             }
         }
 
-        // 2. Compute checksum to prevent incremental forgery attacks (960 - sumNibbles)
+        // 2. Cálculo del checksum para prevenir ataques de falsificación incremental (960 - sumNibbles)
         uint256 checksum = MAX_CHECKSUM_SUM - sumNibbles;
         uint8 c0 = uint8((checksum >> 8) & 0x0F);
         uint8 c1 = uint8((checksum >> 4) & 0x0F);
         uint8 c2 = uint8(checksum & 0x0F);
 
-        // 3. Process the 3 checksum chains forward
+        // 3. Procesa las 3 cadenas del checksum hacia adelante
         reconstructedPubKeys[64] = _hashForward(signature[64], 15 - c0);
         reconstructedPubKeys[65] = _hashForward(signature[65], 15 - c1);
         reconstructedPubKeys[66] = _hashForward(signature[66], 15 - c2);
 
-        // 4. Compare hash of entire reconstructed public key vector with expected commitment root
+        // 4. Compara el hash del vector completo de claves públicas reconstruidas con la raíz esperada
         bytes32 calculatedCommitment = keccak256(abi.encode(reconstructedPubKeys));
         return calculatedCommitment == expectedCommitment;
     }
 
     /**
-     * @notice Authorizes a critical action via post-quantum signature and advances the key chain (PFS)
-     * @param actionId Unique identifier of the governed proposal or operation
-     * @param messageHash Digest of the action payload
-     * @param pqcSignature 67-element Winternitz signature
-     * @param nextCommitment Next quantum key root (Forward Security). Optional (bytes32(0) if closing).
-     * @return authorized Success confirmation
+     * @notice Autoriza una acción crítica mediante firma post-cuántica y avanza el trinquete (PFS).
+     * @param actionId Identificador único de la propuesta u operación gobernada.
+     * @param messageHash Digest del payload de la acción.
+     * @param pqcSignature Firma Winternitz de 67 elementos.
+     * @param nextCommitment Raíz cuántica sucesiva (Forward Security). Opcional (bytes32(0) si finaliza).
+     * @return authorized Confirmación de éxito.
      */
     function authorizeGuardedAction(
         bytes32 actionId,
         bytes32 messageHash,
         bytes32[67] calldata pqcSignature,
         bytes32 nextCommitment
-    ) external override returns (bool authorized) {
+    ) external override nonReentrant returns (bool authorized) {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender) && !hasRole(QUANTUM_OPERATOR_ROLE, msg.sender)) {
             revert IProtocolErrors.Unauthorized();
         }
@@ -153,16 +161,16 @@ contract PostQuantumGuard is IPostQuantumGuard, AccessControl {
         if (currentCommitment == bytes32(0)) revert NoActiveQuantumCommitment();
         if (usedCommitments[currentCommitment]) revert QuantumCommitmentAlreadyUsed();
 
-        // Verify the W-OTS+ signature
+        // Verificación de la firma W-OTS+
         if (!verifyWinternitzSignature(messageHash, pqcSignature, currentCommitment)) {
             revert InvalidQuantumSignature();
         }
 
-        // Consume current commitment to strictly prevent OTS key reuse attacks
+        // Consume el compromiso actual para erradicar ataques de reutilización OTS
         usedCommitments[currentCommitment] = true;
         quantumAuthorizedActions[actionId] = true;
 
-        // Advance to next key commitment if provided (Perfect Forward Secrecy)
+        // Avanza al siguiente compromiso si se provee (Perfect Forward Secrecy)
         if (nextCommitment != bytes32(0)) {
             if (usedCommitments[nextCommitment]) revert QuantumCommitmentAlreadyUsed();
             _activeCommitments[msg.sender] = nextCommitment;
@@ -176,16 +184,17 @@ contract PostQuantumGuard is IPostQuantumGuard, AccessControl {
         return true;
     }
 
-    mapping(bytes32 => uint256) public commitmentNonce;
-
     /**
-     * @notice Authorizes an action with domain-separated Winternitz OTS+ signature and one-time key consumption
+     * @notice Autoriza una acción con firma Winternitz OTS+ con separación estricta de dominios (EIP-712 Style).
+     * @param commitmentRoot Raíz pública esperada del firmante.
+     * @param actionId Identificador único de la acción.
+     * @param signature Firma W-OTS+ de 67 elementos.
      */
     function authorizeActionWithQuantumSignature(
         bytes32 commitmentRoot,
         bytes32 actionId,
         bytes32[67] calldata signature
-    ) external override {
+    ) external override nonReentrant {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender) && !hasRole(QUANTUM_OPERATOR_ROLE, msg.sender)) {
             revert IProtocolErrors.Unauthorized();
         }
@@ -199,14 +208,14 @@ contract PostQuantumGuard is IPostQuantumGuard, AccessControl {
         uint256 nonce = commitmentNonce[commitmentRoot];
         commitmentNonce[commitmentRoot] = nonce + 1;
 
-        // Strict Domain Separation (EIP-712 Style)
+        // Separación estricta de dominios
         bytes32 digest = keccak256(abi.encode(block.chainid, address(this), msg.sender, nonce, actionId));
 
         if (!verifyWinternitzSignature(digest, signature, commitmentRoot)) {
             revert InvalidQuantumSignature();
         }
 
-        // Winternitz OTS+: Mark commitment as used to enforce strict One-Time Signature semantics
+        // Invalida el compromiso de clave de un solo uso
         usedCommitments[commitmentRoot] = true;
         quantumAuthorizedActions[actionId] = true;
         delete _activeCommitments[msg.sender];
@@ -216,8 +225,8 @@ contract PostQuantumGuard is IPostQuantumGuard, AccessControl {
     }
 
     /**
-     * @notice Consumes an authorized quantum action upon execution to prevent replay
-     * @param actionId Action identifier to mark as consumed
+     * @notice Consume una acción autorizada cuánticamente durante su ejecución para prevenir replay.
+     * @param actionId Identificador de la acción a consumir.
      */
     function consumeQuantumAuthorizedAction(bytes32 actionId) external {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender) && !hasRole(QUANTUM_OPERATOR_ROLE, msg.sender)) {
@@ -229,23 +238,35 @@ contract PostQuantumGuard is IPostQuantumGuard, AccessControl {
     }
 
     /**
-     * @notice Checks whether an action has active post-quantum authorization
-     * @param actionId Unique identifier of the action
+     * @notice Consulta si una acción dispone de autorización cuántica activa.
+     * @param actionId Identificador único de la acción.
      */
     function isActionQuantumAuthorized(bytes32 actionId) external view override returns (bool) {
         return quantumAuthorizedActions[actionId];
     }
 
     /**
-     * @notice Returns the active quantum commitment root for an account
-     * @param account Target signer address
+     * @notice Devuelve la raíz de compromiso cuántico activa para una cuenta.
+     * @param account Dirección del firmante consultado.
      */
     function getActiveCommitment(address account) external view override returns (bytes32) {
         return _activeCommitments[account];
     }
 
     /**
-     * @dev Internal: computes n successive Keccak-256 iterations on seed
+     * @notice Rescata tokens ERC-20 transferidos accidentalmente al contrato.
+     * @param token Dirección del activo.
+     * @param to Destinatario del rescate.
+     * @param amount Cantidad a transferir.
+     */
+    function sweepTokens(address token, address to, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (token == address(0) || to == address(0)) revert IProtocolErrors.ZeroAddress();
+        IERC20(token).safeTransfer(to, amount);
+        emit TokensSwept(token, to, amount);
+    }
+
+    /**
+     * @dev Función interna: computa n iteraciones sucesivas de Keccak-256 sobre la semilla.
      */
     function _hashForward(bytes32 seed, uint256 iterations) internal pure returns (bytes32 result) {
         result = seed;
