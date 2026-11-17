@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./ProtocolRoles.sol";
+import "./lib/security/ReentrancyGuard.sol";
 import "./interfaces/IProtocolErrors.sol";
 
 /**
@@ -13,13 +14,14 @@ import "./interfaces/IProtocolErrors.sol";
  * @dev Enforces Checks-Effects-Interactions pattern for proposal executions.
  *      Propagates low-level revert data on call failure for actionable error diagnostics.
  */
-contract TimelockController is AccessControl {
+contract TimelockController is AccessControl, ReentrancyGuard {
     // --- Domain Custom Errors ---
     error InvalidDelay();
     error TransactionNotQueued();
     error DelayNotElapsed();
     error TransactionStale();
     error TransactionAlreadyExecuted();
+    error TransactionAlreadyQueued(bytes32 txHash);
     error CallExecutionFailed();
 
     uint256 public constant MIN_DELAY = 1 days;
@@ -84,11 +86,14 @@ contract TimelockController is AccessControl {
     function queueTransaction(address target, uint256 value, bytes calldata data)
         external
         onlyRole(ProtocolRoles.ADMIN_ROLE)
+        nonReentrant
         returns (bytes32 txHash)
     {
         if (target == address(0)) revert IProtocolErrors.ZeroAddress();
         uint256 eta = block.timestamp + delay;
         txHash = keccak256(abi.encode(target, value, data, eta));
+
+        if (queuedTransactions[txHash].timestamp != 0) revert TransactionAlreadyQueued(txHash);
 
         queuedTransactions[txHash] =
             Transaction({target: target, timestamp: uint64(eta), executed: false, value: value, data: data});
@@ -108,6 +113,7 @@ contract TimelockController is AccessControl {
         external
         payable
         onlyRole(ProtocolRoles.ADMIN_ROLE)
+        nonReentrant
         returns (bytes memory)
     {
         bytes32 txHash = keccak256(abi.encode(target, value, data, eta));
@@ -123,10 +129,12 @@ contract TimelockController is AccessControl {
         (bool success, bytes memory returnData) = target.call{value: value}(data);
         if (!success) {
             if (returnData.length > 0) {
+                /* solhint-disable no-inline-assembly */
                 assembly {
                     let returndata_size := mload(returnData)
                     revert(add(32, returnData), returndata_size)
                 }
+                /* solhint-enable no-inline-assembly */
             } else {
                 revert CallExecutionFailed();
             }
@@ -140,7 +148,7 @@ contract TimelockController is AccessControl {
      * @notice Cancels an unexecuted queued transaction
      * @param txHash Hash of the queued transaction
      */
-    function cancelTransaction(bytes32 txHash) external onlyRole(ProtocolRoles.ADMIN_ROLE) {
+    function cancelTransaction(bytes32 txHash) external onlyRole(ProtocolRoles.ADMIN_ROLE) nonReentrant {
         if (queuedTransactions[txHash].timestamp == 0) revert TransactionNotQueued();
         if (queuedTransactions[txHash].executed) revert TransactionAlreadyExecuted();
 
